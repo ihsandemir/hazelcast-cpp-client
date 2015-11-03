@@ -28,6 +28,10 @@
 #include "hazelcast/client/topic/Message.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
+#include "hazelcast/client/protocol/parameters/TopicEventParameters.h"
+#include "hazelcast/client/protocol/ClientMessageType.h"
+
+#include <assert.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -48,16 +52,17 @@ namespace hazelcast {
 
                 };
 
-                void handle(const client::serialization::pimpl::Data &data) {
-                    boost::shared_ptr<PortableMessage> event = serializationService.toObject<PortableMessage>(data);
-                    handle(*event);
-                }
+                void handle(std::auto_ptr<protocol::ClientMessage> message)
+                {
+                    std::auto_ptr<protocol::parameters::TopicEventParameters> event = protocol::parameters::TopicEventParameters::decode(*message);
 
-                void handle(const PortableMessage &event) {
-                    Member member = clusterService.getMember(event.getUuid());
-                    boost::shared_ptr<E> object = serializationService.toObject<E>(event.getMessage());
-                    Message<E> message(instanceName, *object, event.getPublishTime(), member);
-                    listener.onMessage(message);
+                    std::auto_ptr<Member> member(clusterService.getMember(*event->uuid));
+
+                    boost::shared_ptr<E> object = serializationService.toObject<E>(*event->message);
+
+                    Message<E> listenerMsg(instanceName, *object, event->publishTime, *member);
+
+                    listener.onMessage(listenerMsg);
                 };
 
             private:

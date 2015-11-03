@@ -17,12 +17,15 @@
 // Created by sancar koyunlu on 01/10/14.
 //
 
+#include "hazelcast/util/Util.h"
 #include "hazelcast/client/proxy/TransactionalSetImpl.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
-#include "hazelcast/client/collection/TxnSetAddRequest.h"
 #include "hazelcast/client/txn/TransactionProxy.h"
-#include "hazelcast/client/collection/TxnSetRemoveRequest.h"
-#include "hazelcast/client/collection/TxnSetSizeRequest.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/TransactionalSetAddParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalSetRemoveParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalSetSizeParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -33,21 +36,27 @@ namespace hazelcast {
             }
 
             bool TransactionalSetImpl::add(const serialization::pimpl::Data& e) {
-                collection::TxnSetAddRequest *request = new collection::TxnSetAddRequest(getName(), e);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalSetAddParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), e);
+
+                return invokeAndGetResult<bool>(request);
             }
 
             bool TransactionalSetImpl::remove(const serialization::pimpl::Data& e) {
-                collection::TxnSetRemoveRequest *request = new collection::TxnSetRemoveRequest(getName(), e);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalSetRemoveParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), e);
+
+                return invokeAndGetResult<bool>(request);
             }
 
             int TransactionalSetImpl::size() {
-                collection::TxnSetSizeRequest *request = new collection::TxnSetSizeRequest(getName());
-                boost::shared_ptr<int> result = toObject<int>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalSetSizeParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId());
+
+                return invokeAndGetResult<int>(request);
             }
         }
     }

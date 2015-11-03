@@ -24,9 +24,8 @@
 #include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/InvocationService.h"
-#include "hazelcast/client/impl/ClientRequest.h"
-#include "hazelcast/client/impl/BaseRemoveListenerRequest.h"
-#include "hazelcast/client/impl/BaseEventHandler.h"
+
+#include "hazelcast/client/protocol/parameters/AddListenerResultParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -37,40 +36,51 @@ namespace hazelcast {
 
             }
 
-            std::string ServerListenerService::listen(const impl::ClientRequest *registrationRequest, int partitionId, impl::BaseEventHandler *handler) {
+            std::auto_ptr<std::string> ServerListenerService::listen(std::auto_ptr<protocol::ClientMessage> registrationRequest,
+                                                      int partitionId, impl::BaseEventHandler *handler) {
+
                 connection::CallFuture future = clientContext.getInvocationService().invokeOnPartitionOwner(registrationRequest, handler, partitionId);
-                boost::shared_ptr<std::string> registrationId = clientContext.getSerializationService().toObject<std::string>(future.get());
-                handler->registrationId = *registrationId;
-                registerListener(registrationId, registrationRequest->callId);
 
-                return *registrationId;
+                std::auto_ptr<protocol::ClientMessage> response = future.get();
+
+                // get the correlationId for the request
+                int correlationId = future.getCallId();
+
+                std::auto_ptr<protocol::parameters::AddListenerResultParameters> resultParams = protocol::parameters::AddListenerResultParameters::decode(*response);
+
+                registerListener(*resultParams->registrationId, correlationId);
+
+                return resultParams->registrationId;
             }
 
-            std::string ServerListenerService::listen(const impl::ClientRequest *registrationRequest, impl::BaseEventHandler *handler) {
+            std::auto_ptr<std::string> ServerListenerService::listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, impl::BaseEventHandler *handler) {
                 connection::CallFuture future = clientContext.getInvocationService().invokeOnRandomTarget(registrationRequest, handler);
-                boost::shared_ptr<std::string> registrationId = clientContext.getSerializationService().toObject<std::string>(future.get());
-                handler->registrationId = *registrationId;
-                registerListener(registrationId, registrationRequest->callId);
 
-                return *registrationId;
+                std::auto_ptr<protocol::ClientMessage> response = future.get();
+
+                // get the correlationId for the request
+                int correlationId = future.getCallId();
+
+                std::auto_ptr<protocol::parameters::AddListenerResultParameters> resultParams =
+                        protocol::parameters::AddListenerResultParameters::decode(*response);
+                
+                registerListener(*resultParams->registrationId, correlationId);
+
+                return resultParams->registrationId;
             }
 
-            bool ServerListenerService::stopListening(impl::BaseRemoveListenerRequest *request, const std::string& registrationId) {
-                std::string resolvedRegistrationId = registrationId;
-                bool isValidId = deRegisterListener(resolvedRegistrationId);
-                if (!isValidId) {
-                    delete request;
-                    return false;
-                }
-                request->setRegistrationId(resolvedRegistrationId);
+            bool ServerListenerService::stopListening(std::auto_ptr<protocol::ClientMessage> request) {
                 connection::CallFuture future = clientContext.getInvocationService().invokeOnRandomTarget(request);
-                bool result = *(clientContext.getSerializationService().toObject<bool>(future.get()));
-                return result;
+
+                std::auto_ptr<protocol::ClientMessage> response = future.get();
+
+                assert(protocol::BOOLEAN_RESULT == response->getMessageType());
+                return response->getBoolean();
             }
 
-            void ServerListenerService::registerListener(boost::shared_ptr<std::string> registrationId, int callId) {
-                registrationAliasMap.put(*registrationId, registrationId);
-                registrationIdMap.put(*registrationId, boost::shared_ptr<int>(new int(callId)));
+            void ServerListenerService::registerListener(const std::string &registrationId, int callId) {
+                registrationAliasMap.put(registrationId, boost::shared_ptr<std::string>(new std::string(registrationId)));
+                registrationIdMap.put(registrationId, boost::shared_ptr<int>(new int(callId)));
             }
 
             void ServerListenerService::reRegisterListener(const std::string& registrationId, boost::shared_ptr<std::string> alias, int callId) {

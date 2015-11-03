@@ -49,22 +49,6 @@ namespace hazelcast {
                 return protocol::ProtocolConstants::MEMBERSHIP_EVENT;
 
             }
-
-            void ClientMembershipEvent::readData(serialization::ObjectDataInput &reader) {
-                member.readData(reader);
-                int t = reader.readInt();
-                if (t == MembershipEvent::MEMBER_ADDED) {
-                    eventType = MembershipEvent::MEMBER_ADDED;
-                } else if (t == MembershipEvent::MEMBER_REMOVED) {
-                    eventType = MembershipEvent::MEMBER_REMOVED;
-                } else if (t == MembershipEvent::MEMBER_ATTRIBUTE_CHANGED) {
-                    eventType = MembershipEvent::MEMBER_ATTRIBUTE_CHANGED;
-                }
-                if (reader.readBoolean()) {
-                    memberAttributeChange.reset(new impl::MemberAttributeChange());
-                    memberAttributeChange->readData(reader);
-                }
-            }
         }
     }
 }

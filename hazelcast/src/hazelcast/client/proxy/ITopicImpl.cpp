@@ -18,11 +18,14 @@
 //
 
 #include "hazelcast/client/proxy/ITopicImpl.h"
-#include "hazelcast/client/topic/PublishRequest.h"
-#include "hazelcast/client/topic/AddMessageListenerRequest.h"
-#include "hazelcast/client/topic/RemoveMessageListenerRequest.h"
+
 #include "hazelcast/client/topic/TopicEventHandler.h"
 #include "hazelcast/client/spi/ServerListenerService.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/TopicPublishParameters.h"
+#include "hazelcast/client/protocol/parameters/TopicAddMessageListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/TopicRemoveMessageListenerParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -33,19 +36,32 @@ namespace hazelcast {
             }
 
             void ITopicImpl::publish(const serialization::pimpl::Data& data) {
-                topic::PublishRequest *request = new topic::PublishRequest(getName(), data);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TopicPublishParameters::encode(getName(), data);
+
                 invoke(request, partitionId);
             }
 
 
-            std::string ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
-                topic::AddMessageListenerRequest *request = new topic::AddMessageListenerRequest(getName());
-                return listen(request, partitionId, topicEventHandler);
+            std::auto_ptr<std::string> ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TopicAddMessageListenerParameters::encode(getName());
+
+                return listen(request, topicEventHandler);
             }
 
             bool ITopicImpl::removeMessageListener(const std::string& registrationId) {
-                topic::RemoveMessageListenerRequest *request = new topic::RemoveMessageListenerRequest(getName(), registrationId);
-                return stopListening(request, registrationId);
+                bool result = false;
+
+                std::string effectiveRegistrationId = registrationId;
+                if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
+                    std::auto_ptr<protocol::ClientMessage> request =
+                            protocol::parameters::TopicRemoveMessageListenerParameters::encode(getName(), effectiveRegistrationId);
+
+                    result = invokeAndGetResult<bool>(request);
+                }
+
+                return result;
             }
         }
     }

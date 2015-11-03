@@ -20,6 +20,7 @@
 #ifndef HAZELCAST_MembershipEvent
 #define HAZELCAST_MembershipEvent
 
+#include "hazelcast/client/protocol/parameters/MemberResultParameters.h"
 #include "hazelcast/client/Member.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -45,12 +46,10 @@ namespace hazelcast {
              *
              * MEMBER_ADDED = 1,
              * MEMBER_REMOVED = 2,
-             * MEMBER_ATTRIBUTE_CHANGED = 5
              */
             enum MembershipEventType {
-                MEMBER_ADDED = 1,
-                MEMBER_REMOVED = 2,
-                MEMBER_ATTRIBUTE_CHANGED = 5
+                MEMBER_ADDED = protocol::parameters::MemberResultParameters::MEMBER_ADDED,
+                MEMBER_REMOVED = protocol::parameters::MemberResultParameters::MEMBER_REMOVED
             };
 
             /**
@@ -58,7 +57,7 @@ namespace hazelcast {
              * Constructor.
              */
             MembershipEvent(Cluster &cluster, MembershipEventType eventType, const Member &member);
-            
+
             /**
              * Destructor
              */
@@ -103,6 +102,7 @@ namespace hazelcast {
 
         private:
             Cluster *cluster;
+            //TODO: no need to make a copy since the event is only used in the lifetime of the member in the members list
             Member member;
             MembershipEventType eventType;
         };

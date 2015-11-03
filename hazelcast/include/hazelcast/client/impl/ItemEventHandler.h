@@ -29,6 +29,7 @@
 #include "hazelcast/client/ItemEvent.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
+#include "hazelcast/client/protocol/parameters/ItemEventParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -46,19 +47,16 @@ namespace hazelcast {
 
                 };
 
-                void handle(const client::serialization::pimpl::Data &data) {
-                    boost::shared_ptr<PortableItemEvent> event = serializationService.toObject<PortableItemEvent>(data);
-                    handle(*event);
-                }
+                void handle(std::auto_ptr<protocol::ClientMessage> message) {
+                    std::auto_ptr<protocol::parameters::ItemEventParameters> event = protocol::parameters::ItemEventParameters::decode(*message);
 
-                void handle(const PortableItemEvent &event) {
                     boost::shared_ptr<E> item;
                     if (includeValue) {
-                        item = serializationService.toObject<E>(event.getItem());
+                        item = serializationService.toObject<E>(*event->item);
                     }
-                    Member member = clusterService.getMember(event.getUuid());
-                    ItemEventType type = event.getEventType();
-                    ItemEvent<E> itemEvent(instanceName, type, *item, member);
+                    std::auto_ptr<Member> member = clusterService.getMember(*event->uuid);
+                    ItemEventType type((ItemEventType::Type)event->eventType);
+                    ItemEvent<E> itemEvent(instanceName, type, *item, *member);
                     if (type == EntryEventType::ADDED) {
                         listener.itemAdded(itemEvent);
                     } else if (type == EntryEventType::REMOVED) {

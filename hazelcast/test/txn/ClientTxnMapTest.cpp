@@ -44,7 +44,9 @@ namespace hazelcast {
             void ClientTxnMapTest::addTests() {
                 addTest(&ClientTxnMapTest::testPutGet, "testPutGet");
                 addTest(&ClientTxnMapTest::testKeySetValues, "testKeySetValues");
+/*
                 addTest(&ClientTxnMapTest::testKeySetAndValuesWithPredicates, "testKeysetAndValuesWithPredicates");
+*/
             }
 
             void ClientTxnMapTest::beforeClass() {

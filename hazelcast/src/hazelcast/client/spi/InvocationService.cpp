@@ -18,30 +18,31 @@
 
 
 
+#include <hazelcast/client/protocol/parameters/PingParameters.h>
+#include "hazelcast/client/protocol/parameters/AddListenerResultParameters.h"
 #include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/PartitionService.h"
-#include "hazelcast/client/impl/ClientRequest.h"
+
 #include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/connection/CallPromise.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/ClientProperties.h"
-#include "hazelcast/client/serialization/pimpl/Packet.h"
+
 #include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/connection/ClientResponse.h"
 #include "hazelcast/client/impl/ServerException.h"
 #include "hazelcast/client/spi/ServerListenerService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/impl/ClientPingRequest.h"
+
+#include "hazelcast/client/protocol/parameters/ExceptionResultParameters.h"
 
 namespace hazelcast {
     namespace client {
         namespace spi {
             InvocationService::InvocationService(spi::ClientContext& clientContext)
-            : clientContext(clientContext)
-            , callIdGenerator(10) {
+            : clientContext(clientContext) {
                 redoOperation = clientContext.getClientConfig().isRedoOperation();
                 ClientProperties& properties = clientContext.getClientProperties();
                 retryWaitTime = properties.getRetryWaitTime().getInteger();
@@ -62,46 +63,43 @@ namespace hazelcast {
 
             }
 
-            connection::CallFuture  InvocationService::invokeOnRandomTarget(const impl::ClientRequest *request) {
+            connection::CallFuture  InvocationService::invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request) {
                 return invokeOnRandomTarget(request, NULL);
             }
 
-            connection::CallFuture  InvocationService::invokeOnPartitionOwner(const impl::ClientRequest *request, int partitionId) {
+            connection::CallFuture  InvocationService::invokeOnPartitionOwner(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
                 return invokeOnPartitionOwner(request, NULL, partitionId);
             }
 
-            connection::CallFuture  InvocationService::invokeOnTarget(const impl::ClientRequest *request, const Address& address) {
+            connection::CallFuture  InvocationService::invokeOnTarget(std::auto_ptr<protocol::ClientMessage> request, const Address& address) {
                 return invokeOnTarget(request, NULL, address);
             }
 
-            connection::CallFuture  InvocationService::invokeOnRandomTarget(const impl::ClientRequest *request, impl::BaseEventHandler *eventHandler) {
-                std::auto_ptr<const impl::ClientRequest> managedRequest(request);
+            connection::CallFuture  InvocationService::invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *eventHandler) {
                 std::auto_ptr<impl::BaseEventHandler> managedEventHandler(eventHandler);
                 boost::shared_ptr<connection::Connection> connection = clientContext.getConnectionManager().getRandomConnection(retryCount);
-                return doSend(managedRequest, managedEventHandler, connection, -1);
+                return doSend(request, managedEventHandler, connection, -1);
             }
 
-            connection::CallFuture  InvocationService::invokeOnTarget(const impl::ClientRequest *request, impl::BaseEventHandler *eventHandler, const Address& address) {
-                std::auto_ptr<const impl::ClientRequest> managedRequest(request);
+            connection::CallFuture  InvocationService::invokeOnTarget(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *eventHandler, const Address& address) {
                 std::auto_ptr<impl::BaseEventHandler> managedEventHandler(eventHandler);
                 boost::shared_ptr<connection::Connection> connection = clientContext.getConnectionManager().getOrConnect(address, retryCount);
-                return doSend(managedRequest, managedEventHandler, connection, -1);
+                return doSend(request, managedEventHandler, connection, -1);
             }
 
-            connection::CallFuture  InvocationService::invokeOnPartitionOwner(const impl::ClientRequest *request, impl::BaseEventHandler *handler, int partitionId) {
+            connection::CallFuture  InvocationService::invokeOnPartitionOwner(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *handler, int partitionId) {
                 boost::shared_ptr<Address> owner = clientContext.getPartitionService().getPartitionOwner(partitionId);
                 if (owner.get() != NULL) {
-                    std::auto_ptr<const impl::ClientRequest> managedRequest(request);
-                    std::auto_ptr<impl::BaseEventHandler> managedEventHandler(handler);
                     boost::shared_ptr<connection::Connection> connection = clientContext.getConnectionManager().getOrConnect(*owner, retryCount);
-                    return doSend(managedRequest, managedEventHandler, connection, partitionId);
+                    std::auto_ptr<impl::BaseEventHandler> managedEventHandler(handler);
+                    return doSend(request, managedEventHandler, connection, partitionId);
                 }
                 return invokeOnRandomTarget(request, handler);
             }
 
-            connection::CallFuture  InvocationService::invokeOnConnection(const impl::ClientRequest *request, boost::shared_ptr<connection::Connection> connection) {
-                std::auto_ptr<const impl::ClientRequest> managedRequest(request);
-                return doSend(managedRequest, std::auto_ptr<impl::BaseEventHandler>(NULL), connection, -1);
+            connection::CallFuture  InvocationService::invokeOnConnection(std::auto_ptr<protocol::ClientMessage> request,
+                                                                          boost::shared_ptr<connection::Connection> connection) {
+                return doSend(request, std::auto_ptr<impl::BaseEventHandler>(NULL), connection, -1);
             }
 
             bool InvocationService::isRedoOperation() const {
@@ -127,7 +125,11 @@ namespace hazelcast {
                 }
             }
 
-            connection::CallFuture  InvocationService::doSend(std::auto_ptr<const impl::ClientRequest> request, std::auto_ptr<impl::BaseEventHandler> eventHandler, boost::shared_ptr<connection::Connection> connection, int partitionId) {
+            connection::CallFuture  InvocationService::doSend(std::auto_ptr<protocol::ClientMessage> request,
+                                                              std::auto_ptr<impl::BaseEventHandler> eventHandler,
+                                                              boost::shared_ptr<connection::Connection> connection,
+                                                              int partitionId) {
+                request->setPartitionId(partitionId);
                 boost::shared_ptr<connection::CallPromise> promise(new connection::CallPromise());
                 promise->setRequest(request);
                 promise->setEventHandler(eventHandler);
@@ -136,31 +138,27 @@ namespace hazelcast {
                 return connection::CallFuture(promise, conn, heartbeatTimeout, this);
             }
 
-            int InvocationService::getNextCallId() {
-                return callIdGenerator++;
-            }
 
-
-            bool InvocationService::isAllowedToSentRequest(connection::Connection& connection, impl::ClientRequest const& request) {
+            bool InvocationService::isAllowedToSentRequest(connection::Connection& connection, protocol::ClientMessage const& request) {
                 util::ILogger& logger = util::ILogger::getLogger();
                 if (!connection.live) {
                     if (logger.isEnabled(FINEST)) {
                         std::stringstream message;
                         message << " Connection(" << connection.getRemoteEndpoint();
-                        message << ") is closed, won't write packet with callId : " << request.callId;
+                        message << ") is closed, won't write packet with callId : " << request.getCorrelationId();
                         logger.finest(message.str());
                     }
                     return false;
                 }
 
                 if (!connection.isHeartBeating()) {
-                    if (dynamic_cast<const impl::ClientPingRequest *>(&request)) {
-                        return true;//ping request should be send even though heart is not beating
+                    if (protocol::parameters::PingParameters::TYPE == request.getMessageType()) {
+                        return true;
                     }
                     std::stringstream message;
                     if (logger.isEnabled(FINEST)) {
                         message << " Connection(" << connection.getRemoteEndpoint();
-                        message << ") is not heart-beating, won't write packet with callId : " << request.callId;
+                        message << ") is not heart-beating, won't write packet with callId : " << request.getCorrelationId();
                         logger.finest(message.str());
                     }
                     return false;
@@ -171,7 +169,7 @@ namespace hazelcast {
             boost::shared_ptr<connection::Connection> InvocationService::resend(boost::shared_ptr<connection::CallPromise> promise, const std::string& lastTriedAddress) {
                 util::sleep(getRetryWaitTime());
 
-                if (promise->getRequest().isBindToSingleConnection()) {
+                if (promise->getRequest()->isBindToSingleConnection()) {
                     promise->setException(exception::pimpl::ExceptionHandler::INSTANCE_NOT_ACTIVE, lastTriedAddress);
                     return boost::shared_ptr<connection::Connection>();
                 }
@@ -188,32 +186,38 @@ namespace hazelcast {
                     promise->setException(exception::pimpl::ExceptionHandler::INSTANCE_NOT_ACTIVE, lastTriedAddress);
                     return boost::shared_ptr<connection::Connection>();
                 }
+
+                util::ILogger::getLogger().info("[InvocationService::resend] Re-sending the request with id " +
+                                                        util::IOUtil::to_string<int>(promise->getRequest()->getCorrelationId()) +
+                                                        " to connection " + util::IOUtil::to_string<Address>(connection->getRemoteEndpoint()));
+
                 return registerAndEnqueue(connection, promise, -1);
             }
 
-            boost::shared_ptr<connection::Connection> InvocationService::registerAndEnqueue(boost::shared_ptr<connection::Connection> connection, boost::shared_ptr<connection::CallPromise> promise, int partitionId) {
+            boost::shared_ptr<connection::Connection> InvocationService::registerAndEnqueue(
+                    boost::shared_ptr<connection::Connection> connection,
+                    boost::shared_ptr<connection::CallPromise> promise, int partitionId) {
+
                 registerCall(*connection, promise); //Don't change the order with following line
-                impl::ClientRequest const& request = promise->getRequest();
-                if (!isAllowedToSentRequest(*connection, request)) {
-                    deRegisterCall(*connection, request.callId);
+
+                protocol::ClientMessage *request = promise->getRequest();
+
+                if (!isAllowedToSentRequest(*connection, *request)) {
+                    deRegisterCall(*connection, request->getCorrelationId());
                     std::string address = util::IOUtil::to_string(connection->getRemoteEndpoint());
                     return resend(promise, address);
                 }
-                serialization::pimpl::SerializationService& ss = clientContext.getSerializationService();
-                serialization::pimpl::Data data = ss.toData<impl::ClientRequest>(&(promise->getRequest()));
-                serialization::pimpl::PortableContext& portableContext = ss.getPortableContext();
-                serialization::pimpl::Packet *packet = new serialization::pimpl::Packet(portableContext, data);
-                packet->setPartitionId(partitionId);
-                connection->write(packet);
+
+                connection->write(request);
                 return connection;
             }
 
             void InvocationService::registerCall(connection::Connection& connection, boost::shared_ptr<connection::CallPromise> promise) {
-                int callId = getNextCallId();
-                promise->getRequest().callId = callId;
+                int callId = clientContext.getConnectionManager().getNextCallId();
+                promise->getRequest()->setCorrelationId(callId);
                 getCallPromiseMap(connection)->put(callId, promise);
                 if (promise->getEventHandler() != NULL) {
-                    registerEventHandler(connection, promise);
+                    registerEventHandler(callId, connection, promise);
                 }
             }
 
@@ -221,49 +225,46 @@ namespace hazelcast {
                 return getCallPromiseMap(connection)->remove(callId);
             }
 
-            void InvocationService::registerEventHandler(connection::Connection& connection, boost::shared_ptr<connection::CallPromise> promise) {
-                getEventHandlerPromiseMap(connection)->put(promise->getRequest().callId, promise);
+            void InvocationService::registerEventHandler(int correlationId, connection::Connection& connection,
+                                                         boost::shared_ptr<connection::CallPromise> promise) {
+                getEventHandlerPromiseMap(connection)->put(correlationId, promise);
             }
 
-            void InvocationService::handlePacket(connection::Connection& connection, const serialization::pimpl::Packet& packet) {
-                const serialization::pimpl::Data& data = packet.getData();
-                serialization::pimpl::SerializationService& serializationService = clientContext.getSerializationService();
-                boost::shared_ptr<connection::ClientResponse> response = serializationService.toObject<connection::ClientResponse>(data);
-                if (packet.isHeaderSet(serialization::pimpl::Packet::HEADER_EVENT)) {
-                    boost::shared_ptr<connection::CallPromise> promise = getEventHandlerPromise(connection, response->getCallId());
+            void InvocationService::handleMessage(connection::Connection &connection, std::auto_ptr<protocol::ClientMessage> message) {
+                int correlationId = message->getCorrelationId();
+                if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
+                    boost::shared_ptr<connection::CallPromise> promise = getEventHandlerPromise(connection, correlationId);
                     if (promise.get() != NULL) {
-                        promise->getEventHandler()->handle(response->getData());
+                        promise->getEventHandler()->handle(message);
                     }
                     return;
                 }
 
-                boost::shared_ptr<connection::CallPromise> promise = deRegisterCall(connection, response->getCallId());
+                boost::shared_ptr<connection::CallPromise> promise = deRegisterCall(connection, correlationId);
                 if (promise.get() == NULL) {
                     return;
                 }
+
                 std::string address = util::IOUtil::to_string(connection.getRemoteEndpoint());
-                if (!handleException(response, promise, address))
+                if (!handleException(message.get(), promise, address))
                     return;//if response is exception,then return
 
-                if (!handleEventUuid(response, promise))
+                if (!handleEventUuid(message.get(), promise))
                     return; //if response is event uuid,then return.
 
-                promise->setResponse(response->getData());
-
+                promise->setResponse(message);
             }
 
             /* returns shouldSetResponse */
-            bool InvocationService::handleException(boost::shared_ptr<connection::ClientResponse> response, boost::shared_ptr<connection::CallPromise> promise, const std::string& address) {
-                if (response->isException()) {
-                    serialization::pimpl::SerializationService& serializationService = clientContext.getSerializationService();
-                    serialization::pimpl::Data const& data = response->getData();
-                    boost::shared_ptr<impl::ServerException> ex = serializationService.toObject<impl::ServerException>(data);
+            bool InvocationService::handleException(protocol::ClientMessage *response, boost::shared_ptr<connection::CallPromise> promise, const std::string& address) {
+                if (protocol::EXCEPTION == response->getMessageType()) {
+                    std::auto_ptr<protocol::parameters::ExceptionResultParameters> resultParameters =
+                            protocol::parameters::ExceptionResultParameters::decode(*response);
 
-                    std::string exceptionClassName = *ex->name;
-                    if (exceptionClassName == "com.hazelcast.core.HazelcastInstanceNotActiveException") {
+                    if (*(resultParameters->className) == "com.hazelcast.core.HazelcastInstanceNotActiveException") {
                         tryResend(promise, address);
                     } else {
-                        promise->setException(*ex->name, *ex->message + ":" + *ex->details + "\n");
+                        promise->setException(*resultParameters->className, *resultParameters->message + ":" + *resultParameters->stacktrace + "\n");
                     }
                     return false;
                 }
@@ -272,15 +273,18 @@ namespace hazelcast {
             }
 
             /* returns shouldSetResponse */
-            bool InvocationService::handleEventUuid(boost::shared_ptr<connection::ClientResponse> response, boost::shared_ptr<connection::CallPromise> promise) {
-                serialization::pimpl::SerializationService& serializationService = clientContext.getSerializationService();
+            bool InvocationService::handleEventUuid(protocol::ClientMessage *response, boost::shared_ptr<connection::CallPromise> promise) {
                 impl::BaseEventHandler *eventHandler = promise->getEventHandler();
                 if (eventHandler != NULL) {
                     if (eventHandler->registrationId.size() == 0) //if uuid is not set, it means it is first time that we are getting uuid.
                         return true;                    // then no need to handle it, just set as normal response
-                    boost::shared_ptr<std::string> alias = serializationService.toObject<std::string>(response->getData());
-                    int callId = promise->getRequest().callId;
-                    clientContext.getServerListenerService().reRegisterListener(eventHandler->registrationId, alias, callId);
+
+                    std::auto_ptr<protocol::parameters::AddListenerResultParameters> result = protocol::parameters::AddListenerResultParameters::decode(*response);
+
+                    // result->registrationId is the alias for the original registration
+                    clientContext.getServerListenerService().reRegisterListener(eventHandler->registrationId,
+                                                                                boost::shared_ptr<std::string>(result->registrationId.release()),
+                                                                                response->getCorrelationId());
                     return false;
                 }
                 //if it does not have event handler associated with it, then it is a normal response.
@@ -288,7 +292,7 @@ namespace hazelcast {
             }
 
             void InvocationService::tryResend(boost::shared_ptr<connection::CallPromise> promise, const std::string& lastTriedAddress) {
-                if (promise->getRequest().isRetryable() || isRedoOperation()) {
+                if (promise->getRequest()->isRetryable() || isRedoOperation()) {
                     resend(promise, lastTriedAddress);
                     return;
                 }

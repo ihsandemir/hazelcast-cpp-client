@@ -22,10 +22,10 @@
 #ifndef HAZELCAST_TransactionalObject
 #define HAZELCAST_TransactionalObject
 
-
-#include "hazelcast/client/serialization/pimpl/Data.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/txn/TransactionProxy.h"
+#include "hazelcast/client/protocol/parameters/GenericResultParameters.h"
+#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
+
 #include <string>
 #include <vector>
 
@@ -36,8 +36,20 @@
 
 namespace hazelcast {
     namespace client {
+        namespace connection {
+            class Connection;
+        }
+
         namespace txn {
             class BaseTxnRequest;
+        }
+        namespace serialization {
+            namespace pimpl {
+                class Data;
+            }
+        }
+        namespace protocol {
+            class ClientMessage;
         }
         namespace proxy {
 
@@ -67,23 +79,58 @@ namespace hazelcast {
                 }
 
                 template<typename K>
-                std::vector<K> toObjectCollection(const std::vector<serialization::pimpl::Data>& keyDataSet) {
+                std::vector<K> toObjectCollection(protocol::DataArray &keyDataSet) {
                     int size = keyDataSet.size();
                     std::vector<K> keys(size);
                     for (int i = 0; i < size; i++) {
-                        boost::shared_ptr<K> v = toObject<K>(keyDataSet[i]);
+                        boost::shared_ptr<K> v = toObject<K>(*keyDataSet[i]);
                         keys[i] = *v;
                     }
                     return keys;
                 }
 
-                serialization::pimpl::Data invoke(txn::BaseTxnRequest *request);
+                std::string getTransactionId() const;
+
+                int getTimeoutInMilliseconds() const;
+
+                std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request);
+
+                template<typename T>
+                T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request) {
+                    std::auto_ptr<protocol::ClientMessage> response = invoke(request);
+
+                    return getResponseResult<T>(response);
+                }
 
             private:
+                template<typename T>
+                inline T getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
+                    std::auto_ptr<protocol::parameters::GenericResultParameters> resultParameters =
+                            protocol::parameters::GenericResultParameters::decode(*response);
+
+                    return *this->context->getSerializationService().toObject<T>(
+                            *resultParameters->data);
+                }
+
                 const std::string serviceName;
                 const std::string name;
                 txn::TransactionProxy *context;
             };
+
+            template<>
+            bool TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
+
+            template<>
+            int TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
+
+            template<>
+            std::auto_ptr<std::string> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
+
+            template<>
+            std::auto_ptr<serialization::pimpl::Data> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
+
+            template<>
+            std::auto_ptr<protocol::DataArray> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
         }
     }
 }

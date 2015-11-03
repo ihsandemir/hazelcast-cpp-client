@@ -26,6 +26,8 @@
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/Thread.h"
 #include <boost/shared_ptr.hpp>
+#include "hazelcast/client/common/containers/ManagedPointerVector.h"
+#include "hazelcast/client/MembershipEvent.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -34,6 +36,14 @@
 
 namespace hazelcast {
     namespace client {
+        namespace protocol {
+            class ClientMessage;
+
+            namespace parameters {
+                class MemberListResultParameters;
+                class MemberResultParameters;
+            }
+        }
 
         class Member;
 
@@ -69,24 +79,37 @@ namespace hazelcast {
                 util::CountDownLatch startLatch;
                 bool isStartedSuccessfully;
             private:
-                spi::ClientContext &clientContext;
-                boost::shared_ptr<Connection> conn;
-                util::AtomicBoolean deletingConnection;
-                std::vector<Member> members;
-
-                std::auto_ptr<util::Thread> clusterListenerThread;
-
                 void loadInitialMemberList();
 
                 void listenMembershipEvents();
 
                 void updateMembersRef();
 
+                void handleMember(protocol::ClientMessage &response);
+
+                void memberAttributeChanged(const impl::MemberAttributeChange &change);
+
+                void updateMembers(
+                        protocol::parameters::MemberResultParameters & memberResultParameters,
+                        MembershipEvent::MembershipEventType & eventType);
+
                 void fireMemberAttributeEvent(impl::MemberAttributeChange const &, Member &member);
 
                 std::vector<Address> getClusterAddresses() const;
 
                 std::vector<Address> getConfigAddresses() const;
+
+                void initialMembers(protocol::parameters::MemberListResultParameters &memberListResultParameters);
+
+                spi::ClientContext &clientContext;
+                boost::shared_ptr<Connection> conn;
+                util::AtomicBoolean deletingConnection;
+
+                typedef common::containers::ManagedPointerVector<Member> MEMBERS_TYPE;
+                typedef MEMBERS_TYPE::VECTOR_TYPE MEMBERVECTOR_TYPE;
+                std::auto_ptr<MEMBERS_TYPE> members;
+
+                std::auto_ptr<util::Thread> clusterListenerThread;
             };
         }
     }

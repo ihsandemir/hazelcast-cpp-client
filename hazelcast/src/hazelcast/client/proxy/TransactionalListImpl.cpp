@@ -17,10 +17,13 @@
 // Created by sancar koyunlu on 01/10/14.
 //
 
+#include "hazelcast/util/Util.h"
 #include "hazelcast/client/proxy/TransactionalListImpl.h"
-#include "hazelcast/client/collection/TxnListAddRequest.h"
-#include "hazelcast/client/collection/TxnListRemoveRequest.h"
-#include "hazelcast/client/collection/TxnListSizeRequest.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/TransactionalListAddParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalListRemoveParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalListSizeParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -30,21 +33,27 @@ namespace hazelcast {
             }
 
             bool TransactionalListImpl::add(const serialization::pimpl::Data& e) {
-                collection::TxnListAddRequest *request = new collection::TxnListAddRequest(getName(), e);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalListAddParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), e);
+
+                return invokeAndGetResult<bool>(request);
             }
 
             bool TransactionalListImpl::remove(const serialization::pimpl::Data& e) {
-                collection::TxnListRemoveRequest *request = new collection::TxnListRemoveRequest(getName(), e);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalListRemoveParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), e);
+
+                return invokeAndGetResult<bool>(request);
             }
 
             int TransactionalListImpl::size() {
-                collection::TxnListSizeRequest *request = new collection::TxnListSizeRequest(getName());
-                boost::shared_ptr<int> result = toObject<int>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalListSizeParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId());
+
+                return invokeAndGetResult<int>(request);
             }
         }
     }

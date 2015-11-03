@@ -20,15 +20,21 @@
 
 #include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/connection/ClientResponse.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/protocol/AuthenticationRequest.h"
+#include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
+#include "hazelcast/client/protocol/ClientMessageType.h"
+#include "hazelcast/client/protocol/parameters/AuthenticationParameters.h"
+#include "hazelcast/client/protocol/parameters/AuthenticationCustomCredentialsParameters.h"
+#include "hazelcast/client/protocol/parameters/ExceptionResultParameters.h"
+#include "hazelcast/client/protocol/parameters/AuthenticationResultParameters.h"
+#include "hazelcast/client/protocol/Principal.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/exception/InstanceNotActiveException.h"
 #include "hazelcast/client/impl/SerializableCollection.h"
 #include "hazelcast/client/impl/ServerException.h"
+#include "hazelcast/client/spi/InvocationService.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -45,12 +51,14 @@ namespace hazelcast {
             , inSelectorThread(NULL)
             , outSelectorThread(NULL)
             , live(true)
+            , principal(NULL)
             , heartBeater(clientContext)
             , heartBeatThread(NULL)
             , smartRouting(smartRouting)
-            , ownerConnectionFuture(clientContext) {
-                const byte protocol_bytes[6] = {'C', 'B', '1', 'C', 'P', 'P'};
-                PROTOCOL.insert(PROTOCOL.begin(), protocol_bytes, protocol_bytes + 6);
+            , ownerConnectionFuture(clientContext)
+            , callIdGenerator(-1) {
+                const byte protocol_bytes[6] = {'C', 'B', '2'};
+                PROTOCOL.insert(PROTOCOL.begin(), &protocol_bytes[0], &protocol_bytes[2]);
             }
 
             bool ConnectionManager::start() {
@@ -107,25 +115,28 @@ namespace hazelcast {
 
             boost::shared_ptr<connection::Connection> ConnectionManager::getOrConnect(const Address& target, int tryCount) {
                 checkLive();
+
+                std::auto_ptr<exception::IOException> lastError;
+
                 try {
                     if (clientContext.getClusterService().isMemberExists(target)) {
                         boost::shared_ptr<Connection> connection = getOrConnect(target);
                         return connection;
                     }
-                } catch (exception::IOException&) {
+                } catch (exception::IOException& e) {
+                    lastError = std::auto_ptr<exception::IOException>(new exception::IOException(e));
                 }
 
                 int count = 0;
-                exception::IOException lastError("", "");
                 while (count < tryCount) {
                     try {
                         return getRandomConnection();
                     } catch (exception::IOException& e) {
-                        lastError = e;
+                        lastError = std::auto_ptr<exception::IOException>(new exception::IOException(e));
                     }
                     count++;
                 }
-                throw lastError;
+                throw *lastError;
             }
 
             boost::shared_ptr<Connection> ConnectionManager::getConnectionIfAvailable(const Address& address) {
@@ -173,32 +184,46 @@ namespace hazelcast {
                 return getOrConnect(address);
             }
 
-            void ConnectionManager::authenticate(Connection& connection) {
-                bool ownerConnection = connection.isOwnerConnection();
-                protocol::AuthenticationRequest auth(clientContext.getClientConfig().getCredentials());
-                auth.setPrincipal(principal.get());
-                auth.setFirstConnection(ownerConnection);
+            void ConnectionManager::authenticate(Connection *connection) {
+                const Credentials *credentials = clientContext.getClientConfig().getCredentials();
 
-                connection.init(PROTOCOL);
-                boost::shared_ptr<ClientResponse> clientResponse = connection.sendAndReceive(auth);
-                serialization::pimpl::SerializationService& serializationService = clientContext.getSerializationService();
-
-                if (clientResponse->isException()) {
-                    serialization::pimpl::Data const& data = clientResponse->getData();
-                    boost::shared_ptr<impl::ServerException> ex = serializationService.toObject<impl::ServerException>(data);
-                    throw exception::IException("ConnectionManager::authenticate", ex->what());
+                std::auto_ptr<protocol::ClientMessage> authenticationMessage;
+                if (NULL == credentials) {
+                    GroupConfig &groupConfig = clientContext.getClientConfig().getGroupConfig();
+                    const protocol::UsernamePasswordCredentials cr(groupConfig.getName(), groupConfig.getPassword());
+                    authenticationMessage = protocol::parameters::AuthenticationParameters::encode(
+                            cr.getPrincipal(), cr.getPassword(), principal ? principal->getUuid() : "", principal ? principal->getOwnerUuid() : "", connection->isOwnerConnection());
+                } else {
+                    serialization::pimpl::Data data =
+                            clientContext.getSerializationService().toData<Credentials>(credentials);
+                    authenticationMessage = protocol::parameters::AuthenticationCustomCredentialsParameters::encode(
+                            data.toByteArray(), principal ? principal->getUuid() : "", principal ? principal->getOwnerUuid() : "", connection->isOwnerConnection());
                 }
-                boost::shared_ptr<impl::SerializableCollection> collection = serializationService.toObject<impl::SerializableCollection>(clientResponse->getData());
-                std::vector<serialization::pimpl::Data> const& getCollection = collection->getCollection();
-                boost::shared_ptr<Address> address = serializationService.toObject<Address>(getCollection[0]);
-                connection.setRemoteEndpoint(*address);
+
+                connection->init(PROTOCOL);
+
+                authenticationMessage->setCorrelationId(getNextCallId());
+
+                std::auto_ptr<protocol::ClientMessage> clientResponse = connection->sendAndReceive(*authenticationMessage);
+
+                if (protocol::EXCEPTION == clientResponse->getMessageType()) {
+                    std::auto_ptr<protocol::parameters::ExceptionResultParameters> resultParameters =
+                            protocol::parameters::ExceptionResultParameters::decode(*clientResponse);
+                    throw exception::IException("ConnectionManager::authenticate", std::string("Authentication error message from server ! Server class:") +
+                            *resultParameters->className + std::string("Message:") + *resultParameters->message + std::string(". Stack trace:") + *resultParameters->stacktrace);
+                }
+
+                std::auto_ptr<protocol::parameters::AuthenticationResultParameters> resultParameters =
+                        protocol::parameters::AuthenticationResultParameters::decode(*clientResponse);
+
+                connection->setRemoteEndpoint(*resultParameters->address);
                 std::stringstream message;
-                (message << "client authenticated by " << address->getHost() << ":" << address->getPort());
+                (message << "client authenticated by " << *resultParameters->address);
                 util::ILogger::getLogger().info(message.str());
-                if (ownerConnection) {
-                    this->principal = serializationService.toObject<protocol::Principal>(getCollection[1]);
+                if (connection->isOwnerConnection()) {
+                    this->principal = new protocol::Principal(*resultParameters->uuid, *resultParameters->ownerUuid);
                 }else{
-                    connection.getSocket().setBlocking(false);
+                    connection->getSocket().setBlocking(false);
                 }
             }
 
@@ -218,7 +243,7 @@ namespace hazelcast {
                 }
             }
 
-            connection::Connection *ConnectionManager::connectTo(const Address& address, bool ownerConnection) {
+            std::auto_ptr<Connection> ConnectionManager::connectTo(const Address& address, bool ownerConnection) {
                 std::auto_ptr<connection::Connection> conn(new Connection(address, clientContext, inSelector, outSelector, ownerConnection));
 
                 checkLive();
@@ -226,8 +251,9 @@ namespace hazelcast {
                 if (socketInterceptor != NULL) {
                     socketInterceptor->onConnect(conn->getSocket());
                 }
-                authenticate(*conn);
-                return conn.release();
+                
+                authenticate(conn.get());
+                return conn;
             }
 
 
@@ -254,6 +280,10 @@ namespace hazelcast {
                 if (connection.get() != NULL) {
                     connection->close();
                 }
+            }
+
+            int ConnectionManager::getNextCallId() {
+                return ++callIdGenerator;
             }
         }
     }

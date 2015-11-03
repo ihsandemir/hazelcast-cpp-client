@@ -19,12 +19,14 @@
 
 
 #include "hazelcast/client/txn/TransactionProxy.h"
-#include "hazelcast/client/txn/CreateTxnRequest.h"
-#include "hazelcast/client/txn/CommitTxnRequest.h"
-#include "hazelcast/client/txn/RollbackTxnRequest.h"
+#include "hazelcast/client/TransactionOptions.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/util/Util.h"
 #include <ctime>
+#include "hazelcast/client/protocol/parameters/TransactionCreateParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionCreateResultParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionCommitParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionRollbackParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -39,8 +41,13 @@ namespace hazelcast {
 
             }
 
-            std::string TransactionProxy::getTxnId() const {
-                return txnId;
+            TransactionProxy::TransactionProxy(const TransactionProxy &rhs)
+                    : options(rhs.options), clientContext(rhs.clientContext), connection(rhs.connection),
+                      threadId(rhs.threadId), txnId(new std::string(*rhs.txnId)), state(rhs.state),
+                      startTime(rhs.startTime) { }
+
+            std::string &TransactionProxy::getTxnId() const {
+                return *txnId;
             }
 
             TxnState TransactionProxy::getState() const {
@@ -64,9 +71,19 @@ namespace hazelcast {
 //                    threadFlag.set(Boolean.TRUE);
                     startTime = time(NULL);
 
-                    CreateTxnRequest *request = new CreateTxnRequest(options);
-                    boost::shared_ptr<std::string> response = getSerializationService().toObject<std::string>(invoke(request));
-                    txnId = *response;
+                    // TODO: change this to use XID which is not null in the future
+                    std::auto_ptr<protocol::ClientMessage> request =
+                            protocol::parameters::TransactionCreateParameters::encode(
+                                    true, options.getTimeoutMillis(), options.getDurability(), 
+                                    options.getTransactionType(), threadId);
+
+
+                    std::auto_ptr<protocol::ClientMessage> response = invoke(request);
+
+                    std::auto_ptr<protocol::parameters::TransactionCreateResultParameters> result =
+                            protocol::parameters::TransactionCreateResultParameters::decode(*response);
+
+                    txnId = result->transactionId;
                     state = TxnState::ACTIVE;
                 } catch (exception::IException& e) {
                     onTxnEnd();
@@ -82,8 +99,12 @@ namespace hazelcast {
                     }
                     checkThread();
                     checkTimeout();
-                    CommitTxnRequest *request = new CommitTxnRequest(true);
+
+                    std::auto_ptr<protocol::ClientMessage> request =
+                            protocol::parameters::TransactionCommitParameters::encode(*txnId, threadId, true);
+
                     invoke(request);
+
                     state = TxnState::COMMITTED;
                 } catch (...) {
                     state = TxnState::ROLLING_BACK;
@@ -105,7 +126,8 @@ namespace hazelcast {
                     }
                     checkThread();
                     try {
-                        RollbackTxnRequest *request = new RollbackTxnRequest();
+                        std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::TransactionRollbackParameters::encode(*txnId, threadId);
+                        
                         invoke(request);
                     } catch (std::exception&) {
                     }
@@ -132,14 +154,6 @@ namespace hazelcast {
 
             void TransactionProxy::onTxnEnd() {
                 //threadFlag.set(null);
-            }
-
-            serialization::pimpl::Data TransactionProxy::invoke(BaseTxnRequest *request) {
-                request->setTxnId(txnId);
-                request->setThreadId(threadId);
-                spi::InvocationService& invocationService = clientContext.getInvocationService();
-                connection::CallFuture future = invocationService.invokeOnConnection(request, connection);
-                return future.get();
             }
 
             void TransactionProxy::checkThread() {
@@ -176,6 +190,12 @@ namespace hazelcast {
 
             void TxnState::operator=(int i) {
                 value = values[i];
+            }
+
+            std::auto_ptr<protocol::ClientMessage> TransactionProxy::invoke(std::auto_ptr<protocol::ClientMessage> request) {
+                connection::CallFuture future = clientContext.getInvocationService().invokeOnConnection(request, connection);
+
+                return future.get();
             }
         }
     }

@@ -28,6 +28,9 @@
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/Closeable.h"
+#include "hazelcast/client/protocol/ClientMessageBuilder.h"
+#include "hazelcast/client/protocol/IMessageHandler.h"
+#include "hazelcast/client/protocol/ClientMessage.h"
 
 namespace hazelcast {
     namespace client {
@@ -46,8 +49,6 @@ namespace hazelcast {
 
                 class Data;
 
-                class Packet;
-
                 class PortableContext;
             }
 
@@ -58,13 +59,11 @@ namespace hazelcast {
         namespace connection {
             class CallPromise;
 
-            class ClientResponse;
-
             class OutSelector;
 
             class InSelector;
 
-            class Connection : public util::Closeable {
+            class Connection : public util::Closeable, public protocol::IMessageHandler {
             public:
                 Connection(const Address& address, spi::ClientContext& clientContext, InSelector& iListener, OutSelector& listener, bool isOwner);
 
@@ -76,7 +75,7 @@ namespace hazelcast {
 
                 void close();
 
-                void write(serialization::pimpl::Packet *packet);
+                void write(protocol::ClientMessage *message);
 
                 const Address& getRemoteEndpoint() const;
 
@@ -84,7 +83,7 @@ namespace hazelcast {
 
                 Socket& getSocket();
 
-                boost::shared_ptr<connection::ClientResponse> sendAndReceive(const impl::ClientRequest& clientRequest);
+                std::auto_ptr<protocol::ClientMessage> sendAndReceive(protocol::ClientMessage &clientMessage);
 
                 ReadHandler& getReadHandler();
 
@@ -92,9 +91,9 @@ namespace hazelcast {
 
                 void setAsOwnerConnection(bool isOwnerConnection);
 
-                void writeBlocking(serialization::pimpl::Packet const& packet);
+                void writeBlocking(protocol::ClientMessage &packet);
 
-                serialization::pimpl::Packet readBlocking();
+                std::auto_ptr<protocol::ClientMessage> readBlocking();
 
                 bool isHeartBeating();
 
@@ -103,6 +102,8 @@ namespace hazelcast {
                 void heartBeatingSucceed();
 
                 bool isOwnerConnection() const;
+
+                virtual void handleMessage(connection::Connection &connection, std::auto_ptr<protocol::ClientMessage> message);
 
                 util::AtomicInt lastRead;
                 util::AtomicBoolean live;
@@ -114,8 +115,12 @@ namespace hazelcast {
                 WriteHandler writeHandler;
                 bool _isOwnerConnection;
                 util::AtomicBoolean heartBeating;
-                char* receiveBuffer;
+                byte* receiveBuffer;
                 util::ByteBuffer receiveByteBuffer;
+
+                protocol::ClientMessageBuilder messageBuilder;
+                protocol::ClientMessage wrapperMessage;
+                std::auto_ptr<protocol::ClientMessage> responseMessage;
             };
 
         }

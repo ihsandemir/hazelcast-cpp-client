@@ -18,25 +18,53 @@
 //
 
 #include "hazelcast/client/proxy/IListImpl.h"
-#include "hazelcast/client/collection/CollectionAddListenerRequest.h"
-#include "hazelcast/client/collection/CollectionRemoveListenerRequest.h"
-#include "hazelcast/client/collection/ListAddRequest.h"
-#include "hazelcast/client/collection/ListRemoveRequest.h"
-#include "hazelcast/client/collection/ListAddAllRequest.h"
-#include "hazelcast/client/collection/ListGetRequest.h"
-#include "hazelcast/client/collection/ListSetRequest.h"
-#include "hazelcast/client/collection/ListIndexOfRequest.h"
-#include "hazelcast/client/collection/ListSubRequest.h"
-#include "hazelcast/client/collection/CollectionSizeRequest.h"
-#include "hazelcast/client/collection/CollectionContainsRequest.h"
-#include "hazelcast/client/collection/CollectionGetAllRequest.h"
-#include "hazelcast/client/collection/CollectionCompareAndRemoveRequest.h"
-#include "hazelcast/client/collection/CollectionRemoveRequest.h"
-#include "hazelcast/client/collection/CollectionClearRequest.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "hazelcast/client/spi/ServerListenerService.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
 #include "hazelcast/client/impl/PortableCollection.h"
 #include "hazelcast/client/impl/SerializableCollection.h"
+
+#include "hazelcast/client/serialization/pimpl/Data.h"
+
+#include "hazelcast/client/proxy/ProxyImpl.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/ListSizeParameters.h"
+#include "hazelcast/client/protocol/parameters/ListContainsParameters.h"
+#include "hazelcast/client/protocol/parameters/ListContainsAllParameters.h"
+#include "hazelcast/client/protocol/parameters/ListAddParameters.h"
+#include "hazelcast/client/protocol/parameters/ListRemoveParameters.h"
+#include "hazelcast/client/protocol/parameters/ListAddAllParameters.h"
+#include "hazelcast/client/protocol/parameters/ListCompareAndRemoveAllParameters.h"
+#include "hazelcast/client/protocol/parameters/ListCompareAndRetainAllParameters.h"
+#include "hazelcast/client/protocol/parameters/ListClearParameters.h"
+#include "hazelcast/client/protocol/parameters/ListGetAllParameters.h"
+#include "hazelcast/client/protocol/parameters/ListAddListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/ListRemoveListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/ListIsEmptyParameters.h"
+#include "hazelcast/client/protocol/parameters/ListAddAllWithIndexParameters.h"
+#include "hazelcast/client/protocol/parameters/ListGetParameters.h"
+#include "hazelcast/client/protocol/parameters/ListSetParameters.h"
+#include "hazelcast/client/protocol/parameters/ListAddWithIndexParameters.h"
+#include "hazelcast/client/protocol/parameters/ListRemoveWithIndexParameters.h"
+#include "hazelcast/client/protocol/parameters/ListLastIndexOfParameters.h"
+#include "hazelcast/client/protocol/parameters/ListIndexOfParameters.h"
+#include "hazelcast/client/protocol/parameters/ListSubParameters.h"
+#include "hazelcast/client/protocol/parameters/ListIteratorParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -48,134 +76,152 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            std::string IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                collection::CollectionAddListenerRequest *request = new collection::CollectionAddListenerRequest(getName(), getServiceName(), includeValue);
+            std::auto_ptr<std::string> IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListAddListenerParameters::encode(getName(), includeValue);
+
                 return listen(request, entryEventHandler);
             }
 
             bool IListImpl::removeItemListener(const std::string& registrationId) {
-                collection::CollectionRemoveListenerRequest *request = new collection::CollectionRemoveListenerRequest(getName(), getServiceName(), registrationId);
-                return stopListening(request, registrationId);
+                bool result = false;
+
+                std::string effectiveRegistrationId = registrationId;
+                if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
+                    std::auto_ptr<protocol::ClientMessage> request =
+                            protocol::parameters::ListRemoveListenerParameters::encode(getName(), effectiveRegistrationId);
+
+                    result = invokeAndGetResult<bool>(request);
+                }
+
+                return result;
+
             }
 
             int IListImpl::size() {
-                collection::CollectionSizeRequest *request = new collection::CollectionSizeRequest(getName(), getServiceName());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, int)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListSizeParameters::encode(getName());
+
+                return invokeAndGetResult<int>(request, partitionId);
             }
 
             bool IListImpl::contains(const serialization::pimpl::Data& element) {
-                std::vector<serialization::pimpl::Data> valueSet;
-                valueSet.push_back(element);
-                collection::CollectionContainsRequest *request = new collection::CollectionContainsRequest(getName(), getServiceName(), valueSet);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListContainsParameters::encode(getName(), element);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IListImpl::toArray() {
-                collection::CollectionGetAllRequest *request = new collection::CollectionGetAllRequest(getName(), getServiceName());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                boost::shared_ptr<impl::SerializableCollection> result = context->getSerializationService().toObject<impl::SerializableCollection>(data);
-                return result->getCollection();
+            std::auto_ptr<protocol::DataArray> IListImpl::toArray() {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListGetAllParameters::encode(getName());
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
             }
 
             bool IListImpl::add(const serialization::pimpl::Data& element) {
-                collection::CollectionAddRequest *request = new collection::CollectionAddRequest(getName(), getServiceName(), element);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListAddParameters::encode(getName(), element);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IListImpl::remove(const serialization::pimpl::Data& element) {
-                collection::CollectionRemoveRequest *request = new collection::CollectionRemoveRequest(getName(), getServiceName(), element);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListRemoveParameters::encode(getName(), element);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IListImpl::containsAll(const std::vector<serialization::pimpl::Data>& elements) {
-                collection::CollectionContainsRequest *request = new collection::CollectionContainsRequest(getName(), getServiceName(), elements);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListContainsAllParameters::encode(getName(), elements);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IListImpl::addAll(const std::vector<serialization::pimpl::Data>& elements) {
-                collection::CollectionAddAllRequest *request = new collection::CollectionAddAllRequest(getName(), getServiceName(), elements);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListAddAllParameters::encode(getName(), elements);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IListImpl::addAll(int index, const std::vector<serialization::pimpl::Data>& elements) {
-                list::ListAddAllRequest *request = new list::ListAddAllRequest(getName(), getServiceName(), elements, index);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListAddAllWithIndexParameters::encode(getName(), index, elements);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IListImpl::removeAll(const std::vector<serialization::pimpl::Data>& elements) {
-                collection::CollectionCompareAndRemoveRequest *request = new collection::CollectionCompareAndRemoveRequest(getName(), getServiceName(), elements, false);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListCompareAndRemoveAllParameters::encode(getName(), elements);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IListImpl::retainAll(const std::vector<serialization::pimpl::Data>& elements) {
-                collection::CollectionCompareAndRemoveRequest *request = new collection::CollectionCompareAndRemoveRequest(getName(), getServiceName(), elements, true);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListCompareAndRetainAllParameters::encode(getName(), elements);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             void IListImpl::clear() {
-                collection::CollectionClearRequest *request = new collection::CollectionClearRequest(getName(), getServiceName());
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListClearParameters::encode(getName());
+
                 invoke(request, partitionId);
             }
 
             serialization::pimpl::Data IListImpl::get(int index) {
-                list::ListGetRequest *request = new list::ListGetRequest(getName(), getServiceName(), index);
-                return invoke(request, partitionId);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListGetParameters::encode(getName(), index);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
             serialization::pimpl::Data IListImpl::set(int index, const serialization::pimpl::Data& element) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListSetParameters::encode(getName(), index, element);
 
-                list::ListSetRequest *request = new list::ListSetRequest(getName(), getServiceName(), element, index);
-                return invoke(request, partitionId);
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
             void IListImpl::add(int index, const serialization::pimpl::Data& element) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListAddWithIndexParameters::encode(getName(), index, element);
 
-                list::ListAddRequest *request = new list::ListAddRequest(getName(), getServiceName(), element, index);
                 invoke(request, partitionId);
             }
 
             serialization::pimpl::Data IListImpl::remove(int index) {
-                list::ListRemoveRequest *request = new list::ListRemoveRequest(getName(), getServiceName(), index);
-                return invoke(request, partitionId);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListRemoveWithIndexParameters::encode(getName(), index);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
             int IListImpl::indexOf(const serialization::pimpl::Data& element) {
-                list::ListIndexOfRequest *request = new list::ListIndexOfRequest(getName(), getServiceName(), element, false);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, int)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListIndexOfParameters::encode(getName(), element);
+
+                return invokeAndGetResult<int>(request, partitionId);
             }
 
             int IListImpl::lastIndexOf(const serialization::pimpl::Data& element) {
-                list::ListIndexOfRequest *request = new list::ListIndexOfRequest(getName(), getServiceName(), element, true);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, int)
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListLastIndexOfParameters::encode(getName(), element);
+
+                return invokeAndGetResult<int>(request, partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IListImpl::subList(int fromIndex, int toIndex) {
-                list::ListSubRequest *request = new list::ListSubRequest(getName(), getServiceName(), fromIndex, toIndex);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, impl::SerializableCollection)
-                return result->getCollection();
+            std::auto_ptr<protocol::DataArray> IListImpl::subList(int fromIndex, int toIndex) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::ListSubParameters::encode(getName(), fromIndex, toIndex);
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
             }
 
         }

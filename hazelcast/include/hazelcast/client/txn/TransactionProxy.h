@@ -24,7 +24,7 @@
 #define HAZELCAST_TransactionProxy
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/impl/ClientRequest.h"
+
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
@@ -82,12 +82,15 @@ namespace hazelcast {
                 std::vector<State> values;
             };
 
+            // TODO: Check if we also need the "prepare" method that exists in java code
             class HAZELCAST_API TransactionProxy {
             public:
 
                 TransactionProxy(TransactionOptions&, spi::ClientContext& clientContext, boost::shared_ptr<connection::Connection> connection);
 
-                std::string getTxnId() const;
+                TransactionProxy(const TransactionProxy &rhs);
+
+                std::string &getTxnId() const;
 
                 TxnState getState() const;
 
@@ -106,26 +109,23 @@ namespace hazelcast {
                 boost::shared_ptr<connection::Connection> getConnection();
 
             private:
-
                 TransactionOptions& options;
                 spi::ClientContext& clientContext;
                 boost::shared_ptr<connection::Connection> connection;
 
                 long threadId;
-                std::string txnId;
+                std::auto_ptr<std::string> txnId;
 
                 TxnState state;
                 time_t startTime;
 
                 void onTxnEnd();
 
-                serialization::pimpl::Data invoke(BaseTxnRequest *request);
-
                 void checkThread();
 
                 void checkTimeout();
 
-
+                std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request);
             };
         }
     }

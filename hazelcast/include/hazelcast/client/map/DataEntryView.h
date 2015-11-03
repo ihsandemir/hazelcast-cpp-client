@@ -51,6 +51,8 @@ namespace hazelcast {
                 long lastStoredTime;
                 long lastUpdateTime;
                 long version;
+                long evictionCriteriaNumber;
+                long ttl;
             };
         }
     }

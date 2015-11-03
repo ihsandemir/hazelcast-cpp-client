@@ -22,6 +22,7 @@
 #ifndef HAZELCAST_SERVER_LISTENER_SERVICE
 #define HAZELCAST_SERVER_LISTENER_SERVICE
 
+#include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/HazelcastDll.h"
 
@@ -50,6 +51,11 @@ namespace hazelcast {
             }
 
         }
+
+        namespace protocol {
+            class ClientMessage;
+        }
+
         namespace spi {
             class ClientContext;
 
@@ -57,13 +63,15 @@ namespace hazelcast {
             public:
                 ServerListenerService(spi::ClientContext &clientContext);
 
-                std::string listen(const impl::ClientRequest *registrationRequest, int partitionId, impl::BaseEventHandler *handler);
+                std::auto_ptr<std::string> listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, int partitionId, impl::BaseEventHandler *handler);
 
-                std::string listen(const impl::ClientRequest *registrationRequest, impl::BaseEventHandler *handler);
+                std::auto_ptr<std::string> listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, impl::BaseEventHandler *handler);
 
-                bool stopListening(impl::BaseRemoveListenerRequest *request, const std::string &registrationId);
+                bool stopListening(std::auto_ptr<protocol::ClientMessage> request);
 
                 void reRegisterListener(const std::string &registrationId, boost::shared_ptr<std::string> alias, int callId);
+
+                bool deRegisterListener(std::string &registrationId);
 
                 void retryFailedListener(boost::shared_ptr<connection::CallPromise> listenerPromise);
 
@@ -78,9 +86,7 @@ namespace hazelcast {
                 util::SynchronizedMap<std::string, const std::string > registrationAliasMap;
                 spi::ClientContext &clientContext;
 
-                void registerListener(boost::shared_ptr<std::string> registrationId, int callId);
-
-                bool deRegisterListener(std::string &registrationId);
+                void registerListener(const std::string &registrationId, int callId);
             };
         }
     }

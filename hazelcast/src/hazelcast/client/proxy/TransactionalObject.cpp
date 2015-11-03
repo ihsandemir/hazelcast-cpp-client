@@ -18,14 +18,17 @@
 
 
 
+#include "hazelcast/client/protocol/parameters/DestroyProxyParameters.h"
+#include "hazelcast/client/protocol/parameters/DataCollectionResultParameters.h"
 #include "hazelcast/client/proxy/TransactionalObject.h"
-#include "hazelcast/client/impl/ClientDestroyRequest.h"
-#include "hazelcast/client/txn/BaseTxnRequest.h"
-#include "hazelcast/util/Util.h"
+#include "hazelcast/client/protocol/ClientMessage.h"
+
 
 namespace hazelcast {
     namespace client {
         namespace proxy {
+            #define MILLISECONDS_IN_A_SECOND 1000
+
             TransactionalObject::TransactionalObject(const std::string& serviceName, const std::string& objectName, txn::TransactionProxy *context)
             : serviceName(serviceName), name(objectName), context(context) {
 
@@ -45,7 +48,10 @@ namespace hazelcast {
 
             void TransactionalObject::destroy() {
                 onDestroy();
-                impl::ClientDestroyRequest *request = new impl::ClientDestroyRequest(name, serviceName);
+
+                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::DestroyProxyParameters::encode(
+                        name, serviceName);
+
                 spi::InvocationService& invocationService = context->getInvocationService();
                 invocationService.invokeOnConnection(request, context->getConnection());
             }
@@ -54,12 +60,53 @@ namespace hazelcast {
 
             }
 
-            serialization::pimpl::Data TransactionalObject::invoke(txn::BaseTxnRequest *request) {
-                request->setTxnId(context->getTxnId());
-                request->setThreadId(util::getThreadId());
-                spi::InvocationService& invocationService = context->getInvocationService();
-                connection::CallFuture future = invocationService.invokeOnConnection(request, context->getConnection());
+            std::string TransactionalObject::getTransactionId() const {
+                return context->getTxnId();
+            }
+
+
+            int TransactionalObject::getTimeoutInMilliseconds() const {
+                return context->getTimeoutSeconds() * MILLISECONDS_IN_A_SECOND;
+            }
+
+            std::auto_ptr<protocol::ClientMessage> TransactionalObject::invoke(
+                    std::auto_ptr<protocol::ClientMessage> request) {
+
+                connection::CallFuture future = context->getInvocationService().invokeOnConnection(
+                        request, context->getConnection());
+
                 return future.get();
+            }
+
+            template<>
+            bool TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
+                return response->getBoolean();
+            }
+
+            template<>
+            int TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
+                return response->getInt32();
+            }
+
+            template<>
+            std::auto_ptr<std::string> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
+                return response->getStringUtf8();
+            }
+
+            template<>
+            std::auto_ptr<serialization::pimpl::Data> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
+                std::auto_ptr<protocol::parameters::GenericResultParameters> resultParameters =
+                        protocol::parameters::GenericResultParameters::decode(*response);
+
+                return resultParameters->data;
+            }
+
+            template<>
+            std::auto_ptr<protocol::DataArray> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
+                std::auto_ptr<protocol::parameters::DataCollectionResultParameters> resultParameters =
+                        protocol::parameters::DataCollectionResultParameters::decode(*response);
+
+                return resultParameters->values;
             }
         }
     }

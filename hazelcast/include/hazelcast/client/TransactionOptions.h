@@ -104,6 +104,12 @@ namespace hazelcast {
 
             /**
             *
+            * @return the timeout in milliseconds.
+            */
+            long getTimeoutMillis() const;
+
+            /**
+            *
             * The timeout determines the maximum lifespan of a transaction. So if a transaction is configured with a
             * timeout of 2 minutes, then it will automatically rollback if it hasn't committed yet.
             *

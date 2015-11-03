@@ -48,7 +48,6 @@
 #include "hazelcast/client/LifecycleListener.h"
 #include "hazelcast/client/LoadBalancer.h"
 #include "hazelcast/client/Member.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/MembershipEvent.h"
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/MultiMap.h"

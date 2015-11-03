@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 #include "hazelcast/client/connection/OutputSocketStream.h"
-#include "hazelcast/client/serialization/pimpl/Packet.h"
 #include "hazelcast/client/Socket.h"
 
 namespace hazelcast {
@@ -47,20 +46,6 @@ namespace hazelcast {
             void OutputSocketStream::writeShort(int v) {
                 writeByte((v >> 8));
                 writeByte(v);
-            }
-
-            void OutputSocketStream::writePacket(serialization::pimpl::Packet const& packet) {
-                writeByte(serialization::pimpl::Packet::VERSION);
-                writeShort(packet.getHeader());
-                writeInt(packet.getPartitionId());
-                writeValue(packet.getData());
-            }
-
-
-            void OutputSocketStream::writeValue(serialization::pimpl::Data const &data) {
-                writeInt((int)data.totalSize());
-
-                write(data.toByteArray());
             }
         }
     }

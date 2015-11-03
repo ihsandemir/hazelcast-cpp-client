@@ -30,8 +30,12 @@ namespace hazelcast {
         namespace impl {
 
 
-            class MemberAttributeChange : public serialization::pimpl::DataSerializable {
+            class MemberAttributeChange {
             public:
+
+                MemberAttributeChange(std::auto_ptr<std::string> uuid,
+                                      MemberAttributeEvent::MemberAttributeOperationType const &operationType,
+                                      std::auto_ptr<std::string> key, std::auto_ptr<std::string> value);
 
                 MemberAttributeChange();
 
@@ -43,18 +47,11 @@ namespace hazelcast {
 
                 const std::string &getValue() const;
 
-                util::IOUtil::PRIMITIVE_ID getTypeId() const;
-
-                void writeData(serialization::ObjectDataOutput &writer) const;
-
-                void readData(serialization::ObjectDataInput &reader);
-
             private:
-                std::string uuid;
+                std::auto_ptr<std::string> uuid;
                 MemberAttributeEvent::MemberAttributeOperationType operationType;
-                std::string key;
-                std::string value;
-                util::IOUtil::PRIMITIVE_ID primitive_id;
+                std::auto_ptr<std::string> key;
+                std::auto_ptr<std::string> value;
             };
         }
     }

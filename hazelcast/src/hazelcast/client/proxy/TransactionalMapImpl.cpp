@@ -18,10 +18,27 @@
 //
 
 #include "hazelcast/client/proxy/TransactionalMapImpl.h"
+
 #include "hazelcast/client/spi/ClusterService.h"
-#include "hazelcast/client/map/TxnMapRequest.h"
-#include "hazelcast/client/impl/MapKeySet.h"
-#include "hazelcast/client/impl/MapValueCollection.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/TransactionalMapContainsKeyParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapGetParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapGetForUpdateParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapSizeParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapIsEmptyParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapPutParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapSetParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapPutIfAbsentParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapReplaceParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapReplaceIfSameParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapRemoveParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapDeleteParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapRemoveIfSameParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapKeySetParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapKeySetWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapValuesParameters.h"
+#include "hazelcast/client/protocol/parameters/TransactionalMapValuesWithPredicateParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -32,86 +49,126 @@ namespace hazelcast {
             }
 
             bool TransactionalMapImpl::containsKey(const serialization::pimpl::Data& key) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::CONTAINS_KEY, key);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapContainsKeyParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key);
+
+                return invokeAndGetResult<bool>(request);
             }
 
             serialization::pimpl::Data TransactionalMapImpl::get(const serialization::pimpl::Data& key) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::GET, key);
-                return invoke(request);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapGetParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request);
             }
 
             int TransactionalMapImpl::size() {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::SIZE);
-                boost::shared_ptr<int> result = toObject<int>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapSizeParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId());
+
+                return invokeAndGetResult<int>(request);
             }
 
-            serialization::pimpl::Data TransactionalMapImpl::put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::PUT, key, value);
-                return invoke(request);
+            serialization::pimpl::Data TransactionalMapImpl::put(
+                    const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapPutParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key, value, getTimeoutInMilliseconds());
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request);
+
             }
 
             void TransactionalMapImpl::set(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::SET, key, value);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapSetParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key, value);
+
                 invoke(request);
             }
 
             serialization::pimpl::Data TransactionalMapImpl::putIfAbsent(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::PUT_IF_ABSENT, key, value);
-                return invoke(request);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapPutIfAbsentParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key, value);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request);
             }
 
             serialization::pimpl::Data TransactionalMapImpl::replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::REPLACE, key, value);
-                return invoke(request);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapReplaceParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key, value);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request);
             }
 
             bool TransactionalMapImpl::replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& oldValue, const serialization::pimpl::Data& newValue) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::REPLACE, key, oldValue, newValue);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapReplaceIfSameParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key, oldValue, newValue);
+
+                return invokeAndGetResult<bool>(request);
             }
 
             serialization::pimpl::Data TransactionalMapImpl::remove(const serialization::pimpl::Data& key) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::REMOVE, key);
-                return invoke(request);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapRemoveParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request);
             }
 
             void TransactionalMapImpl::deleteEntry(const serialization::pimpl::Data& key) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::DELETE_R, key);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapDeleteParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key);
+
                 invoke(request);
             }
 
             bool TransactionalMapImpl::remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::REMOVE, key, value);
-                boost::shared_ptr<bool> result = toObject<bool>(invoke(request));
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapRemoveIfSameParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), key, value);
+
+                return invokeAndGetResult<bool>(request);
             }
 
-            std::vector<serialization::pimpl::Data> TransactionalMapImpl::keySet() {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::KEYSET);
-                boost::shared_ptr<map::MapKeySet> result = toObject<map::MapKeySet>(invoke(request));
-                return result->getKeySet();
+            std::auto_ptr<protocol::DataArray> TransactionalMapImpl::keySet() {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapKeySetParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId());
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
             }
 
-            std::vector<serialization::pimpl::Data> TransactionalMapImpl::keySet(const std::string& predicate) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::KEYSET_BY_PREDICATE, predicate);
-                boost::shared_ptr<map::MapKeySet> result = toObject<map::MapKeySet>(invoke(request));
-                return result->getKeySet();
+            std::auto_ptr<protocol::DataArray> TransactionalMapImpl::keySet(const std::string& predicate) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapKeySetWithPredicateParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), toData<std::string>(predicate));
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
             }
 
-            std::vector<serialization::pimpl::Data> TransactionalMapImpl::values() {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::VALUES);
-                boost::shared_ptr<map::MapValueCollection> result = toObject<map::MapValueCollection>(invoke(request));
-                return result->getValues();
+            std::auto_ptr<protocol::DataArray> TransactionalMapImpl::values() {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapValuesParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId());
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
             }
 
-            std::vector<serialization::pimpl::Data> TransactionalMapImpl::values(const std::string& predicate) {
-                map::TxnMapRequest *request = new map::TxnMapRequest(getName(), map::TxnMapRequestType::VALUES_BY_PREDICATE, predicate);
-                boost::shared_ptr<map::MapValueCollection> result = toObject<map::MapValueCollection>(invoke(request));
-                return result->getValues();
+            std::auto_ptr<protocol::DataArray> TransactionalMapImpl::values(const std::string& predicate) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::TransactionalMapValuesWithPredicateParameters::encode(
+                                getName(), getTransactionId(), util::getThreadId(), toData<std::string>(predicate));
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
             }
         }
     }

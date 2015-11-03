@@ -31,7 +31,7 @@
 namespace hazelcast {
     namespace client {
         namespace impl {
-            class ClientMembershipEvent : public impl::IdentifiedDataSerializableResponse {
+            class ClientMembershipEvent {
             public:
                 ClientMembershipEvent();
 
@@ -44,8 +44,6 @@ namespace hazelcast {
                 int getFactoryId() const;
 
                 int getClassId() const;
-
-                void readData(serialization::ObjectDataInput &reader);
 
             private:
                 Member member;

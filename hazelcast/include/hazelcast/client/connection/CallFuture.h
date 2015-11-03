@@ -23,12 +23,12 @@
 
 #include "hazelcast/util/HazelcastDll.h"
 
+#include <boost/shared_ptr.hpp>
+
 namespace hazelcast {
     namespace client {
-        namespace serialization {
-            namespace pimpl {
-                class Data;
-            }
+        namespace protocol {
+            class ClientMessage;
         }
 
         namespace spi{
@@ -46,14 +46,15 @@ namespace hazelcast {
 
                 CallFuture(boost::shared_ptr<CallPromise> promise, boost::shared_ptr<Connection> connection, int heartBeatTimeout, spi::InvocationService* invocationService);
 
-                // copy constructor
                 CallFuture(const CallFuture &rhs);
 
-                CallFuture &operator =(const CallFuture &rhs);
+                CallFuture &operator=(const CallFuture &rhs);
 
-                serialization::pimpl::Data get();
+                std::auto_ptr<protocol::ClientMessage> get();
 
-                serialization::pimpl::Data get(time_t timeoutInSeconds);
+                std::auto_ptr<protocol::ClientMessage> get(time_t timeoutInSeconds);
+
+                int getCallId() const;
 
             private:
                 boost::shared_ptr<CallPromise> promise;

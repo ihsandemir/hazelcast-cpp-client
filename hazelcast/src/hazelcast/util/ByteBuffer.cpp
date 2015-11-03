@@ -75,6 +75,13 @@ namespace hazelcast {
             return bytesReceived;
         }
 
+        size_t ByteBuffer::readFrom(client::Socket const &socket, int numBytesToRead, int flag) {
+            size_t calculatedNumber = std::min<size_t>(remaining(), numBytesToRead);
+            size_t bytesReceived = (size_t)socket.receive(ix(), (int)calculatedNumber, flag);
+            safeIncrementPosition(bytesReceived);
+            return bytesReceived;
+        }
+
         void ByteBuffer::writeTo(const client::Socket& socket) {
             size_t rm = remaining();
             int bytesSend = socket.send(ix(), (int)rm);
@@ -150,6 +157,13 @@ namespace hazelcast {
         void ByteBuffer::safeIncrementPosition(size_t t) {
             assert(pos + t <= capacity);
             pos += t;
+        }
+
+        size_t ByteBuffer::readBytes(byte *target, size_t len) {
+            size_t numBytesToCopy = std::min<size_t>(capacity - pos, len);
+            memcpy(target, ix(), numBytesToCopy);
+            pos += len;
+            return numBytesToCopy;
         }
     }
 }

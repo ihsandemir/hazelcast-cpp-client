@@ -21,6 +21,7 @@
 #include <string>
 #include <sstream>
 #include <iterator>
+#include <memory>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -43,11 +44,15 @@ namespace hazelcast {
             /**
              * Copy Constructor
              */
-            Address(const Address& );
+            Address(const Address& rhs);
             /**
              * Constructor
              */
-            Address(const std::string &url, int port);
+            Address(std::auto_ptr<std::string> url, int port);
+
+            Address(const std::string &url, int portNumber);
+
+            Address &operator = (const Address &rhs);
 
             /**
              * comparison operator
@@ -89,7 +94,7 @@ namespace hazelcast {
             static const byte IPv4 = 4;
             static const byte IPv6 = 6;
 
-            std::string host;
+            std::auto_ptr<std::string> host;
             int port;
             byte type;
         };

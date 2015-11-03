@@ -21,6 +21,8 @@
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
 #include "hazelcast/client/proxy/IListImpl.h"
+#include "hazelcast/client/serialization/pimpl/Data.h"
+
 #include <stdexcept>
 
 
@@ -50,7 +52,7 @@ namespace hazelcast {
             */
             std::string addItemListener(ItemListener<E>& listener, bool includeValue) {
                 impl::ItemEventHandler<E> *entryEventHandler = new impl::ItemEventHandler<E>(getName(), context->getClusterService(), context->getSerializationService(), listener, includeValue);
-                return proxy::IListImpl::addItemListener(entryEventHandler, includeValue);
+                return *proxy::IListImpl::addItemListener(entryEventHandler, includeValue);
             }
 
             /**

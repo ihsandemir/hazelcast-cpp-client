@@ -17,13 +17,11 @@
 #define HAZELCAST_MULTI_MAP
 
 #include "hazelcast/client/proxy/MultiMapImpl.h"
-#include "hazelcast/client/multimap/PortableEntrySetResponse.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
 #include <string>
 #include <map>
 #include <set>
 #include <vector>
-#include <stdexcept>
 
 namespace hazelcast {
     namespace client {
@@ -58,7 +56,9 @@ namespace hazelcast {
             * @return the multimap of the values associated with the key.
             */
             std::vector<V> get(const K& key) {
-                return toObjectCollection<V>(proxy::MultiMapImpl::get(toData(key)));
+                std::auto_ptr<protocol::DataArray> values(proxy::MultiMapImpl::get(toData(key)));
+
+                return toObjectCollection<V>(values);
             }
 
             /**
@@ -80,7 +80,9 @@ namespace hazelcast {
             *         might be modifiable but it has no effect on the multimap
             */
             std::vector<V> remove(const K& key) {
-                return toObjectCollection<V>(proxy::MultiMapImpl::remove(toData(key)));
+                std::auto_ptr<protocol::DataArray> values(proxy::MultiMapImpl::remove(toData(key)));
+
+                return toObjectCollection<V>(values);
             }
 
             /**
@@ -90,7 +92,9 @@ namespace hazelcast {
             *         but it has no effect on the multimap
             */
             std::vector<K> keySet() {
-                return toObjectCollection<K>(proxy::MultiMapImpl::keySet());
+                std::auto_ptr<protocol::DataArray> keys(proxy::MultiMapImpl::keySet());
+
+                return toObjectCollection<V>(keys);
             }
 
             /**
@@ -100,7 +104,9 @@ namespace hazelcast {
             *         but it has no effect on the multimap
             */
             std::vector<V> values() {
-                return toObjectCollection<V>(proxy::MultiMapImpl::values());
+                std::auto_ptr<protocol::DataArray> values(proxy::MultiMapImpl::values());
+
+                return toObjectCollection<V>(values);
             }
 
             /**
@@ -110,7 +116,11 @@ namespace hazelcast {
             *         but it has no effect on the multimap
             */
             std::vector<std::pair<K, V> > entrySet() {
-                return toObjectEntrySet<K, V>(proxy::MultiMapImpl::entrySet());
+                std::auto_ptr<protocol::DataArray> keys;
+                std::auto_ptr<protocol::DataArray> values;
+                proxy::MultiMapImpl::entrySet(keys, values);
+
+                return toObjectEntrySet<K, V>(keys, values);
             }            
 
             /**
@@ -189,7 +199,7 @@ namespace hazelcast {
                 spi::ClusterService& clusterService = context->getClusterService();
                 serialization::pimpl::SerializationService& ss = context->getSerializationService();
                 impl::EntryEventHandler<K, V> *entryEventHandler = new impl::EntryEventHandler<K, V>(getName(), clusterService, ss, listener, includeValue);
-                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, includeValue);
+                return *proxy::MultiMapImpl::addEntryListener(entryEventHandler, includeValue);
             }
 
             /**
@@ -210,7 +220,7 @@ namespace hazelcast {
             */
             std::string addEntryListener(EntryListener<K, V>& listener, const K& key, bool includeValue) {
                 impl::EntryEventHandler<K, V> *entryEventHandler = new impl::EntryEventHandler<K, V>(getName(), context->getClusterService(), context->getSerializationService(), listener, includeValue);
-                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, toData(key), includeValue);
+                return *proxy::MultiMapImpl::addEntryListener(entryEventHandler, toData(key), includeValue);
             }
 
             /**

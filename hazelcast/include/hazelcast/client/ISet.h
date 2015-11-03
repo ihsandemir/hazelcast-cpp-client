@@ -18,8 +18,6 @@
 
 #include "hazelcast/client/proxy/ISetImpl.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
-#include "hazelcast/client/impl/SerializableCollection.h"
-#include <stdexcept>
 
 
 namespace hazelcast {
@@ -47,7 +45,7 @@ namespace hazelcast {
             */
             std::string addItemListener(ItemListener<E>& listener, bool includeValue) {
                 impl::ItemEventHandler<E> *itemEventHandler = new impl::ItemEventHandler<E>(getName(), context->getClusterService(), context->getSerializationService(), listener, includeValue);
-                return proxy::ISetImpl::addItemListener(itemEventHandler, includeValue);
+                return *proxy::ISetImpl::addItemListener(itemEventHandler, includeValue);
             }
 
             /**
@@ -93,7 +91,8 @@ namespace hazelcast {
             * @returns all elements as std::vector
             */
             std::vector<E> toArray() {
-                return toObjectCollection<E>(proxy::ISetImpl::toArray());
+                std::auto_ptr<protocol::DataArray> result(proxy::ISetImpl::toArray());
+                return toObjectCollection<E>(result);
             }
 
             /**
@@ -123,8 +122,7 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
             bool containsAll(const std::vector<E>& elements) {
-                std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(elements);
-                return proxy::ISetImpl::containsAll(dataCollection);
+                return proxy::ISetImpl::containsAll(toDataCollection(elements));
             }
 
             /**
@@ -135,7 +133,7 @@ namespace hazelcast {
             */
             bool addAll(const std::vector<E>& elements) {
                 std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(elements);
-                return proxy::ISetImpl::addAll(dataCollection);
+                return proxy::ISetImpl::addAll(toDataCollection(elements));
             }
 
             /**

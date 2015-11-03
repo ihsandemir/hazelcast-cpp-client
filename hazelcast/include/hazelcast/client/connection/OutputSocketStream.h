@@ -31,16 +31,8 @@
 
 namespace hazelcast {
     namespace client {
+
         class Socket;
-        namespace serialization {
-            namespace pimpl {
-                class Packet;
-
-                class Data;
-
-                class PortableContext;
-            }
-        }
 
         namespace connection {
 
@@ -53,11 +45,7 @@ namespace hazelcast {
 
                 void writeInt(int i);
 
-                void writePacket(const serialization::pimpl::Packet&);
-
             private:
-                void writeValue(const serialization::pimpl::Data &data);
-
                 Socket& socket;
 
                 void writeShort(int v);

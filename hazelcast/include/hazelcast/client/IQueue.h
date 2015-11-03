@@ -52,7 +52,7 @@ namespace hazelcast {
                 spi::ClusterService& cs = context->getClusterService();
                 serialization::pimpl::SerializationService& ss = context->getSerializationService();
                 impl::ItemEventHandler<E> *itemEventHandler = new impl::ItemEventHandler<E>(getName(), cs, ss, listener, includeValue);
-                return proxy::IQueueImpl::addItemListener(itemEventHandler, includeValue);
+                return *proxy::IQueueImpl::addItemListener(itemEventHandler, includeValue);
             }
 
             /**
@@ -161,12 +161,13 @@ namespace hazelcast {
             * @return number of elements drained.
             */
             int drainTo(std::vector<E>& elements, int maxElements) {
-                std::vector<serialization::pimpl::Data> coll = proxy::IQueueImpl::drainTo(maxElements);
-                for (std::vector<serialization::pimpl::Data>::const_iterator it = coll.begin(); it != coll.end(); ++it) {
-                    boost::shared_ptr<E> e = context->getSerializationService().template toObject<E>(*it);
+                std::auto_ptr<protocol::DataArray> result(proxy::IQueueImpl::drainTo(maxElements));
+
+                for (protocol::DataArray::VECTOR_TYPE::const_iterator it = result->begin(); it != result->end(); ++it) {
+                    boost::shared_ptr<E> e = context->getSerializationService().template toObject<E>(**it);
                     elements.push_back(*e);
                 }
-                return coll.size();
+                return result->size();
             }
 
             /**
@@ -208,7 +209,8 @@ namespace hazelcast {
             * @returns all elements as std::vector
             */
             std::vector<E> toArray() {
-                return toObjectCollection<E>(proxy::IQueueImpl::toArray());
+                std::auto_ptr<protocol::DataArray> result(proxy::IQueueImpl::toArray());
+                return toObjectCollection<E>(result);
             }
 
             /**
@@ -218,8 +220,8 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
             bool containsAll(const std::vector<E>& elements) {
-                std::vector<serialization::pimpl::Data> list = toDataCollection(elements);
-                return proxy::IQueueImpl::containsAll(list);
+                std::vector<serialization::pimpl::Data> result(toDataCollection(elements));
+                return proxy::IQueueImpl::containsAll(result);
             }
 
             /**
@@ -229,8 +231,8 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
             bool addAll(const std::vector<E>& elements) {
-                std::vector<serialization::pimpl::Data> dataList = toDataCollection(elements);
-                return proxy::IQueueImpl::addAll(dataList);
+                std::vector<serialization::pimpl::Data> result(toDataCollection(elements));
+                return proxy::IQueueImpl::addAll(result);
             }
 
             /**
@@ -240,8 +242,8 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
             bool removeAll(const std::vector<E>& elements) {
-                std::vector<serialization::pimpl::Data> dataList = toDataCollection(elements);
-                return proxy::IQueueImpl::removeAll(dataList);
+                std::vector<serialization::pimpl::Data> result(toDataCollection(elements));
+                return proxy::IQueueImpl::removeAll(result);
             }
 
             /**
@@ -252,8 +254,8 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
             bool retainAll(const std::vector<E>& elements) {
-                std::vector<serialization::pimpl::Data> dataList = toDataCollection(elements);
-                return proxy::IQueueImpl::retainAll(dataList);
+                std::vector<serialization::pimpl::Data> result(toDataCollection(elements));
+                return proxy::IQueueImpl::retainAll(result);
             }
 
             /**

@@ -32,6 +32,10 @@ namespace hazelcast {
 
             }
 
+            Principal::Principal(std::string &uuid, std::string &ownerUuid) : uuid(new std::string(uuid)),
+                                                                              ownerUuid(new std::string(ownerUuid)) {
+            }
+
             int Principal::getFactoryId() const {
                 return ProtocolConstants::CLIENT_PORTABLE_FACTORY;
             }
@@ -45,12 +49,18 @@ namespace hazelcast {
                 writer.writeUTF("ownerUuid", ownerUuid.get());
             }
 
-            void Principal::readPortable(serialization::PortableReader& reader) {
+            void Principal::readPortable(serialization::PortableReader &reader) {
                 uuid = reader.readUTF("uuid");
                 ownerUuid = reader.readUTF("ownerUuid");
             }
 
+            const std::string &Principal::getUuid() const {
+                return *uuid;
+            }
 
+            const std::string &Principal::getOwnerUuid() const {
+                return *ownerUuid;
+            }
         }
     }
 }

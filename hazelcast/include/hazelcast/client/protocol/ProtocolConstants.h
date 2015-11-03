@@ -17,7 +17,6 @@
 #define HAZELCAST_PROTOCOL_CONSTANTS
 
 #include "hazelcast/util/HazelcastDll.h"
-#include <vector>
 
 namespace hazelcast {
     namespace client {

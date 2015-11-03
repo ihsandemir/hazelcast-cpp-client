@@ -19,11 +19,17 @@
 
 
 #include "hazelcast/client/ILock.h"
-#include "hazelcast/client/lock/LockRequest.h"
-#include "hazelcast/client/lock/UnlockRequest.h"
-#include "hazelcast/client/lock/IsLockedRequest.h"
-#include "hazelcast/client/lock/GetLockCountRequest.h"
-#include "hazelcast/client/lock/GetRemainingLeaseRequest.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/LockIsLockedParameters.h"
+#include "hazelcast/client/protocol/parameters/LockIsLockedByCurrentThreadParameters.h"
+#include "hazelcast/client/protocol/parameters/LockGetLockCountParameters.h"
+#include "hazelcast/client/protocol/parameters/LockGetRemainingLeaseTimeParameters.h"
+#include "hazelcast/client/protocol/parameters/LockLockParameters.h"
+#include "hazelcast/client/protocol/parameters/LockUnlockParameters.h"
+#include "hazelcast/client/protocol/parameters/LockForceUnlockParameters.h"
+#include "hazelcast/client/protocol/parameters/LockTryLockParameters.h"
+
 #include "hazelcast/util/Util.h"
 
 namespace hazelcast {
@@ -39,46 +45,52 @@ namespace hazelcast {
         }
 
         void ILock::lock(long leaseTimeInMillis) {
-            lock::LockRequest *request = new lock::LockRequest(key, util::getThreadId(), leaseTimeInMillis, -1);
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockLockParameters::encode(getName(), leaseTimeInMillis, util::getThreadId());
+
             invoke(request, partitionId);
         }
 
         void ILock::unlock() {
-            lock::UnlockRequest *request = new lock::UnlockRequest(key, util::getThreadId(), false);
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockUnlockParameters::encode(getName(), util::getThreadId());
+
             invoke(request, partitionId);
         }
 
         void ILock::forceUnlock() {
-            lock::UnlockRequest *request = new lock::UnlockRequest(key, util::getThreadId(), true);
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockForceUnlockParameters::encode(getName());
+
             invoke(request, partitionId);
         }
 
         bool ILock::isLocked() {
-            lock::IsLockedRequest *request = new lock::IsLockedRequest(key);
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, bool);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockIsLockedParameters::encode(getName());
+
+            return invokeAndGetResult<bool>(request, partitionId);
         }
 
         bool ILock::isLockedByCurrentThread() {
-            lock::IsLockedRequest *request = new lock::IsLockedRequest(key, util::getThreadId());
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, bool);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockIsLockedByCurrentThreadParameters::encode(getName(), util::getThreadId());
+
+            return invokeAndGetResult<bool>(request, partitionId);
         }
 
         int ILock::getLockCount() {
-            lock::GetLockCountRequest *request = new lock::GetLockCountRequest(key);
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, int);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockGetLockCountParameters::encode(getName());
+
+            return invokeAndGetResult<int>(request, partitionId);
         }
 
         long ILock::getRemainingLeaseTime() {
-            lock::GetRemainingLeaseRequest *request = new lock::GetRemainingLeaseRequest(key);
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, long);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockGetRemainingLeaseTimeParameters::encode(getName());
+
+            return invokeAndGetResult<long>(request, partitionId);
         }
 
         bool ILock::tryLock() {
@@ -86,10 +98,10 @@ namespace hazelcast {
         }
 
         bool ILock::tryLock(long timeInMillis) {
-            lock::LockRequest *request = new lock::LockRequest(key, util::getThreadId(), -1, timeInMillis);
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, bool);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::LockTryLockParameters::encode(getName(), util::getThreadId(), timeInMillis);
+
+            return invokeAndGetResult<bool>(request, partitionId);
         }
     }
 }

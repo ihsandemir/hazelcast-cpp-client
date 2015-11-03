@@ -23,354 +23,446 @@
 #include "hazelcast/client/impl/MapKeySet.h"
 #include "hazelcast/client/impl/MapEntrySet.h"
 #include "hazelcast/client/impl/MapValueCollection.h"
-#include "hazelcast/client/map/GetRequest.h"
-#include "hazelcast/client/map/PutRequest.h"
-#include "hazelcast/client/map/RemoveRequest.h"
-#include "hazelcast/client/map/ContainsKeyRequest.h"
-#include "hazelcast/client/map/ContainsValueRequest.h"
-#include "hazelcast/client/map/FlushRequest.h"
-#include "hazelcast/client/map/RemoveIfSameRequest.h"
-#include "hazelcast/client/map/DeleteRequest.h"
-#include "hazelcast/client/map/TryRemoveRequest.h"
-#include "hazelcast/client/map/TryPutRequest.h"
-#include "hazelcast/client/map/PutTransientRequest.h"
-#include "hazelcast/client/map/ReplaceIfSameRequest.h"
-#include "hazelcast/client/map/ReplaceRequest.h"
-#include "hazelcast/client/map/SetRequest.h"
-#include "hazelcast/client/map/LockRequest.h"
-#include "hazelcast/client/map/IsLockedRequest.h"
-#include "hazelcast/client/map/UnlockRequest.h"
-#include "hazelcast/client/map/GetEntryViewRequest.h"
-#include "hazelcast/client/map/EvictRequest.h"
-#include "hazelcast/client/map/EvictAllRequest.h"
-#include "hazelcast/client/map/GetAllRequest.h"
-#include "hazelcast/client/map/AddIndexRequest.h"
-#include "hazelcast/client/map/SizeRequest.h"
-#include "hazelcast/client/map/ClearRequest.h"
-#include "hazelcast/client/map/PutAllRequest.h"
-#include "hazelcast/client/map/QueryRequest.h"
-#include "hazelcast/client/map/AddEntryListenerRequest.h"
-#include "hazelcast/client/map/ExecuteOnKeyRequest.h"
-#include "hazelcast/client/map/ExecuteOnAllKeysRequest.h"
-#include "hazelcast/client/map/RemoveInterceptorRequest.h"
-#include "hazelcast/client/map/PutIfAbsentRequest.h"
-#include "hazelcast/client/map/RemoveEntryListenerRequest.h"
-#include "hazelcast/client/map/MapIsEmptyRequest.h"
-#include "hazelcast/client/impl/QueryResult.h"
 #include "hazelcast/client/EntryView.h"
-#include "hazelcast/util/Util.h"
-#include "hazelcast/client/spi/PartitionService.h"
+
+#include "hazelcast/client/protocol/ClientMessage.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/MapPutParameters.h"
+#include "hazelcast/client/protocol/parameters/MapGetParameters.h"
+#include "hazelcast/client/protocol/parameters/MapRemoveParameters.h"
+#include "hazelcast/client/protocol/parameters/MapReplaceParameters.h"
+#include "hazelcast/client/protocol/parameters/MapReplaceIfSameParameters.h"
+#include "hazelcast/client/protocol/parameters/MapPutAsyncParameters.h"
+#include "hazelcast/client/protocol/parameters/MapGetAsyncParameters.h"
+#include "hazelcast/client/protocol/parameters/MapRemoveAsyncParameters.h"
+#include "hazelcast/client/protocol/parameters/MapContainsKeyParameters.h"
+#include "hazelcast/client/protocol/parameters/MapContainsValueParameters.h"
+#include "hazelcast/client/protocol/parameters/MapRemoveIfSameParameters.h"
+#include "hazelcast/client/protocol/parameters/MapDeleteParameters.h"
+#include "hazelcast/client/protocol/parameters/MapFlushParameters.h"
+#include "hazelcast/client/protocol/parameters/MapTryRemoveParameters.h"
+#include "hazelcast/client/protocol/parameters/MapTryPutParameters.h"
+#include "hazelcast/client/protocol/parameters/MapPutTransientParameters.h"
+#include "hazelcast/client/protocol/parameters/MapPutIfAbsentParameters.h"
+#include "hazelcast/client/protocol/parameters/MapSetParameters.h"
+#include "hazelcast/client/protocol/parameters/MapLockParameters.h"
+#include "hazelcast/client/protocol/parameters/MapTryLockParameters.h"
+#include "hazelcast/client/protocol/parameters/MapIsLockedParameters.h"
+#include "hazelcast/client/protocol/parameters/MapUnlockParameters.h"
+#include "hazelcast/client/protocol/parameters/MapForceUnlockParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddInterceptorParameters.h"
+#include "hazelcast/client/protocol/parameters/MapRemoveInterceptorParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddEntryListenerToKeyWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddEntryListenerWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddEntryListenerToKeyParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddEntryListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddNearCacheEntryListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/MapRemoveEntryListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddPartitionLostListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/MapRemovePartitionLostListenerParameters.h"
+#include "hazelcast/client/protocol/parameters/MapGetEntryViewParameters.h"
+#include "hazelcast/client/protocol/parameters/MapEvictParameters.h"
+#include "hazelcast/client/protocol/parameters/MapEvictAllParameters.h"
+#include "hazelcast/client/protocol/parameters/MapLoadAllParameters.h"
+#include "hazelcast/client/protocol/parameters/MapLoadGivenKeysParameters.h"
+#include "hazelcast/client/protocol/parameters/MapKeySetParameters.h"
+#include "hazelcast/client/protocol/parameters/MapGetAllParameters.h"
+#include "hazelcast/client/protocol/parameters/MapValuesParameters.h"
+#include "hazelcast/client/protocol/parameters/MapEntrySetParameters.h"
+#include "hazelcast/client/protocol/parameters/MapKeySetWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/MapValuesWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/MapEntriesWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/MapAddIndexParameters.h"
+#include "hazelcast/client/protocol/parameters/MapSizeParameters.h"
+#include "hazelcast/client/protocol/parameters/MapIsEmptyParameters.h"
+#include "hazelcast/client/protocol/parameters/MapPutAllParameters.h"
+#include "hazelcast/client/protocol/parameters/MapClearParameters.h"
+#include "hazelcast/client/protocol/parameters/MapExecuteOnKeyParameters.h"
+#include "hazelcast/client/protocol/parameters/MapSubmitToKeyParameters.h"
+#include "hazelcast/client/protocol/parameters/MapExecuteOnAllKeysParameters.h"
+#include "hazelcast/client/protocol/parameters/MapExecuteWithPredicateParameters.h"
+#include "hazelcast/client/protocol/parameters/MapExecuteOnKeysParameters.h"
+
 #include <climits>
 
 namespace hazelcast {
     namespace client {
         namespace proxy {
-
             const std::string IMapImpl::VALUE_ITERATION_TYPE = "VALUE";
             const std::string IMapImpl::KEY_ITERATION_TYPE = "KEY";
             const std::string IMapImpl::ENTRY_ITERATION_TYPE = "ENTRY";
             const std::string IMapImpl::NO_PREDICATE = "";
 
-            IMapImpl::IMapImpl(const std::string& instanceName, spi::ClientContext *context)
-            : ProxyImpl("hz:impl:mapService", instanceName, context) {
+            IMapImpl::IMapImpl(const std::string &instanceName, spi::ClientContext *context)
+                    : ProxyImpl("hz:impl:mapService", instanceName, context) {
 
             }
 
-            bool IMapImpl::containsKey(const serialization::pimpl::Data& key) {
+            bool IMapImpl::containsKey(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::ContainsKeyRequest *request = new map::ContainsKeyRequest(getName(), key, util::getThreadId());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapContainsKeyParameters::encode(getName(), key, util::getThreadId());
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            bool IMapImpl::containsValue(const serialization::pimpl::Data& value) {
-                map::ContainsValueRequest *request = new map::ContainsValueRequest(getName(), value);
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, bool);
-                return *result;
+            bool IMapImpl::containsValue(const serialization::pimpl::Data &value) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapContainsValueParameters::encode(getName(), value);
+
+                return invokeAndGetResult<bool>(request);
             }
 
-            serialization::pimpl::Data IMapImpl::get(const serialization::pimpl::Data& key) {
+            serialization::pimpl::Data IMapImpl::get(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::GetRequest *request = new map::GetRequest(getName(), key, util::getThreadId());
-                return invoke(request, partitionId);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapGetParameters::encode(getName(), key, util::getThreadId());
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
-            serialization::pimpl::Data IMapImpl::put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
+            serialization::pimpl::Data IMapImpl::put(const serialization::pimpl::Data &key,
+                                                     const serialization::pimpl::Data &value) {
                 int partitionId = getPartitionId(key);
-                map::PutRequest *request = new map::PutRequest(getName(), key, value, util::getThreadId(), 0);
-                return invoke(request, partitionId);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapPutParameters::encode(getName(), key, value, util::getThreadId(), 0);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
-            serialization::pimpl::Data IMapImpl::remove(const serialization::pimpl::Data& key) {
+            serialization::pimpl::Data IMapImpl::remove(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::RemoveRequest *request = new map::RemoveRequest(getName(), key, util::getThreadId());
-                return invoke(request, partitionId);
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapRemoveParameters::encode(getName(), key, util::getThreadId());
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
-            bool IMapImpl::remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
+            bool IMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 int partitionId = getPartitionId(key);
-                map::RemoveIfSameRequest *request = new map::RemoveIfSameRequest(getName(), key, value, util::getThreadId());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapRemoveIfSameParameters::encode(getName(), key, value, util::getThreadId());
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            void IMapImpl::deleteEntry(const serialization::pimpl::Data& key) {
+            void IMapImpl::deleteEntry(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::DeleteRequest *request = new map::DeleteRequest(getName(), key, util::getThreadId());
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapDeleteParameters::encode(getName(), key, util::getThreadId());
+
                 invoke(request, partitionId);
             }
 
             void IMapImpl::flush() {
-                map::FlushRequest *request = new map::FlushRequest(getName());
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapFlushParameters::encode(getName());
+
                 invoke(request);
             }
 
-            bool IMapImpl::tryRemove(const serialization::pimpl::Data& key, long timeoutInMillis) {
+            bool IMapImpl::tryRemove(const serialization::pimpl::Data &key, long timeoutInMillis) {
                 int partitionId = getPartitionId(key);
-                map::TryRemoveRequest *request = new map::TryRemoveRequest(getName(), key, util::getThreadId(), timeoutInMillis);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapTryRemoveParameters::encode(getName(), key, util::getThreadId(),
+                                                                             timeoutInMillis);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            bool IMapImpl::tryPut(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long timeoutInMillis) {
+            bool IMapImpl::tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+                                  long timeoutInMillis) {
                 int partitionId = getPartitionId(key);
-                map::TryPutRequest *request = new map::TryPutRequest(getName(), key, value, util::getThreadId(), timeoutInMillis);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapTryPutParameters::encode(getName(), key, value, util::getThreadId(),
+                                                                          timeoutInMillis);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            serialization::pimpl::Data IMapImpl::put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis) {
+            serialization::pimpl::Data IMapImpl::put(const serialization::pimpl::Data &key,
+                                                     const serialization::pimpl::Data &value, long ttlInMillis) {
                 int partitionId = getPartitionId(key);
-                map::PutRequest *request = new map::PutRequest(getName(), key, value, util::getThreadId(), ttlInMillis);
-                return invoke(request, partitionId);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapPutParameters::encode(getName(), key, value, util::getThreadId(),
+                                                                       ttlInMillis);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
-            void IMapImpl::putTransient(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis) {
+            void IMapImpl::putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+                                        long ttlInMillis) {
                 int partitionId = getPartitionId(key);
-                map::PutTransientRequest *request = new map::PutTransientRequest(getName(), key, value, util::getThreadId(), ttlInMillis);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapPutTransientParameters::encode(getName(), key, value,
+                                                                                util::getThreadId(), ttlInMillis);
+
                 invoke(request, partitionId);
             }
 
-            serialization::pimpl::Data IMapImpl::putIfAbsent(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis) {
+            serialization::pimpl::Data IMapImpl::putIfAbsent(const serialization::pimpl::Data &key,
+                                                             const serialization::pimpl::Data &value,
+                                                             long ttlInMillis) {
                 int partitionId = getPartitionId(key);
-                map::PutIfAbsentRequest *request = new map::PutIfAbsentRequest(getName(), key, value, util::getThreadId(), ttlInMillis);
-                return invoke(request, partitionId);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapPutIfAbsentParameters::encode(getName(), key, value,
+                                                                               util::getThreadId(), ttlInMillis);
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
-            bool IMapImpl::replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& oldValue, const serialization::pimpl::Data& newValue) {
+            bool IMapImpl::replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
+                                   const serialization::pimpl::Data &newValue) {
                 int partitionId = getPartitionId(key);
-                map::ReplaceIfSameRequest *request = new map::ReplaceIfSameRequest(getName(), key, oldValue, newValue, util::getThreadId());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapReplaceIfSameParameters::encode(getName(), key, oldValue, newValue,
+                                                                                 util::getThreadId());
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            serialization::pimpl::Data IMapImpl::replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
+            serialization::pimpl::Data IMapImpl::replace(const serialization::pimpl::Data &key,
+                                                         const serialization::pimpl::Data &value) {
                 int partitionId = getPartitionId(key);
-                map::ReplaceRequest *request = new map::ReplaceRequest(getName(), key, value, util::getThreadId());
-                return invoke(request, partitionId);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapReplaceParameters::encode(getName(), key, value, util::getThreadId());
+
+                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
-            void IMapImpl::set(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttl) {
+            void IMapImpl::set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+                               long ttl) {
                 int partitionId = getPartitionId(key);
-                map::SetRequest *request = new map::SetRequest(getName(), key, value, util::getThreadId(), ttl);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapSetParameters::encode(getName(), key, value, util::getThreadId(), ttl);
+
                 invoke(request, partitionId);
             }
 
-            void IMapImpl::lock(const serialization::pimpl::Data& key) {
+            void IMapImpl::lock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::LockRequest *request = new map::LockRequest(getName(), key, util::getThreadId());
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapLockParameters::encode(getName(), key, util::getThreadId(), -1);
+
                 invoke(request, partitionId);
             }
 
-            void IMapImpl::lock(const serialization::pimpl::Data& key, long leaseTime) {
+            void IMapImpl::lock(const serialization::pimpl::Data &key, long leaseTime) {
                 int partitionId = getPartitionId(key);
-                map::LockRequest *request = new map::LockRequest(getName(), key, util::getThreadId(), leaseTime, -1);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapLockParameters::encode(getName(), key, util::getThreadId(), leaseTime);
+
                 invoke(request, partitionId);
             }
 
-            bool IMapImpl::isLocked(const serialization::pimpl::Data& key) {
+            bool IMapImpl::isLocked(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::IsLockedRequest *request = new map::IsLockedRequest(getName(), key);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapIsLockedParameters::encode(getName(), key);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            bool IMapImpl::tryLock(const serialization::pimpl::Data& key, long timeInMillis) {
+            bool IMapImpl::tryLock(const serialization::pimpl::Data &key, long timeInMillis) {
                 int partitionId = getPartitionId(key);
-                map::LockRequest *request = new map::LockRequest(getName(), key, util::getThreadId(), LONG_MAX, timeInMillis);
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapTryLockParameters::encode(getName(), key, util::getThreadId(),
+                                                                        timeInMillis);
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
-            void IMapImpl::unlock(const serialization::pimpl::Data& key) {
+            void IMapImpl::unlock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::UnlockRequest *request = new map::UnlockRequest(getName(), key, util::getThreadId(), false);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapUnlockParameters::encode(getName(), key, util::getThreadId());
+
                 invoke(request, partitionId);
             }
 
-            void IMapImpl::forceUnlock(const serialization::pimpl::Data& key) {
+            void IMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::UnlockRequest *request = new map::UnlockRequest(getName(), key, util::getThreadId(), true);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapForceUnlockParameters::encode(getName(), key);
+
                 invoke(request, partitionId);
             }
 
-            std::string IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                map::AddEntryListenerRequest *request = new map::AddEntryListenerRequest(getName(), includeValue);
+            std::auto_ptr<std::string> IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapAddEntryListenerParameters::encode(getName(), includeValue);
+
                 return listen(request, entryEventHandler);
             }
 
-            bool IMapImpl::removeEntryListener(const std::string& registrationId) {
-                map::RemoveEntryListenerRequest *request = new map::RemoveEntryListenerRequest(getName(), registrationId);
-                return stopListening(request, registrationId);
+            bool IMapImpl::removeEntryListener(const std::string &registrationId) {
+                bool result = false;
+
+                std::string effectiveRegistrationId = registrationId;
+                if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
+                    std::auto_ptr<protocol::ClientMessage> request =
+                            protocol::parameters::MapRemoveEntryListenerParameters::encode(getName(), effectiveRegistrationId);
+
+                    result = invokeAndGetResult<bool>(request);
+                }
+
+                return result;
             }
 
-            std::string IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue) {
+            std::auto_ptr<std::string> IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
+                                                   const serialization::pimpl::Data &key, bool includeValue) {
+
                 int partitionId = getPartitionId(key);
-                map::AddEntryListenerRequest *request = new map::AddEntryListenerRequest(getName(), includeValue, key);
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapAddEntryListenerToKeyParameters::encode(getName(), key, includeValue);
+
                 return listen(request, partitionId, entryEventHandler);
             }
 
-            map::DataEntryView IMapImpl::getEntryView(const serialization::pimpl::Data& key) {
+            std::auto_ptr<map::DataEntryView> IMapImpl::getEntryView(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::GetEntryViewRequest *request = new map::GetEntryViewRequest(getName(), key, util::getThreadId());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, map::DataEntryView);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapGetEntryViewParameters::encode(getName(), key, util::getThreadId());
+
+                return invokeAndGetResult<std::auto_ptr<map::DataEntryView> >(request, partitionId);
             }
 
-            bool IMapImpl::evict(const serialization::pimpl::Data& key) {
+            bool IMapImpl::evict(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
-                map::EvictRequest *request = new map::EvictRequest(getName(), key, util::getThreadId());
-                serialization::pimpl::Data data = invoke(request, partitionId);
-                DESERIALIZE(data, bool);
-                return *result;
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapEvictParameters::encode(getName(), key, util::getThreadId());
+
+                return invokeAndGetResult<bool>(request, partitionId);
             }
 
             void IMapImpl::evictAll() {
-                map::EvictAllRequest *request = new map::EvictAllRequest(getName());
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapEvictAllParameters::encode(getName());
+
                 invoke(request);
             }
 
-            std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > IMapImpl::getAll(const std::vector<serialization::pimpl::Data>& keys) {
-                map::GetAllRequest *request = new map::GetAllRequest(getName(), keys);
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, map::MapEntrySet);
-                return result->getEntrySet();
+            void IMapImpl::getAll(const std::vector<serialization::pimpl::Data> &keys,
+                                  std::auto_ptr<protocol::DataArray> &resultKeys,
+                                  std::auto_ptr<protocol::DataArray> &resultValue) {
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapGetAllParameters::encode(getName(), keys);
+
+                std::auto_ptr<protocol::ClientMessage> response = invoke(request);
+
+                resultKeys = response->getDataList();
+                resultValue = response->getDataList();
             }
 
-            std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > IMapImpl::keySet(const std::string& sql) {
-                map::QueryRequest *request = new map::QueryRequest(getName(), KEY_ITERATION_TYPE, sql);
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, impl::QueryResult);
-                return result->getResultData();
+            std::auto_ptr<protocol::DataArray> IMapImpl::keySet(const std::string &sql) {
+
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapKeySetWithPredicateParameters::encode(getName(),
+                                                                                       toData<std::string>(sql));
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
             }
 
-            std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > IMapImpl::entrySet(const std::string& sql) {
-                map::QueryRequest *request = new map::QueryRequest(getName(), ENTRY_ITERATION_TYPE, sql);
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, impl::QueryResult);
-                return result->getResultData();
+            void IMapImpl::entrySet(const std::string &sql,
+                                    std::auto_ptr<protocol::DataArray> &resultKeys,
+                                    std::auto_ptr<protocol::DataArray> &resultValue) {
+
+                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::MapEntriesWithPredicateParameters::encode(
+                        getName(), toData<std::string>(sql));
+
+                std::auto_ptr<protocol::ClientMessage> response = invoke(request);
+
+                resultKeys = response->getDataList();
+                resultValue = response->getDataList();
             }
 
-            std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > IMapImpl::values(const std::string& sql) {
-                map::QueryRequest *request = new map::QueryRequest(getName(), VALUE_ITERATION_TYPE, sql);
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, impl::QueryResult);
-                return result->getResultData();
+            std::auto_ptr<protocol::DataArray> IMapImpl::values(const std::string &sql) {
+
+                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::MapValuesWithPredicateParameters::encode(
+                        getName(), toData<std::string>(sql));
+
+                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
             }
 
-            void IMapImpl::addIndex(const std::string& attribute, bool ordered) {
-                map::AddIndexRequest *request = new map::AddIndexRequest(getName(), attribute, ordered);
+            void IMapImpl::addIndex(const std::string &attribute, bool ordered) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapAddIndexParameters::encode(getName(), attribute, ordered);
+
                 invoke(request);
             }
 
             int IMapImpl::size() {
-                map::SizeRequest *request = new map::SizeRequest(getName());
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, int);
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::MapSizeParameters::encode(
+                        getName());
+
+                return invokeAndGetResult<int>(request);
             }
 
             bool IMapImpl::isEmpty() {
-                map::MapIsEmptyRequest *request = new map::MapIsEmptyRequest(getName());
-                serialization::pimpl::Data data = invoke(request);
-                DESERIALIZE(data, bool);
-                return *result;
+                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::MapIsEmptyParameters::encode(
+                        getName());
+
+                return invokeAndGetResult<bool>(request);
             }
 
-            void IMapImpl::putAll(const EntryVector& m) {
-                spi::PartitionService &partitionService = context->getPartitionService();
+            void IMapImpl::putAll(const protocol::DataArray &keys,
+                                  const protocol::DataArray &values) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapPutAllParameters::encode(getName(), keys, values);
 
-                int partitionCount = partitionService.getPartitionCount();
-
-                std::vector<connection::CallFuture> futures;
-
-                // release memory properly, can not use auto_ptr and do not want unneeded allocation
-                std::vector<EntryVector *> allEntriesByPartitionId(partitionCount);
-                for (int i=0;i < partitionCount; ++i) {
-                    allEntriesByPartitionId[i] = NULL;
-                }
-
-                for (EntryVector::const_iterator entryIter = m.begin(); entryIter != m.end(); ++entryIter) {
-                    int partitionId = getPartitionId(entryIter->first);
-
-                    if (NULL == allEntriesByPartitionId[partitionId]) {
-                        // create the list for the list for the partition
-                        allEntriesByPartitionId[partitionId] = new EntryVector();
-                    }
-
-                    allEntriesByPartitionId[partitionId]->push_back(*entryIter);
-                }
-
-                try {
-                    for (int i=0;i < partitionCount; ++i) {
-                        if (NULL != allEntriesByPartitionId[i]) {
-                            map::PutAllRequest *request = new map::PutAllRequest(getName(), *allEntriesByPartitionId[i], i);
-                            connection::CallFuture future = invokeAsync(request, i);
-                            futures.push_back(future);
-                        }
-                    }
-
-                    for (std::vector<connection::CallFuture>::iterator it = futures.begin(); futures.end() != it; ++it) {
-                        it->get();
-                    }
-
-                    // release the memory for the allEntriesByPartitionId
-                    for (int i=0;i < partitionCount; ++i) {
-                        if (NULL != allEntriesByPartitionId[i]) {
-                            delete allEntriesByPartitionId[i];
-                        }
-                    }
-                } catch (...) {
-                    // release the memory for the allEntriesByPartitionId
-                    for (int i=0;i < partitionCount; ++i) {
-                        if (NULL != allEntriesByPartitionId[i]) {
-                            delete allEntriesByPartitionId[i];
-                        }
-                    }
-
-                    // rethrow the exception
-                    throw;
-                }
-
-
-            }
-
-            void IMapImpl::clear() {
-                map::ClearRequest *request = new map::ClearRequest(getName());
                 invoke(request);
             }
 
-            void IMapImpl::removeInterceptor(const std::string& id) {
-                map::RemoveInterceptorRequest *request = new map::RemoveInterceptorRequest(getName(), id);
+            void IMapImpl::clear() {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapClearParameters::encode(getName());
+
+                invoke(request);
+            }
+
+            std::auto_ptr<std::string> IMapImpl::addInterceptor(serialization::Portable &interceptor) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapAddInterceptorParameters::encode(
+                                getName(), toData<serialization::Portable>(interceptor));
+
+                return invokeAndGetResult<std::auto_ptr<std::string> >(request);
+            }
+
+            std::auto_ptr<std::string> IMapImpl::addInterceptor(serialization::IdentifiedDataSerializable &interceptor) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapAddInterceptorParameters::encode(
+                                getName(), toData<serialization::IdentifiedDataSerializable>(interceptor));
+
+                return invokeAndGetResult<std::auto_ptr<std::string> >(request);
+            }
+
+            void IMapImpl::removeInterceptor(const std::string &id) {
+                std::auto_ptr<protocol::ClientMessage> request =
+                        protocol::parameters::MapRemoveInterceptorParameters::encode(getName(), id);
+
                 invoke(request);
             }
 

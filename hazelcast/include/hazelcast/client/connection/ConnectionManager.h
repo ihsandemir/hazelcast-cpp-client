@@ -30,6 +30,7 @@
 #include "hazelcast/util/Thread.h"
 #include "hazelcast/util/Future.h"
 #include <boost/shared_ptr.hpp>
+#include <hazelcast/util/AtomicInt.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -140,8 +141,9 @@ namespace hazelcast {
                 /**
                 * @param address
                 * @param ownerConnection
+                * @return Return the newly created connection.
                 */
-                connection::Connection *connectTo(const Address& address, bool ownerConnection);
+                std::auto_ptr<Connection> connectTo(const Address& address, bool ownerConnection);
 
                 /**
                 * @param address
@@ -161,6 +163,13 @@ namespace hazelcast {
                  * @param address address of the member
                 */
                 void removeEndpoint(const Address& address);
+
+                /**
+                 *
+                 * TODO: Keep the call id per connection inside the connection object and we may not need to use atomic int since only one connection io thread
+                 * shall call it during the actual send operation!!!
+                 */
+                int getNextCallId();
             private:
 
                 boost::shared_ptr<Connection> getOrConnectResolved(const Address& resolvedAddress);
@@ -169,7 +178,7 @@ namespace hazelcast {
 
                 boost::shared_ptr<Connection> getRandomConnection();
 
-                void authenticate(Connection& connection);
+                void authenticate(Connection *connection);
 
                 void checkLive();
 
@@ -186,13 +195,15 @@ namespace hazelcast {
                 std::auto_ptr<util::Thread> outSelectorThread;
                 util::AtomicBoolean live;
                 util::Mutex lockMutex;
-                boost::shared_ptr<protocol::Principal> principal;
+                protocol::Principal *principal;
 
                 connection::HeartBeater heartBeater;
                 std::auto_ptr<util::Thread> heartBeatThread;
                 /** Can be separated via inheritance as Dumb ConnectionManager**/
                 bool smartRouting;
                 OwnerConnectionFuture ownerConnectionFuture;
+
+                util::AtomicInt callIdGenerator;
             };
         }
     }

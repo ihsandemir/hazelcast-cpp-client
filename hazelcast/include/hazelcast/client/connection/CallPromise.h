@@ -27,7 +27,7 @@
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/Future.h"
 #include "hazelcast/util/AtomicInt.h"
-#include "hazelcast/client/impl/ClientRequest.h"
+
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include <memory>
 
@@ -61,15 +61,15 @@ namespace hazelcast {
             public:
                 CallPromise();
 
-                void setResponse(const serialization::pimpl::Data& data);
+                void setResponse(std::auto_ptr<protocol::ClientMessage> message);
 
                 void setException(const std::string& exceptionName, const std::string& exceptionDetails);
 
-                void setRequest(std::auto_ptr<const impl::ClientRequest> request);
+                void setRequest(std::auto_ptr<protocol::ClientMessage> request);
 
-                const impl::ClientRequest& getRequest() const;
+                protocol::ClientMessage *getRequest() const;
 
-                boost::shared_ptr<util::Future<serialization::pimpl::Data> > getFuture();
+                util::Future<std::auto_ptr<protocol::ClientMessage> > &getFuture();
 
                 void setEventHandler(std::auto_ptr<impl::BaseEventHandler> eventHandler);
 
@@ -78,8 +78,8 @@ namespace hazelcast {
                 int incrementAndGetResendCount();
 
             private:
-                boost::shared_ptr<util::Future<serialization::pimpl::Data> > future;
-                std::auto_ptr<const impl::ClientRequest> request;
+                util::Future<std::auto_ptr<protocol::ClientMessage> > future;
+                std::auto_ptr<protocol::ClientMessage> request;
                 std::auto_ptr<impl::BaseEventHandler> eventHandler;
                 util::AtomicInt resendCount;
             };

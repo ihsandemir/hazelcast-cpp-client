@@ -23,10 +23,13 @@
 #include "hazelcast/client/TransactionOptions.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 
+#define MILLISECOND_IN_A_SECOND 1000
+#define SECONDS_IN_A_MINUTE     60
+
 namespace hazelcast {
     namespace client {
         TransactionOptions::TransactionOptions()
-        : timeoutSeconds(2 * 60)//2 minutes
+        : timeoutSeconds(2 * SECONDS_IN_A_MINUTE)//2 minutes
         , durability(1)
         , transactionType(TransactionType::TWO_PHASE) {
 
@@ -43,6 +46,10 @@ namespace hazelcast {
 
         int TransactionOptions::getTimeout() const {
             return timeoutSeconds;
+        }
+
+        long TransactionOptions::getTimeoutMillis() const {
+            return timeoutSeconds * MILLISECOND_IN_A_SECOND;
         }
 
         TransactionOptions &TransactionOptions::setTimeout(int timeoutInSeconds) {
@@ -92,6 +99,5 @@ namespace hazelcast {
                 value = LOCAL;
             }
         }
-
     }
 }

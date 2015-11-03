@@ -22,12 +22,17 @@
 
 namespace hazelcast {
     namespace client {
+        namespace serialization {
+            namespace pimpl {
+                class Data;
+            }
+        }
         namespace proxy {
             class HAZELCAST_API IQueueImpl : public ProxyImpl {
             protected:
                 IQueueImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                std::string addItemListener(impl::BaseEventHandler *handler, bool includeValue);
+                std::auto_ptr<std::string> addItemListener(impl::BaseEventHandler *handler, bool includeValue);
 
                 bool removeItemListener(const std::string& registrationId);
 
@@ -41,13 +46,13 @@ namespace hazelcast {
 
                 bool contains(const serialization::pimpl::Data& element);
 
-                std::vector<serialization::pimpl::Data>  drainTo(int maxElements);
+                std::auto_ptr<protocol::DataArray> drainTo(int maxElements);
 
                 serialization::pimpl::Data peek();
 
                 int size();
 
-                std::vector<serialization::pimpl::Data> toArray();
+                std::auto_ptr<protocol::DataArray> toArray();
 
                 bool containsAll(const std::vector<serialization::pimpl::Data>& elements);
 

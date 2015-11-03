@@ -75,11 +75,13 @@ namespace hazelcast {
 
                 bool isMemberExists(const Address &address);
 
-                Member getMember(const std::string &uuid);
+                std::auto_ptr<Member> getMember(const std::string &uuid);
 
-                Member getMember(Address &address);
+                const Member &getMember(Address &address);
 
+                // TODO: Double check if using shared_ptr for Member would eliminate this deep copying
                 std::vector<Member> getMemberList();
+                std::auto_ptr<Address> getFirstMemberAddress();
 
             private:
                 ClientContext &clientContext;

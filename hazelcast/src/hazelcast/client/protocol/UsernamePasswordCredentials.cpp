@@ -27,39 +27,15 @@ namespace hazelcast {
     namespace client {
         namespace protocol {
             UsernamePasswordCredentials::UsernamePasswordCredentials(const std::string &principal, const std::string &password)
-            : principal(principal) {
-                char const *pasw = password.c_str();
-                this->password.insert(this->password.begin(), pasw, pasw + password.size());
-            }
-
-            int UsernamePasswordCredentials::getFactoryId() const {
-                return protocol::SpiConstants::SPI_PORTABLE_FACTORY;
-
-            }
-
-            int UsernamePasswordCredentials::getClassId() const {
-                return protocol::SpiConstants::USERNAME_PWD_CRED;
-            }
-
-            void UsernamePasswordCredentials::writePortable(serialization::PortableWriter &writer) const {
-                writer.writeUTF("principal", &principal);//dev
-                writer.writeUTF("endpoint", &endpoint);//"
-                writer.writeByteArray("pwd", &password);//dev-pass
-            }
-
-            void UsernamePasswordCredentials::readPortable(serialization::PortableReader &reader) {
-            }
-
-            void UsernamePasswordCredentials::setEndpoint(const std::string &endpoint) {
-                this->endpoint = endpoint;
-            }
-
-            const std::string &UsernamePasswordCredentials::getEndpoint() const {
-                return endpoint;
+            : principal(principal), password(password) {
             }
 
             const std::string &UsernamePasswordCredentials::getPrincipal() const {
                 return principal;
+            }
+
+            const std::string &UsernamePasswordCredentials::getPassword() const {
+                return password;
             }
         }
     }

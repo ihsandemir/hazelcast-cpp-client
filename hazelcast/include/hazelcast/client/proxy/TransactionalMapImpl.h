@@ -22,6 +22,7 @@
 #define HAZELCAST_TransactionalMapProxy
 
 #include "hazelcast/client/proxy/TransactionalObject.h"
+#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
 
 namespace hazelcast {
     namespace client {
@@ -29,7 +30,6 @@ namespace hazelcast {
 
             class HAZELCAST_API TransactionalMapImpl : public TransactionalObject {
             protected:
-                TransactionalMapImpl(const std::string& name, txn::TransactionProxy *transactionProxy);
 
                 bool containsKey(const serialization::pimpl::Data& key);
 
@@ -53,14 +53,15 @@ namespace hazelcast {
 
                 bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::vector<serialization::pimpl::Data> keySet();
+                std::auto_ptr<protocol::DataArray> keySet();
 
-                std::vector<serialization::pimpl::Data> keySet(const std::string& predicate);
+                std::auto_ptr<protocol::DataArray> keySet(const std::string& predicate);
 
-                std::vector<serialization::pimpl::Data> values();
+                std::auto_ptr<protocol::DataArray> values();
 
-                std::vector<serialization::pimpl::Data> values(const std::string& predicate);
+                std::auto_ptr<protocol::DataArray> values(const std::string& predicate);
 
+                TransactionalMapImpl(const std::string& name, txn::TransactionProxy *transactionProxy);
             };
         }
     }

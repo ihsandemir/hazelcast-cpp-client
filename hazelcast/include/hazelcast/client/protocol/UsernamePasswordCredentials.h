@@ -36,32 +36,20 @@ namespace hazelcast {
              * Credentials is a container object for endpoint (Members and Clients)
              * security attributes.
              *
-             * It is used on authentication process by javax.security.auth.spi.LoginModules.
+             * It is used on authentication process.
              */
-            class HAZELCAST_API UsernamePasswordCredentials : public Credentials {
+            class HAZELCAST_API UsernamePasswordCredentials {
             public:
 
                 UsernamePasswordCredentials(const std::string &principal, const std::string &password);
 
-                int getFactoryId() const;
-
-                int getClassId() const;
-
-                void writePortable(serialization::PortableWriter &writer) const;
-
-                void readPortable(serialization::PortableReader &reader);
-
-                const std::string &getEndpoint() const;
-
-                void setEndpoint(const std::string &endpoint);
-
                 const std::string &getPrincipal() const;
+
+                const std::string &getPassword() const;
 
             private:
                 std::string principal;
-
-                std::string endpoint;
-                std::vector<byte> password;
+                std::string password;
             };
         }
     }

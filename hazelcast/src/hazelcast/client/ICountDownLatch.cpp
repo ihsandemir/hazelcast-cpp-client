@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 #include "hazelcast/client/ICountDownLatch.h"
-#include "hazelcast/client/countdownlatch/AwaitRequest.h"
-#include "hazelcast/client/countdownlatch/CountDownRequest.h"
-#include "hazelcast/client/countdownlatch/GetCountRequest.h"
-#include "hazelcast/client/countdownlatch/SetCountRequest.h"
+
+// Includes for parameters classes
+#include "hazelcast/client/protocol/parameters/CountDownLatchAwaitParameters.h"
+#include "hazelcast/client/protocol/parameters/CountDownLatchCountDownParameters.h"
+#include "hazelcast/client/protocol/parameters/CountDownLatchGetCountParameters.h"
+#include "hazelcast/client/protocol/parameters/CountDownLatchTrySetCountParameters.h"
+
+#include "hazelcast/client/proxy/ProxyImpl.h"
 
 namespace hazelcast {
     namespace client {
@@ -29,29 +33,31 @@ namespace hazelcast {
         }
 
         bool ICountDownLatch::await(long timeoutInMillis) {
-            countdownlatch::AwaitRequest *request = new countdownlatch::AwaitRequest(getName(), timeoutInMillis);
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, bool);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::CountDownLatchAwaitParameters::encode(getName(), timeoutInMillis);
+
+            return invokeAndGetResult<bool>(request, partitionId);
         }
 
         void ICountDownLatch::countDown() {
-            countdownlatch::CountDownRequest *request = new countdownlatch::CountDownRequest(getName());
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::CountDownLatchCountDownParameters::encode(getName());
+
             invoke(request, partitionId);
         }
 
         int ICountDownLatch::getCount() {
-            countdownlatch::GetCountRequest *request = new countdownlatch::GetCountRequest(getName());
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, int);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::CountDownLatchGetCountParameters::encode(getName());
+
+            return invokeAndGetResult<int>(request, partitionId);
         }
 
         bool ICountDownLatch::trySetCount(int count) {
-            countdownlatch::SetCountRequest *request = new countdownlatch::SetCountRequest(getName(), count);
-            serialization::pimpl::Data data = invoke(request, partitionId);
-            DESERIALIZE(data, bool);
-            return *result;
+            std::auto_ptr<protocol::ClientMessage> request =
+                    protocol::parameters::CountDownLatchTrySetCountParameters::encode(getName(), count);
+
+            return invokeAndGetResult<bool>(request, partitionId);
         }
     }
 }

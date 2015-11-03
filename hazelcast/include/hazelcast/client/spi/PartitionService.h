@@ -39,6 +39,10 @@ namespace hazelcast {
     }
 
     namespace client {
+        namespace protocol {
+            class ClientMessage;
+        }
+
         namespace serialization {
             namespace pimpl {
                 class SerializationService;
@@ -90,11 +94,11 @@ namespace hazelcast {
 
                 void runRefresher();
 
-                boost::shared_ptr<impl::PartitionsResponse> getPartitionsFrom(const Address &address);
+                std::auto_ptr<protocol::ClientMessage> getPartitionsFrom(const Address &address);
 
-                boost::shared_ptr<impl::PartitionsResponse> getPartitionsFrom();
+                std::auto_ptr<protocol::ClientMessage> getPartitionsFrom();
 
-                void processPartitionResponse(impl::PartitionsResponse &response);
+                bool processPartitionResponse(protocol::ClientMessage &response);
 
                 bool getInitialPartitions();
             };

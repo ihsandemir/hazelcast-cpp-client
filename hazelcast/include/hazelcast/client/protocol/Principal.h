@@ -35,6 +35,8 @@ namespace hazelcast {
             public:
                 Principal();
 
+                Principal(std::string &uuid, std::string &ownerUuid);
+
                 int getFactoryId() const;
 
                 int getClassId() const;
@@ -42,6 +44,10 @@ namespace hazelcast {
                 void writePortable(serialization::PortableWriter &writer) const;
 
                 void readPortable(serialization::PortableReader& reader);
+
+                const std::string &getUuid() const;
+
+                const std::string &getOwnerUuid() const;
 
             private:
                 std::auto_ptr<std::string> uuid;

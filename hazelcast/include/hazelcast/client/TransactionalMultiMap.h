@@ -53,7 +53,7 @@ namespace hazelcast {
             * @see Multimap#get(key)
             */
             std::vector<V> get(const K& key) {
-                return toObjectCollection<V>(proxy::TransactionalMultiMapImpl::get(toData(key)));
+                return toObjectCollection<V>(*proxy::TransactionalMultiMapImpl::get(toData(key)));
             };
 
             /**
@@ -71,7 +71,7 @@ namespace hazelcast {
             * @see Multimap#remove(key)
             */
             std::vector<V> remove(const K& key) {
-                return toObjectCollection<V>(proxy::TransactionalMultiMapImpl::remove(toData(key)));
+                return toObjectCollection<V>(*proxy::TransactionalMultiMapImpl::remove(toData(key)));
             };
 
 

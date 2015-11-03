@@ -23,15 +23,12 @@
 
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/client/connection/IOHandler.h"
+#include "hazelcast/client/protocol/ClientMessageBuilder.h"
 
 namespace hazelcast {
     namespace client {
-        namespace serialization {
-            namespace pimpl {
-                class Packet;
 
-                class PortableContext;
-            }
+        namespace serialization {
         }
         namespace spi {
             class ClientContext;
@@ -56,10 +53,8 @@ namespace hazelcast {
             private:
                 char* buffer;
                 util::ByteBuffer byteBuffer;
-                serialization::pimpl::Packet *lastData;
-                spi::ClientContext& clientContext;
 
-                serialization::pimpl::PortableContext& getPortableContext();
+                protocol::ClientMessageBuilder builder;
 
 
             };

@@ -24,7 +24,6 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/serialization/ClassDefinitionBuilder.h"
-#include "hazelcast/client/connection/ClientResponse.h"
 #include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/InitialMembershipListener.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
@@ -80,11 +79,7 @@ namespace hazelcast {
             }
 
             std::auto_ptr<Address> ClusterService::getMasterAddress() {
-                std::vector<Member> list = getMemberList();
-                if (list.empty()) {
-                    return std::auto_ptr<Address>(NULL);
-                }
-                return std::auto_ptr<Address>(new Address(list[0].getAddress()));
+                return getFirstMemberAddress();
             }
 
             void ClusterService::addMembershipListener(MembershipListener *listener) {
@@ -119,30 +114,40 @@ namespace hazelcast {
                 return members.count(address) > 0;
             }
 
-            Member ClusterService::getMember(Address& address) {
+            const Member &ClusterService::getMember(Address& address) {
                 util::LockGuard guard(membersLock);
                 return members[address];
             }
 
-            Member ClusterService::getMember(const std::string& uuid) {
-                std::vector<Member> list = getMemberList();
-                for (std::vector<Member>::iterator it = list.begin(); it != list.end(); ++it) {
-                    if (uuid.compare(it->getUuid())) {
-                        return *it;
+            std::auto_ptr<Member> ClusterService::getMember(const std::string& uuid) {
+                std::auto_ptr<Member> result;
+                util::LockGuard guard(membersLock);
+                for (std::map<Address, Member, addressComparator >::iterator it = members.begin(); it != members.end(); ++it) {
+                    if (0 == uuid.compare(it->second.getUuid())) {
+                        result = std::auto_ptr<Member>(new Member(it->second));
+                        break;
                     }
                 }
-                return Member();
+                return result;
             }
 
-            std::vector<Member>  ClusterService::getMemberList() {
+            std::vector<Member> ClusterService::getMemberList() {
                 typedef std::map<Address, Member, addressComparator> MemberMap;
                 std::vector<Member> v;
                 util::LockGuard guard(membersLock);
                 MemberMap::const_iterator it;
-                for (it = members.begin(); it != members.end(); it++) {
+                for (it = members.begin(); it != members.end(); ++it) {
                     v.push_back(it->second);
                 }
                 return v;
+            }
+
+            std::auto_ptr<Address> ClusterService::getFirstMemberAddress() {
+                util::LockGuard guard(membersLock);
+                typedef std::map<Address, Member, addressComparator> MemberMap;
+                MemberMap::const_iterator it = members.begin();
+                std::auto_ptr<Address> result(new Address(it->first));
+                return result;
             }
 
 

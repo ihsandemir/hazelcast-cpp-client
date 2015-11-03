@@ -22,13 +22,18 @@
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/spi/InvocationService.h"
-#include "hazelcast/client/impl/GetPartitionsRequest.h"
+
 #include "hazelcast/client/impl/PartitionsResponse.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/connection/CallFuture.h"
+#include "hazelcast/client/protocol/parameters/GetPartitionsParameters.h"
+#include "hazelcast/client/protocol/parameters/GetPartitionsResultParameters.h"
+
 #include <climits>
+
+#include <vector>
 
 namespace hazelcast {
     namespace client {
@@ -91,14 +96,14 @@ namespace hazelcast {
 
                 if (updating.compareAndSet(false, true)) {
                     try {
-                        boost::shared_ptr<impl::PartitionsResponse> partitionResponse;
+                        std::auto_ptr<protocol::ClientMessage> partitionResponse;
                         std::auto_ptr<Address> ptr = clientContext.getClusterService().getMasterAddress();
                         if (ptr.get() == NULL) {
                             partitionResponse = getPartitionsFrom();
                         } else {
                             partitionResponse = getPartitionsFrom(*ptr.get());
                         }
-                        if (partitionResponse != NULL) {
+                        if (partitionResponse.get() != NULL) {
                             processPartitionResponse(*partitionResponse);
                         }
                     } catch (hazelcast::client::exception::IException& e) {
@@ -112,57 +117,83 @@ namespace hazelcast {
 
             }
 
-            boost::shared_ptr<impl::PartitionsResponse> PartitionService::getPartitionsFrom(const Address& address) {
-                impl::GetPartitionsRequest *request = new impl::GetPartitionsRequest();
-                boost::shared_ptr<impl::PartitionsResponse> partitionResponse;
+            std::auto_ptr<protocol::ClientMessage> PartitionService::getPartitionsFrom(const Address& address) {
+                std::auto_ptr<protocol::ClientMessage> responseMessage;
                 try {
-                    connection::CallFuture future = clientContext.getInvocationService().invokeOnTarget(request, address);
-                    partitionResponse = clientContext.getSerializationService().toObject<impl::PartitionsResponse>(future.get());
+                    std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::parameters::GetPartitionsParameters::encode();
+
+                    connection::CallFuture future = clientContext.getInvocationService().invokeOnTarget(
+                            requestMessage, address);
+
+                    responseMessage = future.get();
+
                 } catch (exception::IOException& e) {
                     util::ILogger::getLogger().severe(std::string("Error while fetching cluster partition table => ") + e.what());
                 }
-                return partitionResponse;
+                return responseMessage;
             }
 
-            boost::shared_ptr<impl::PartitionsResponse>PartitionService::getPartitionsFrom() {
-                impl::GetPartitionsRequest *request = new impl::GetPartitionsRequest();
-                boost::shared_ptr<impl::PartitionsResponse> partitionResponse;
+            std::auto_ptr<protocol::ClientMessage> PartitionService::getPartitionsFrom() {
+                std::auto_ptr<protocol::ClientMessage> responseMessage;
                 try {
-                    connection::CallFuture future = clientContext.getInvocationService().invokeOnRandomTarget(request);
-                    partitionResponse = clientContext.getSerializationService().toObject<impl::PartitionsResponse>(future.get());
+                    std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::parameters::GetPartitionsParameters::encode();
+
+                    connection::CallFuture future = clientContext.getInvocationService().invokeOnRandomTarget(
+                            requestMessage);
+
+                    responseMessage = future.get();
+
                 } catch (exception::IOException& e) {
-                    util::ILogger::getLogger().warning(std::string("Error while fetching cluster partition table => ") + e.what());
+                    util::ILogger::getLogger().severe(std::string("Error while fetching cluster partition table => ") + e.what());
                 }
-                return partitionResponse;
+                return responseMessage;
             }
 
-            void PartitionService::processPartitionResponse(impl::PartitionsResponse& response) {
-                const std::vector<Address>& members = response.getMembers();
-                const std::vector<int>& ownerIndexes = response.getOwnerIndexes();
+            bool PartitionService::processPartitionResponse(protocol::ClientMessage &response) {
+                bool isSuccess = false;
+
+                std::auto_ptr<protocol::parameters::GetPartitionsResultParameters> result = 
+                        protocol::parameters::GetPartitionsResultParameters::decode(response);
+
+                common::containers::ManagedPointerVector<Address> &members = *result->members;
                 if (partitionCount == 0) {
-                    partitionCount = ownerIndexes.size();
+                    partitionCount = result->ownerIndexes->size();
                 }
-                for (int partitionId = 0; partitionId < (int)partitionCount; ++partitionId) {
-                    int ownerIndex = ownerIndexes[partitionId];
-                    if (ownerIndex > -1) {
-                        boost::shared_ptr<Address> address(new Address(members[ownerIndex]));
-                        partitions.put(partitionId, address);
+
+                if (partitionCount > 0) {
+                    for (int partitionId = 0; partitionId < (int)partitionCount; ++partitionId) {
+                        int ownerIndex = result->ownerIndexes->operator[](partitionId);
+                        if (ownerIndex > -1) {
+                            //TODO: use shared_ptr assignment here by using the member address as shared_ptr
+                            boost::shared_ptr<Address> address(new Address(*members[ownerIndex]));
+                            partitions.put(partitionId, address);
+                        }
                     }
+                    isSuccess = true;
                 }
+                return isSuccess;
+
             }
 
             bool PartitionService::getInitialPartitions() {
+                bool result = false;
                 std::vector<Member> memberList = clientContext.getClusterService().getMemberList();
                 for (std::vector<Member>::iterator it = memberList.begin(); it < memberList.end(); ++it) {
-                    Address target = (*it).getAddress();
-                    boost::shared_ptr<impl::PartitionsResponse> response = getPartitionsFrom(target);
-                    if (response != NULL) {
-                        processPartitionResponse(*response);
-                        return true;
+                    const Address &target = (*it).getAddress();
+                    std::auto_ptr<protocol::ClientMessage> response = getPartitionsFrom(target);
+                    if (response.get() != NULL) {
+                        result = processPartitionResponse(*response);
                     }
                 }
-                util::ILogger::getLogger().severe("PartitionService::getInitialPartitions Cannot get initial partitions!");
-                return false;
+
+                if (!result) {
+                    util::ILogger::getLogger().severe("PartitionService::getInitialPartitions Cannot get initial partitions!");
+                } else {
+                    util::ILogger::getLogger().finest("PartitionService::getInitialPartitions Got " +
+                                                              util::IOUtil::to_string<int>(partitionCount) +
+                                                              " initial partitions successfully.");
+                }
+                return result;
             }
 
 

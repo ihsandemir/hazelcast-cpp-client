@@ -24,7 +24,6 @@
 #include "hazelcast/client/Member.h"
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/LoadBalancer.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/util/Mutex.h"
 #include <vector>
 

@@ -35,8 +35,7 @@ namespace hazelcast {
                      * Asks the SocketWritable to write its content to the destination ByteBuffer.
                      *
                      * @param destination the ByteBuffer to write to.
-                     * @return false if there is not enough space in destination buffer and write is partially done
-                     *         true if all packet written successfully
+                     * @return true if the write is completed, else returns false
                      */
                     virtual bool writeTo(util::ByteBuffer &destination) = 0;
                 };

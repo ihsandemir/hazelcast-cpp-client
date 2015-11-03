@@ -31,17 +31,15 @@
 
 namespace hazelcast {
     namespace client {
-        namespace serialization {
-            namespace pimpl{
-                class Data;
-            }
+        namespace protocol {
+            class ClientMessage;
         }
         namespace impl {
             class HAZELCAST_API BaseEventHandler {
             public:
                 virtual ~BaseEventHandler();
                 
-                virtual void handle(const client::serialization::pimpl::Data &data) = 0;
+                virtual void handle(std::auto_ptr<protocol::ClientMessage> message) = 0;
 
                 std::string registrationId;
             };

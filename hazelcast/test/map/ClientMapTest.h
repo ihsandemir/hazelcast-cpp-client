@@ -54,6 +54,8 @@ namespace hazelcast {
 
                 void fillMap();
 
+                void testMapPut();
+
                 void testGet();
 
                 void testRemoveAndDelete();
