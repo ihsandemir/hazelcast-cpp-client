@@ -62,13 +62,13 @@ namespace hazelcast {
                     }
 
                     //---------------------- Getters -------------------------------
-                    inline std::auto_ptr<std::string> getStringUtf8() {
+                    inline std::string getStringUtf8() {
+                        // TODO: Change this!!!
                         int32_t len = getInt32();
                         assert(checkReadAvailable(len));
                         const char *start = (const char *)ix();
                         index += len;
-                        std::auto_ptr<std::string> result(new std::string(start, len));
-                        return result;
+                        return std::string(start, len);
                     }
 
                     inline uint8_t getUint8() {

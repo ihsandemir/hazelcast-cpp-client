@@ -151,8 +151,7 @@ namespace hazelcast {
 
                         {
                             wrapForRead(strBytes, 8, 0);
-                            std::auto_ptr<std::string> result = getStringUtf8();
-                            ASSERT_EQUAL("BCDE", *result);
+                            ASSERT_EQUAL("BCDE", getStringUtf8());
                         }
                         
                         // ---- Test consecutive gets starts ---------------------------
@@ -231,8 +230,7 @@ namespace hazelcast {
                             // ----- Test signed get ends ---------------------------------
 
                             {
-                                std::auto_ptr<std::string> result = getStringUtf8();
-                                ASSERT_EQUAL("BCDE", *result);
+                                ASSERT_EQUAL("BCDE", getStringUtf8());
                             }
 
                             {

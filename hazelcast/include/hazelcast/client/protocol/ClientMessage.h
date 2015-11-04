@@ -222,73 +222,38 @@ namespace hazelcast {
                 }
                 #endif
 
+                inline ClientMessage &set(const serialization::pimpl::Data &data) {
+                    set<std::vector<byte> >(data.toByteArray());
+                    return *this;
+                }
+
                 inline ClientMessage &set(const Address &address) {
                     set(address.getHost()).set(address.getPort());
                     return *this;
                 }
 
-                inline ClientMessage &set(const std::vector<byte> &valueArray) {
-                    int32_t len = (int32_t)valueArray.size();
-                    set(len);
-
-                    if (len > 0) {
-                        setBytes(&valueArray[0], len);
-                    }
-
-                    return *this;
-                }
-
-                inline ClientMessage &set(const serialization::pimpl::Data &data) {
-                    set(data.toByteArray());
-                    return *this;
-                }
-
-                inline ClientMessage &set(const std::list<serialization::pimpl::Data> &values) {
+                template <typename T>
+                ClientMessage &set(const std::vector<T> &values) {
                     int32_t len = (int32_t)values.size();
                     set(len);
 
                     if (len > 0) {
-                        for (std::list<serialization::pimpl::Data>::const_iterator it = values.begin();
-                                it != values.end(); ++it) {
+                        for (std::vector<T>::const_iterator it = values.begin();it != values.end(); ++it) {
                             set(*it);
                         }
                     }
                     return *this;
                 }
 
-                inline ClientMessage &set(const std::set<serialization::pimpl::Data> &values) {
+                template <typename K, typename V>
+                ClientMessage &set(const std::map<K, V> &values) {
                     int32_t len = (int32_t)values.size();
                     set(len);
 
                     if (len > 0) {
-                        for (std::set<serialization::pimpl::Data>::const_iterator it = values.begin();
-                             it != values.end(); ++it) {
-                            set(*it);
-                        }
-                    }
-                    return *this;
-                }
-                inline ClientMessage &set(const std::vector<serialization::pimpl::Data> &values) {
-                    int32_t len = (int32_t)values.size();
-                    set(len);
-
-                    if (len > 0) {
-                        for (std::vector<serialization::pimpl::Data>::const_iterator it = values.begin();
-                             it != values.end(); ++it) {
-                            set(*it);
-                        }
-                    }
-                    return *this;
-                }
-
-                inline ClientMessage &set(const DataArray &values) {
-                    int32_t len = (int32_t)values.size();
-                    set(len);
-
-                    if (len > 0) {
-                        for (DataArray::VECTOR_TYPE::const_iterator it = values.begin();
-                             it != values.end(); ++it) {
-                            set(**it);
+                        for (std::map<K, V>::const_iterator it = values.begin();it != values.end(); ++it) {
+                            set((*it).first);
+                            set((*it).second);
                         }
                     }
                     return *this;
@@ -345,123 +310,62 @@ namespace hazelcast {
                 }
 
                 //-----Getters that change the index position---------
-                inline std::auto_ptr<ManagedInt32Array> getInt32Array() {
-                    int32_t len = getInt32();
-                    int32_t numBytes = len * INT32_SIZE;
-
-                    const byte *bytes = getBytes(numBytes);
-                    int32_t *buffer = new int32_t[len];
-                    memcpy(buffer, bytes, (size_t)numBytes);
-
-                    util::Bits::littleEndianToNativeArray4(len, buffer);
-
-                    std::auto_ptr<ManagedInt32Array> result(
-                            new ManagedInt32Array(len, buffer));
-
-                    return result;
+                template <typename T>
+                T get() {
+                    #error "Data type is not supported by the protocol."
+                    return T();
                 }
 
-                inline std::auto_ptr<std::vector<byte> > getByteArray() {
-                    int32_t len = getInt32();
-
-                    if (len > 0) {
-                        const byte *bytes = getBytes(len);
-                        return std::auto_ptr<std::vector<byte> >(new std::vector<byte>(bytes, bytes + len));
-                    } else {
-                        return std::auto_ptr<std::vector<byte> >();
+                template <typename T>
+                std::auto_ptr<T> getNullable() {
+                    std::auto_ptr<T> result;
+                    if (getBoolean()) {
+                        return result;
                     }
+                    return std::auto_ptr<T>(new T(get<T>()));
                 }
 
-                inline std::auto_ptr<Address> getAddress() {
-                    // read 1 byte to see if null
-                    bool isNull = getBoolean();
-                    if (isNull) {
-                        return std::auto_ptr<Address>(new Address());
-                    }
-					std::auto_ptr<std::string> host(getStringUtf8());
-					int32_t port = getInt32();
-                    return std::auto_ptr<Address>(new Address(host, port));
-                }
-
-                inline std::auto_ptr<AddressArray> getAddressList() {
+                template <typename T>
+                std::vector<T> getArray() {
                     int32_t len = getInt32();
 
-                    std::auto_ptr<AddressArray> result(
-                            new AddressArray(len));
-
+                    std::vector<T> result(len);
                     for (int i = 0; i < len; ++i) {
-                        std::auto_ptr<Address> ptr = getAddress();
-                        result->push_back(ptr.release());
+                        result[i] = get<T>();
                     }
                     return result;
                 }
 
-                inline std::auto_ptr<serialization::pimpl::Data> getData() {
-                    return std::auto_ptr<serialization::pimpl::Data>(
-                            new serialization::pimpl::Data(getByteArray()));
+                template <typename T>
+                std::auto_ptr<std::vector<T> > getNullableArray() {
+                    std::auto_ptr<T> result;
+                    if (getBoolean()) {
+                        return result;
+                    }
+                    return std::auto_ptr<std::vector<T> >(new std::vector<T>(getArray<T>()));
                 }
 
-                inline std::auto_ptr<DataArray> getDataList() {
+                template <typename KEY, typename VALUE>
+                std::map<KEY, VALUE > getMap() {
                     int32_t len = getInt32();
 
-                    std::auto_ptr<DataArray> result(
-                            new DataArray(len));
-
+                    std::map<KEY, VALUE> result;
                     for (int i = 0; i < len; ++i) {
-                        result->push_back(getData().release());
+                        KEY k = get<KEY>();
+                        VALUE v = get<VALUE>();
+                        result[k] = v;
                     }
                     return result;
                 }
 
-                inline std::auto_ptr<Member> getMember() {
-                    std::auto_ptr<Address> address = getAddress();
-                    std::auto_ptr<std::string> uuid = getStringUtf8();
-                    bool isLite = getBoolean();
-                    int32_t numAttributes = getInt32();
-
-                    std::auto_ptr<std::map<std::string, std::string > > attributes(
-                            new std::map<std::string, std::string >());
-
-                    for (int i = 0; i < numAttributes; ++i) {
-                        std::auto_ptr<std::string> key = getStringUtf8();
-                        std::auto_ptr<std::string> value = getStringUtf8();
-                        (*attributes)[*key] = *value;
+                template <typename KEY, typename VALUE>
+                std::auto_ptr<std::map<KEY, VALUE > > getNullableMap() {
+                    std::auto_ptr<std::map<KEY, VALUE > > result;
+                    if (getBoolean()) {
+                        return result;
                     }
-
-
-
-                    return std::auto_ptr<Member>(new Member(address, uuid, attributes, isLite));
+                    return std::auto_ptr<std::map<KEY, VALUE > >(new std::map<KEY, VALUE >(getMap<KEY, VALUE>()));
                 }
-
-
-                inline std::auto_ptr<MemberArray> getMemberList() {
-                    int32_t len = getInt32();
-
-                    std::auto_ptr<MemberArray> result(new MemberArray(len));
-
-                    for (int i = 0; i < len; ++i) {
-                        std::auto_ptr<Member> ptr = getMember();
-                        result->push_back(ptr.release());
-                    }
-
-                    return result;
-                }
-
-                inline std::auto_ptr<impl::MemberAttributeChange> getMemberAttributeChange() {
-                    std::auto_ptr<std::string> uuid = getStringUtf8();
-                    std::auto_ptr<std::string> key = getStringUtf8();
-                    MemberAttributeEvent::MemberAttributeOperationType operationType = (MemberAttributeEvent::MemberAttributeOperationType)getInt32();
-
-                    std::auto_ptr<std::string> value = std::auto_ptr<std::string>(new std::string());
-                    if (operationType == MemberAttributeEvent::PUT) {
-                        value = getStringUtf8();
-                    }
-
-                    return std::auto_ptr<impl::MemberAttributeChange>(
-                            new impl::MemberAttributeChange(uuid, operationType, key, value));
-
-                }
-
                 //----- Getter methods end --------------------------
 
                 //----- Data size calculation functions BEGIN -------
@@ -617,6 +521,111 @@ namespace hazelcast {
                 static struct MessageHeaderType DEFAULT_HEADER;
             };
         }
+
+        inline std::auto_ptr<ManagedInt32Array> getInt32Array() {
+            int32_t len = getInt32();
+            int32_t numBytes = len * INT32_SIZE;
+
+            const byte *bytes = getBytes(numBytes);
+            int32_t *buffer = new int32_t[len];
+            memcpy(buffer, bytes, (size_t)numBytes);
+
+            util::Bits::littleEndianToNativeArray4(len, buffer);
+
+            std::auto_ptr<ManagedInt32Array> result(
+                    new ManagedInt32Array(len, buffer));
+
+            return result;
+        }
+
+        inline std::auto_ptr<std::vector<byte> > getByteArray() {
+            int32_t len = getInt32();
+
+            if (len > 0) {
+                const byte *bytes = getBytes(len);
+                return std::auto_ptr<std::vector<byte> >(new std::vector<byte>(bytes, bytes + len));
+            } else {
+                return std::auto_ptr<std::vector<byte> >();
+            }
+        }
+
+        inline std::auto_ptr<Address> getAddress() {
+            // read 1 byte to see if null
+            bool isNull = getBoolean();
+            if (isNull) {
+                return std::auto_ptr<Address>(new Address());
+            }
+            std::auto_ptr<std::string> host(getStringUtf8());
+            int32_t port = getInt32();
+            return std::auto_ptr<Address>(new Address(host, port));
+        }
+
+        inline std::auto_ptr<AddressArray> getAddressList() {
+            int32_t len = getInt32();
+
+            std::auto_ptr<AddressArray> result(
+                    new AddressArray(len));
+
+            for (int i = 0; i < len; ++i) {
+                std::auto_ptr<Address> ptr = getAddress();
+                result->push_back(ptr.release());
+            }
+            return result;
+        }
+
+        template <>
+        serialization::pimpl::Data ClientMessage::get() {
+            return serialization::pimpl::Data(getByteArray());
+        }
+
+        template <>
+        Member ClientMessage::get() {
+            std::auto_ptr<Address> address = getAddress();
+            std::auto_ptr<std::string> uuid = getStringUtf8();
+            bool isLite = getBoolean();
+            int32_t numAttributes = getInt32();
+
+            std::auto_ptr<std::map<std::string, std::string > > attributes(
+                    new std::map<std::string, std::string >());
+
+            for (int i = 0; i < numAttributes; ++i) {
+                std::auto_ptr<std::string> key = getStringUtf8();
+                std::auto_ptr<std::string> value = getStringUtf8();
+                (*attributes)[*key] = *value;
+            }
+
+            return std::auto_ptr<Member>(new Member(address, uuid, attributes, isLite));
+        }
+
+
+        inline std::auto_ptr<MemberArray> getMemberList() {
+            int32_t len = getInt32();
+
+            std::auto_ptr<MemberArray> result(new MemberArray(len));
+
+            for (int i = 0; i < len; ++i) {
+                std::auto_ptr<Member> ptr = getMember();
+                result->push_back(ptr.release());
+            }
+
+            return result;
+        }
+
+        inline std::auto_ptr<impl::MemberAttributeChange> getMemberAttributeChange() {
+            std::auto_ptr<std::string> uuid = getStringUtf8();
+            std::auto_ptr<std::string> key = getStringUtf8();
+            MemberAttributeEvent::MemberAttributeOperationType operationType = (MemberAttributeEvent::MemberAttributeOperationType)getInt32();
+
+            std::auto_ptr<std::string> value = std::auto_ptr<std::string>(new std::string());
+            if (operationType == MemberAttributeEvent::PUT) {
+                value = getStringUtf8();
+            }
+
+            return std::auto_ptr<impl::MemberAttributeChange>(
+                    new impl::MemberAttributeChange(uuid, operationType, key, value));
+
+        }
+
 
         // Generate the types
         template class common::containers::ManagedPointerVector<Member>;
