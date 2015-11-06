@@ -16,18 +16,14 @@
 #ifndef HAZELCAST_ADDRESS
 #define HAZELCAST_ADDRESS
 
-#include "hazelcast/util/Util.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/util/HazelcastDll.h"
 #include <string>
 #include <sstream>
-#include <iterator>
-#include <memory>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
-#pragma warning(disable: 4251) //for dll export	
-#endif 
-
+#pragma warning(disable: 4251) //for dll export
+#endif
 
 namespace hazelcast {
     namespace client {
@@ -35,24 +31,17 @@ namespace hazelcast {
         /**
          * IP Address
          */
-        class HAZELCAST_API Address : public serialization::IdentifiedDataSerializable {
+        class HAZELCAST_API Address {
         public:
             /**
              * Constructor
              */
             Address();
-            /**
-             * Copy Constructor
-             */
-            Address(const Address& rhs);
+
             /**
              * Constructor
              */
-            Address(std::auto_ptr<std::string> url, int port);
-
-            Address(const std::string &url, int portNumber);
-
-            Address &operator = (const Address &rhs);
+            Address(const std::string &url, int port);
 
             /**
              * comparison operator
@@ -70,33 +59,9 @@ namespace hazelcast {
              */
             const std::string& getHost() const;
 
-            /**
-             * @see IdentifiedDataSerializable
-             */
-            int getFactoryId() const;
-
-            /**
-             * @see IdentifiedDataSerializable
-             */
-            int getClassId() const;
-
-            /**
-             * @see IdentifiedDataSerializable
-             */
-            void writeData(serialization::ObjectDataOutput &writer) const;
-
-            /**
-             * @see IdentifiedDataSerializable
-             */
-            void readData(serialization::ObjectDataInput &reader);
-
         private:
-            static const byte IPv4 = 4;
-            static const byte IPv6 = 6;
-
-            std::auto_ptr<std::string> host;
+            std::string host;
             int port;
-            byte type;
         };
 
         /**

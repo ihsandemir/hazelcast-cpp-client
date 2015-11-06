@@ -27,6 +27,11 @@
 #include "hazelcast/client/protocol/ClientMessage.h"
 
 #include "hazelcast/client/Socket.h"
+#include "hazelcast/client/protocol/codec/AddressCodec.h"
+#include "hazelcast/client/protocol/codec/MemberCodec.h"
+#include "hazelcast/client/protocol/codec/DataEntryViewCodec.h"
+#include "hazelcast/client/serialization/pimpl/Data.h"
+#include "hazelcast/util/ByteBuffer.h"
 
 namespace hazelcast {
     namespace client {
@@ -36,22 +41,29 @@ namespace hazelcast {
             ClientMessage::ClientMessage() : isOwner(false), numBytesWrittenToConnection(0), numBytesFilled(0),
                                              retryable(false), isBoundToSingleConnection(false) {}
 
-            ClientMessage::ClientMessage(int32_t size) : numBytesWrittenToConnection(0), numBytesFilled(0), retryable(false),
+            ClientMessage::ClientMessage(int32_t size) : numBytesWrittenToConnection(0), numBytesFilled(0),
+                                                         retryable(false),
                                                          isBoundToSingleConnection(false) {
-            byteBuffer = new byte[size];
-            memset(byteBuffer, 0, size);
+                byteBuffer = new byte[size];
+                memset(byteBuffer, 0, size);
 
-            isOwner = true;
+                isOwner = true;
 
-            header = reinterpret_cast<MessageHeaderType *> (byteBuffer);
+                header = reinterpret_cast<MessageHeaderType *> (byteBuffer);
 
-            setFrameLength(size);
-        }
+                setFrameLength(size);
+            }
 
             ClientMessage::~ClientMessage() {
                 if (isOwner) {
                     delete [] byteBuffer;
                 }
+            }
+
+            void ClientMessage::wrapForDecode(byte *buffer, int32_t size, bool owner) {
+                isOwner = owner;
+                wrapForRead(buffer, size, HEADER_SIZE);
+                header = reinterpret_cast<MessageHeaderType *> (buffer);
             }
 
             void ClientMessage::wrapForEncode(byte *buffer, int32_t size, bool owner) {
@@ -64,17 +76,83 @@ namespace hazelcast {
                 setFrameLength(size);
             }
 
-            std::auto_ptr<ClientMessage> ClientMessage::createForEncode(int32_t size) {
-                std::auto_ptr<ClientMessage> msg(new ClientMessage());
+            ClientMessage ClientMessage::createForEncode(int32_t size) {
+                ClientMessage msg;
                 byte *buffer = new byte[size];
                 memset(buffer, 0, size);
-                msg->wrapForEncode(buffer, size, true);
+                msg.wrapForEncode(buffer, size, true);
                 return msg;
             }
 
-            std::auto_ptr<ClientMessage> ClientMessage::create(int32_t size) {
-                return std::auto_ptr<ClientMessage>(new ClientMessage(size));
+            //----- Setter methods begin --------------------------------------
+            void ClientMessage::setFrameLength(int32_t length) {
+                util::Bits::nativeToLittleEndian4(&length, &header->frameLength);
             }
+
+            void ClientMessage::setMessageType(uint16_t type) {
+                util::Bits::nativeToLittleEndian2(&type, &header->type);
+            }
+
+            void ClientMessage::setVersion(uint8_t value) {
+                header->version = value;
+            }
+
+            void ClientMessage::setFlags(uint8_t value) {
+                header->flags = value;
+            }
+
+            void ClientMessage::setCorrelationId(uint32_t id) {
+                util::Bits::nativeToLittleEndian4(&id, &header->correlationId);
+            }
+
+            void ClientMessage::setPartitionId(int32_t partitionId) {
+                util::Bits::nativeToLittleEndian4(&partitionId, &header->partitionId);
+            }
+
+            void ClientMessage::setDataOffset(uint16_t offset) {
+                util::Bits::nativeToLittleEndian2(&offset, &header->dataOffset);
+            }
+
+            void ClientMessage::updateFrameLength() {
+                setFrameLength(getIndex());
+            }
+
+            void ClientMessage::set(const std::string *value) {
+                setNullable<std::string> (value);
+            }
+
+            void ClientMessage::set(const serialization::pimpl::Data &value) {
+                set<std::vector<byte> >(value.toByteArray());
+            }
+
+            void ClientMessage::set(const serialization::pimpl::Data *value) {
+                setNullable<serialization::pimpl::Data>(value);
+            }
+
+            void ClientMessage::set(const Address &value) {
+                codec::AddressCodec::encode(value, *this);
+            }
+
+            void ClientMessage::set(const Address *value) {
+                setNullable<Address>(value);
+            }
+
+            void ClientMessage::set(const Member &value) {
+                codec::MemberCodec::encode(value, *this);
+            }
+
+            void ClientMessage::set(const Member *value) {
+                setNullable<Member>(value);
+            }
+
+            void ClientMessage::set(const map::DataEntryView &value) {
+                codec::DataEntryViewCodec::encode(value, *this);
+            }
+
+            void ClientMessage::set(const map::DataEntryView *value) {
+                setNullable<map::DataEntryView>(value);
+            }
+            //----- Setter methods end ---------------------
 
             bool ClientMessage::fillMessageFrom(util::ByteBuffer &buffer) {
                 int32_t frameLen = getFrameLength();
@@ -89,6 +167,192 @@ namespace hazelcast {
 
                 return isComplete;
             }
+
+            //----- Getter methods begin -------------------
+            int32_t ClientMessage::getFrameLength() const {
+                int32_t result;
+
+                util::Bits::littleEndianToNative4(
+                        &header->frameLength, &result);
+
+                return result;
+            }
+
+            uint16_t ClientMessage::getMessageType() const {
+                uint16_t type;
+
+                util::Bits::littleEndianToNative2(&header->type, &type);
+
+                return type;
+            }
+
+            uint8_t ClientMessage::getVersion() {
+                return header->version;
+            }
+
+            uint32_t ClientMessage::getCorrelationId() const {
+                uint32_t value;
+                util::Bits::littleEndianToNative4(&header->correlationId, &value);
+                return value;
+            }
+
+            int32_t ClientMessage::getPartitionId() const {
+                int32_t value;
+                util::Bits::littleEndianToNative4(&header->partitionId, &value);
+                return value;
+            }
+
+            uint16_t ClientMessage::getDataOffset() const {
+                uint16_t value;
+                util::Bits::littleEndianToNative2(&header->dataOffset, &value);
+                return value;
+            }
+
+            bool ClientMessage::isFlagSet(uint8_t flag) const {
+                return flag == (header->flags & flag);
+            }
+
+            template <>
+            uint8_t ClientMessage::get() {
+                return getUint8();
+            }
+
+            template <>
+            int8_t ClientMessage::get() {
+                return getInt8();
+            }
+
+            template <>
+            int16_t ClientMessage::get() {
+                return getInt16();
+            }
+
+            template <>
+            uint16_t ClientMessage::get() {
+                return getUint16();
+            }
+
+            template <>
+            uint32_t ClientMessage::get() {
+                return getUint32();
+            }
+
+            template <>
+            int32_t ClientMessage::get() {
+                return getInt32();
+            }
+
+            template <>
+            int64_t ClientMessage::get() {
+                return getInt64();
+            }
+
+            template <>
+            uint64_t ClientMessage::get() {
+                return getUint64();
+            }
+
+            template <>
+            Address ClientMessage::get() {
+                return codec::AddressCodec::decode(*this);
+            }
+
+            template <>
+            Member ClientMessage::get() {
+                return return codec::MemberCodec::decode(*this);
+            }
+
+            template <>
+            map::DataEntryView ClientMessage::get() {
+                return codec::DataEntryViewCodec::decode(*this);
+            }
+            //----- Getter methods end --------------------------
+
+            //----- Data size calculation functions BEGIN -------
+            int32_t ClientMessage::calculateDataSize(uint8_t param) const {
+                return UINT8_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(int8_t param) const {
+                return INT8_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(bool param) const {
+                return UINT8_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(int16_t param) const {
+                return INT16_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(uint16_t param) const {
+                return UINT16_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(int32_t param) const {
+                return INT32_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(uint32_t param) const {
+                return UINT32_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(int64_t param) const {
+                return INT64_SIZE;
+            }
+
+            #ifdef HZ_PLATFORM_DARWIN
+            int32_t ClientMessage::calculateDataSize(long param) const {
+                return calculateDataSize((int64_t)param);
+            }
+            #endif
+
+            int32_t ClientMessage::calculateDataSize(uint64_t param) const {
+                return UINT64_SIZE;
+            }
+
+            int32_t ClientMessage::calculateDataSize(const std::string &param) const {
+                return INT32_SIZE +  // bytes for the length field
+                       param.length();
+            }
+
+            int32_t ClientMessage::calculateDataSize(const std::string *param) const {
+                return calculateDataSizeNullable<std::string>(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data &param) const {
+                return INT32_SIZE +  // bytes for the length field
+                       (int32_t)param.totalSize();
+            }
+
+            int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data *param) const {
+                return calculateDataSizeNullable<serialization::pimpl::Data>(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const Address &param) const {
+                return codec::AddressCodec::calculateDataSize(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const Address *param) const {
+                return calculateDataSizeNullable<Address>(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const Member &param) const {
+                return codec::MemberCodec::calculateDataSize(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const Member *param) const {
+                return calculateDataSizeNullable<Member>(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const map::DataEntryView &param) const {
+                return codec::DataEntryViewCodec::calculateDataSize(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const map::DataEntryView *param) const {
+                return calculateDataSizeNullable<map::DataEntryView>(param);
+            }
+            //----- Data size calculation functions END ---------
 
             void ClientMessage::append(const ClientMessage *msg) {
                 // no need to double check if correlation ids match here,

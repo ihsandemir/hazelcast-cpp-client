@@ -56,27 +56,38 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include <list>
-#include <set>
-#include <assert.h>
+#include <map>
+#include <hazelcast/client/impl/MemberAttributeChange.h>
 
 #include "hazelcast/client/common/containers/LittleEndianBufferWrapper.h"
-
-#include "hazelcast/client/exception/IOException.h"
-#include "hazelcast/client/Member.h"
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/protocol/ClientMessageType.h"
-#include "hazelcast/util/Bits.h"
-#include "hazelcast/util/ByteBuffer.h"
-#include "hazelcast/client/Address.h"
-#include "hazelcast/client/serialization/pimpl/Data.h"
-#include "hazelcast/client/impl/MemberAttributeChange.h"
-#include "hazelcast/client/common/containers/ManagedPointerVector.h"
-#include "hazelcast/client/common/containers/ManagedArray.h"
-#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
 
 namespace hazelcast {
+    namespace util {
+        class ByteBuffer;
+    }
+
     namespace client {
+        class Address;
+
+        class Member;
+
+        class Socket;
+
+        namespace map {
+            class DataEntryView;
+        }
+
+        namespace serialization {
+            namespace pimpl {
+                class Data;
+            }
+        }
+
+        namespace impl {
+            class MemberAttributeChange;
+        }
+
         namespace protocol {
             class ClientMessage : public common::containers::LittleEndianBufferWrapper {
 
@@ -119,144 +130,99 @@ namespace hazelcast {
 
                 ClientMessage();
 
+                ClientMessage(int32_t size);
+
                 virtual ~ClientMessage();
 
-                inline void wrapForDecode(byte *buffer, int32_t size, bool owner) {
-                    isOwner = owner;
-                    wrapForRead(buffer, size, HEADER_SIZE);
-                    header = reinterpret_cast<MessageHeaderType *> (buffer);
-                }
+                void wrapForDecode(byte *buffer, int32_t size, bool owner);
 
-                static std::auto_ptr<ClientMessage> createForEncode(int32_t size);
-
-                static std::auto_ptr<ClientMessage> create(int32_t size);
+                static ClientMessage createForEncode(int32_t size);
 
                 //----- Setter methods begin --------------------------------------
-                inline void setFrameLength(int32_t length) {
-                    util::Bits::nativeToLittleEndian4(&length, &header->frameLength);
+                void setFrameLength(int32_t length);
+
+                void setMessageType(uint16_t type);
+
+                void setVersion(uint8_t value);
+
+                void setFlags(uint8_t value);
+
+                void setCorrelationId(uint32_t id);
+
+                void setPartitionId(int32_t partitionId);
+
+                void setDataOffset(uint16_t offset);
+
+                void updateFrameLength();
+
+                template<typename T>
+                void setNullable(const T *value) {
+                    bool isNull = (NULL == value);
+                    set(isNull);
+                    if (!isNull) {
+                        set(*value);
+                    }
                 }
 
-                inline void setMessageType(uint16_t type) {
-                    util::Bits::nativeToLittleEndian2(&type, &header->type);
-                }
+                void set(const std::string *data);
 
-                inline void setVersion(uint8_t value) {
-                    header->version = value;
-                }
+                void set(const serialization::pimpl::Data &data);
 
-                inline void setFlags(uint8_t value) {
-                    header->flags = value;
-                }
+                void set(const serialization::pimpl::Data *data);
 
-                inline void setCorrelationId(uint32_t id) {
-                    util::Bits::nativeToLittleEndian4(&id, &header->correlationId);
-                }
+                void set(const Address &value);
 
-                inline void setPartitionId(int32_t partitionId) {
-                    util::Bits::nativeToLittleEndian4(&partitionId, &header->partitionId);
-                }
+                void set(const Address *value);
 
-                inline void setDataOffset(uint16_t offset) {
-                    util::Bits::nativeToLittleEndian2(&offset, &header->dataOffset);
-                }
+                void set(const Member &value);
 
-                inline void updateFrameLength() {
-                    setFrameLength(getIndex());
-                }
+                void set(const Member *value);
 
-                inline ClientMessage &set(const std::string & value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
+                void set(const map::DataEntryView &value);
 
-                inline ClientMessage &set(uint8_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
+                void set(const map::DataEntryView *value);
 
-                inline ClientMessage &set(bool value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                inline ClientMessage &set(char value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-
-                inline ClientMessage &set(uint16_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                inline ClientMessage &set(int16_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                inline ClientMessage &set(uint32_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                inline ClientMessage &set(int32_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                inline ClientMessage &set(uint64_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                inline ClientMessage &set(int64_t value) {
-                    common::containers::LittleEndianBufferWrapper::set(value);
-                    return *this;
-                }
-
-                #ifdef HZ_PLATFORM_DARWIN
-                inline ClientMessage &set(long value) {
-                    common::containers::LittleEndianBufferWrapper::set((int64_t)value);
-                    return *this;
-                }
-                #endif
-
-                inline ClientMessage &set(const serialization::pimpl::Data &data) {
-                    set<std::vector<byte> >(data.toByteArray());
-                    return *this;
-                }
-
-                inline ClientMessage &set(const Address &address) {
-                    set(address.getHost()).set(address.getPort());
-                    return *this;
-                }
-
-                template <typename T>
-                ClientMessage &set(const std::vector<T> &values) {
-                    int32_t len = (int32_t)values.size();
+                template<typename T>
+                void set(const std::vector<T> &values) {
+                    int32_t len = (int32_t) values.size();
                     set(len);
 
                     if (len > 0) {
-                        for (std::vector<T>::const_iterator it = values.begin();it != values.end(); ++it) {
+                        for (std::vector<T>::const_iterator it = values.begin(); it != values.end(); ++it) {
                             set(*it);
                         }
                     }
-                    return *this;
                 }
 
-                template <typename K, typename V>
-                ClientMessage &set(const std::map<K, V> &values) {
-                    int32_t len = (int32_t)values.size();
+                template<typename T>
+                void set(const std::vector<T> *value) {
+                    bool isNull = (NULL == value);
+                    set(isNull);
+                    if (!isNull) {
+                        set<T>(*value);
+                    }
+                }
+
+                template<typename K, typename V>
+                void set(const std::map<K, V> &values) {
+                    int32_t len = (int32_t) values.size();
                     set(len);
 
                     if (len > 0) {
-                        for (std::map<K, V>::const_iterator it = values.begin();it != values.end(); ++it) {
+                        for (std::map<K, V>::const_iterator it = values.begin(); it != values.end(); ++it) {
                             set((*it).first);
                             set((*it).second);
                         }
                     }
-                    return *this;
+                }
+
+                template<typename K, typename V>
+                void set(const std::map<K, V> *values) {
+                    bool isNull = (NULL == value);
+                    set(isNull);
+                    if (!isNull) {
+                        set<K, V>(*value);
+                    }
                 }
                 //----- Setter methods end ---------------------
 
@@ -266,57 +232,28 @@ namespace hazelcast {
                 bool fillMessageFrom(util::ByteBuffer &buffer);
 
                 //----- Getter methods begin -------------------
-                inline int32_t getFrameLength() const {
-                    int32_t result;
+                int32_t getFrameLength() const;
 
-                    util::Bits::littleEndianToNative4(
-                            &header->frameLength, &result);
+                uint16_t getMessageType() const;
 
-                    return result;
-                }
+                uint8_t getVersion();
 
-                inline uint16_t getMessageType() const {
-                    uint16_t type;
+                uint32_t getCorrelationId() const;
 
-                    util::Bits::littleEndianToNative2(&header->type, &type);
+                int32_t getPartitionId() const;
 
-                    return type;
-                }
+                uint16_t getDataOffset() const;
 
-                inline uint8_t getVersion() {
-                    return header->version;
-                }
-
-                inline uint32_t getCorrelationId() const {
-                    uint32_t value;
-                    util::Bits::littleEndianToNative4(&header->correlationId, &value);
-                    return value;
-                }
-
-                inline int32_t getPartitionId() const {
-                    int32_t value;
-                    util::Bits::littleEndianToNative4(&header->partitionId, &value);
-                    return value;
-                }
-
-                inline uint16_t getDataOffset() const {
-                    uint16_t value;
-                    util::Bits::littleEndianToNative2(&header->dataOffset, &value);
-                    return value;
-                }
-
-                inline bool isFlagSet(uint8_t flag) const {
-                    return flag == (header->flags & flag);
-                }
+                bool isFlagSet(uint8_t flag) const;
 
                 //-----Getters that change the index position---------
-                template <typename T>
+                template<typename T>
                 T get() {
-                    #error "Data type is not supported by the protocol."
+#error "Data type is not supported by the protocol."
                     return T();
                 }
 
-                template <typename T>
+                template<typename T>
                 std::auto_ptr<T> getNullable() {
                     std::auto_ptr<T> result;
                     if (getBoolean()) {
@@ -325,7 +262,7 @@ namespace hazelcast {
                     return std::auto_ptr<T>(new T(get<T>()));
                 }
 
-                template <typename T>
+                template<typename T>
                 std::vector<T> getArray() {
                     int32_t len = getInt32();
 
@@ -336,7 +273,7 @@ namespace hazelcast {
                     return result;
                 }
 
-                template <typename T>
+                template<typename T>
                 std::auto_ptr<std::vector<T> > getNullableArray() {
                     std::auto_ptr<T> result;
                     if (getBoolean()) {
@@ -345,8 +282,8 @@ namespace hazelcast {
                     return std::auto_ptr<std::vector<T> >(new std::vector<T>(getArray<T>()));
                 }
 
-                template <typename KEY, typename VALUE>
-                std::map<KEY, VALUE > getMap() {
+                template<typename KEY, typename VALUE>
+                std::map<KEY, VALUE> getMap() {
                     int32_t len = getInt32();
 
                     std::map<KEY, VALUE> result;
@@ -358,116 +295,109 @@ namespace hazelcast {
                     return result;
                 }
 
-                template <typename KEY, typename VALUE>
-                std::auto_ptr<std::map<KEY, VALUE > > getNullableMap() {
-                    std::auto_ptr<std::map<KEY, VALUE > > result;
+                template<typename KEY, typename VALUE>
+                std::auto_ptr<std::map<KEY, VALUE> > getNullableMap() {
+                    std::auto_ptr<std::map<KEY, VALUE> > result;
                     if (getBoolean()) {
                         return result;
                     }
-                    return std::auto_ptr<std::map<KEY, VALUE > >(new std::map<KEY, VALUE >(getMap<KEY, VALUE>()));
+                    return std::auto_ptr<std::map<KEY, VALUE> >(new std::map<KEY, VALUE>(getMap<KEY, VALUE>()));
                 }
                 //----- Getter methods end --------------------------
 
                 //----- Data size calculation functions BEGIN -------
-                static inline int32_t calculateDataSize(uint8_t param) {
-                    return UINT8_SIZE;
+                static int32_t calculateDataSize(uint8_t param) const;
+
+                static int32_t calculateDataSize(int8_t param) const;
+
+                static int32_t calculateDataSize(bool param) const;
+
+                static int32_t calculateDataSize(int16_t param) const;
+
+                static int32_t calculateDataSize(uint16_t param) const;
+
+                static int32_t calculateDataSize(int32_t param) const;
+
+                static int32_t calculateDataSize(uint32_t param) const;
+
+                static int32_t calculateDataSize(int64_t param) const;
+
+#ifdef HZ_PLATFORM_DARWIN
+                static it32_t calculateDataSize(long param) const;
+#endif
+
+                static int32_t calculateDataSize(uint64_t param) const;
+
+                template<typename T>
+                static int32_t calculateDataSizeNullable(const T *param) const {
+                    int32_t size = INT8_SIZE;
+                    if (NULL != param) {
+                        size += calculateDataSize(*param);
+                    }
+                    return size;
                 }
 
-                static inline int32_t calculateDataSize(int8_t param) {
-                    return INT8_SIZE;
+                static int32_t calculateDataSize(const std::string &param) const;
+
+                static int32_t calculateDataSize(const std::string *param) const {
+                    return calculateDataSizeNullable<std::string>(param);
                 }
 
-                static inline int32_t calculateDataSize(bool param) {
-                    return UINT8_SIZE;
+                static int32_t calculateDataSize(const serialization::pimpl::Data &param) const;
+
+                static int32_t calculateDataSize(const serialization::pimpl::Data *param) const;
+
+                static int32_t calculateDataSize(const Address &param) const;
+
+                static int32_t calculateDataSize(const Address *param) const;
+
+                static int32_t calculateDataSize(const Member &param) const;
+
+                static int32_t calculateDataSize(const Member *param) const;
+
+                static int32_t calculateDataSize(const map::DataEntryView &param) const;
+
+                static int32_t calculateDataSize(const map::DataEntryView *param) const;
+
+                template<typename T>
+                static int32_t calculateDataSize(const std::vector<T> &param) const {
+                    int32_t dataSize = INT32_SIZE;
+                    for (std::vector<T>::const_iterator it = param.begin(); param.end() != it; ++it) {
+                        dataSize += calculateDataSize(*it);
+                    }
+                    return dataSize;
                 }
 
-                static inline int32_t calculateDataSize(int16_t param) {
-                    return INT16_SIZE;
+                template<typename T>
+                static int32_t calculateDataSize(const std::vector<T> *param) const {
+                    int32_t size = INT8_SIZE;
+                    if (NULL != param) {
+                        size += calculateDataSize<T>(*param);
+                    }
+                    return size;
                 }
 
-                static inline int32_t calculateDataSize(uint16_t param) {
-                    return UINT16_SIZE;
+                template<typename KEY, typename VALUE>
+                static int32_t calculateDataSize(const std::map<KEY, VALUE> &param) const {
+                    int32_t size = INT32_SIZE;
+                    for (std::map<KEY, VALUE>::const_iterator it = param.begin(); param.end() != it; ++it) {
+                        size += calculateDataSize(it->first);
+                        size += calculateDataSize(it->second);
+                    }
+                    return size;
                 }
 
-                static inline int32_t calculateDataSize(int32_t param) {
-                    return INT32_SIZE;
-                }
+                template<typename KEY, typename VALUE>
+                static int32_t calculateDataSize(const std::map<KEY, VALUE> *param) const {
+                    int32_t size = INT8_SIZE;
 
-                static inline int32_t calculateDataSize(uint32_t param) {
-                    return UINT32_SIZE;
-                }
-
-                static inline int32_t calculateDataSize(int64_t param) {
-                    return INT64_SIZE;
-                }
-
-                #ifdef HZ_PLATFORM_DARWIN
-                static inline int32_t calculateDataSize(long param) {
-                    return calculateDataSize((int64_t)param);
-                }
-                #endif
-
-                static inline int32_t calculateDataSize(uint64_t param) {
-                    return UINT64_SIZE;
-                }
-
-                static inline int32_t calculateDataSize(const std::string &param) {
-                    return INT32_SIZE +  // bytes for the length field
-                            UTF8_MAX_CHAR_SIZE * param.length();
-                }
-
-                static inline int32_t calculateDataSize(const Address &param) {
-                    // TODO: double check if port should be written 4 bytes or 2 bytes
-                    return calculateDataSize(param.getHost()) + calculateDataSize((int32_t)param.getPort());
-                }
-
-                static inline int32_t calculateDataSize(const serialization::pimpl::Data &param) {
-                    return INT32_SIZE +  // bytes for the length field
-                        (int32_t)param.totalSize();
-                }
-
-                static inline int32_t calculateDataSize(const protocol::DataArray &values) {
-                    int32_t totalSize = 0;
-
-                    int32_t len = (int32_t)values.size();
-                    if (len > 0) {
-                        for (protocol::DataArray::VECTOR_TYPE::const_iterator it = values.begin();
-                             it != values.end(); ++it) {
-                            totalSize += INT32_SIZE; // bytes for the length field
-                            totalSize += calculateDataSize(**it);
-                        }
+                    if (NULL != param) {
+                        size += calculateDataSize<KEY, VALUE>(*param);
                     }
 
-                    return totalSize;
+                    return size;
                 }
 
-                static inline int32_t calculateDataSize(const std::set<serialization::pimpl::Data> &values) {
-                    int32_t totalSize = INT32_SIZE;  // bytes for the length field
-
-                    int32_t len = (int32_t)values.size();
-                    if (len > 0) {
-                        for (std::set<serialization::pimpl::Data>::const_iterator it = values.begin();
-                             it != values.end(); ++it) {
-                            totalSize += calculateDataSize(*it);
-                        }
-                    }
-
-                    return totalSize;
-                }
-
-                static inline int32_t calculateDataSize(const std::vector<serialization::pimpl::Data> &values) {
-                    int32_t totalSize = INT32_SIZE;  // bytes for the length field
-
-                    int32_t len = (int32_t)values.size();
-                    if (len > 0) {
-                        for (std::vector<serialization::pimpl::Data>::const_iterator it = values.begin();
-                             it != values.end(); ++it) {
-                            totalSize += calculateDataSize(*it);
-                        }
-                    }
-
-                    return totalSize;
-                }
                 //----- Data size calculation functions END ---------
 
                 //Builder function
@@ -499,9 +429,7 @@ namespace hazelcast {
                     uint16_t dataOffset;
                 };
 
-                ClientMessage(int32_t size);
-
-                inline void wrapForEncode(byte *buffer, int32_t size, bool owner);
+                void wrapForEncode(byte *buffer, int32_t size, bool owner);
 
                 void ensureBufferSize(int32_t newCapacity);
 
@@ -520,118 +448,44 @@ namespace hazelcast {
 
                 static struct MessageHeaderType DEFAULT_HEADER;
             };
-        }
 
-        inline std::auto_ptr<ManagedInt32Array> getInt32Array() {
-            int32_t len = getInt32();
-            int32_t numBytes = len * INT32_SIZE;
+            template<>
+            uint8_t ClientMessage::get();
 
-            const byte *bytes = getBytes(numBytes);
-            int32_t *buffer = new int32_t[len];
-            memcpy(buffer, bytes, (size_t)numBytes);
+            template<>
+            int8_t ClientMessage::get();
 
-            util::Bits::littleEndianToNativeArray4(len, buffer);
+            template<>
+            int16_t ClientMessage::get();
 
-            std::auto_ptr<ManagedInt32Array> result(
-                    new ManagedInt32Array(len, buffer));
+            template<>
+            uint16_t ClientMessage::get();
 
-            return result;
-        }
+            template<>
+            int32_t ClientMessage::get();
 
-        inline std::auto_ptr<std::vector<byte> > getByteArray() {
-            int32_t len = getInt32();
+            template<>
+            uint32_t ClientMessage::get();
 
-            if (len > 0) {
-                const byte *bytes = getBytes(len);
-                return std::auto_ptr<std::vector<byte> >(new std::vector<byte>(bytes, bytes + len));
-            } else {
-                return std::auto_ptr<std::vector<byte> >();
-            }
-        }
+            template<>
+            int64_t ClientMessage::get();
 
-        inline std::auto_ptr<Address> getAddress() {
-            // read 1 byte to see if null
-            bool isNull = getBoolean();
-            if (isNull) {
-                return std::auto_ptr<Address>(new Address());
-            }
-            std::auto_ptr<std::string> host(getStringUtf8());
-            int32_t port = getInt32();
-            return std::auto_ptr<Address>(new Address(host, port));
-        }
+            template<>
+            uint64_t ClientMessage::get();
 
-        inline std::auto_ptr<AddressArray> getAddressList() {
-            int32_t len = getInt32();
+            template<>
+            Address ClientMessage::get();
 
-            std::auto_ptr<AddressArray> result(
-                    new AddressArray(len));
+            template<>
+            Member ClientMessage::get();
 
-            for (int i = 0; i < len; ++i) {
-                std::auto_ptr<Address> ptr = getAddress();
-                result->push_back(ptr.release());
-            }
-            return result;
-        }
+            template<>
+            map::DataEntryView ClientMessage::get();
 
-        template <>
-        serialization::pimpl::Data ClientMessage::get() {
-            return serialization::pimpl::Data(getByteArray());
-        }
-
-        template <>
-        Member ClientMessage::get() {
-            std::auto_ptr<Address> address = getAddress();
-            std::auto_ptr<std::string> uuid = getStringUtf8();
-            bool isLite = getBoolean();
-            int32_t numAttributes = getInt32();
-
-            std::auto_ptr<std::map<std::string, std::string > > attributes(
-                    new std::map<std::string, std::string >());
-
-            for (int i = 0; i < numAttributes; ++i) {
-                std::auto_ptr<std::string> key = getStringUtf8();
-                std::auto_ptr<std::string> value = getStringUtf8();
-                (*attributes)[*key] = *value;
-            }
-
-            return std::auto_ptr<Member>(new Member(address, uuid, attributes, isLite));
-        }
-
-
-        inline std::auto_ptr<MemberArray> getMemberList() {
-            int32_t len = getInt32();
-
-            std::auto_ptr<MemberArray> result(new MemberArray(len));
-
-            for (int i = 0; i < len; ++i) {
-                std::auto_ptr<Member> ptr = getMember();
-                result->push_back(ptr.release());
-            }
-
-            return result;
-        }
-
-        inline std::auto_ptr<impl::MemberAttributeChange> getMemberAttributeChange() {
-            std::auto_ptr<std::string> uuid = getStringUtf8();
-            std::auto_ptr<std::string> key = getStringUtf8();
-            MemberAttributeEvent::MemberAttributeOperationType operationType = (MemberAttributeEvent::MemberAttributeOperationType)getInt32();
-
-            std::auto_ptr<std::string> value = std::auto_ptr<std::string>(new std::string());
-            if (operationType == MemberAttributeEvent::PUT) {
-                value = getStringUtf8();
-            }
-
-            return std::auto_ptr<impl::MemberAttributeChange>(
-                    new impl::MemberAttributeChange(uuid, operationType, key, value));
 
         }
 
 
-        // Generate the types
-        template class common::containers::ManagedPointerVector<Member>;
-        template class common::containers::ManagedPointerVector<Address>;
-        template class common::containers::ManagedPointerVector<serialization::pimpl::Data>;
-        template class common::containers::ManagedArray<int32_t>;
     }
 }
 

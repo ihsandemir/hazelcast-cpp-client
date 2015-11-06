@@ -39,7 +39,6 @@ namespace hazelcast {
                         UINT16_SIZE = INT32_C(2),
                         INT32_SIZE = INT32_C(4),
                         UINT32_SIZE = INT32_C(4),
-                        UTF8_MAX_CHAR_SIZE = INT32_C(4),
                         UINT64_SIZE = INT32_C(8),
                         INT64_SIZE = INT32_C(8)
                     };
@@ -144,14 +143,6 @@ namespace hazelcast {
                     }
 
                     //---------------------- Setters -------------------------------
-                    inline void set(const std::string & value) {
-                        // write len first
-                        int32_t len = (int32_t)value.length();
-                        set(len);
-
-                        setBytes((byte *)value.c_str(), len);
-                    }
-
                     inline void set(uint8_t value) {
                         assert(checkWriteAvailable(UINT8_SIZE));
                         *(ix()) = value;
@@ -211,6 +202,20 @@ namespace hazelcast {
                         assert(checkWriteAvailable(INT64_SIZE));
                         util::Bits::nativeToLittleEndian8(&value, ix());
                         index += INT64_SIZE;
+                    }
+
+                    #ifdef HZ_PLATFORM_DARWIN
+                    inline void &set(long value) {
+                        set((int64_t)value);
+                    }
+                    #endif
+
+                    inline void set(const std::string & value) {
+                        // write len first
+                        int32_t len = (int32_t)value.length();
+                        set(len);
+
+                        setBytes((byte *)value.c_str(), len);
                     }
 
                     inline void setBytes(const byte *value, int32_t len) {

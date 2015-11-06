@@ -22,11 +22,7 @@
 #define HAZELCAST_MEMBER
 
 #include <map>
-#include "hazelcast/client/protocol/ProtocolConstants.h"
 #include "hazelcast/client/Address.h"
-#include "hazelcast/client/impl/IdentifiedDataSerializableResponse.h"
-
-#include <map>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -47,32 +43,15 @@ namespace hazelcast {
          */
         class HAZELCAST_API Member {
         public:
-            Member(std::auto_ptr<Address> address, std::auto_ptr<std::string> uuid,
-                   std::auto_ptr<std::map<std::string, std::string> > attributes, bool lite);
-
-            // Performs deep copy
-            Member(const Member &rhs);
-
-            Member();
-
             friend class connection::ClusterListenerThread;
 
-            Member &operator = (const Member &rhs);
+            Member(const Address &address, const std::string &uuid, bool lite,
+                           const std::map<std::string, std::string> &attr);
 
             /**
              * comparison operation
              */
             bool operator ==(const Member &) const;
-
-            /**
-             * @see IdentifiedDataSerializable
-             */
-            int getFactoryId() const;
-
-            /**
-             * @see IdentifiedDataSerializable
-             */
-            int getClassId() const;
 
             /**
              *
@@ -94,6 +73,8 @@ namespace hazelcast {
              * @return UUID of this member.
              */
             const std::string &getUuid() const;
+
+            const std::map<std::string, std::string> &getAttributes() const;
 
             /**
              * Returns the value of the specified key for this member or
@@ -118,10 +99,10 @@ namespace hazelcast {
 
             bool removeAttribute(const std::string &key);
 
-            std::auto_ptr<Address> address;
-            std::auto_ptr<std::string> uuid;
-            std::auto_ptr<std::map<std::string, std::string > > attributes;
+            Address address;
+            std::string uuid;
             bool liteMember;
+            std::map<std::string, std::string> attributes;
         };
 
         std::ostream HAZELCAST_API &operator <<(std::ostream &stream, const Member &member);

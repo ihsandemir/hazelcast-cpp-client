@@ -18,34 +18,67 @@
 //
 
 #include "hazelcast/client/map/DataEntryView.h"
-#include "hazelcast/client/map/DataSerializableHook.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
 
 namespace hazelcast {
     namespace client {
         namespace map{
-                int DataEntryView::getFactoryId() const {
-                    return map::DataSerializableHook::F_ID;
-                }
-                int DataEntryView::getClassId() const {
-                    return map::DataSerializableHook::ENTRY_VIEW;
-                }
-                void DataEntryView::readData(serialization::ObjectDataInput &in) {
-                    if(in.readBoolean()){
-                        key = in.readData();
-                    }
-                    if(in.readBoolean()){
-                        value = in.readData();
-                    }
-                    cost = in.readLong();
-                    creationTime = in.readLong();
-                    expirationTime = in.readLong();
-                    hits = in.readLong();
-                    lastAccessTime = in.readLong();
-                    lastStoredTime = in.readLong();
-                    lastUpdateTime = in.readLong();
-                    version = in.readLong();
-                }
+            DataEntryView::DataEntryView(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value, long cost,
+                          long creationTime, long expirationTime, long hits, long lastAccessTime,
+                          long lastStoredTime, long lastUpdateTime, long version, long evictionCriteriaNumber,
+                          long ttl) : key(key), value(value), cost(cost), creationTime(creationTime),
+                                      expirationTime(expirationTime), hits(hits), lastAccessTime(lastAccessTime),
+                                      lastStoredTime(lastStoredTime), lastUpdateTime(lastUpdateTime),
+                                      version(version), evictionCriteriaNumber(evictionCriteriaNumber), ttl(ttl) { }
+
+
+            const serialization::pimpl::Data &DataEntryView::getKey() const {
+                return key;
+            }
+
+            const serialization::pimpl::Data &DataEntryView::getValue() const {
+                return value;
+            }
+
+            long DataEntryView::getCost() const {
+                return cost;
+            }
+
+            long DataEntryView::getCreationTime() const {
+                return creationTime;
+            }
+
+            long DataEntryView::getExpirationTime() const {
+                return expirationTime;
+            }
+
+            long DataEntryView::getHits() const {
+                return hits;
+            }
+
+            long DataEntryView::getLastAccessTime() const {
+                return lastAccessTime;
+            }
+
+            long DataEntryView::getLastStoredTime() const {
+                return lastStoredTime;
+            }
+
+            long DataEntryView::getLastUpdateTime() const {
+                return lastUpdateTime;
+            }
+
+            long DataEntryView::getVersion() const {
+                return version;
+            }
+
+            long DataEntryView::getEvictionCriteriaNumber() const {
+                return evictionCriteriaNumber;
+            }
+
+            long DataEntryView::getTtl() const {
+                return ttl;
+            }
+
         }
     }
 }

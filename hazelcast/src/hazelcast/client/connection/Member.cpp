@@ -20,57 +20,33 @@
 
 #include "hazelcast/client/Member.h"
 #include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
-#include "hazelcast/util/IOUtil.h"
 
 namespace hazelcast {
     namespace client {
 
-        Member::Member(std::auto_ptr<Address> address, std::auto_ptr<std::string> uuid,
-                       std::auto_ptr<std::map<std::string, std::string> > attributes, bool lite) :
-                address(address), uuid(uuid), attributes(attributes), liteMember(lite) {
-        }
-
-        Member::Member() :
-                address(new Address), uuid(new std::string), attributes(new std::map<std::string, std::string>){
-        }
-
-        Member::Member(const Member &rhs) : address(new Address(rhs.getAddress())),
-                                            uuid(new std::string(rhs.getUuid())),
-                                            attributes(new std::map<std::string, std::string >(*rhs.attributes)) {
-        }
-
-        Member &Member::operator=(const Member &rhs) {
-            address = std::auto_ptr<Address>(new Address(rhs.getAddress()));
-            uuid = std::auto_ptr<std::string>(new std::string(rhs.getUuid())) ;
-            attributes = std::auto_ptr<std::map<std::string, std::string > > (
-                    new std::map<std::string, std::string >(*rhs.attributes));
-
-            return *this;
+        Member::Member(const Address &address, const std::string &uuid, bool lite,
+                       const std::map<std::string, std::string> &attr) :
+                address(address), uuid(uuid), liteMember(lite), attributes(attr) {
         }
 
         bool Member::operator ==(const Member &rhs) const {
-            return *address == *rhs.address;
+            return address == rhs.address;
         }
 
         const Address &Member::getAddress() const {
-            return *address;
+            return address;
         }
 
         const std::string &Member::getUuid() const {
-            return *uuid;
-        }
-
-        int Member::getFactoryId() const {
-            return protocol::ProtocolConstants::DATA_FACTORY_ID;
-        }
-
-        int Member::getClassId() const {
-            return protocol::ProtocolConstants::MEMBER_ID;
+            return uuid;
         }
 
         bool Member::isLiteMember() const {
             return liteMember;
+        }
+
+        const std::map<std::string, std::string> &Member::getAttributes() const {
+            return attributes;
         }
 
         std::ostream &operator <<(std::ostream &stream, const Member &member) {
@@ -78,19 +54,19 @@ namespace hazelcast {
         }
 
         const std::string &Member::getAttribute(const std::string &key) const {
-            return (*attributes)[key];
+            return attributes[key];
         }
 
         bool Member::lookupAttribute(const std::string &key) const {
-            return (*attributes).find(key) != (*attributes).end();
+            return attributes.find(key) != attributes.end();
         }
 
         void Member::setAttribute(const std::string &key, const std::string &value) {
-            (*attributes)[key] = value;
+            attributes[key] = value;
         }
 
         bool Member::removeAttribute(const std::string &key) {
-            return 0 != (*attributes).erase(key);
+            return 0 != attributes.erase(key);
         }
     }
 }
