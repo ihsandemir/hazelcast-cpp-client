@@ -16,10 +16,10 @@
 //
 // Created by sancar koyunlu on 5/23/13.
 
-
-
-#include <hazelcast/client/protocol/parameters/PingParameters.h>
-#include "hazelcast/client/protocol/parameters/AddListenerResultParameters.h"
+#include <hazelcast/client/protocol/codec/ClientPingCodec.h>
+#include <hazelcast/util/Util.h>
+#include <hazelcast/client/protocol/ResponseMessageConst.h>
+#include <hazelcast/client/protocol/codec/ErrorCodec.h>
 #include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/PartitionService.h"
@@ -35,8 +35,6 @@
 #include "hazelcast/client/impl/ServerException.h"
 #include "hazelcast/client/spi/ServerListenerService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-
-#include "hazelcast/client/protocol/parameters/ExceptionResultParameters.h"
 
 namespace hazelcast {
     namespace client {
@@ -75,7 +73,7 @@ namespace hazelcast {
                 return invokeOnTarget(request, NULL, address);
             }
 
-            connection::CallFuture  InvocationService::invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *eventHandler) {
+            connection::CallFuture InvocationService::invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *eventHandler) {
                 std::auto_ptr<impl::BaseEventHandler> managedEventHandler(eventHandler);
                 boost::shared_ptr<connection::Connection> connection = clientContext.getConnectionManager().getRandomConnection(retryCount);
                 return doSend(request, managedEventHandler, connection, -1);
@@ -152,7 +150,7 @@ namespace hazelcast {
                 }
 
                 if (!connection.isHeartBeating()) {
-                    if (protocol::parameters::PingParameters::TYPE == request.getMessageType()) {
+                    if (protocol::codec::ClientPingCodec::RequestParameters::TYPE == request.getMessageType()) {
                         return true;
                     }
                     std::stringstream message;
@@ -258,13 +256,12 @@ namespace hazelcast {
             /* returns shouldSetResponse */
             bool InvocationService::handleException(protocol::ClientMessage *response, boost::shared_ptr<connection::CallPromise> promise, const std::string& address) {
                 if (protocol::EXCEPTION == response->getMessageType()) {
-                    std::auto_ptr<protocol::parameters::ExceptionResultParameters> resultParameters =
-                            protocol::parameters::ExceptionResultParameters::decode(*response);
+                    protocol::codec::ErrorCodec error = protocol::codec::ErrorCodec::decode(*response);
 
-                    if (*(resultParameters->className) == "com.hazelcast.core.HazelcastInstanceNotActiveException") {
+                    if (error.className == "com.hazelcast.core.HazelcastInstanceNotActiveException") {
                         tryResend(promise, address);
                     } else {
-                        promise->setException(*resultParameters->className, *resultParameters->message + ":" + *resultParameters->stacktrace + "\n");
+                        promise->setException(error.className, error.toString());
                     }
                     return false;
                 }
@@ -279,12 +276,9 @@ namespace hazelcast {
                     if (eventHandler->registrationId.size() == 0) //if uuid is not set, it means it is first time that we are getting uuid.
                         return true;                    // then no need to handle it, just set as normal response
 
-                    std::auto_ptr<protocol::parameters::AddListenerResultParameters> result = protocol::parameters::AddListenerResultParameters::decode(*response);
-
                     // result->registrationId is the alias for the original registration
-                    clientContext.getServerListenerService().reRegisterListener(eventHandler->registrationId,
-                                                                                boost::shared_ptr<std::string>(result->registrationId.release()),
-                                                                                response->getCorrelationId());
+                    clientContext.getServerListenerService().reRegisterListener(eventHandler->registrationId, response);
+
                     return false;
                 }
                 //if it does not have event handler associated with it, then it is a normal response.

@@ -21,14 +21,13 @@
 #ifndef HAZELCAST_ProxyImpl
 #define HAZELCAST_ProxyImpl
 
-#include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/protocol/codec/IRemoveListenerCodec.h"
+#include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/protocol/parameters/GenericResultParameters.h"
-#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
-
-#include <string>
+#include "hazelcast/client/protocol/ClientMessage.h"
+#include "hazelcast/client/spi/ClientContext.h"
 
 namespace hazelcast {
     namespace client {
@@ -53,19 +52,16 @@ namespace hazelcast {
             }
         }
 
-        namespace protocol {
-            class ClientMessage;
-        }
-
         namespace proxy {
-            class HAZELCAST_API ProxyImpl : public DistributedObject{
+            class HAZELCAST_API ProxyImpl : public DistributedObject {
             protected:
                 typedef std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > EntryVector;
+                typedef std::map<serialization::pimpl::Data, serialization::pimpl::Data> EntryMap;
 
                 /**
                 * Constructor
                 */
-                ProxyImpl(const std::string& serviceName, const std::string& objectName, spi::ClientContext *context);
+                ProxyImpl(const std::string &serviceName, const std::string &objectName, spi::ClientContext *context);
 
                 /**
                 * Destructor
@@ -80,7 +76,12 @@ namespace hazelcast {
                 * @param partitionId that given request will be send to.
                 * @param request ClientRequest ptr.
                 */
-                std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request, int partitionId);
+                // TODO: Add response decode here to check for the returned message type in runtime
+                std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request,
+                                                              int partitionId);
+
+                connection::CallFuture invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request,
+                                                              int partitionId);
 
                 /**
                 * Internal API.
@@ -101,8 +102,8 @@ namespace hazelcast {
                 * @param partitionId
                 * @param handler
                 */
-                std::auto_ptr<std::string> listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, int partitionId,
-                                   impl::BaseEventHandler *handler);
+                std::string registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
+                                             int partitionId, impl::BaseEventHandler *handler);
 
                 /**
                 * Internal API.
@@ -110,7 +111,8 @@ namespace hazelcast {
                 * @param registrationRequest ClientRequest ptr.
                 * @param handler
                 */
-                std::auto_ptr<std::string> listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, impl::BaseEventHandler *handler);
+                std::string registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
+                                             impl::BaseEventHandler *handler);
 
                 /**
                 * Internal API.
@@ -119,29 +121,28 @@ namespace hazelcast {
                 int getPartitionId(const serialization::pimpl::Data &key);
 
                 template<typename T>
-                serialization::pimpl::Data toData(const T& object) {
+                serialization::pimpl::Data toData(const T &object) {
                     return context->getSerializationService().template toData<T>(&object);
                 }
 
                 template<typename T>
-                boost::shared_ptr<T> toObject(const serialization::pimpl::Data& data) {
+                boost::shared_ptr<T> toObject(const serialization::pimpl::Data &data) {
                     return context->getSerializationService().template toObject<T>(data);
                 }
 
                 template<typename V>
-                std::vector<V> toObjectCollection(std::auto_ptr<protocol::DataArray> collection) {
-                    protocol::DataArray &dataCollection = *collection;
-                    size_t size = dataCollection.size();
+                std::vector<V> toObjectCollection(const std::vector<serialization::pimpl::Data> &collection) {
+                    size_t size = collection.size();
                     std::vector<V> multimap(size);
                     for (size_t i = 0; i < size; i++) {
-                        boost::shared_ptr<V> v = toObject<V>(*dataCollection[i]);
+                        boost::shared_ptr<V> v = toObject<V>(collection[i]);
                         multimap[i] = *v;
                     }
                     return multimap;
                 }
 
                 template<typename T>
-                const std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T>& elements) {
+                const std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T> &elements) {
                     size_t size = elements.size();
                     std::vector<serialization::pimpl::Data> dataCollection(size);
                     for (size_t i = 0; i < size; ++i) {
@@ -150,69 +151,69 @@ namespace hazelcast {
                     return dataCollection;
                 }
 
-                template <typename K, typename V>
-                std::vector<std::pair<K, V> > toObjectEntrySet(const std::auto_ptr<protocol::DataArray> keys,
-                                                               const std::auto_ptr<protocol::DataArray> values) {
-                    size_t size = keys->size();
+                template<typename K, typename V>
+                std::vector<std::pair<K, V> > toObjectEntrySet(
+                        std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > const &dataEntrySet) {
+                    size_t size = dataEntrySet.size();
                     std::vector<std::pair<K, V> > entrySet(size);
                     for (size_t i = 0; i < size; i++) {
-                        boost::shared_ptr<K> key = toObject<K>(*((*keys)[i]));
+                        boost::shared_ptr<K> key = toObject<K>(dataEntrySet[i].first);
                         entrySet[i].first = *key;
-                        boost::shared_ptr<V> value = toObject<V>(*((*values)[i]));
+                        boost::shared_ptr<V> value = toObject<V>(dataEntrySet[i].second);
                         entrySet[i].second = *value;
                     }
                     return entrySet;
                 }
 
                 template<typename K, typename V>
-                void toDataEntriesSet(std::map<K, V> const &m, std::auto_ptr<protocol::DataArray> &resultKeys,
-                                      std::auto_ptr<protocol::DataArray> &resultValues) {
-
-                    unsigned long size = m.size();
-
-                    resultKeys = std::auto_ptr<protocol::DataArray>(new protocol::DataArray(size));
-                    resultValues = std::auto_ptr<protocol::DataArray>(new protocol::DataArray(size));
-
-                    for (typename std::map<K, V>::const_iterator it = m.begin(); it != m.end(); ++it) {
-                        resultKeys->push_back(new serialization::pimpl::Data(toData<K>(it->first)));
-                        resultValues->push_back(new serialization::pimpl::Data(toData<V>(it->second)));
+                EntryVector toDataEntriesSet(std::map<K, V> const &m) {
+                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entryDataSet(
+                            m.size());
+                    typename std::map<K, V>::const_iterator it;
+                    int i = 0;
+                    for (it = m.begin(); it != m.end(); ++it) {
+                        entryDataSet[i++] = std::make_pair(toData(it->first), toData(it->second));
                     }
+                    return entryDataSet;
                 }
 
-                template<typename T>
+                template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request);
 
-                    return getResponseResult<T>(response);
+                    return CODEC::decode().response;
                 }
 
-                template<typename T>
+                template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request,
                                      boost::shared_ptr<connection::Connection> conn) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, conn);
 
-                    return getResponseResult<T>(response);
+                    return CODEC::decode().response;
                 }
 
-                template<typename T>
+                template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, partitionId);
 
-                    return getResponseResult<T>(response);
+                    return CODEC::decode().response;
                 }
 
-                template<typename T>
+                template<typename T, typename CODEC>
+                T invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
+
+                    std::auto_ptr<protocol::ClientMessage> response = invoke(request, partitionId);
+
+                    return CODEC::decode().response;
+                }
+
+                template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request,
                                      int partitionId, boost::shared_ptr<connection::Connection> conn) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, conn);
 
-                    return getResponseResult<T>(response);
+                    return CODEC::decode().response;
                 }
-
-                std::auto_ptr<protocol::DataArray> invokeAndGetResult(
-                        std::auto_ptr<protocol::ClientMessage> request);
-
-                std::auto_ptr<protocol::DataArray> getDataList(protocol::ClientMessage *response) const;
 
                 spi::ClientContext *context;
             public:
@@ -221,38 +222,7 @@ namespace hazelcast {
                 * Clears and releases all resources for this object.
                 */
                 void destroy();
-
-            private:
-                template<typename T>
-                inline T getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                    std::auto_ptr<protocol::parameters::GenericResultParameters> resultParameters =
-                            protocol::parameters::GenericResultParameters::decode(*response);
-
-                    return *this->context->getSerializationService().toObject<T>(
-                            *resultParameters->data);
-                }
             };
-
-            template<>
-            bool ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            int ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            long ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<std::string> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<serialization::pimpl::Data> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<protocol::DataArray> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<map::DataEntryView> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
         }
     }
 }

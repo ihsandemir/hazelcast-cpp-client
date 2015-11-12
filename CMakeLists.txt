@@ -25,10 +25,11 @@ ENDIF (${IS_BIG_ENDIAN})
 
 
 FILE(GLOB_RECURSE HZ_SOURCES "./hazelcast/src/*cpp")
-FILE(GLOB_RECURSE HZ_GENERATED_SOURCES "./hazelcast/generated-sources/*cpp")
+FILE(GLOB_RECURSE HZ_GENERATED_SOURCES "./hazelcast/generated-sources/src/*cpp")
 FILE(GLOB_RECURSE HZ_HEADERS "./hazelcast/include/*h")
+FILE(GLOB_RECURSE HZ_GENERATED_HEADERS "./hazelcast/generated-sources/include/*h")
 
-include_directories(${CMAKE_SOURCE_DIR}/hazelcast/include ${CMAKE_SOURCE_DIR}/hazelcast/generated-sources)
+include_directories(${CMAKE_SOURCE_DIR}/hazelcast/include ${CMAKE_SOURCE_DIR}/hazelcast/generated-sources/include)
 
 IF(NOT (${HZ_BIT} MATCHES "32") AND NOT (${HZ_BIT} MATCHES "64") )
   message( STATUS "Build needs HZ_BIT. Setting default as -DHZ_BIT=64 (other option -DHZ_BIT=32)" )
@@ -51,7 +52,7 @@ message(STATUS "Generating ${HZ_LIB_TYPE} Library")
 
 SET(HZ_LIB_NAME HazelcastClient${HZ_VERSION}_${HZ_BIT})
 
-add_library(${HZ_LIB_NAME} ${HZ_LIB_TYPE} ${HZ_SOURCES} ${HZ_GENERATED_SOURCES} ${HZ_HEADERS})
+add_library(${HZ_LIB_NAME} ${HZ_LIB_TYPE} ${HZ_SOURCES} ${HZ_GENERATED_SOURCES} ${HZ_HEADERS} ${HZ_GENERATED_HEADERS})
 
 set(HZ_CODE_COVERAGE_COMPILE_FLAGS " ")
 set(HZ_CODE_COVERAGE_LINK_FLAGS " ") 

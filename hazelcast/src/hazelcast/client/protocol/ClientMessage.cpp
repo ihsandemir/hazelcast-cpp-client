@@ -32,6 +32,7 @@
 #include "hazelcast/client/protocol/codec/DataEntryViewCodec.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/util/ByteBuffer.h"
+#include "hazelcast/client/protocol/codec/StackTraceElementCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -259,97 +260,102 @@ namespace hazelcast {
 
             template <>
             Member ClientMessage::get() {
-                return return codec::MemberCodec::decode(*this);
+                return codec::MemberCodec::decode(*this);
             }
 
             template <>
             map::DataEntryView ClientMessage::get() {
                 return codec::DataEntryViewCodec::decode(*this);
             }
+
+            template <>
+            codec::StackTraceElement ClientMessage::get() {
+                return codec::StackTraceElementCodec::decode(*this);
+            }
             //----- Getter methods end --------------------------
 
             //----- Data size calculation functions BEGIN -------
-            int32_t ClientMessage::calculateDataSize(uint8_t param) const {
+            int32_t ClientMessage::calculateDataSize(uint8_t param) {
                 return UINT8_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(int8_t param) const {
+            int32_t ClientMessage::calculateDataSize(int8_t param) {
                 return INT8_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(bool param) const {
+            int32_t ClientMessage::calculateDataSize(bool param) {
                 return UINT8_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(int16_t param) const {
+            int32_t ClientMessage::calculateDataSize(int16_t param) {
                 return INT16_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(uint16_t param) const {
+            int32_t ClientMessage::calculateDataSize(uint16_t param) {
                 return UINT16_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(int32_t param) const {
+            int32_t ClientMessage::calculateDataSize(int32_t param) {
                 return INT32_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(uint32_t param) const {
+            int32_t ClientMessage::calculateDataSize(uint32_t param) {
                 return UINT32_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(int64_t param) const {
+            int32_t ClientMessage::calculateDataSize(int64_t param) {
                 return INT64_SIZE;
             }
 
             #ifdef HZ_PLATFORM_DARWIN
-            int32_t ClientMessage::calculateDataSize(long param) const {
+            int32_t ClientMessage::calculateDataSize(long param) {
                 return calculateDataSize((int64_t)param);
             }
             #endif
 
-            int32_t ClientMessage::calculateDataSize(uint64_t param) const {
+            int32_t ClientMessage::calculateDataSize(uint64_t param) {
                 return UINT64_SIZE;
             }
 
-            int32_t ClientMessage::calculateDataSize(const std::string &param) const {
+            int32_t ClientMessage::calculateDataSize(const std::string &param) {
                 return INT32_SIZE +  // bytes for the length field
                        param.length();
             }
 
-            int32_t ClientMessage::calculateDataSize(const std::string *param) const {
+            int32_t ClientMessage::calculateDataSize(const std::string *param) {
                 return calculateDataSizeNullable<std::string>(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data &param) const {
+            int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data &param) {
                 return INT32_SIZE +  // bytes for the length field
                        (int32_t)param.totalSize();
             }
 
-            int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data *param) const {
+            int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data *param) {
                 return calculateDataSizeNullable<serialization::pimpl::Data>(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const Address &param) const {
+            int32_t ClientMessage::calculateDataSize(const Address &param) {
                 return codec::AddressCodec::calculateDataSize(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const Address *param) const {
+            int32_t ClientMessage::calculateDataSize(const Address *param) {
                 return calculateDataSizeNullable<Address>(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const Member &param) const {
+            int32_t ClientMessage::calculateDataSize(const Member &param) {
                 return codec::MemberCodec::calculateDataSize(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const Member *param) const {
+            int32_t ClientMessage::calculateDataSize(const Member *param) {
                 return calculateDataSizeNullable<Member>(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const map::DataEntryView &param) const {
+            int32_t ClientMessage::calculateDataSize(const map::DataEntryView &param) {
                 return codec::DataEntryViewCodec::calculateDataSize(param);
             }
 
-            int32_t ClientMessage::calculateDataSize(const map::DataEntryView *param) const {
+            int32_t ClientMessage::calculateDataSize(const map::DataEntryView *param) {
                 return calculateDataSizeNullable<map::DataEntryView>(param);
             }
             //----- Data size calculation functions END ---------

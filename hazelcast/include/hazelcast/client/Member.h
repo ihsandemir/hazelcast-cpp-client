@@ -45,6 +45,8 @@ namespace hazelcast {
         public:
             friend class connection::ClusterListenerThread;
 
+            Member();
+
             Member(const Address &address, const std::string &uuid, bool lite,
                            const std::map<std::string, std::string> &attr);
 

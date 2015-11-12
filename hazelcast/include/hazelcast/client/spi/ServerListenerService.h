@@ -22,6 +22,8 @@
 #ifndef HAZELCAST_SERVER_LISTENER_SERVICE
 #define HAZELCAST_SERVER_LISTENER_SERVICE
 
+#include <hazelcast/client/connection/CallFuture.h>
+#include <hazelcast/client/protocol/codec/IRemoveListenerCodec.h>
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/HazelcastDll.h"
@@ -54,24 +56,34 @@ namespace hazelcast {
 
         namespace protocol {
             class ClientMessage;
+            namespace codec {
+                class IAddListenerCodec;
+                class IRemoveListenerCodec;
+            }
         }
 
         namespace spi {
             class ClientContext;
 
+            namespace impl {
+                namespace listener {
+                    class EventRegistration;
+                }
+            }
+
             class HAZELCAST_API ServerListenerService {
             public:
                 ServerListenerService(spi::ClientContext &clientContext);
 
-                std::auto_ptr<std::string> listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, int partitionId, impl::BaseEventHandler *handler);
+                std::string registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
+                                             int partitionId, impl::BaseEventHandler *handler);
 
-                std::auto_ptr<std::string> listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, impl::BaseEventHandler *handler);
+                std::string registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
+                                             impl::BaseEventHandler *handler);
 
-                bool stopListening(std::auto_ptr<protocol::ClientMessage> request);
+                void reRegisterListener(std::string registrationId, protocol::ClientMessage *response);
 
-                void reRegisterListener(const std::string &registrationId, boost::shared_ptr<std::string> alias, int callId);
-
-                bool deRegisterListener(std::string &registrationId);
+                bool deRegisterListener(protocol::codec::IRemoveListenerCodec &removeListenerCodec);
 
                 void retryFailedListener(boost::shared_ptr<connection::CallPromise> listenerPromise);
 
@@ -82,11 +94,12 @@ namespace hazelcast {
                 util::Mutex failedListenerLock;
                 std::vector< boost::shared_ptr<connection::CallPromise> > failedListeners;
 
-                util::SynchronizedMap<std::string, int > registrationIdMap;
+                util::SynchronizedMap<std::string, impl::listener::EventRegistration> registrationIdMap;
                 util::SynchronizedMap<std::string, const std::string > registrationAliasMap;
                 spi::ClientContext &clientContext;
 
-                void registerListener(const std::string &registrationId, int callId);
+                std::string registerInternal(std::auto_ptr<protocol::codec::IAddListenerCodec> &addListenerCodec,
+                                             hazelcast::client::connection::CallFuture &future);
             };
         }
     }

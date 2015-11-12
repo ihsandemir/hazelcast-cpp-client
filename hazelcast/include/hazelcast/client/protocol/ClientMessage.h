@@ -56,8 +56,8 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <assert.h>
 #include <map>
-#include <hazelcast/client/impl/MemberAttributeChange.h>
 
 #include "hazelcast/client/common/containers/LittleEndianBufferWrapper.h"
 #include "hazelcast/util/HazelcastDll.h"
@@ -89,6 +89,10 @@ namespace hazelcast {
         }
 
         namespace protocol {
+            namespace codec {
+                class StackTraceElement;
+            }
+
             class ClientMessage : public common::containers::LittleEndianBufferWrapper {
 
             public:
@@ -158,7 +162,7 @@ namespace hazelcast {
                 template<typename T>
                 void setNullable(const T *value) {
                     bool isNull = (NULL == value);
-                    set(isNull);
+                    common::containers::LittleEndianBufferWrapper::set(isNull);
                     if (!isNull) {
                         set(*value);
                     }
@@ -185,10 +189,10 @@ namespace hazelcast {
                 template<typename T>
                 void set(const std::vector<T> &values) {
                     int32_t len = (int32_t) values.size();
-                    set(len);
+                    common::containers::LittleEndianBufferWrapper::set(len);
 
                     if (len > 0) {
-                        for (std::vector<T>::const_iterator it = values.begin(); it != values.end(); ++it) {
+                        for (typename std::vector<T>::const_iterator it = values.begin(); it != values.end(); ++it) {
                             set(*it);
                         }
                     }
@@ -197,7 +201,7 @@ namespace hazelcast {
                 template<typename T>
                 void set(const std::vector<T> *value) {
                     bool isNull = (NULL == value);
-                    set(isNull);
+                    common::containers::LittleEndianBufferWrapper::set(isNull);
                     if (!isNull) {
                         set<T>(*value);
                     }
@@ -206,10 +210,10 @@ namespace hazelcast {
                 template<typename K, typename V>
                 void set(const std::map<K, V> &values) {
                     int32_t len = (int32_t) values.size();
-                    set(len);
+                    common::containers::LittleEndianBufferWrapper::set(len);
 
                     if (len > 0) {
-                        for (std::map<K, V>::const_iterator it = values.begin(); it != values.end(); ++it) {
+                        for (typename std::map<K, V>::const_iterator it = values.begin(); it != values.end(); ++it) {
                             set((*it).first);
                             set((*it).second);
                         }
@@ -217,9 +221,9 @@ namespace hazelcast {
                 }
 
                 template<typename K, typename V>
-                void set(const std::map<K, V> *values) {
+                void set(const std::map<K, V> *value) {
                     bool isNull = (NULL == value);
-                    set(isNull);
+                    common::containers::LittleEndianBufferWrapper::set(isNull);
                     if (!isNull) {
                         set<K, V>(*value);
                     }
@@ -249,8 +253,7 @@ namespace hazelcast {
                 //-----Getters that change the index position---------
                 template<typename T>
                 T get() {
-#error "Data type is not supported by the protocol."
-                    return T();
+                    assert(0);
                 }
 
                 template<typename T>
@@ -306,30 +309,30 @@ namespace hazelcast {
                 //----- Getter methods end --------------------------
 
                 //----- Data size calculation functions BEGIN -------
-                static int32_t calculateDataSize(uint8_t param) const;
+                static int32_t calculateDataSize(uint8_t param);
 
-                static int32_t calculateDataSize(int8_t param) const;
+                static int32_t calculateDataSize(int8_t param);
 
-                static int32_t calculateDataSize(bool param) const;
+                static int32_t calculateDataSize(bool param);
 
-                static int32_t calculateDataSize(int16_t param) const;
+                static int32_t calculateDataSize(int16_t param);
 
-                static int32_t calculateDataSize(uint16_t param) const;
+                static int32_t calculateDataSize(uint16_t param);
 
-                static int32_t calculateDataSize(int32_t param) const;
+                static int32_t calculateDataSize(int32_t param);
 
-                static int32_t calculateDataSize(uint32_t param) const;
+                static int32_t calculateDataSize(uint32_t param);
 
-                static int32_t calculateDataSize(int64_t param) const;
+                static int32_t calculateDataSize(int64_t param);
 
 #ifdef HZ_PLATFORM_DARWIN
-                static it32_t calculateDataSize(long param) const;
+                static int32_t calculateDataSize(long param);
 #endif
 
-                static int32_t calculateDataSize(uint64_t param) const;
+                static int32_t calculateDataSize(uint64_t param);
 
                 template<typename T>
-                static int32_t calculateDataSizeNullable(const T *param) const {
+                static int32_t calculateDataSizeNullable(const T *param) {
                     int32_t size = INT8_SIZE;
                     if (NULL != param) {
                         size += calculateDataSize(*param);
@@ -337,39 +340,39 @@ namespace hazelcast {
                     return size;
                 }
 
-                static int32_t calculateDataSize(const std::string &param) const;
+                static int32_t calculateDataSize(const std::string &param);
 
-                static int32_t calculateDataSize(const std::string *param) const {
+                static int32_t calculateDataSize(const std::string *param) {
                     return calculateDataSizeNullable<std::string>(param);
                 }
 
-                static int32_t calculateDataSize(const serialization::pimpl::Data &param) const;
+                static int32_t calculateDataSize(const serialization::pimpl::Data &param);
 
-                static int32_t calculateDataSize(const serialization::pimpl::Data *param) const;
+                static int32_t calculateDataSize(const serialization::pimpl::Data *param);
 
-                static int32_t calculateDataSize(const Address &param) const;
+                static int32_t calculateDataSize(const Address &param);
 
-                static int32_t calculateDataSize(const Address *param) const;
+                static int32_t calculateDataSize(const Address *param);
 
-                static int32_t calculateDataSize(const Member &param) const;
+                static int32_t calculateDataSize(const Member &param);
 
-                static int32_t calculateDataSize(const Member *param) const;
+                static int32_t calculateDataSize(const Member *param);
 
-                static int32_t calculateDataSize(const map::DataEntryView &param) const;
+                static int32_t calculateDataSize(const map::DataEntryView &param);
 
-                static int32_t calculateDataSize(const map::DataEntryView *param) const;
+                static int32_t calculateDataSize(const map::DataEntryView *param);
 
                 template<typename T>
-                static int32_t calculateDataSize(const std::vector<T> &param) const {
+                static int32_t calculateDataSize(const std::vector<T> &param) {
                     int32_t dataSize = INT32_SIZE;
-                    for (std::vector<T>::const_iterator it = param.begin(); param.end() != it; ++it) {
+                    for (typename std::vector<T>::const_iterator it = param.begin(); param.end() != it; ++it) {
                         dataSize += calculateDataSize(*it);
                     }
                     return dataSize;
                 }
 
                 template<typename T>
-                static int32_t calculateDataSize(const std::vector<T> *param) const {
+                static int32_t calculateDataSize(const std::vector<T> *param) {
                     int32_t size = INT8_SIZE;
                     if (NULL != param) {
                         size += calculateDataSize<T>(*param);
@@ -378,9 +381,9 @@ namespace hazelcast {
                 }
 
                 template<typename KEY, typename VALUE>
-                static int32_t calculateDataSize(const std::map<KEY, VALUE> &param) const {
+                static int32_t calculateDataSize(const std::map<KEY, VALUE> &param) {
                     int32_t size = INT32_SIZE;
-                    for (std::map<KEY, VALUE>::const_iterator it = param.begin(); param.end() != it; ++it) {
+                    for (typename std::map<KEY, VALUE>::const_iterator it = param.begin(); param.end() != it; ++it) {
                         size += calculateDataSize(it->first);
                         size += calculateDataSize(it->second);
                     }
@@ -388,7 +391,7 @@ namespace hazelcast {
                 }
 
                 template<typename KEY, typename VALUE>
-                static int32_t calculateDataSize(const std::map<KEY, VALUE> *param) const {
+                static int32_t calculateDataSize(const std::map<KEY, VALUE> *param) {
                     int32_t size = INT8_SIZE;
 
                     if (NULL != param) {
@@ -482,6 +485,8 @@ namespace hazelcast {
             template<>
             map::DataEntryView ClientMessage::get();
 
+            template<>
+            codec::StackTraceElement ClientMessage::get();
 
         }
 

@@ -47,7 +47,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::parameters::TopicAddMessageListenerParameters::encode(getName());
 
-                return listen(request, topicEventHandler);
+                return registerListener(request, topicEventHandler);
             }
 
             bool ITopicImpl::removeMessageListener(const std::string& registrationId) {

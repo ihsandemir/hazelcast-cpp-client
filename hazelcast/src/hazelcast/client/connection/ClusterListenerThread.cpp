@@ -33,7 +33,6 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/protocol/parameters/RegisterMembershipListenerParameters.h"
 #include "hazelcast/client/protocol/parameters/MemberListResultParameters.h"
-#include "hazelcast/client/protocol/ClientMessageType.h"
 
 namespace hazelcast {
     namespace client {

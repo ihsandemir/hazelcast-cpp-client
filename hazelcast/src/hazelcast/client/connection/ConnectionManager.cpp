@@ -24,7 +24,6 @@
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
-#include "hazelcast/client/protocol/ClientMessageType.h"
 #include "hazelcast/client/protocol/parameters/AuthenticationParameters.h"
 #include "hazelcast/client/protocol/parameters/AuthenticationCustomCredentialsParameters.h"
 #include "hazelcast/client/protocol/parameters/ExceptionResultParameters.h"

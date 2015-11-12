@@ -91,6 +91,10 @@ namespace hazelcast {
                 }
                 return callId;
             }
+
+            const Connection &CallFuture::getConnection() const {
+                return *connection;
+            }
         }
     }
 }

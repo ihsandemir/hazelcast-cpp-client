@@ -17,10 +17,9 @@
 // Created by sancar koyunlu on 01/10/14.
 //
 
-#include "hazelcast/client/protocol/parameters/GenericResultParameters.h"
-#include "hazelcast/client/protocol/parameters/DestroyProxyParameters.h"
-#include "hazelcast/client/protocol/parameters/EntryViewParameters.h"
-#include "hazelcast/client/protocol/parameters/DataCollectionResultParameters.h"
+#include <hazelcast/client/protocol/codec/IAddListenerCodec.h>
+#include <hazelcast/client/protocol/codec/IRemoveListenerCodec.h>
+#include <hazelcast/client/protocol/codec/ClientDestroyProxyCodec.h>
 #include "hazelcast/client/proxy/ProxyImpl.h"
 
 #include "hazelcast/client/spi/ServerListenerService.h"
@@ -45,14 +44,14 @@ namespace hazelcast {
 
             }
 
-            std::auto_ptr<std::string> ProxyImpl::listen(
-                    std::auto_ptr<protocol::ClientMessage> registrationRequest, int partitionId,
-                    impl::BaseEventHandler *handler) {
-                return context->getServerListenerService().listen(registrationRequest, partitionId, handler);
+            std::string ProxyImpl::registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
+                                                    int partitionId, impl::BaseEventHandler *handler) {
+                return context->getServerListenerService().registerListener(addListenerCodec, partitionId, handler);
             }
 
-            std::auto_ptr<std::string> ProxyImpl::listen(std::auto_ptr<protocol::ClientMessage> registrationRequest, impl::BaseEventHandler *handler) {
-                return context->getServerListenerService().listen(registrationRequest, handler);
+            std::string ProxyImpl::registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
+                                                    impl::BaseEventHandler *handler) {
+                return context->getServerListenerService().registerListener(addListenerCodec, handler);
             }
 
             int ProxyImpl::getPartitionId(const serialization::pimpl::Data& key) {
@@ -65,6 +64,11 @@ namespace hazelcast {
                 return future.get();
             }
 
+            connection::CallFuture ProxyImpl::invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
+                spi::InvocationService& invocationService = context->getInvocationService();
+                return invocationService.invokeOnPartitionOwner(request, partitionId);
+            }
+
             std::auto_ptr<protocol::ClientMessage> ProxyImpl::invoke(std::auto_ptr<protocol::ClientMessage> request) {
                 connection::CallFuture future = context->getInvocationService().invokeOnRandomTarget(request);
                 return future.get();
@@ -72,75 +76,17 @@ namespace hazelcast {
 
             void ProxyImpl::destroy() {
                 onDestroy();
-                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::DestroyProxyParameters::encode(
-                        DistributedObject::getName(), DistributedObject::getServiceName());
 
-                context->getInvocationService().invokeOnRandomTarget(request);
+                std::auto_ptr<protocol::ClientMessage> request = protocol::codec::ClientDestroyProxyCodec::RequestParameters::encode(
+                                        DistributedObject::getName(), DistributedObject::getServiceName());
+
+                context->getInvocationService().invokeOnRandomTarget(request).get();
             }
 
             std::auto_ptr<protocol::ClientMessage> ProxyImpl::invoke(std::auto_ptr<protocol::ClientMessage> request,
                                                                      boost::shared_ptr<connection::Connection> conn) {
                 connection::CallFuture future = context->getInvocationService().invokeOnConnection(request, conn);
                 return future.get();
-            }
-
-            std::auto_ptr<protocol::DataArray> ProxyImpl::invokeAndGetResult(
-                    std::auto_ptr<protocol::ClientMessage> request) {
-                std::auto_ptr<protocol::ClientMessage> response = invoke(request);
-
-                return protocol::parameters::DataCollectionResultParameters::decode(*response)->values;
-            }
-
-            template<>
-            bool ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return response->getBoolean();
-            }
-
-            template<>
-            int ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return response->getInt32();
-            }
-
-            template<>
-            long ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return (long)response->getInt64();
-            }
-
-            template<>
-            std::auto_ptr<std::string> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return response->getStringUtf8();
-            }
-
-            template<>
-            std::auto_ptr<serialization::pimpl::Data> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::parameters::GenericResultParameters> resultParameters =
-                        protocol::parameters::GenericResultParameters::decode(*response);
-
-                std::auto_ptr<serialization::pimpl::Data> result = resultParameters->data;
-
-                return result;
-            }
-
-            template<>
-            std::auto_ptr<protocol::DataArray> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::parameters::DataCollectionResultParameters> resultParameters =
-                        protocol::parameters::DataCollectionResultParameters::decode(*response);
-
-                std::auto_ptr<protocol::DataArray> result = resultParameters->values;
-
-                return result;
-            }
-
-            template<>
-            std::auto_ptr<map::DataEntryView> ProxyImpl::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::parameters::EntryViewParameters> resultParameters =
-                        protocol::parameters::EntryViewParameters::decode(*response);
-
-                return resultParameters->entryView;
-            }
-
-            std::auto_ptr<protocol::DataArray> ProxyImpl::getDataList(protocol::ClientMessage *response) const {
-                return response->getDataList();
             }
         }
     }

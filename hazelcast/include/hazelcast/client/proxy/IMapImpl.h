@@ -19,14 +19,8 @@
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include "hazelcast/client/map/DataEntryView.h"
 
-#include "hazelcast/client/protocol/parameters/MapExecuteOnKeyParameters.h"
-#include "hazelcast/client/protocol/parameters/MapExecuteOnAllKeysParameters.h"
-
 namespace hazelcast {
     namespace client {
-        namespace protocol {
-            class ClientMessage;
-        }
         namespace proxy {
             class HAZELCAST_API IMapImpl : public ProxyImpl {
             protected:
@@ -76,79 +70,58 @@ namespace hazelcast {
 
                 void forceUnlock(const serialization::pimpl::Data& key);
 
-                std::auto_ptr<std::string> addInterceptor(serialization::Portable &interceptor);
+                std::string addInterceptor(serialization::Portable &interceptor);
 
-                std::auto_ptr<std::string> addInterceptor(serialization::IdentifiedDataSerializable &interceptor);
+                std::string addInterceptor(serialization::IdentifiedDataSerializable &interceptor);
 
                 void removeInterceptor(const std::string& id);
 
-                std::auto_ptr<std::string> addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
+                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
 
                 bool removeEntryListener(const std::string& registrationId);
 
-                std::auto_ptr<std::string> addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue);
+                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue);
 
-                std::auto_ptr<map::DataEntryView> getEntryView(const serialization::pimpl::Data& key);
+                map::DataEntryView getEntryView(const serialization::pimpl::Data& key);
 
                 bool evict(const serialization::pimpl::Data& key);
 
                 void evictAll();
 
-                void getAll(const std::vector<serialization::pimpl::Data> &keys,
-                            std::auto_ptr<protocol::DataArray> &resultKeys,
-                            std::auto_ptr<protocol::DataArray> &resultValue);
+                EntryVector getAll(const std::vector<serialization::pimpl::Data>& keys);
 
-                std::auto_ptr<protocol::DataArray> keySet(const std::string& sql);
+                std::vector<serialization::pimpl::Data> keySet(const std::string& sql);
 
-                void entrySet(const std::string &sql,
-                                        std::auto_ptr<protocol::DataArray> &resultKeys,
-                                        std::auto_ptr<protocol::DataArray> &resultValue);
+                EntryVector entrySet(const std::string& sql);
 
-                std::auto_ptr<protocol::DataArray> values(const std::string& sql);
+                EntryVector values(const std::string& sql);
 
                 void addIndex(const std::string& attribute, bool ordered);
-
-                template<typename K, typename ResultType, typename EntryProcessor>
-                ResultType executeOnKey(const K& key, EntryProcessor& entryProcessor) {
-                    serialization::pimpl::Data keyData = toData<K>(key);
-
-                    int partitionId = getPartitionId(keyData);
-
-                    std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::MapExecuteOnKeyParameters::encode(
-                                    getName(), toData<EntryProcessor>(entryProcessor), toData<K>(key));
-
-                    return invokeAndGetResult<ResultType>(request, partitionId);
-                }
-
-                template<typename ResultType, typename EntryProcessor>
-                void executeOnEntries(EntryProcessor& entryProcessor,
-                                            std::auto_ptr<protocol::DataArray> &resultKeys,
-                                            std::auto_ptr<protocol::DataArray> &resultValues) {
-
-                    std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::MapExecuteOnAllKeysParameters::encode(
-                                    getName(), toData<EntryProcessor>(entryProcessor));
-
-                    std::auto_ptr<protocol::ClientMessage> response = invoke(request);
-
-                    resultKeys = getDataList(response.get());
-                    resultValues = getDataList(response.get());
-                }
 
                 int size();
 
                 bool isEmpty();
 
-                void putAll(const protocol::DataArray &keys,
-                                      const protocol::DataArray &values);
+                void putAll(const EntryVector& entries);
 
                 void clear();
 
+                template<typename KEY, typename RESULT, typename ENTRYPROCESSOR>
+                RESULT executeOnKey(const KEY& key, ENTRYPROCESSOR &entryProcessor) {
+
+                }
+
+                template<typename KEY, typename RESULT, typename ENTRYPROCESSOR>
+                std::map<KEY, RESULT> executeOnEntries(ENTRYPROCESSOR &entryProcessor) {
+
+                }
+
+
+                static const std::string NO_PREDICATE;
+            private:
                 static const std::string VALUE_ITERATION_TYPE;
                 static const std::string KEY_ITERATION_TYPE;
                 static const std::string ENTRY_ITERATION_TYPE;
-                static const std::string NO_PREDICATE;
             };
         }
 

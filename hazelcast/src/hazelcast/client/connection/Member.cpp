@@ -23,6 +23,8 @@
 
 namespace hazelcast {
     namespace client {
+        Member::Member() {
+        }
 
         Member::Member(const Address &address, const std::string &uuid, bool lite,
                        const std::map<std::string, std::string> &attr) :
@@ -54,7 +56,7 @@ namespace hazelcast {
         }
 
         const std::string &Member::getAttribute(const std::string &key) const {
-            return attributes[key];
+            return attributes.at(key);
         }
 
         bool Member::lookupAttribute(const std::string &key) const {

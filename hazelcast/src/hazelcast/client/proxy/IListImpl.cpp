@@ -80,7 +80,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::parameters::ListAddListenerParameters::encode(getName(), includeValue);
 
-                return listen(request, entryEventHandler);
+                return registerListener(request, entryEventHandler);
             }
 
             bool IListImpl::removeItemListener(const std::string& registrationId) {

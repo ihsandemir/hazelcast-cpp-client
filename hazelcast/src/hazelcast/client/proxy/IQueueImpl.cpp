@@ -56,7 +56,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::parameters::QueueAddListenerParameters::encode(getName(), includeValue);
 
-                return listen(request, itemEventHandler);
+                return registerListener(request, itemEventHandler);
             }
 
             bool IQueueImpl::removeItemListener(const std::string& registrationId) {

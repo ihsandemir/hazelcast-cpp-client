@@ -184,7 +184,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::parameters::MultiMapAddEntryListenerParameters::encode(getName(), includeValue);
 
-                return listen(request, entryEventHandler);
+                return registerListener(request, entryEventHandler);
             }
 
             std::auto_ptr<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
@@ -195,7 +195,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::parameters::MultiMapAddEntryListenerToKeyParameters::encode(getName(), key, includeValue);
 
-                return listen(request, partitionId, entryEventHandler);
+                return registerListener(request, partitionId, entryEventHandler, 0, NULL);
             }
 
             bool MultiMapImpl::removeEntryListener(const std::string& registrationId) {

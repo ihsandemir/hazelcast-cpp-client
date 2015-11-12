@@ -51,7 +51,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::parameters::SetAddListenerParameters::encode(getName(), includeValue);
 
-                return listen(request, itemEventHandler);
+                return registerListener(request, itemEventHandler);
             }
 
             bool ISetImpl::removeItemListener(const std::string& registrationId) {

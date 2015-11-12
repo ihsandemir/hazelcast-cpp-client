@@ -62,7 +62,6 @@ namespace hazelcast {
 
                     //---------------------- Getters -------------------------------
                     inline std::string getStringUtf8() {
-                        // TODO: Change this!!!
                         int32_t len = getInt32();
                         assert(checkReadAvailable(len));
                         const char *start = (const char *)ix();
@@ -205,7 +204,7 @@ namespace hazelcast {
                     }
 
                     #ifdef HZ_PLATFORM_DARWIN
-                    inline void &set(long value) {
+                    inline void set(long value) {
                         set((int64_t)value);
                     }
                     #endif

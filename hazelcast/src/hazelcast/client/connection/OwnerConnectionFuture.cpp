@@ -17,6 +17,7 @@
 // Created by sancar koyunlu on 19/08/14.
 //
 
+#include "hazelcast/util/Util.h"
 #include "hazelcast/client/exception/IOException.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/ClientContext.h"
