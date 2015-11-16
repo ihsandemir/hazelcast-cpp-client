@@ -28,7 +28,7 @@
 #include "hazelcast/client/topic/Message.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
-#include "hazelcast/client/protocol/parameters/TopicEventParameters.h"
+#include "hazelcast/client/protocol/codec/TopicEventCodec.h"
 
 #include <assert.h>
 

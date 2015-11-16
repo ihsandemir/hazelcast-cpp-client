@@ -20,7 +20,7 @@
 #ifndef HAZELCAST_MembershipEvent
 #define HAZELCAST_MembershipEvent
 
-#include "hazelcast/client/protocol/parameters/MemberResultParameters.h"
+#include <vector>
 #include "hazelcast/client/Member.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -48,15 +48,15 @@ namespace hazelcast {
              * MEMBER_REMOVED = 2,
              */
             enum MembershipEventType {
-                MEMBER_ADDED = protocol::parameters::MemberResultParameters::MEMBER_ADDED,
-                MEMBER_REMOVED = protocol::parameters::MemberResultParameters::MEMBER_REMOVED
+                MEMBER_ADDED = 1,
+                MEMBER_REMOVED = 2,
             };
 
             /**
              * Internal API.
              * Constructor.
              */
-            MembershipEvent(Cluster &cluster, MembershipEventType eventType, const Member &member);
+            MembershipEvent(Cluster &cluster, const Member &member, MembershipEventType eventType, const std::vector<Member> &membersList);
 
             /**
              * Destructor
@@ -76,7 +76,7 @@ namespace hazelcast {
              *
              * @return the members at the moment after this event.
              */
-            virtual std::vector <Member> getMembers() const;
+            virtual const std::vector<Member> getMembers() const;
 
             /**
              * Returns the cluster of the event.
@@ -101,10 +101,11 @@ namespace hazelcast {
             virtual const Member &getMember() const;
 
         private:
-            Cluster *cluster;
+            Cluster &cluster;
             //TODO: no need to make a copy since the event is only used in the lifetime of the member in the members list
             Member member;
             MembershipEventType eventType;
+            std::vector<Member> members;
         };
     }
 }

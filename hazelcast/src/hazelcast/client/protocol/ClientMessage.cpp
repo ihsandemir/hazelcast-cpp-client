@@ -37,6 +37,8 @@
 namespace hazelcast {
     namespace client {
         namespace protocol {
+            const std::string ClientTypes::CPP = "CPP";
+
             struct ClientMessage::MessageHeaderType ClientMessage::DEFAULT_HEADER = getDefaultHeader();
 
             ClientMessage::ClientMessage() : isOwner(false), numBytesWrittenToConnection(0), numBytesFilled(0),

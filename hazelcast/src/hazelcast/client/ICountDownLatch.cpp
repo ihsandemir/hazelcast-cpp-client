@@ -16,10 +16,10 @@
 #include "hazelcast/client/ICountDownLatch.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/CountDownLatchAwaitParameters.h"
-#include "hazelcast/client/protocol/parameters/CountDownLatchCountDownParameters.h"
-#include "hazelcast/client/protocol/parameters/CountDownLatchGetCountParameters.h"
-#include "hazelcast/client/protocol/parameters/CountDownLatchTrySetCountParameters.h"
+#include "hazelcast/client/protocol/codec/CountDownLatchAwaitCodec.h"
+#include "hazelcast/client/protocol/codec/CountDownLatchCountDownCodec.h"
+#include "hazelcast/client/protocol/codec/CountDownLatchGetCountCodec.h"
+#include "hazelcast/client/protocol/codec/CountDownLatchTrySetCountCodec.h"
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 
@@ -34,28 +34,28 @@ namespace hazelcast {
 
         bool ICountDownLatch::await(long timeoutInMillis) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::CountDownLatchAwaitParameters::encode(getName(), timeoutInMillis);
+                    protocol::codec::CountDownLatchAwaitCodec::RequestParameters::encode(getName(), timeoutInMillis);
 
             return invokeAndGetResult<bool>(request, partitionId);
         }
 
         void ICountDownLatch::countDown() {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::CountDownLatchCountDownParameters::encode(getName());
+                    protocol::codec::CountDownLatchCountDownCodec::RequestParameters::encode(getName());
 
             invoke(request, partitionId);
         }
 
         int ICountDownLatch::getCount() {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::CountDownLatchGetCountParameters::encode(getName());
+                    protocol::codec::CountDownLatchGetCountCodec::RequestParameters::encode(getName());
 
             return invokeAndGetResult<int>(request, partitionId);
         }
 
         bool ICountDownLatch::trySetCount(int count) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::CountDownLatchTrySetCountParameters::encode(getName(), count);
+                    protocol::codec::CountDownLatchTrySetCountCodec::RequestParameters::encode(getName(), count);
 
             return invokeAndGetResult<bool>(request, partitionId);
         }

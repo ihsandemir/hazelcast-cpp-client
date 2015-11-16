@@ -21,12 +21,12 @@
 #include "hazelcast/client/proxy/TransactionalMultiMapImpl.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/TransactionalMultiMapPutParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalMultiMapGetParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalMultiMapRemoveParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalMultiMapRemoveEntryParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalMultiMapValueCountParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalMultiMapSizeParameters.h"
+#include "hazelcast/client/protocol/codec/TransactionalMultiMapPutCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalMultiMapGetCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalMultiMapRemoveCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalMultiMapRemoveEntryCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalMultiMapValueCountCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalMultiMapSizeCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -39,7 +39,7 @@ namespace hazelcast {
 
             bool TransactionalMultiMapImpl::put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalMultiMapPutParameters::encode(
+                        protocol::codec::TransactionalMultiMapPutCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), key, value);
 
                 return invokeAndGetResult<bool>(request);
@@ -47,7 +47,7 @@ namespace hazelcast {
 
             std::auto_ptr<protocol::DataArray> TransactionalMultiMapImpl::get(const serialization::pimpl::Data& key) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalMultiMapGetParameters::encode(
+                        protocol::codec::TransactionalMultiMapGetCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), key);
 
                 return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
@@ -56,7 +56,7 @@ namespace hazelcast {
 
             bool TransactionalMultiMapImpl::remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalMultiMapRemoveEntryParameters::encode(
+                        protocol::codec::TransactionalMultiMapRemoveEntryCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), key, value);
 
                 return invokeAndGetResult<bool>(request);
@@ -65,7 +65,7 @@ namespace hazelcast {
 
             std::auto_ptr<protocol::DataArray> TransactionalMultiMapImpl::remove(const serialization::pimpl::Data& key) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalMultiMapRemoveParameters::encode(
+                        protocol::codec::TransactionalMultiMapRemoveCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), key);
 
                 return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
@@ -74,7 +74,7 @@ namespace hazelcast {
 
             int TransactionalMultiMapImpl::valueCount(const serialization::pimpl::Data& key) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalMultiMapValueCountParameters::encode(
+                        protocol::codec::TransactionalMultiMapValueCountCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), key);
 
                 return invokeAndGetResult<int>(request);
@@ -82,7 +82,7 @@ namespace hazelcast {
 
             int TransactionalMultiMapImpl::size() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalMultiMapSizeParameters::encode(
+                        protocol::codec::TransactionalMultiMapSizeCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId());
 
                 return invokeAndGetResult<int>(request);

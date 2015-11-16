@@ -23,7 +23,7 @@
 #define HAZELCAST_TransactionalObject
 
 #include "hazelcast/client/txn/TransactionProxy.h"
-#include "hazelcast/client/protocol/parameters/GenericResultParameters.h"
+#include "hazelcast/client/protocol/codec/GenericResultCodec.h"
 #include "hazelcast/client/protocol/ProtocolTypeDefs.h"
 
 #include <string>

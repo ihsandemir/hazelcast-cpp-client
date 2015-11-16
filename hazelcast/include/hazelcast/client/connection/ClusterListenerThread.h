@@ -25,9 +25,11 @@
 #include "hazelcast/util/CountDownLatch.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/Thread.h"
-#include <boost/shared_ptr.hpp>
+#include "hazelcast/client/protocol/codec/ClientAddMembershipListenerCodec.h"
 #include "hazelcast/client/common/containers/ManagedPointerVector.h"
 #include "hazelcast/client/MembershipEvent.h"
+
+#include <boost/shared_ptr.hpp>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -62,7 +64,7 @@ namespace hazelcast {
 
             class ConnectionManager;
 
-            class HAZELCAST_API ClusterListenerThread {
+            class HAZELCAST_API ClusterListenerThread : public protocol::codec::ClientAddMembershipListenerCodec::AbstractEventHandler {
             public:
                 ClusterListenerThread(spi::ClientContext &clientContext);
 
@@ -74,24 +76,32 @@ namespace hazelcast {
 
                 void stop();
 
+                virtual void handleMember(const Member &member, const int32_t &eventType);
+
+                virtual void handleMemberSet(const std::vector<Member> &initialMembers);
+
+                virtual void handleMemberAttributeChange(const std::string &uuid, const std::string &key,
+                                                         const int32_t &operationType,
+                                                         std::auto_ptr<std::string> value);
+
                 std::vector<Address> getSocketAddresses();
 
                 util::CountDownLatch startLatch;
+
                 bool isStartedSuccessfully;
             private:
+                spi::ClientContext &clientContext;
+                boost::shared_ptr<Connection> conn;
+                util::AtomicBoolean deletingConnection;
+                std::vector<Member> members;
+
+                std::auto_ptr<util::Thread> clusterListenerThread;
+
                 void loadInitialMemberList();
 
                 void listenMembershipEvents();
 
                 void updateMembersRef();
-
-                void handleMember(protocol::ClientMessage &response);
-
-                void memberAttributeChanged(const impl::MemberAttributeChange &change);
-
-                void updateMembers(
-                        protocol::parameters::MemberResultParameters & memberResultParameters,
-                        MembershipEvent::MembershipEventType & eventType);
 
                 void fireMemberAttributeEvent(impl::MemberAttributeChange const &, Member &member);
 
@@ -99,17 +109,15 @@ namespace hazelcast {
 
                 std::vector<Address> getConfigAddresses() const;
 
-                void initialMembers(protocol::parameters::MemberListResultParameters &memberListResultParameters);
+                void memberAdded(const Member &member);
 
-                spi::ClientContext &clientContext;
-                boost::shared_ptr<Connection> conn;
-                util::AtomicBoolean deletingConnection;
+                void memberRemoved(const Member &member);
 
-                typedef common::containers::ManagedPointerVector<Member> MEMBERS_TYPE;
-                typedef MEMBERS_TYPE::VECTOR_TYPE MEMBERVECTOR_TYPE;
-                std::auto_ptr<MEMBERS_TYPE> members;
+                std::vector<MembershipEvent> detectMembershipEvents(std::auto_ptr<std::map<std::string, Member> > prevMembers) const;
 
-                std::auto_ptr<util::Thread> clusterListenerThread;
+                void applyMemberListChanges();
+
+                void fireMembershipEvents(const std::vector<MembershipEvent> &events) const;
             };
         }
     }

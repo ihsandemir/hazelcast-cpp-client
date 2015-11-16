@@ -23,7 +23,7 @@
 namespace hazelcast {
     namespace client {
 
-        MemberAttributeEvent::MemberAttributeEvent(Cluster &cluster, Member &member, MemberAttributeOperationType operationType, const std::string &key, const std::string &value)
+        MemberAttributeEvent::MemberAttributeEvent(Cluster &cluster, const Member &member, Member::MemberAttributeOperationType operationType, const std::string &key, const std::string &value)
         :MembershipEvent(cluster, MembershipEvent::MEMBER_ADDED, member)
         , operationType(operationType)
         , key(key)

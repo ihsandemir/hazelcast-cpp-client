@@ -27,7 +27,7 @@
 #include "hazelcast/client/connection/OutputSocketStream.h"
 #include "hazelcast/client/connection/InputSocketStream.h"
 #include "hazelcast/client/connection/CallFuture.h"
-#include "hazelcast/client/protocol/parameters/RemoveAllListenersParameters.h"
+#include "hazelcast/client/protocol/codec/ClientRemoveAllListenersCodec.h"
 
 #include <stdint.h>
 
@@ -110,7 +110,7 @@ namespace hazelcast {
                 return socket.getRemoteEndpoint();
             }
 
-            void Connection::setRemoteEndpoint(Address& remoteEndpoint) {
+            void Connection::setRemoteEndpoint(const Address& remoteEndpoint) {
                 socket.setRemoteEndpoint(remoteEndpoint);
             }
 
@@ -169,7 +169,7 @@ namespace hazelcast {
                 errorMessage << "Heartbeat to connection  " << getRemoteEndpoint() << " is failed. ";
                 util::ILogger::getLogger().warning(errorMessage.str());
 
-                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::RemoveAllListenersParameters::encode();
+                std::auto_ptr<protocol::ClientMessage> request = protocol::codec::ClientRemoveAllListenersCodec::RequestParameters::encode();
 
                 spi::InvocationService& invocationService = clientContext.getInvocationService();
                 invocationService.invokeOnTarget(request, getRemoteEndpoint()).get();

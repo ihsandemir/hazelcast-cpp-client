@@ -20,26 +20,26 @@
 #include "hazelcast/client/proxy/IQueueImpl.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/QueueOfferParameters.h"
-#include "hazelcast/client/protocol/parameters/QueuePutParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueSizeParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueRemoveParameters.h"
-#include "hazelcast/client/protocol/parameters/QueuePollParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueTakeParameters.h"
-#include "hazelcast/client/protocol/parameters/QueuePeekParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueIteratorParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueDrainToParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueDrainToMaxSizeParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueContainsParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueContainsAllParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueCompareAndRemoveAllParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueCompareAndRetainAllParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueClearParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueAddAllParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueAddListenerParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueRemoveListenerParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueRemainingCapacityParameters.h"
-#include "hazelcast/client/protocol/parameters/QueueIsEmptyParameters.h"
+#include "hazelcast/client/protocol/codec/QueueOfferCodec.h"
+#include "hazelcast/client/protocol/codec/QueuePutCodec.h"
+#include "hazelcast/client/protocol/codec/QueueSizeCodec.h"
+#include "hazelcast/client/protocol/codec/QueueRemoveCodec.h"
+#include "hazelcast/client/protocol/codec/QueuePollCodec.h"
+#include "hazelcast/client/protocol/codec/QueueTakeCodec.h"
+#include "hazelcast/client/protocol/codec/QueuePeekCodec.h"
+#include "hazelcast/client/protocol/codec/QueueIteratorCodec.h"
+#include "hazelcast/client/protocol/codec/QueueDrainToCodec.h"
+#include "hazelcast/client/protocol/codec/QueueDrainToMaxSizeCodec.h"
+#include "hazelcast/client/protocol/codec/QueueContainsCodec.h"
+#include "hazelcast/client/protocol/codec/QueueContainsAllCodec.h"
+#include "hazelcast/client/protocol/codec/QueueCompareAndRemoveAllCodec.h"
+#include "hazelcast/client/protocol/codec/QueueCompareAndRetainAllCodec.h"
+#include "hazelcast/client/protocol/codec/QueueClearCodec.h"
+#include "hazelcast/client/protocol/codec/QueueAddAllCodec.h"
+#include "hazelcast/client/protocol/codec/QueueAddListenerCodec.h"
+#include "hazelcast/client/protocol/codec/QueueRemoveListenerCodec.h"
+#include "hazelcast/client/protocol/codec/QueueRemainingCapacityCodec.h"
+#include "hazelcast/client/protocol/codec/QueueIsEmptyCodec.h"
 
 #include "hazelcast/client/spi/ServerListenerService.h"
 
@@ -54,7 +54,7 @@ namespace hazelcast {
 
             std::auto_ptr<std::string> IQueueImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueAddListenerParameters::encode(getName(), includeValue);
+                        protocol::codec::QueueAddListenerCodec::RequestParameters::encode(getName(), includeValue);
 
                 return registerListener(request, itemEventHandler);
             }
@@ -65,7 +65,7 @@ namespace hazelcast {
                 std::string effectiveRegistrationId = registrationId;
                 if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
                     std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::QueueRemoveListenerParameters::encode(getName(), effectiveRegistrationId);
+                            protocol::codec::QueueRemoveListenerCodec::RequestParameters::encode(getName(), effectiveRegistrationId);
 
                     result = invokeAndGetResult<bool>(request);
                 }
@@ -75,42 +75,42 @@ namespace hazelcast {
 
             bool IQueueImpl::offer(const serialization::pimpl::Data& element, long timeoutInMillis) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueOfferParameters::encode(getName(), element, timeoutInMillis);
+                        protocol::codec::QueueOfferCodec::RequestParameters::encode(getName(), element, timeoutInMillis);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             serialization::pimpl::Data IQueueImpl::poll(long timeoutInMillis) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueuePollParameters::encode(getName(), timeoutInMillis);
+                        protocol::codec::QueuePollCodec::RequestParameters::encode(getName(), timeoutInMillis);
 
                 return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
             int IQueueImpl::remainingCapacity() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueRemainingCapacityParameters::encode(getName());
+                        protocol::codec::QueueRemainingCapacityCodec::RequestParameters::encode(getName());
 
                 return invokeAndGetResult<int>(request, partitionId);
             }
 
             bool IQueueImpl::remove(const serialization::pimpl::Data& element) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueRemoveParameters::encode(getName(), element);
+                        protocol::codec::QueueRemoveCodec::RequestParameters::encode(getName(), element);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IQueueImpl::contains(const serialization::pimpl::Data& element) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueContainsParameters::encode(getName(), element);
+                        protocol::codec::QueueContainsCodec::RequestParameters::encode(getName(), element);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             std::auto_ptr<protocol::DataArray> IQueueImpl::drainTo(int maxElements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueDrainToMaxSizeParameters::encode(getName(), maxElements);
+                        protocol::codec::QueueDrainToMaxSizeCodec::RequestParameters::encode(getName(), maxElements);
 
                 return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
             }
@@ -118,56 +118,56 @@ namespace hazelcast {
 
             serialization::pimpl::Data IQueueImpl::peek() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueuePeekParameters::encode(getName());
+                        protocol::codec::QueuePeekCodec::RequestParameters::encode(getName());
 
                 return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
             }
 
             int IQueueImpl::size() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueSizeParameters::encode(getName());
+                        protocol::codec::QueueSizeCodec::RequestParameters::encode(getName());
 
                 return invokeAndGetResult<int>(request, partitionId);
             }
 
             std::auto_ptr<protocol::DataArray> IQueueImpl::toArray() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueIteratorParameters::encode(getName());
+                        protocol::codec::QueueIteratorCodec::RequestParameters::encode(getName());
 
                 return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
             }
 
             bool IQueueImpl::containsAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueContainsAllParameters::encode(getName(), elements);
+                        protocol::codec::QueueContainsAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IQueueImpl::addAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueAddAllParameters::encode(getName(), elements);
+                        protocol::codec::QueueAddAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IQueueImpl::removeAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueCompareAndRemoveAllParameters::encode(getName(), elements);
+                        protocol::codec::QueueCompareAndRemoveAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool IQueueImpl::retainAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueCompareAndRetainAllParameters::encode(getName(), elements);
+                        protocol::codec::QueueCompareAndRetainAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             void IQueueImpl::clear() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::QueueClearParameters::encode(getName());
+                        protocol::codec::QueueClearCodec::RequestParameters::encode(getName());
 
                 invoke(request, partitionId);
             }

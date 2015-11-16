@@ -35,7 +35,7 @@ namespace hazelcast {
             public:
                 Principal();
 
-                Principal(std::string &uuid, std::string &ownerUuid);
+                Principal(std::auto_ptr<std::string> id, std::auto_ptr<std::string> owner);
 
                 int getFactoryId() const;
 
@@ -45,9 +45,9 @@ namespace hazelcast {
 
                 void readPortable(serialization::PortableReader& reader);
 
-                const std::string &getUuid() const;
+                const std::string *getUuid() const;
 
-                const std::string &getOwnerUuid() const;
+                const std::string *getOwnerUuid() const;
 
             private:
                 std::auto_ptr<std::string> uuid;

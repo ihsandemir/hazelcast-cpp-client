@@ -29,7 +29,7 @@
 #include "hazelcast/client/ItemEvent.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
-#include "hazelcast/client/protocol/parameters/ItemEventParameters.h"
+#include "hazelcast/client/protocol/codec/ItemEventCodec.h"
 
 namespace hazelcast {
     namespace client {

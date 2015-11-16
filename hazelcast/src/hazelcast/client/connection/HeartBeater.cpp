@@ -26,9 +26,10 @@
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/util/IOUtil.h"
-#include "hazelcast/client/protocol/parameters/PingParameters.h"
+#include "hazelcast/client/protocol/codec/ClientPingCodec.h"
 
 #include <ctime>
+#include <hazelcast/client/protocol/codec/ClientPingCodec.h>
 
 namespace hazelcast {
     namespace client {
@@ -69,7 +70,7 @@ namespace hazelcast {
                         }
 
                         if (now - connection->lastRead > heartBeatIntervalSeconds) {
-                            std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::PingParameters::encode();
+                            std::auto_ptr<protocol::ClientMessage> request = protocol::codec::ClientPingCodec::RequestParameters::encode();
 
                             clientContext.getInvocationService().invokeOnConnection(request, connection);
                         } else {

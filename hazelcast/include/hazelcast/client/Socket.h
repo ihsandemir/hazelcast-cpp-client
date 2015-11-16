@@ -105,7 +105,7 @@ namespace hazelcast {
             /**
              * @param address remote endpoint address.
              */
-            void setRemoteEndpoint(client::Address &address);
+            void setRemoteEndpoint(const client::Address &address);
 
             /**
              * @return remoteEndpoint

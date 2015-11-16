@@ -30,7 +30,7 @@
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/protocol/parameters/EntryEventParameters.h"
+#include "hazelcast/client/protocol/codec/EntryEventCodec.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

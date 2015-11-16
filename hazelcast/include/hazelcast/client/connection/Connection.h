@@ -79,7 +79,7 @@ namespace hazelcast {
 
                 const Address& getRemoteEndpoint() const;
 
-                void setRemoteEndpoint(Address& remoteEndpoint);
+                void setRemoteEndpoint(const Address& remoteEndpoint);
 
                 Socket& getSocket();
 

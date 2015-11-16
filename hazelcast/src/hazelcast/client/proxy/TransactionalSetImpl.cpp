@@ -23,9 +23,9 @@
 #include "hazelcast/client/txn/TransactionProxy.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/TransactionalSetAddParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalSetRemoveParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalSetSizeParameters.h"
+#include "hazelcast/client/protocol/codec/TransactionalSetAddCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalSetRemoveCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalSetSizeCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -37,7 +37,7 @@ namespace hazelcast {
 
             bool TransactionalSetImpl::add(const serialization::pimpl::Data& e) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalSetAddParameters::encode(
+                        protocol::codec::TransactionalSetAddCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), e);
 
                 return invokeAndGetResult<bool>(request);
@@ -45,7 +45,7 @@ namespace hazelcast {
 
             bool TransactionalSetImpl::remove(const serialization::pimpl::Data& e) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalSetRemoveParameters::encode(
+                        protocol::codec::TransactionalSetRemoveCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), e);
 
                 return invokeAndGetResult<bool>(request);
@@ -53,7 +53,7 @@ namespace hazelcast {
 
             int TransactionalSetImpl::size() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalSetSizeParameters::encode(
+                        protocol::codec::TransactionalSetSizeCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId());
 
                 return invokeAndGetResult<int>(request);

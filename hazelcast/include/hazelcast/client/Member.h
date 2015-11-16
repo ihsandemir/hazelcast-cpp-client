@@ -45,15 +45,24 @@ namespace hazelcast {
         public:
             friend class connection::ClusterListenerThread;
 
+            /**
+            * PUT even type representing an addition of an attribute
+            * REMOVE event type representing a deletion of an attribute
+            */
+            enum MemberAttributeOperationType {
+                PUT = 1,
+                REMOVE = 2
+            };
+
             Member();
 
             Member(const Address &address, const std::string &uuid, bool lite,
-                           const std::map<std::string, std::string> &attr);
+                   const std::map<std::string, std::string> &attr);
 
             /**
              * comparison operation
              */
-            bool operator ==(const Member &) const;
+            bool operator==(const Member &) const;
 
             /**
              *
@@ -107,7 +116,7 @@ namespace hazelcast {
             std::map<std::string, std::string> attributes;
         };
 
-        std::ostream HAZELCAST_API &operator <<(std::ostream &stream, const Member &member);
+        std::ostream HAZELCAST_API &operator<<(std::ostream &stream, const Member &member);
     }
 }
 

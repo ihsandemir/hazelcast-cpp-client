@@ -24,19 +24,19 @@
 #include "hazelcast/client/impl/SerializableCollection.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/SetSizeParameters.h"
-#include "hazelcast/client/protocol/parameters/SetContainsParameters.h"
-#include "hazelcast/client/protocol/parameters/SetContainsAllParameters.h"
-#include "hazelcast/client/protocol/parameters/SetAddParameters.h"
-#include "hazelcast/client/protocol/parameters/SetRemoveParameters.h"
-#include "hazelcast/client/protocol/parameters/SetAddAllParameters.h"
-#include "hazelcast/client/protocol/parameters/SetCompareAndRemoveAllParameters.h"
-#include "hazelcast/client/protocol/parameters/SetCompareAndRetainAllParameters.h"
-#include "hazelcast/client/protocol/parameters/SetClearParameters.h"
-#include "hazelcast/client/protocol/parameters/SetGetAllParameters.h"
-#include "hazelcast/client/protocol/parameters/SetAddListenerParameters.h"
-#include "hazelcast/client/protocol/parameters/SetRemoveListenerParameters.h"
-#include "hazelcast/client/protocol/parameters/SetIsEmptyParameters.h"
+#include "hazelcast/client/protocol/codec/SetSizeCodec.h"
+#include "hazelcast/client/protocol/codec/SetContainsCodec.h"
+#include "hazelcast/client/protocol/codec/SetContainsAllCodec.h"
+#include "hazelcast/client/protocol/codec/SetAddCodec.h"
+#include "hazelcast/client/protocol/codec/SetRemoveCodec.h"
+#include "hazelcast/client/protocol/codec/SetAddAllCodec.h"
+#include "hazelcast/client/protocol/codec/SetCompareAndRemoveAllCodec.h"
+#include "hazelcast/client/protocol/codec/SetCompareAndRetainAllCodec.h"
+#include "hazelcast/client/protocol/codec/SetClearCodec.h"
+#include "hazelcast/client/protocol/codec/SetGetAllCodec.h"
+#include "hazelcast/client/protocol/codec/SetAddListenerCodec.h"
+#include "hazelcast/client/protocol/codec/SetRemoveListenerCodec.h"
+#include "hazelcast/client/protocol/codec/SetIsEmptyCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -49,7 +49,7 @@ namespace hazelcast {
 
             std::auto_ptr<std::string> ISetImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetAddListenerParameters::encode(getName(), includeValue);
+                        protocol::codec::SetAddListenerCodec::RequestParameters::encode(getName(), includeValue);
 
                 return registerListener(request, itemEventHandler);
             }
@@ -60,7 +60,7 @@ namespace hazelcast {
                 std::string effectiveRegistrationId = registrationId;
                 if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
                     std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::SetRemoveListenerParameters::encode(getName(), effectiveRegistrationId);
+                            protocol::codec::SetRemoveListenerCodec::RequestParameters::encode(getName(), effectiveRegistrationId);
 
                     result = invokeAndGetResult<bool>(request);
                 }
@@ -69,7 +69,7 @@ namespace hazelcast {
             }
 
             int ISetImpl::size() {
-                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::SetSizeParameters::encode(getName());
+                std::auto_ptr<protocol::ClientMessage> request = protocol::codec::SetSizeCodec::RequestParameters::encode(getName());
 
                 return invokeAndGetResult<int>(request, partitionId);
             }
@@ -77,63 +77,63 @@ namespace hazelcast {
 
             bool ISetImpl::contains(const serialization::pimpl::Data& element) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetContainsParameters::encode(getName(), element);
+                        protocol::codec::SetContainsCodec::RequestParameters::encode(getName(), element);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             std::auto_ptr<protocol::DataArray>  ISetImpl::toArray() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetGetAllParameters::encode(getName());
+                        protocol::codec::SetGetAllCodec::RequestParameters::encode(getName());
 
                 return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
             }
 
             bool ISetImpl::add(const serialization::pimpl::Data& element) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetAddParameters::encode(getName(), element);
+                        protocol::codec::SetAddCodec::RequestParameters::encode(getName(), element);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool ISetImpl::remove(const serialization::pimpl::Data& element) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetRemoveParameters::encode(getName(), element);
+                        protocol::codec::SetRemoveCodec::RequestParameters::encode(getName(), element);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool ISetImpl::containsAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetContainsAllParameters::encode(getName(), elements);
+                        protocol::codec::SetContainsAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool ISetImpl::addAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetAddAllParameters::encode(getName(), elements);
+                        protocol::codec::SetAddAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool ISetImpl::removeAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetCompareAndRemoveAllParameters::encode(getName(), elements);
+                        protocol::codec::SetCompareAndRemoveAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             bool ISetImpl::retainAll(const std::vector<serialization::pimpl::Data>& elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetCompareAndRetainAllParameters::encode(getName(), elements);
+                        protocol::codec::SetCompareAndRetainAllCodec::RequestParameters::encode(getName(), elements);
 
                 return invokeAndGetResult<bool>(request, partitionId);
             }
 
             void ISetImpl::clear() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::SetClearParameters::encode(getName());
+                        protocol::codec::SetClearCodec::RequestParameters::encode(getName());
 
                 invoke(request, partitionId);
             }

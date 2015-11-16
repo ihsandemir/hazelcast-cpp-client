@@ -30,7 +30,7 @@
 #include "hazelcast/util/Thread.h"
 #include "hazelcast/util/Future.h"
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/util/AtomicInt.h>
+#include <hazelcast/util/Atomic.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -70,9 +70,9 @@ namespace hazelcast {
             /**
             * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
             */
-            class HAZELCAST_API ConnectionManager{
+            class HAZELCAST_API ConnectionManager {
             public:
-                ConnectionManager(spi::ClientContext& clientContext, bool smartRouting);              
+                ConnectionManager(spi::ClientContext &clientContext, bool smartRouting);
 
                 /**
                 * Start clientConnectionManager
@@ -86,14 +86,14 @@ namespace hazelcast {
                 * @return ownerConnection
                 * @throws Exception
                 */
-                boost::shared_ptr<Connection> createOwnerConnection(const Address& address);
+                boost::shared_ptr<Connection> createOwnerConnection(const Address &address);
 
                 /**
                 * Gets a shared ptr to connection if available to given address
                 *
                 * @param address
                 */
-                boost::shared_ptr<Connection> getConnectionIfAvailable(const Address& address);
+                boost::shared_ptr<Connection> getConnectionIfAvailable(const Address &address);
 
                 /**
                 * Gets a shared ptr to connection if available to the provided socket descriptor
@@ -110,7 +110,7 @@ namespace hazelcast {
                 * @return authenticated connection
                 * @throws Exception authentication failed or no connection found
                 */
-                boost::shared_ptr<Connection> getOrConnect(const Address& resolvedAddress, int tryCount);
+                boost::shared_ptr<Connection> getOrConnect(const Address &resolvedAddress, int tryCount);
 
                 /**
                 * Tries to connect to an address in member list.
@@ -126,7 +126,7 @@ namespace hazelcast {
                 *
                 * @param clientConnection closed connection
                 */
-                void onConnectionClose(const Address& address);
+                void onConnectionClose(const Address &address);
 
                 /**
                 * Shutdown clientConnectionManager
@@ -143,38 +143,39 @@ namespace hazelcast {
                 * @param ownerConnection
                 * @return Return the newly created connection.
                 */
-                std::auto_ptr<Connection> connectTo(const Address& address, bool ownerConnection);
+                std::auto_ptr<Connection> connectTo(const Address &address, bool ownerConnection);
 
                 /**
                 * @param address
                 * @param ownerConnection
                 */
-                std::vector< boost::shared_ptr<Connection> > getConnections();
+                std::vector<boost::shared_ptr<Connection> > getConnections();
 
                 /**
                 * Called heartbeat timeout is detected on a connection.
                 *
                 * @param connection to be marked.
                 */
-                void onDetectingUnresponsiveConnection(Connection& connection);
+                void onDetectingUnresponsiveConnection(Connection &connection);
 
                 /**
                  * Called when a member left the cluster
                  * @param address address of the member
                 */
-                void removeEndpoint(const Address& address);
+                void removeEndpoint(const Address &address);
 
                 /**
                  *
                  * TODO: Keep the call id per connection inside the connection object and we may not need to use atomic int since only one connection io thread
                  * shall call it during the actual send operation!!!
                  */
-                int getNextCallId();
+                uint32_t getNextCallId();
+
             private:
 
-                boost::shared_ptr<Connection> getOrConnectResolved(const Address& resolvedAddress);
+                boost::shared_ptr<Connection> getOrConnectResolved(const Address &resolvedAddress);
 
-                boost::shared_ptr<Connection> getOrConnect(const Address& resolvedAddress);
+                boost::shared_ptr<Connection> getOrConnect(const Address &resolvedAddress);
 
                 boost::shared_ptr<Connection> getRandomConnection();
 
@@ -182,13 +183,17 @@ namespace hazelcast {
 
                 void checkLive();
 
+                void processSuccessfulAuthenticationResult(Connection *connection, const Address &addr,
+                                                           std::auto_ptr<std::string> uuid,
+                                                           std::auto_ptr<std::string> ownerUuid);
+
                 std::vector<byte> PROTOCOL;
                 util::SynchronizedMap<Address, Connection, addressComparator> connections;
                 // TODO: Would prefer to use map<int, IOHandler *> but due to the implementation of
                 // util::SynchronizedMap I had to use something of type shared pointer
                 util::SynchronizedMap<int, Connection> socketConnections;
-                spi::ClientContext& clientContext;
-                SocketInterceptor* socketInterceptor;
+                spi::ClientContext &clientContext;
+                SocketInterceptor *socketInterceptor;
                 InSelector inSelector;
                 OutSelector outSelector;
                 std::auto_ptr<util::Thread> inSelectorThread;
@@ -203,7 +208,7 @@ namespace hazelcast {
                 bool smartRouting;
                 OwnerConnectionFuture ownerConnectionFuture;
 
-                util::AtomicInt callIdGenerator;
+                util::Atomic<uint32_t> callIdGenerator;
             };
         }
     }

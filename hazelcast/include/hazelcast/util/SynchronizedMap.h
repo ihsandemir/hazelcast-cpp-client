@@ -167,6 +167,11 @@ namespace hazelcast {
                 }
                 return value;
             }
+
+            size_t size() const {
+                util::LockGuard lg(mapLock);
+                return internalMap.size();
+            }
         private:
             std::map<K, boost::shared_ptr<V>, Comparator> internalMap;
             mutable util::Mutex mapLock;

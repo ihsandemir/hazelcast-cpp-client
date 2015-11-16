@@ -95,6 +95,8 @@ namespace hazelcast {
 
                     PortableContext &getPortableContext();
 
+                    const byte getVersion() const;
+
                 private:
                     template <typename T>
                     inline boost::shared_ptr<T> readObject(DataInput &data) {

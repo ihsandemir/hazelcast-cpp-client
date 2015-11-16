@@ -24,12 +24,14 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/serialization/ClassDefinitionBuilder.h"
+#include "hazelcast/client/protocol/ProtocolConstants.h"
 #include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/InitialMembershipListener.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
 #include "hazelcast/client/Cluster.h"
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
+#include "hazelcast/util/Util.h"
 #include <ctime>
 
 namespace hazelcast {
@@ -111,18 +113,18 @@ namespace hazelcast {
 
             bool ClusterService::isMemberExists(Address const& address) {
                 util::LockGuard guard(membersLock);
-                return members.count(address) > 0;
+                return members->count(address) > 0;
             }
 
             const Member &ClusterService::getMember(Address& address) {
                 util::LockGuard guard(membersLock);
-                return members[address];
+                return (*members)[address];
             }
 
             std::auto_ptr<Member> ClusterService::getMember(const std::string& uuid) {
                 std::auto_ptr<Member> result;
                 util::LockGuard guard(membersLock);
-                for (std::map<Address, Member, addressComparator >::iterator it = members.begin(); it != members.end(); ++it) {
+                for (std::map<Address, Member, addressComparator >::iterator it = members->begin(); it != members->end(); ++it) {
                     if (0 == uuid.compare(it->second.getUuid())) {
                         result = std::auto_ptr<Member>(new Member(it->second));
                         break;
@@ -131,12 +133,12 @@ namespace hazelcast {
                 return result;
             }
 
-            std::vector<Member> ClusterService::getMemberList() {
+            std::vector<Member> ClusterService::getMemberList() const {
                 typedef std::map<Address, Member, addressComparator> MemberMap;
                 std::vector<Member> v;
                 util::LockGuard guard(membersLock);
                 MemberMap::const_iterator it;
-                for (it = members.begin(); it != members.end(); ++it) {
+                for (it = members->begin(); it != members->end(); ++it) {
                     v.push_back(it->second);
                 }
                 return v;
@@ -145,7 +147,7 @@ namespace hazelcast {
             std::auto_ptr<Address> ClusterService::getFirstMemberAddress() {
                 util::LockGuard guard(membersLock);
                 typedef std::map<Address, Member, addressComparator> MemberMap;
-                MemberMap::const_iterator it = members.begin();
+                MemberMap::const_iterator it = members->begin();
                 std::auto_ptr<Address> result(new Address(it->first));
                 return result;
             }
@@ -199,10 +201,11 @@ namespace hazelcast {
             }
 
 
-            void ClusterService::fireMembershipEvent(MembershipEvent& event) {
+            void ClusterService::fireMembershipEvent(const MembershipEvent& event) {
                 util::LockGuard guard(listenerLock);
                 for (std::set<MembershipListener *>::iterator it = listeners.begin(); it != listeners.end(); ++it) {
                     if (event.getEventType() == MembershipEvent::MEMBER_ADDED) {
+                        // TODO: Java client executes this call using a thread, apply similar logic here
                         (*it)->memberAdded(event);
                     } else if (event.getEventType() == MembershipEvent::MEMBER_REMOVED) {
                         (*it)->memberRemoved(event);
@@ -219,7 +222,7 @@ namespace hazelcast {
             }
 
 
-            void ClusterService::fireMemberAttributeEvent(MemberAttributeEvent& event) {
+            void ClusterService::fireMemberAttributeEvent(const MemberAttributeEvent& event) {
                 util::LockGuard guard(listenerLock);
                 for (std::set<MembershipListener *>::iterator it = listeners.begin(); it != listeners.end(); ++it) {
                     (*it)->memberAttributeChanged(event);
@@ -230,9 +233,23 @@ namespace hazelcast {
                 }
             }
 
-            void ClusterService::setMembers(const std::map<Address, Member, addressComparator>& map) {
+            void ClusterService::setMembers(std::auto_ptr<std::map<Address, Member, addressComparator> > map) {
                 util::LockGuard guard(membersLock);
                 members = map;
+            }
+
+            std::string ClusterService::membersString() const {
+                std::vector<Member> currentMembers = getMemberList();
+
+                std::stringstream memberInfo;
+                memberInfo << std::endl << "Members [" << currentMembers.size() << "]  {" << std::endl;
+
+                for (std::vector<Member>::const_iterator it = currentMembers.begin(); it != currentMembers.end(); ++it) {
+                    memberInfo << "\t" << *it << std::endl;
+                }
+                memberInfo << "}" << std::endl;
+
+                return memberInfo.str();
             }
         }
     }

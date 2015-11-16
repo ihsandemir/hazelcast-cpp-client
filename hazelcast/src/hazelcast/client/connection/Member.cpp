@@ -16,8 +16,6 @@
 //
 // Created by sancar koyunlu on 5/29/13.
 
-
-
 #include "hazelcast/client/Member.h"
 #include "hazelcast/client/serialization/ObjectDataOutput.h"
 
@@ -31,7 +29,7 @@ namespace hazelcast {
                 address(address), uuid(uuid), liteMember(lite), attributes(attr) {
         }
 
-        bool Member::operator ==(const Member &rhs) const {
+        bool Member::operator==(const Member &rhs) const {
             return address == rhs.address;
         }
 
@@ -51,7 +49,7 @@ namespace hazelcast {
             return attributes;
         }
 
-        std::ostream &operator <<(std::ostream &stream, const Member &member) {
+        std::ostream &operator<<(std::ostream &stream, const Member &member) {
             return stream << "Member[" << member.getAddress() << "]";
         }
 

@@ -16,19 +16,19 @@
 #include "hazelcast/client/IAtomicLong.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/AtomicLongApplyParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongAlterParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongAlterAndGetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongGetAndAlterParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongAddAndGetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongCompareAndSetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongDecrementAndGetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongGetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongGetAndAddParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongGetAndSetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongIncrementAndGetParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongGetAndIncrementParameters.h"
-#include "hazelcast/client/protocol/parameters/AtomicLongSetParameters.h"
+#include "hazelcast/client/protocol/codec/AtomicLongApplyCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongAlterCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongAlterAndGetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongGetAndAlterCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongAddAndGetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongCompareAndSetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongDecrementAndGetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongGetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongGetAndAddCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongGetAndSetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongIncrementAndGetCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongGetAndIncrementCodec.h"
+#include "hazelcast/client/protocol/codec/AtomicLongSetCodec.h"
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 
@@ -44,14 +44,14 @@ namespace hazelcast {
 
         long IAtomicLong::addAndGet(long delta) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::AtomicLongAddAndGetParameters::encode(getName(), delta);
+                    protocol::codec::AtomicLongAddAndGetCodec::RequestParameters::encode(getName(), delta);
 
             return invokeAndGetResult<long>(request, partitionId);
         }
 
         bool IAtomicLong::compareAndSet(long expect, long update) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::AtomicLongCompareAndSetParameters::encode(getName(), expect, update);
+                    protocol::codec::AtomicLongCompareAndSetCodec::RequestParameters::encode(getName(), expect, update);
 
             return invokeAndGetResult<bool>(request, partitionId);
         }
@@ -66,14 +66,14 @@ namespace hazelcast {
 
         long IAtomicLong::getAndAdd(long delta) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::AtomicLongGetAndAddParameters::encode(getName(), delta);
+                    protocol::codec::AtomicLongGetAndAddCodec::RequestParameters::encode(getName(), delta);
 
             return invokeAndGetResult<long>(request, partitionId);
         }
 
         long IAtomicLong::getAndSet(long newValue) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::AtomicLongGetAndSetParameters::encode(getName(), newValue);
+                    protocol::codec::AtomicLongGetAndSetCodec::RequestParameters::encode(getName(), newValue);
 
             return invokeAndGetResult<long>(request, partitionId);
         }
@@ -88,7 +88,7 @@ namespace hazelcast {
 
         void IAtomicLong::set(long newValue) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::parameters::AtomicLongSetParameters::encode(getName(), newValue);
+                    protocol::codec::AtomicLongSetCodec::RequestParameters::encode(getName(), newValue);
 
             invoke(request, partitionId);
         }

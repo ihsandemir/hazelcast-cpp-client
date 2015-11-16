@@ -32,8 +32,8 @@ namespace hazelcast {
 
             }
 
-            Principal::Principal(std::string &uuid, std::string &ownerUuid) : uuid(new std::string(uuid)),
-                                                                              ownerUuid(new std::string(ownerUuid)) {
+            Principal::Principal(std::auto_ptr<std::string> id, std::auto_ptr<std::string> owner) : uuid(id),
+                                                                              ownerUuid(owner) {
             }
 
             int Principal::getFactoryId() const {
@@ -54,12 +54,12 @@ namespace hazelcast {
                 ownerUuid = reader.readUTF("ownerUuid");
             }
 
-            const std::string &Principal::getUuid() const {
-                return *uuid;
+            const std::string *Principal::getUuid() const {
+                return uuid.get();
             }
 
-            const std::string &Principal::getOwnerUuid() const {
-                return *ownerUuid;
+            const std::string *Principal::getOwnerUuid() const {
+                return ownerUuid.get();
             }
         }
     }

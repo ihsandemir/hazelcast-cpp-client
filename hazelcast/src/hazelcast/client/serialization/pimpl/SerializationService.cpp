@@ -633,6 +633,9 @@ namespace hazelcast {
                     return boost::shared_ptr<common::containers::ManagedPointerVector<std::string> > (dataInput.readUTFArray());
                 }
 
+                const byte SerializationService::getVersion() const {
+                    return 1;
+                }
             }
         }
     }

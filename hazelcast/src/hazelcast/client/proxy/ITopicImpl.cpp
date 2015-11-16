@@ -23,9 +23,9 @@
 #include "hazelcast/client/spi/ServerListenerService.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/TopicPublishParameters.h"
-#include "hazelcast/client/protocol/parameters/TopicAddMessageListenerParameters.h"
-#include "hazelcast/client/protocol/parameters/TopicRemoveMessageListenerParameters.h"
+#include "hazelcast/client/protocol/codec/TopicPublishCodec.h"
+#include "hazelcast/client/protocol/codec/TopicAddMessageListenerCodec.h"
+#include "hazelcast/client/protocol/codec/TopicRemoveMessageListenerCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -37,7 +37,7 @@ namespace hazelcast {
 
             void ITopicImpl::publish(const serialization::pimpl::Data& data) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TopicPublishParameters::encode(getName(), data);
+                        protocol::codec::TopicPublishCodec::RequestParameters::encode(getName(), data);
 
                 invoke(request, partitionId);
             }
@@ -45,7 +45,7 @@ namespace hazelcast {
 
             std::auto_ptr<std::string> ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TopicAddMessageListenerParameters::encode(getName());
+                        protocol::codec::TopicAddMessageListenerCodec::RequestParameters::encode(getName());
 
                 return registerListener(request, topicEventHandler);
             }
@@ -56,7 +56,7 @@ namespace hazelcast {
                 std::string effectiveRegistrationId = registrationId;
                 if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
                     std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::TopicRemoveMessageListenerParameters::encode(getName(), effectiveRegistrationId);
+                            protocol::codec::TopicRemoveMessageListenerCodec::RequestParameters::encode(getName(), effectiveRegistrationId);
 
                     result = invokeAndGetResult<bool>(request);
                 }

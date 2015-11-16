@@ -76,10 +76,10 @@ namespace hazelcast {
                 ServerListenerService(spi::ClientContext &clientContext);
 
                 std::string registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
-                                             int partitionId, impl::BaseEventHandler *handler);
+                                             int partitionId, client::impl::BaseEventHandler *handler);
 
                 std::string registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
-                                             impl::BaseEventHandler *handler);
+                                             client::impl::BaseEventHandler *handler);
 
                 void reRegisterListener(std::string registrationId, protocol::ClientMessage *response);
 

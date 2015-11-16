@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /*
- * ClientMessage.h
  *
  *  Created on: Mar 17, 2015
- *      Author: ihsan
+ *      Author: ihsan demir
  */
 
 /**
@@ -92,6 +90,11 @@ namespace hazelcast {
             namespace codec {
                 class StackTraceElement;
             }
+
+            class HAZELCAST_API ClientTypes {
+            public:
+                static const std::string CPP;
+            };
 
             class ClientMessage : public common::containers::LittleEndianBufferWrapper {
 

@@ -23,13 +23,11 @@
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/spi/InvocationService.h"
 
-#include "hazelcast/client/impl/PartitionsResponse.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/connection/CallFuture.h"
-#include "hazelcast/client/protocol/parameters/GetPartitionsParameters.h"
-#include "hazelcast/client/protocol/parameters/GetPartitionsResultParameters.h"
+#include "hazelcast/client/protocol/codec/ClientGetPartitionsCodec.h"
 
 #include <climits>
 
@@ -120,7 +118,7 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> PartitionService::getPartitionsFrom(const Address& address) {
                 std::auto_ptr<protocol::ClientMessage> responseMessage;
                 try {
-                    std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::parameters::GetPartitionsParameters::encode();
+                    std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::RequestParameters::encode();
 
                     connection::CallFuture future = clientContext.getInvocationService().invokeOnTarget(
                             requestMessage, address);
@@ -136,7 +134,7 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> PartitionService::getPartitionsFrom() {
                 std::auto_ptr<protocol::ClientMessage> responseMessage;
                 try {
-                    std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::parameters::GetPartitionsParameters::encode();
+                    std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::RequestParameters::encode();
 
                     connection::CallFuture future = clientContext.getInvocationService().invokeOnRandomTarget(
                             requestMessage);
@@ -152,27 +150,20 @@ namespace hazelcast {
             bool PartitionService::processPartitionResponse(protocol::ClientMessage &response) {
                 bool isSuccess = false;
 
-                std::auto_ptr<protocol::parameters::GetPartitionsResultParameters> result = 
-                        protocol::parameters::GetPartitionsResultParameters::decode(response);
+                protocol::codec::ClientGetPartitionsCodec::ResponseParameters result =
+                        protocol::codec::ClientGetPartitionsCodec::ResponseParameters::decode(response);
 
-                common::containers::ManagedPointerVector<Address> &members = *result->members;
-                if (partitionCount == 0) {
-                    partitionCount = result->ownerIndexes->size();
-                }
-
-                if (partitionCount > 0) {
-                    for (int partitionId = 0; partitionId < (int)partitionCount; ++partitionId) {
-                        int ownerIndex = result->ownerIndexes->operator[](partitionId);
-                        if (ownerIndex > -1) {
-                            //TODO: use shared_ptr assignment here by using the member address as shared_ptr
-                            boost::shared_ptr<Address> address(new Address(*members[ownerIndex]));
-                            partitions.put(partitionId, address);
-                        }
+                partitions.clear();
+                for (std::map<Address, std::vector<int32_t> >::const_iterator it = result.partitions.begin();it != result.partitions.end();++it) {
+                    boost::shared_ptr<Address> addr(new Address(it->first));
+                    for (std::vector<int32_t>::const_iterator partIt = it->second.begin(); partIt != it->second.end(); ++it) {
+                        partitions.put(*partIt, addr);
                     }
-                    isSuccess = true;
                 }
-                return isSuccess;
 
+                partitionCount = (int)partitions.size();
+
+                return partitionCount > 0;
             }
 
             bool PartitionService::getInitialPartitions() {
@@ -183,6 +174,10 @@ namespace hazelcast {
                     std::auto_ptr<protocol::ClientMessage> response = getPartitionsFrom(target);
                     if (response.get() != NULL) {
                         result = processPartitionResponse(*response);
+
+                        if (result) {
+                            break;
+                        }
                     }
                 }
 
@@ -199,6 +194,16 @@ namespace hazelcast {
 
             int PartitionService::getPartitionCount() {
                 return partitionCount;
+            }
+
+            // TODO: Implement using executor as done in java
+            void PartitionService::refreshPartitions() {
+                util::Thread t(refreshTask, this);
+            }
+
+            void PartitionService::refreshTask(util::ThreadArgs &args) {
+                PartitionService *partitionSrv = (PartitionService *)args.arg0;
+                partitionSrv->runRefresher();
             }
         }
     }

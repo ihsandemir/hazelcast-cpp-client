@@ -46,7 +46,7 @@ namespace hazelcast {
                     int causeErrorCode;
                     std::auto_ptr<std::string> causeClassName;
 
-                    static const enum ResponseMessageConst TYPE = ResponseMessageConst::EXCEPTION;
+                    static const enum ResponseMessageConst TYPE = EXCEPTION;
 
                     /**
                     * Decode input byte array data into parameters

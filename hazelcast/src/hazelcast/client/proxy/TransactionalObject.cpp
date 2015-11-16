@@ -18,8 +18,8 @@
 
 
 
-#include "hazelcast/client/protocol/parameters/DestroyProxyParameters.h"
-#include "hazelcast/client/protocol/parameters/DataCollectionResultParameters.h"
+#include "hazelcast/client/protocol/codec/DestroyProxyCodec.h"
+#include "hazelcast/client/protocol/codec/DataCollectionResultCodec.h"
 #include "hazelcast/client/proxy/TransactionalObject.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 
@@ -49,7 +49,7 @@ namespace hazelcast {
             void TransactionalObject::destroy() {
                 onDestroy();
 
-                std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::DestroyProxyParameters::encode(
+                std::auto_ptr<protocol::ClientMessage> request = protocol::codec::DestroyProxyCodec::RequestParameters::encode(
                         name, serviceName);
 
                 spi::InvocationService& invocationService = context->getInvocationService();
@@ -95,16 +95,16 @@ namespace hazelcast {
 
             template<>
             std::auto_ptr<serialization::pimpl::Data> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::parameters::GenericResultParameters> resultParameters =
-                        protocol::parameters::GenericResultParameters::decode(*response);
+                std::auto_ptr<protocol::codec::GenericResultParameters> resultCodec::RequestParameters =
+                        protocol::codec::GenericResultCodec::RequestParameters::decode(*response);
 
                 return resultParameters->data;
             }
 
             template<>
             std::auto_ptr<protocol::DataArray> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::parameters::DataCollectionResultParameters> resultParameters =
-                        protocol::parameters::DataCollectionResultParameters::decode(*response);
+                std::auto_ptr<protocol::codec::DataCollectionResultParameters> resultCodec::RequestParameters =
+                        protocol::codec::DataCollectionResultCodec::RequestParameters::decode(*response);
 
                 return resultParameters->values;
             }

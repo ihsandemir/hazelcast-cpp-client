@@ -21,11 +21,11 @@
 #include "hazelcast/client/proxy/TransactionalQueueImpl.h"
 
 // Includes for parameters classes
-#include "hazelcast/client/protocol/parameters/TransactionalQueueOfferParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalQueueTakeParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalQueuePollParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalQueuePeekParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionalQueueSizeParameters.h"
+#include "hazelcast/client/protocol/codec/TransactionalQueueOfferCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalQueueTakeCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalQueuePollCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalQueuePeekCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionalQueueSizeCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -37,7 +37,7 @@ namespace hazelcast {
 
             bool TransactionalQueueImpl::offer(const serialization::pimpl::Data& e, long timeoutInMillis) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalQueueOfferParameters::encode(
+                        protocol::codec::TransactionalQueueOfferCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), e, timeoutInMillis);
 
                 return invokeAndGetResult<bool>(request);
@@ -45,7 +45,7 @@ namespace hazelcast {
 
             serialization::pimpl::Data TransactionalQueueImpl::poll(long timeoutInMillis) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalQueuePollParameters::encode(
+                        protocol::codec::TransactionalQueuePollCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId(), timeoutInMillis);
 
                 return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request);
@@ -53,7 +53,7 @@ namespace hazelcast {
 
             int TransactionalQueueImpl::size() {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::parameters::TransactionalQueueSizeParameters::encode(
+                        protocol::codec::TransactionalQueueSizeCodec::RequestParameters::encode(
                                 getName(), getTransactionId(), util::getThreadId());
 
                 return invokeAndGetResult<int>(request);

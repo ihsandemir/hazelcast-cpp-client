@@ -23,10 +23,10 @@
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/util/Util.h"
 #include <ctime>
-#include "hazelcast/client/protocol/parameters/TransactionCreateParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionCreateResultParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionCommitParameters.h"
-#include "hazelcast/client/protocol/parameters/TransactionRollbackParameters.h"
+#include "hazelcast/client/protocol/codec/TransactionCreateCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionCreateResultCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionCommitCodec.h"
+#include "hazelcast/client/protocol/codec/TransactionRollbackCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -73,15 +73,15 @@ namespace hazelcast {
 
                     // TODO: change this to use XID which is not null in the future
                     std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::TransactionCreateParameters::encode(
+                            protocol::codec::TransactionCreateCodec::RequestParameters::encode(
                                     true, options.getTimeoutMillis(), options.getDurability(), 
                                     options.getTransactionType(), threadId);
 
 
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request);
 
-                    std::auto_ptr<protocol::parameters::TransactionCreateResultParameters> result =
-                            protocol::parameters::TransactionCreateResultParameters::decode(*response);
+                    std::auto_ptr<protocol::codec::TransactionCreateResultCodec::RequestParameters> result =
+                            protocol::codec::TransactionCreateResultCodec::RequestParameters::decode(*response);
 
                     txnId = result->transactionId;
                     state = TxnState::ACTIVE;
@@ -101,7 +101,7 @@ namespace hazelcast {
                     checkTimeout();
 
                     std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::parameters::TransactionCommitParameters::encode(*txnId, threadId, true);
+                            protocol::codec::TransactionCommitCodec::RequestParameters::encode(*txnId, threadId, true);
 
                     invoke(request);
 
@@ -126,7 +126,7 @@ namespace hazelcast {
                     }
                     checkThread();
                     try {
-                        std::auto_ptr<protocol::ClientMessage> request = protocol::parameters::TransactionRollbackParameters::encode(*txnId, threadId);
+                        std::auto_ptr<protocol::ClientMessage> request = protocol::codec::TransactionRollbackCodec::RequestParameters::encode(*txnId, threadId);
                         
                         invoke(request);
                     } catch (std::exception&) {
