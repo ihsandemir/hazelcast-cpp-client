@@ -18,11 +18,15 @@
 //
 
 #include "hazelcast/client/protocol/codec/StackTraceElement.h"
+#include <iostream>
 
 namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace codec {
+                StackTraceElement::StackTraceElement() {
+                }
+
                 StackTraceElement::StackTraceElement(const std::string &declaringClass, const std::string &methodName,
                                   const std::string &fileName, int lineNumber) : declaringClass(declaringClass),
                                                                                  methodName(methodName),

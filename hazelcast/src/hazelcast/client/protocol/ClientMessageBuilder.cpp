@@ -25,6 +25,7 @@
 
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
+#include "hazelcast/util/ByteBuffer.h"
 
 namespace hazelcast {
     namespace client {
@@ -46,7 +47,7 @@ namespace hazelcast {
                         if (buffer.remaining() >= ClientMessage::HEADER_SIZE) {
                             wrapperMessage.wrapForDecode((byte *) buffer.ix(), (int32_t) buffer.remaining(), false);
                             int32_t frameLen = wrapperMessage.getFrameLength();
-                            message = ClientMessage(frameLen);
+                            message = std::auto_ptr<ClientMessage>(new ClientMessage(frameLen));
                         } else {
                             isFrameComplete = false; // not enough bytes to for the frame header
                         }

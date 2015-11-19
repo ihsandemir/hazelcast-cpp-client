@@ -35,7 +35,7 @@ namespace hazelcast {
 
                     static void encode(const Member &Member, ClientMessage &clientMessage);
 
-                    static int calculateDataSize(const Member &Member);
+                    static int calculateDataSize(const Member &member);
                 };
             }
         }

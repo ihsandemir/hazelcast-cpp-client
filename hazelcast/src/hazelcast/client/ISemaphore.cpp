@@ -37,7 +37,7 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::SemaphoreInitCodec::RequestParameters::encode(getName(), permits);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::SemaphoreInitCodec::ResponseParameters>(request, partitionId);
         }
 
         void ISemaphore::acquire() {
@@ -55,14 +55,14 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::SemaphoreAvailablePermitsCodec::RequestParameters::encode(getName());
 
-            return invokeAndGetResult<int>(request, partitionId);
+            return invokeAndGetResult<int, protocol::codec::SemaphoreAvailablePermitsCodec::ResponseParameters>(request, partitionId);
         }
 
         int ISemaphore::drainPermits() {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::SemaphoreDrainPermitsCodec::RequestParameters::encode(getName());
 
-            return invokeAndGetResult<int>(request, partitionId);
+            return invokeAndGetResult<int, protocol::codec::SemaphoreDrainPermitsCodec::ResponseParameters>(request, partitionId);
         }
 
         void ISemaphore::reducePermits(int reduction) {
@@ -91,7 +91,7 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::SemaphoreTryAcquireCodec::RequestParameters::encode(getName(), permits, 0);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::SemaphoreTryAcquireCodec::ResponseParameters>(request, partitionId);
         }
 
         bool ISemaphore::tryAcquire(long timeoutInMillis) {
@@ -102,7 +102,7 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::SemaphoreTryAcquireCodec::RequestParameters::encode(getName(), permits, timeoutInMillis);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::SemaphoreTryAcquireCodec::ResponseParameters>(request, partitionId);
         }
     }
 }

@@ -17,25 +17,27 @@
 // Created by ihsan demir on 5/11/15.
 //
 
-#include "hazelcast/client/protocol/codec/AddressCodec.h"
+#include "hazelcast/client/protocol/codec/DistributedObjectInfoCodec.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
-#include "hazelcast/client/Address.h"
+#include "hazelcast/client/DistributedObjectInfo.h"
 
 namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace codec {
-                Address AddressCodec::decode(ClientMessage &clientMessage) {
-                    return Address(clientMessage.getStringUtf8(), clientMessage.getInt32());
+                DistributedObjectInfo DistributedObjectInfoCodec::decode(ClientMessage &clientMessage) {
+                    return DistributedObjectInfo(clientMessage.getStringUtf8(), clientMessage.getStringUtf8());
                 }
 
-                void AddressCodec::encode(const Address &address, ClientMessage &clientMessage) {
-                    clientMessage.set(address.getHost());
-                    clientMessage.set((int32_t)address.getPort());
+                void DistributedObjectInfoCodec::encode(const DistributedObjectInfo &info,
+                                                        ClientMessage &clientMessage) {
+                    clientMessage.set(info.getServiceName());
+                    clientMessage.set(info.getName());
                 }
 
-                int AddressCodec::calculateDataSize(const Address &address) {
-                    return ClientMessage::calculateDataSize(address.getHost()) + ClientMessage::INT32_SIZE;
+                int DistributedObjectInfoCodec::calculateDataSize(const DistributedObjectInfo &info) {
+                    return ClientMessage::calculateDataSize(info.getServiceName()) +
+                           ClientMessage::calculateDataSize(info.getName());
                 }
             }
         }

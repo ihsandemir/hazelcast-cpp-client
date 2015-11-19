@@ -37,7 +37,7 @@ namespace hazelcast {
                     }
 
                     const protocol::codec::IAddListenerCodec *EventRegistration::getAddCodec() const {
-                        return addCodec;
+                        return addCodec.get();
                     }
 
                     void EventRegistration::setCorrelationId(int32_t callId) {

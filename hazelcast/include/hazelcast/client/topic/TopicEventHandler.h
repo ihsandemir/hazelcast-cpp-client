@@ -27,8 +27,7 @@
 #include "hazelcast/client/topic/PortableMessage.h"
 #include "hazelcast/client/topic/Message.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/impl/BaseEventHandler.h"
-#include "hazelcast/client/protocol/codec/TopicEventCodec.h"
+#include "hazelcast/client/protocol/codec/TopicAddMessageListenerCodec.h"
 
 #include <assert.h>
 
@@ -41,7 +40,7 @@ namespace hazelcast {
     namespace client {
         namespace topic {
             template<typename E, typename L>
-            class TopicEventHandler : public impl::BaseEventHandler {
+            class TopicEventHandler : public protocol::codec::TopicAddMessageListenerCodec::AbstractEventHandler {
             public:
                 TopicEventHandler(const std::string &instanceName, spi::ClusterService &clusterService, serialization::pimpl::SerializationService &serializationService, L &listener)
                 :instanceName(instanceName)
@@ -51,18 +50,17 @@ namespace hazelcast {
 
                 };
 
-                void handle(std::auto_ptr<protocol::ClientMessage> message)
-                {
-                    std::auto_ptr<protocol::parameters::TopicEventParameters> event = protocol::parameters::TopicEventParameters::decode(*message);
+                virtual void handleTopic(const serialization::pimpl::Data &item, const int64_t &publishTime,
+                                         const std::string &uuid) {
+                    std::auto_ptr<Member> member(clusterService.getMember(uuid));
 
-                    std::auto_ptr<Member> member(clusterService.getMember(*event->uuid));
+                    boost::shared_ptr<E> object = serializationService.toObject<E>(item);
 
-                    boost::shared_ptr<E> object = serializationService.toObject<E>(*event->message);
-
-                    Message<E> listenerMsg(instanceName, *object, event->publishTime, *member);
+                    Message<E> listenerMsg(instanceName, *object, publishTime, *member);
 
                     listener.onMessage(listenerMsg);
-                };
+
+                }
 
             private:
                 const std::string &instanceName;
@@ -70,7 +68,6 @@ namespace hazelcast {
                 serialization::pimpl::SerializationService &serializationService;
                 L &listener;
             };
-
         }
     }
 }

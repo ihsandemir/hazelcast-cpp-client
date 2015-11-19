@@ -30,9 +30,14 @@
 #include "hazelcast/client/protocol/codec/AddressCodec.h"
 #include "hazelcast/client/protocol/codec/MemberCodec.h"
 #include "hazelcast/client/protocol/codec/DataEntryViewCodec.h"
+#include "hazelcast/client/protocol/codec/DistributedObjectInfoCodec.h"
+#include "hazelcast/client/DistributedObjectInfo.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/client/protocol/codec/StackTraceElementCodec.h"
+#include "hazelcast/client/Member.h"
+#include "hazelcast/client/map/DataEntryView.h"
+#include "hazelcast/client/protocol/codec/StackTraceElement.h"
 
 namespace hazelcast {
     namespace client {
@@ -51,6 +56,8 @@ namespace hazelcast {
                 memset(byteBuffer, 0, size);
 
                 isOwner = true;
+
+                wrapForWrite(byteBuffer, size, DATA_OFFSET_FIELD_OFFSET);
 
                 header = reinterpret_cast<MessageHeaderType *> (byteBuffer);
 
@@ -125,7 +132,7 @@ namespace hazelcast {
             }
 
             void ClientMessage::set(const serialization::pimpl::Data &value) {
-                set<std::vector<byte> >(value.toByteArray());
+                setArray<byte>(value.toByteArray());
             }
 
             void ClientMessage::set(const serialization::pimpl::Data *value) {
@@ -154,6 +161,14 @@ namespace hazelcast {
 
             void ClientMessage::set(const map::DataEntryView *value) {
                 setNullable<map::DataEntryView>(value);
+            }
+
+            void ClientMessage::set(const DistributedObjectInfo &value) {
+                codec::DistributedObjectInfoCodec::encode(value, *this);
+            }
+
+            void ClientMessage::set(const DistributedObjectInfo *value) {
+                setNullable<DistributedObjectInfo>(value);
             }
             //----- Setter methods end ---------------------
 
@@ -271,6 +286,11 @@ namespace hazelcast {
             }
 
             template <>
+            DistributedObjectInfo ClientMessage::get() {
+                return codec::DistributedObjectInfoCodec::decode(*this);
+            }
+
+            template <>
             codec::StackTraceElement ClientMessage::get() {
                 return codec::StackTraceElementCodec::decode(*this);
             }
@@ -359,6 +379,14 @@ namespace hazelcast {
 
             int32_t ClientMessage::calculateDataSize(const map::DataEntryView *param) {
                 return calculateDataSizeNullable<map::DataEntryView>(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const DistributedObjectInfo &param) {
+                return codec::DistributedObjectInfoCodec::calculateDataSize(param);
+            }
+
+            int32_t ClientMessage::calculateDataSize(const DistributedObjectInfo *param) {
+                return calculateDataSizeNullable<DistributedObjectInfo>(param);
             }
             //----- Data size calculation functions END ---------
 

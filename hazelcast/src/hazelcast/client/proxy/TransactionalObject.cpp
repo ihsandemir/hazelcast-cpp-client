@@ -17,12 +17,8 @@
 // Created by sancar koyunlu on 12/11/13.
 
 
-
-#include "hazelcast/client/protocol/codec/DestroyProxyCodec.h"
-#include "hazelcast/client/protocol/codec/DataCollectionResultCodec.h"
+#include "hazelcast/client/protocol/codec/ClientDestroyProxyCodec.h"
 #include "hazelcast/client/proxy/TransactionalObject.h"
-#include "hazelcast/client/protocol/ClientMessage.h"
-
 
 namespace hazelcast {
     namespace client {
@@ -49,7 +45,7 @@ namespace hazelcast {
             void TransactionalObject::destroy() {
                 onDestroy();
 
-                std::auto_ptr<protocol::ClientMessage> request = protocol::codec::DestroyProxyCodec::RequestParameters::encode(
+                std::auto_ptr<protocol::ClientMessage> request = protocol::codec::ClientDestroyProxyCodec::RequestParameters::encode(
                         name, serviceName);
 
                 spi::InvocationService& invocationService = context->getInvocationService();
@@ -76,37 +72,6 @@ namespace hazelcast {
                         request, context->getConnection());
 
                 return future.get();
-            }
-
-            template<>
-            bool TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return response->getBoolean();
-            }
-
-            template<>
-            int TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return response->getInt32();
-            }
-
-            template<>
-            std::auto_ptr<std::string> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                return response->getStringUtf8();
-            }
-
-            template<>
-            std::auto_ptr<serialization::pimpl::Data> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::codec::GenericResultParameters> resultCodec::RequestParameters =
-                        protocol::codec::GenericResultCodec::RequestParameters::decode(*response);
-
-                return resultParameters->data;
-            }
-
-            template<>
-            std::auto_ptr<protocol::DataArray> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                std::auto_ptr<protocol::codec::DataCollectionResultParameters> resultCodec::RequestParameters =
-                        protocol::codec::DataCollectionResultCodec::RequestParameters::decode(*response);
-
-                return resultParameters->values;
             }
         }
     }

@@ -52,12 +52,17 @@ namespace hazelcast {
             }
         }
 
+        namespace protocol {
+            namespace codec {
+                class IAddListenerCodec;
+            }
+        }
+
+        typedef std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > EntryVector;
+
         namespace proxy {
             class HAZELCAST_API ProxyImpl : public DistributedObject {
             protected:
-                typedef std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > EntryVector;
-                typedef std::map<serialization::pimpl::Data, serialization::pimpl::Data> EntryMap;
-
                 /**
                 * Constructor
                 */
@@ -130,6 +135,15 @@ namespace hazelcast {
                     return context->getSerializationService().template toObject<T>(data);
                 }
 
+                template<typename T>
+                boost::shared_ptr<T> toObject(std::auto_ptr<serialization::pimpl::Data> data) {
+                    if (NULL == data.get()) {
+                        return boost::shared_ptr<T>();
+                    } else {
+                        return toObject<T>(*data);
+                    }
+                }
+
                 template<typename V>
                 std::vector<V> toObjectCollection(const std::vector<serialization::pimpl::Data> &collection) {
                     size_t size = collection.size();
@@ -181,7 +195,7 @@ namespace hazelcast {
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request);
 
-                    return CODEC::decode().response;
+                    return CODEC::decode(*response).response;
                 }
 
                 template<typename T, typename CODEC>
@@ -189,14 +203,14 @@ namespace hazelcast {
                                      boost::shared_ptr<connection::Connection> conn) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, conn);
 
-                    return CODEC::decode().response;
+                    return CODEC::decode(*response).response;
                 }
 
                 template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, partitionId);
 
-                    return CODEC::decode().response;
+                    return CODEC::decode(*response).response;
                 }
 
                 template<typename T, typename CODEC>
@@ -204,7 +218,7 @@ namespace hazelcast {
 
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, partitionId);
 
-                    return CODEC::decode().response;
+                    return CODEC::decode(*response).response;
                 }
 
                 template<typename T, typename CODEC>
@@ -212,7 +226,7 @@ namespace hazelcast {
                                      int partitionId, boost::shared_ptr<connection::Connection> conn) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, conn);
 
-                    return CODEC::decode().response;
+                    return CODEC::decode(*response).response;
                 }
 
                 spi::ClientContext *context;

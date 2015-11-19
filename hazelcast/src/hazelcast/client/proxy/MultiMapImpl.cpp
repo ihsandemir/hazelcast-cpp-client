@@ -17,31 +17,14 @@
 // Created by sancar koyunlu on 30/09/14.
 //
 
+#include <hazelcast/client/protocol/ProtocolTypeDefs.h>
 #include "hazelcast/client/proxy/MultiMapImpl.h"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "hazelcast/client/impl/PortableCollection.h"
-
-#include "hazelcast/client/multimap/PortableEntrySetResponse.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
 #include "hazelcast/client/spi/ServerListenerService.h"
 #include "hazelcast/util/Util.h"
 
-// Includes for parameters classes
+// Includes for codec classes
 #include "hazelcast/client/protocol/codec/MultiMapPutCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapGetCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapRemoveCodec.h"
@@ -53,7 +36,6 @@
 #include "hazelcast/client/protocol/codec/MultiMapContainsEntryCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapSizeCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapClearCodec.h"
-#include "hazelcast/client/protocol/codec/MultiMapCountCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapAddEntryListenerToKeyCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapAddEntryListenerCodec.h"
 #include "hazelcast/client/protocol/codec/MultiMapRemoveEntryListenerCodec.h"
@@ -78,16 +60,16 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapPutCodec::RequestParameters::encode(getName(), key, value, util::getThreadId());
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapPutCodec::ResponseParameters>(request, partitionId);
             }
 
-            std::auto_ptr<protocol::DataArray> MultiMapImpl::get(const serialization::pimpl::Data& key) {
+            std::vector<serialization::pimpl::Data> MultiMapImpl::get(const serialization::pimpl::Data& key) {
                 int partitionId = getPartitionId(key);
 
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapGetCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
-                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
+                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapGetCodec::ResponseParameters>(request, partitionId);
             }
 
             bool MultiMapImpl::remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
@@ -96,41 +78,38 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapRemoveEntryCodec::RequestParameters::encode(getName(), key, value, util::getThreadId());
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapRemoveEntryCodec::ResponseParameters>(request, partitionId);
             }
 
-            std::auto_ptr<protocol::DataArray> MultiMapImpl::remove(const serialization::pimpl::Data& key) {
+            std::vector<serialization::pimpl::Data> MultiMapImpl::remove(const serialization::pimpl::Data& key) {
                 int partitionId = getPartitionId(key);
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapRemoveCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
-                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
+                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapRemoveCodec::ResponseParameters>(request, partitionId);
             }
 
-            std::auto_ptr<protocol::DataArray> MultiMapImpl::keySet() {
+            std::vector<serialization::pimpl::Data> MultiMapImpl::keySet() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapKeySetCodec::RequestParameters::encode(getName());
 
-                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
+                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapKeySetCodec::ResponseParameters>(request);
             }
 
-            std::auto_ptr<protocol::DataArray> MultiMapImpl::values() {
+            std::vector<serialization::pimpl::Data> MultiMapImpl::values() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapValuesCodec::RequestParameters::encode(getName());
 
-                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request);
+                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapValuesCodec::ResponseParameters>(request);
             }
 
-            void MultiMapImpl::entrySet(std::auto_ptr<protocol::DataArray> &resultKeys,
-                                    std::auto_ptr<protocol::DataArray> &resultValues) {
-
+            std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > MultiMapImpl::entrySet() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapEntrySetCodec::RequestParameters::encode(getName());
 
                 std::auto_ptr<protocol::ClientMessage> response = invoke(request);
 
-                resultKeys = response->getDataList();
-                resultValues = response->getDataList();
+                return invokeAndGetResult<std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >, protocol::codec::MultiMapEntrySetCodec::ResponseParameters>(request);
             }
 
             bool MultiMapImpl::containsKey(const serialization::pimpl::Data& key) {
@@ -139,14 +118,14 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapContainsKeyCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapContainsKeyCodec::ResponseParameters>(request, partitionId);
             }
 
             bool MultiMapImpl::containsValue(const serialization::pimpl::Data& value) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapContainsValueCodec::RequestParameters::encode(getName(), value);
 
-                return invokeAndGetResult<bool>(request);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapContainsValueCodec::ResponseParameters>(request);
             }
 
             bool MultiMapImpl::containsEntry(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value) {
@@ -155,13 +134,13 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapContainsEntryCodec::RequestParameters::encode(getName(), key, value, util::getThreadId());
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapContainsEntryCodec::ResponseParameters>(request, partitionId);
             }
 
             int MultiMapImpl::size() {
                 std::auto_ptr<protocol::ClientMessage> request = protocol::codec::MultiMapSizeCodec::RequestParameters::encode(getName());
 
-                return invokeAndGetResult<int>(request);
+                return invokeAndGetResult<int, protocol::codec::MultiMapSizeCodec::ResponseParameters>(request);
             }
 
             void MultiMapImpl::clear() {
@@ -177,39 +156,30 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapValueCountCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
-                return invokeAndGetResult<int>(request, partitionId);
+                return invokeAndGetResult<int, protocol::codec::MultiMapValueCountCodec::ResponseParameters>(request, partitionId);
             }
 
-            std::auto_ptr<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::MultiMapAddEntryListenerCodec::RequestParameters::encode(getName(), includeValue);
+            std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+                std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
+                        new protocol::codec::MultiMapAddEntryListenerCodec(getName(), includeValue, false));
 
-                return registerListener(request, entryEventHandler);
+                return registerListener(addCodec, entryEventHandler);
             }
 
-            std::auto_ptr<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
+            std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
                                                    const serialization::pimpl::Data& key, bool includeValue) {
-
                 int partitionId = getPartitionId(key);
 
-                std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::MultiMapAddEntryListenerToKeyCodec::RequestParameters::encode(getName(), key, includeValue);
+                std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
+                        new protocol::codec::MultiMapAddEntryListenerToKeyCodec(getName(), key, includeValue, false));
 
-                return registerListener(request, partitionId, entryEventHandler, 0, NULL);
+                return registerListener(addCodec, partitionId, entryEventHandler);
             }
 
             bool MultiMapImpl::removeEntryListener(const std::string& registrationId) {
-                bool result = false;
+                protocol::codec::MultiMapRemoveEntryListenerCodec removeCodec(getName(), registrationId);
 
-                std::string effectiveRegistrationId = registrationId;
-                if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
-                    std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::codec::MultiMapRemoveEntryListenerCodec::RequestParameters::encode(getName(), effectiveRegistrationId);
-
-                    result = invokeAndGetResult<bool>(request);
-                }
-
-                return result;
+                return context->getServerListenerService().deRegisterListener(removeCodec);
             }
 
             void MultiMapImpl::lock(const serialization::pimpl::Data& key) {
@@ -237,25 +207,25 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapIsLockedCodec::RequestParameters::encode(getName(), key);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapIsLockedCodec::ResponseParameters>(request, partitionId);
             }
 
             bool MultiMapImpl::tryLock(const serialization::pimpl::Data& key) {
                 int partitionId = getPartitionId(key);
 
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::MultiMapTryLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(), 0);
+                        protocol::codec::MultiMapTryLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(), LONG_MAX, 0);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request, partitionId);
             }
 
             bool MultiMapImpl::tryLock(const serialization::pimpl::Data& key, long timeInMillis) {
                 int partitionId = getPartitionId(key);
 
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::MultiMapTryLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(), timeInMillis);
+                        protocol::codec::MultiMapTryLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(), LONG_MAX, timeInMillis);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request, partitionId);
             }
 
             void MultiMapImpl::unlock(const serialization::pimpl::Data& key) {

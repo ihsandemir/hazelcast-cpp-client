@@ -17,6 +17,7 @@
 // Created by ihsan demir on 5/11/15.
 //
 
+#include "hazelcast/client/protocol/codec/AddressCodec.h"
 #include "hazelcast/client/protocol/codec/MemberCodec.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/Member.h"
@@ -34,7 +35,7 @@ namespace hazelcast {
                     for (int i = 0; i < attributeSize; i++) {
                         std::string key = clientMessage.get<std::string>();
                         std::string value = clientMessage.get<std::string>();
-                        attributes.put(key, value);
+                        attributes[key] = value;
                     }
 
                     return Member(address, uuid, liteMember, attributes);
@@ -44,15 +45,15 @@ namespace hazelcast {
                     clientMessage.set(member.getAddress());
                     clientMessage.set(member.getUuid());
                     clientMessage.set(member.isLiteMember());
-                    clientMessage.set(member.getAttributes());
+                    clientMessage.setMap<std::string, std::string>(member.getAttributes());
                 }
 
-                int MemberCodec::calculateDataSize(const Member &Member) {
+                int MemberCodec::calculateDataSize(const Member &member) {
                     int dataSize = ClientMessage::calculateDataSize(member.getAddress());
                     dataSize += ClientMessage::calculateDataSize(member.getUuid());
                     dataSize += ClientMessage::INT8_SIZE;
                     dataSize += ClientMessage::INT32_SIZE;
-                    std::map<std::string, std::string> &attributes = member.getAttributes();
+                    const std::map<std::string, std::string> &attributes = member.getAttributes();
                     for (std::map<std::string, std::string>::const_iterator it = attributes.begin();
                          attributes.end() != it; ++it) {
                         dataSize += ClientMessage::calculateDataSize((*it).first);

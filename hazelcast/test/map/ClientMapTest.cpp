@@ -18,6 +18,7 @@
 
 
 
+#include <hazelcast/util/Util.h>
 #include "map/ClientMapTest.h"
 #include "hazelcast/client/EntryAdapter.h"
 #include "HazelcastServerFactory.h"

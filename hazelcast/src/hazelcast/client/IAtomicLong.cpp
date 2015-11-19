@@ -46,14 +46,14 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::AtomicLongAddAndGetCodec::RequestParameters::encode(getName(), delta);
 
-            return invokeAndGetResult<long>(request, partitionId);
+            return invokeAndGetResult<long, protocol::codec::AtomicLongAddAndGetCodec::ResponseParameters>(request, partitionId);
         }
 
         bool IAtomicLong::compareAndSet(long expect, long update) {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::AtomicLongCompareAndSetCodec::RequestParameters::encode(getName(), expect, update);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::AtomicLongCompareAndSetCodec::ResponseParameters>(request, partitionId);
         }
 
         long IAtomicLong::decrementAndGet() {
@@ -68,14 +68,14 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::AtomicLongGetAndAddCodec::RequestParameters::encode(getName(), delta);
 
-            return invokeAndGetResult<long>(request, partitionId);
+            return invokeAndGetResult<long, protocol::codec::AtomicLongGetAndAddCodec::ResponseParameters>(request, partitionId);
         }
 
         long IAtomicLong::getAndSet(long newValue) {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::AtomicLongGetAndSetCodec::RequestParameters::encode(getName(), newValue);
 
-            return invokeAndGetResult<long>(request, partitionId);
+            return invokeAndGetResult<long, protocol::codec::AtomicLongGetAndSetCodec::ResponseParameters>(request, partitionId);
         }
 
         long IAtomicLong::incrementAndGet() {

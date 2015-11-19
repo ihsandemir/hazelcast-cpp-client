@@ -61,7 +61,7 @@ namespace hazelcast {
             * @return true if contains, false otherwise
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool containsKey(const K& key) {
+            bool containsKey(const K &key) {
                 return proxy::IMapImpl::containsKey(toData(key));
             };
 
@@ -71,7 +71,7 @@ namespace hazelcast {
             * @return true if contains, false otherwise
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool containsValue(const V& value) {
+            bool containsValue(const V &value) {
                 return proxy::IMapImpl::containsValue(toData(value));
             };
 
@@ -82,7 +82,7 @@ namespace hazelcast {
             * then return NULL in shared_ptr.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            boost::shared_ptr<V> get(const K& key) {
+            boost::shared_ptr<V> get(const K &key) {
                 return toObject<V>(proxy::IMapImpl::get(toData(key)));
             };
 
@@ -94,7 +94,7 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified elements are incompatible with the server side.
             * then returns NULL in shared_ptr.
             */
-            boost::shared_ptr<V> put(const K& key, const V& value) {
+            boost::shared_ptr<V> put(const K &key, const V &value) {
                 return toObject<V>(proxy::IMapImpl::put(toData(key), toData(value)));
             };
 
@@ -105,7 +105,7 @@ namespace hazelcast {
             * then returns NULL in shared_ptr.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            boost::shared_ptr<V> remove(const K& key) {
+            boost::shared_ptr<V> remove(const K &key) {
                 return toObject<V>(proxy::IMapImpl::remove(toData(key)));
             };
 
@@ -116,7 +116,7 @@ namespace hazelcast {
             * @return true if remove is successful false otherwise
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool remove(const K& key, const V& value) {
+            bool remove(const K &key, const V &value) {
                 return proxy::IMapImpl::remove(toData(key), toData(value));
             };
 
@@ -126,7 +126,7 @@ namespace hazelcast {
             * @param key The key of the map entry to remove.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            void deleteEntry(const K& key) {
+            void deleteEntry(const K &key) {
                 proxy::IMapImpl::deleteEntry(toData(key));
             };
 
@@ -148,7 +148,7 @@ namespace hazelcast {
             * @param timeoutInMillis  maximum time in milliseconds to wait for acquiring the lock
             *                 for the key
             */
-            bool tryRemove(const K& key, long timeoutInMillis) {
+            bool tryRemove(const K &key, long timeoutInMillis) {
                 return proxy::IMapImpl::tryRemove(toData(key), timeoutInMillis);
             };
 
@@ -164,7 +164,7 @@ namespace hazelcast {
             * @return <tt>true</tt> if the put is successful, <tt>false</tt>
             *         otherwise.
             */
-            bool tryPut(const K& key, const V& value, long timeoutInMillis) {
+            bool tryPut(const K &key, const V &value, long timeoutInMillis) {
                 return proxy::IMapImpl::tryPut(toData(key), toData(value), timeoutInMillis);
             };
 
@@ -179,7 +179,7 @@ namespace hazelcast {
             * @return the previous value in shared_ptr, if there is no mapping for key
             * then returns NULL in shared_ptr.
             */
-            boost::shared_ptr<V> put(const K& key, const V& value, long ttlInMillis) {
+            boost::shared_ptr<V> put(const K &key, const V &value, long ttlInMillis) {
                 return toObject<V>(proxy::IMapImpl::put(toData(key), toData(value), ttlInMillis));
             };
 
@@ -192,7 +192,7 @@ namespace hazelcast {
             * @param value        value of the entry
             * @param ttlInMillis  maximum time for this entry to stay in the map in milliseconds, 0 means infinite.
             */
-            void putTransient(const K& key, const V& value, long ttlInMillis) {
+            void putTransient(const K &key, const V &value, long ttlInMillis) {
                 proxy::IMapImpl::putTransient(toData(key), toData(value), ttlInMillis);
             };
 
@@ -204,7 +204,7 @@ namespace hazelcast {
             * @return the previous value in shared_ptr, if there is no mapping for key
             * then returns NULL in shared_ptr.
             */
-            boost::shared_ptr<V> putIfAbsent(const K& key, const V& value) {
+            boost::shared_ptr<V> putIfAbsent(const K &key, const V &value) {
                 return putIfAbsent(key, value, -1);
             }
 
@@ -219,7 +219,7 @@ namespace hazelcast {
             * @return the previous value of the entry, if there is no mapping for key
             * then returns NULL in shared_ptr.
             */
-            boost::shared_ptr<V> putIfAbsent(const K& key, const V& value, long ttlInMillis) {
+            boost::shared_ptr<V> putIfAbsent(const K &key, const V &value, long ttlInMillis) {
                 return toObject<V>(proxy::IMapImpl::putIfAbsent(toData(key), toData(value), ttlInMillis));
             }
 
@@ -230,7 +230,7 @@ namespace hazelcast {
             * @param newValue
             * @return <tt>true</tt> if the value was replaced
             */
-            bool replace(const K& key, const V& oldValue, const V& newValue) {
+            bool replace(const K &key, const V &oldValue, const V &newValue) {
                 return proxy::IMapImpl::replace(toData(key), toData(oldValue), toData(newValue));
             };
 
@@ -241,7 +241,7 @@ namespace hazelcast {
             * @return the previous value of the entry, if there is no mapping for key
             * then returns NULL in shared_ptr.
             */
-            boost::shared_ptr<V> replace(const K& key, const V& value) {
+            boost::shared_ptr<V> replace(const K &key, const V &value) {
                 return toObject<V>(proxy::IMapImpl::replace(toData(key), toData(value)));
             };
 
@@ -254,7 +254,7 @@ namespace hazelcast {
             * @param ttl maximum time in milliseconds for this entry to stay in the map
             0 means infinite.
             */
-            void set(const K& key, const V& value, long ttl) {
+            void set(const K &key, const V &value, long ttl) {
                 proxy::IMapImpl::set(toData(key), toData(value), ttl);
             };
 
@@ -272,7 +272,7 @@ namespace hazelcast {
             *
             * @param key key to lock.
             */
-            void lock(const K& key) {
+            void lock(const K &key) {
                 proxy::IMapImpl::lock(toData(key));
             };
 
@@ -294,7 +294,7 @@ namespace hazelcast {
             * @param key key to lock.
             * @param leaseTime time in milliseconds to wait before releasing the lock.
             */
-            void lock(const K& key, long leaseTime) {
+            void lock(const K &key, long leaseTime) {
                 proxy::IMapImpl::lock(toData(key), leaseTime);
             };
 
@@ -306,7 +306,7 @@ namespace hazelcast {
             * @param key key to lock to be checked.
             * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
             */
-            bool isLocked(const K& key) {
+            bool isLocked(const K &key) {
                 return proxy::IMapImpl::isLocked(toData(key));
             };
 
@@ -319,7 +319,7 @@ namespace hazelcast {
             * @param key key to lock.
             * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
             */
-            bool tryLock(const K& key) {
+            bool tryLock(const K &key) {
                 return tryLock(key, 0);
             };
 
@@ -339,7 +339,7 @@ namespace hazelcast {
             * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
             *         if the waiting time elapsed before the lock was acquired.
             */
-            bool tryLock(const K& key, long timeInMillis) {
+            bool tryLock(const K &key, long timeInMillis) {
                 return proxy::IMapImpl::tryLock(toData(key), timeInMillis);
             };
 
@@ -356,7 +356,7 @@ namespace hazelcast {
             * @param key key to lock.
             * @throws IllegalMonitorStateException if the current thread does not hold this lock MTODO
             */
-            void unlock(const K& key) {
+            void unlock(const K &key) {
                 proxy::IMapImpl::unlock(toData(key));
             };
 
@@ -368,7 +368,7 @@ namespace hazelcast {
             *
             * @param key key to lock.
             */
-            void forceUnlock(const K& key) {
+            void forceUnlock(const K &key) {
                 proxy::IMapImpl::forceUnlock(toData(key));
             };
 
@@ -384,7 +384,7 @@ namespace hazelcast {
             * @return id of registered interceptor
             */
             template<typename MapInterceptor>
-            std::string addInterceptor(MapInterceptor& interceptor) {
+            std::string addInterceptor(MapInterceptor &interceptor) {
                 return proxy::IMapImpl::addInterceptor(interceptor);
             }
 
@@ -394,7 +394,7 @@ namespace hazelcast {
             *
             * @param id registration id of map interceptor
             */
-            void removeInterceptor(const std::string& id) {
+            void removeInterceptor(const std::string &id) {
                 proxy::IMapImpl::removeInterceptor(id);
             }
 
@@ -412,8 +412,11 @@ namespace hazelcast {
             *
             * @return registrationId of added listener that can be used to remove the entry listener.
             */
-            std::string addEntryListener(EntryListener<K, V>& listener, bool includeValue) {
-                impl::EntryEventHandler<K, V> *entryEventHandler = new impl::EntryEventHandler<K, V>(getName(), context->getClusterService(), context->getSerializationService(), listener, includeValue);
+            std::string addEntryListener(EntryListener<K, V> &listener, bool includeValue) {
+                impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
+                        new impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
+                                getName(), context->getClusterService(), context->getSerializationService(), listener,
+                                includeValue);
                 return proxy::IMapImpl::addEntryListener(entryEventHandler, includeValue);
             };
 
@@ -426,7 +429,7 @@ namespace hazelcast {
             *
             * @return true if registration is removed, false otherwise
             */
-            bool removeEntryListener(const std::string& registrationId) {
+            bool removeEntryListener(const std::string &registrationId) {
                 return proxy::IMapImpl::removeEntryListener(registrationId);
             };
 
@@ -444,9 +447,12 @@ namespace hazelcast {
             * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
             *                     contain the value.
             */
-            std::string addEntryListener(EntryListener<K, V>& listener, const K& key, bool includeValue) {
+            std::string addEntryListener(EntryListener<K, V> &listener, const K &key, bool includeValue) {
                 serialization::pimpl::Data keyData = toData(key);
-                impl::EntryEventHandler<K, V> *entryEventHandler = new impl::EntryEventHandler<K, V>(getName(), context->getClusterService(), context->getSerializationService(), listener, includeValue);
+                impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
+                        new impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
+                                getName(), context->getClusterService(), context->getSerializationService(), listener,
+                                includeValue);
                 return proxy::IMapImpl::addEntryListener(entryEventHandler, keyData, includeValue);
             };
 
@@ -458,11 +464,11 @@ namespace hazelcast {
             * @return <tt>EntryView</tt> of the specified key
             * @see EntryView
             */
-            EntryView<K, V> getEntryView(const K& key) {
+            EntryView<K, V> getEntryView(const K &key) {
                 serialization::pimpl::Data keyData = toData(key);
-                map::DataEntryView dataEntryView = proxy::IMapImpl::getEntryView(keyData);
-                boost::shared_ptr<V> v = toObject<V>(dataEntryView.getValue());
-                EntryView<K, V> view(key, *v, dataEntryView);
+                std::auto_ptr<map::DataEntryView> dataEntryView = proxy::IMapImpl::getEntryView(keyData);
+                boost::shared_ptr<V> v = toObject<V>(dataEntryView->getValue());
+                EntryView<K, V> view(key, *v, *dataEntryView);
                 return view;
             };
 
@@ -476,7 +482,7 @@ namespace hazelcast {
             * @param key key to evict
             * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
             */
-            bool evict(const K& key) {
+            bool evict(const K &key) {
                 return proxy::IMapImpl::evict(toData(key));
             };
 
@@ -513,15 +519,17 @@ namespace hazelcast {
             * @param keys keys to get
             * @return map of entries
             */
-            std::map<K, V> getAll(const std::set<K>& keys) {
+            std::map<K, V> getAll(const std::set<K> &keys) {
                 std::vector<serialization::pimpl::Data> keySet(keys.size());
                 int i = 0;
                 for (typename std::set<K>::iterator it = keys.begin(); it != keys.end(); ++it) {
                     keySet[i++] = toData(*it);
                 }
                 std::map<K, V> result;
-                std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entrySet = proxy::IMapImpl::getAll(keySet);
-                for (std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >::const_iterator it = entrySet.begin(); it != entrySet.end(); ++it) {
+                std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entrySet = proxy::IMapImpl::getAll(
+                        keySet);
+                for (std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >::const_iterator it = entrySet.begin();
+                     it != entrySet.end(); ++it) {
                     boost::shared_ptr<K> key = toObject<K>(it->first);
                     boost::shared_ptr<V> value = toObject<V>(it->second);
                     result[*key] = *value;
@@ -562,7 +570,7 @@ namespace hazelcast {
             * @param sql string query criteria
             * @return result key set of the query
             */
-            std::vector<K> keySet(const std::string& sql) {
+            std::vector<K> keySet(const std::string &sql) {
                 std::vector<serialization::pimpl::Data> dataResult = proxy::IMapImpl::keySet(sql);
                 int size = dataResult.size();
                 std::vector<K> keySet(size);
@@ -583,8 +591,9 @@ namespace hazelcast {
             * @param sql string query criteria
             * @return result entry vector of the query
             */
-            std::vector<std::pair<K, V> > entrySet(const std::string& sql) {
-                std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySet(sql);
+            std::vector<std::pair<K, V> > entrySet(const std::string &sql) {
+                std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySet(
+                        sql);
                 size_t size = dataResult.size();
                 std::vector<std::pair<K, V> > keySet(size);
                 for (size_t i = 0; i < size; ++i) {
@@ -605,15 +614,16 @@ namespace hazelcast {
             * @param sql predicate query string
             * @return result value vector of the query
             */
-            std::vector<V> values(const std::string& sql) {
-                std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::values(sql);
+            std::vector<V> values(const std::string &sql) {
+                std::vector<serialization::pimpl::Data> dataResult = proxy::IMapImpl::values(
+                        sql);
                 size_t size = dataResult.size();
-                std::vector<V> keySet(size);
+                std::vector<V> result(size);
                 for (size_t i = 0; i < size; ++i) {
-                    boost::shared_ptr<V> value = toObject<V>(dataResult[i].second);
-                    keySet[i] = *value;
+                    boost::shared_ptr<V> value = toObject<V>(dataResult[i]);
+                    result[i] = *value;
                 }
-                return keySet;
+                return result;
             };
 
             /**
@@ -648,7 +658,7 @@ namespace hazelcast {
             * @param ordered   <tt>true</tt> if index should be ordered,
             *                  <tt>false</tt> otherwise.
             */
-            void addIndex(const std::string& attribute, bool ordered) {
+            void addIndex(const std::string &attribute, bool ordered) {
                 proxy::IMapImpl::addIndex(attribute, ordered);
             };
 
@@ -667,7 +677,7 @@ namespace hazelcast {
             * @return result of entry process.
             */
             template<typename ResultType, typename EntryProcessor>
-            ResultType executeOnKey(const K& key, EntryProcessor& entryProcessor) {
+            ResultType executeOnKey(const K &key, EntryProcessor &entryProcessor) {
                 return proxy::IMapImpl::executeOnKey<K, ResultType, EntryProcessor>(key, entryProcessor);
             }
 
@@ -685,7 +695,7 @@ namespace hazelcast {
             * @param entryProcessor that will be applied
             */
             template<typename ResultType, typename EntryProcessor>
-            std::map<K, ResultType> executeOnEntries(EntryProcessor& entryProcessor) {
+            std::map<K, ResultType> executeOnEntries(EntryProcessor &entryProcessor) {
                 return proxy::IMapImpl::executeOnEntries<K, ResultType, EntryProcessor>(entryProcessor);
             }
 
@@ -696,7 +706,7 @@ namespace hazelcast {
             * @param key
             * @param value
             */
-            void set(const K& key, const V& value) {
+            void set(const K &key, const V &value) {
                 set(key, value, -1);
             };
 
@@ -731,7 +741,7 @@ namespace hazelcast {
             *
             * @param m mappings to be stored in this map
             */
-            void putAll(const std::map<K, V>& entries) {
+            void putAll(const std::map<K, V> &entries) {
                 return proxy::IMapImpl::putAll(toDataEntriesSet(entries));
             }
 
@@ -744,10 +754,10 @@ namespace hazelcast {
             }
 
         private:
-            IMap(const std::string& instanceName, spi::ClientContext *context)
-            : proxy::IMapImpl(instanceName, context) {
-
+            IMap(const std::string &instanceName, spi::ClientContext *context)
+                    : proxy::IMapImpl(instanceName, context) {
             }
+
 
         };
     }

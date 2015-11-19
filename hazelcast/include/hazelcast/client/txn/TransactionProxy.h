@@ -90,7 +90,7 @@ namespace hazelcast {
 
                 TransactionProxy(const TransactionProxy &rhs);
 
-                std::string &getTxnId() const;
+                const std::string &getTxnId() const;
 
                 TxnState getState() const;
 
@@ -114,7 +114,7 @@ namespace hazelcast {
                 boost::shared_ptr<connection::Connection> connection;
 
                 long threadId;
-                std::auto_ptr<std::string> txnId;
+                std::string txnId;
 
                 TxnState state;
                 time_t startTime;

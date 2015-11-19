@@ -32,6 +32,7 @@
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/util/Util.h"
+#include "hazelcast/util/LockGuard.h"
 #include <ctime>
 
 namespace hazelcast {
@@ -133,7 +134,7 @@ namespace hazelcast {
                 return result;
             }
 
-            std::vector<Member> ClusterService::getMemberList() const {
+            std::vector<Member> ClusterService::getMemberList() {
                 typedef std::map<Address, Member, addressComparator> MemberMap;
                 std::vector<Member> v;
                 util::LockGuard guard(membersLock);
@@ -238,7 +239,7 @@ namespace hazelcast {
                 members = map;
             }
 
-            std::string ClusterService::membersString() const {
+            std::string ClusterService::membersString() {
                 std::vector<Member> currentMembers = getMemberList();
 
                 std::stringstream memberInfo;

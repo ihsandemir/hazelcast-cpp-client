@@ -30,11 +30,11 @@ namespace hazelcast {
 
                 bool containsValue(const serialization::pimpl::Data& value);
 
-                serialization::pimpl::Data get(const serialization::pimpl::Data& key);
+                std::auto_ptr<serialization::pimpl::Data> get(const serialization::pimpl::Data& key);
 
-                serialization::pimpl::Data put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                std::auto_ptr<serialization::pimpl::Data> put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                serialization::pimpl::Data remove(const serialization::pimpl::Data& key);
+                std::auto_ptr<serialization::pimpl::Data> remove(const serialization::pimpl::Data& key);
 
                 bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
@@ -46,15 +46,15 @@ namespace hazelcast {
 
                 bool tryPut(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long timeoutInMillis);
 
-                serialization::pimpl::Data put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis);
+                std::auto_ptr<serialization::pimpl::Data> put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis);
 
                 void putTransient(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis);
 
-                serialization::pimpl::Data putIfAbsent(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis);
+                std::auto_ptr<serialization::pimpl::Data> putIfAbsent(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttlInMillis);
 
                 bool replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& oldValue, const serialization::pimpl::Data& newValue);
 
-                serialization::pimpl::Data replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                std::auto_ptr<serialization::pimpl::Data> replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
                 void set(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value, long ttl);
 
@@ -82,7 +82,7 @@ namespace hazelcast {
 
                 std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue);
 
-                map::DataEntryView getEntryView(const serialization::pimpl::Data& key);
+                std::auto_ptr<map::DataEntryView> getEntryView(const serialization::pimpl::Data& key);
 
                 bool evict(const serialization::pimpl::Data& key);
 
@@ -94,7 +94,7 @@ namespace hazelcast {
 
                 EntryVector entrySet(const std::string& sql);
 
-                EntryVector values(const std::string& sql);
+                std::vector<serialization::pimpl::Data> values(const std::string& sql);
 
                 void addIndex(const std::string& attribute, bool ordered);
 
@@ -115,7 +115,6 @@ namespace hazelcast {
                 std::map<KEY, RESULT> executeOnEntries(ENTRYPROCESSOR &entryProcessor) {
 
                 }
-
 
                 static const std::string NO_PREDICATE;
             private:

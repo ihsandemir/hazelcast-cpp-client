@@ -34,7 +34,7 @@ namespace hazelcast {
 
                 void publish(const serialization::pimpl::Data& data);
 
-                std::auto_ptr<std::string> addMessageListener(impl::BaseEventHandler *topicEventHandler);
+                std::string addMessageListener(impl::BaseEventHandler *topicEventHandler);
 
                 virtual bool removeMessageListener(const std::string& registrationId);
 

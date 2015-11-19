@@ -32,13 +32,13 @@ namespace hazelcast {
             protected:
                 IQueueImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                std::auto_ptr<std::string> addItemListener(impl::BaseEventHandler *handler, bool includeValue);
+                std::string addItemListener(impl::BaseEventHandler *handler, bool includeValue);
 
                 bool removeItemListener(const std::string& registrationId);
 
                 bool offer(const serialization::pimpl::Data& element, long timeoutInMillis);
 
-                serialization::pimpl::Data poll(long timeoutInMillis);
+                std::auto_ptr<serialization::pimpl::Data> poll(long timeoutInMillis);
 
                 int remainingCapacity();
 
@@ -46,13 +46,13 @@ namespace hazelcast {
 
                 bool contains(const serialization::pimpl::Data& element);
 
-                std::auto_ptr<protocol::DataArray> drainTo(int maxElements);
+                std::vector<serialization::pimpl::Data>  drainTo(int maxElements);
 
-                serialization::pimpl::Data peek();
+                std::auto_ptr<serialization::pimpl::Data> peek();
 
                 int size();
 
-                std::auto_ptr<protocol::DataArray> toArray();
+                std::vector<serialization::pimpl::Data> toArray();
 
                 bool containsAll(const std::vector<serialization::pimpl::Data>& elements);
 

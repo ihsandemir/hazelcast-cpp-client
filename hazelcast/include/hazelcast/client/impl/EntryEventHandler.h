@@ -23,14 +23,13 @@
 #ifndef HAZELCAST_ENTRY_EVENT_HANDLER
 #define HAZELCAST_ENTRY_EVENT_HANDLER
 
-#include "hazelcast/client/impl/PortableEntryEvent.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/MapEvent.h"
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/protocol/codec/EntryEventCodec.h"
+#include "hazelcast/client/protocol/codec/MapAddEntryListenerCodec.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -41,8 +40,8 @@ namespace hazelcast {
     namespace client {
         namespace impl {
 
-            template<typename K, typename V>
-            class EntryEventHandler : public BaseEventHandler {
+            template<typename K, typename V, typename BaseType>
+            class EntryEventHandler : public BaseType {
             public:
                 EntryEventHandler(const std::string& instanceName, spi::ClusterService& clusterService, serialization::pimpl::SerializationService& serializationService, EntryListener<K, V>& listener, bool includeValue)
                 : instanceName(instanceName)
@@ -52,44 +51,56 @@ namespace hazelcast {
                 , includeValue(includeValue) {
                 }
 
-                void handle(std::auto_ptr<protocol::ClientMessage> message)
-                {
-                    std::auto_ptr<protocol::parameters::EntryEventParameters> result = protocol::parameters::EntryEventParameters::decode(*message);
-
-                    if (result->eventType == EntryEventType::EVICT_ALL || result->eventType == EntryEventType::CLEAR_ALL) {
-                        fireMapWideEvent(*result);
+                virtual void handleEntry(std::auto_ptr<serialization::pimpl::Data> key,
+                                         std::auto_ptr<serialization::pimpl::Data> value,
+                                         std::auto_ptr<serialization::pimpl::Data> oldValue,
+                                         std::auto_ptr<serialization::pimpl::Data> mergingValue,
+                                         const int32_t &eventType, const std::string &uuid,
+                                         const int32_t &numberOfAffectedEntries) {
+                    if (eventType == EntryEventType::EVICT_ALL || eventType == EntryEventType::CLEAR_ALL) {
+                        fireMapWideEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                         return;
                     }
 
-                    fireEntryEvent(*result);
+                    fireEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                 }
 
             private:
-                void fireMapWideEvent(const protocol::parameters::EntryEventParameters &event) {
-                    std::auto_ptr<Member> member = clusterService.getMember(*event.uuid);
+                void fireMapWideEvent(std::auto_ptr<serialization::pimpl::Data> key,
+                                      std::auto_ptr<serialization::pimpl::Data> value,
+                                      std::auto_ptr<serialization::pimpl::Data> oldValue,
+                                      std::auto_ptr<serialization::pimpl::Data> mergingValue,
+                                      const int32_t &eventType, const std::string &uuid,
+                                      const int32_t &numberOfAffectedEntries) {
+                    std::auto_ptr<Member> member = clusterService.getMember(uuid);
 
-                    MapEvent mapEvent(*member, (EntryEventType::Type)event.eventType, instanceName, event.numberOfAffectedEntries);
+                    MapEvent mapEvent(*member, (EntryEventType::Type)eventType, instanceName, numberOfAffectedEntries);
 
-                    if (event.eventType == EntryEventType::CLEAR_ALL) {
+                    if (eventType == EntryEventType::CLEAR_ALL) {
                         listener.mapCleared(mapEvent);
-                    } else if (event.eventType == EntryEventType::EVICT_ALL) {
+                    } else if (eventType == EntryEventType::EVICT_ALL) {
                         listener.mapEvicted(mapEvent);
                     }
                 }
 
-                void fireEntryEvent(const protocol::parameters::EntryEventParameters &event) {
-                    EntryEventType type((EntryEventType::Type)event.eventType);
-                    boost::shared_ptr<V> value;
-                    boost::shared_ptr<V> oldValue;
-                    boost::shared_ptr<V> mergingValue;
+                void fireEntryEvent(std::auto_ptr<serialization::pimpl::Data> key,
+                                    std::auto_ptr<serialization::pimpl::Data> value,
+                                    std::auto_ptr<serialization::pimpl::Data> oldValue,
+                                    std::auto_ptr<serialization::pimpl::Data> mergingValue,
+                                    const int32_t &eventType, const std::string &uuid,
+                                    const int32_t &numberOfAffectedEntries) {
+                    EntryEventType type((EntryEventType::Type)eventType);
+                    boost::shared_ptr<V> val;
+                    boost::shared_ptr<V> oldVal;
+                    boost::shared_ptr<V> mergingVal;
                     if (includeValue) {
-                        value = serializationService.toObject<V>(*event.value);
-                        oldValue = serializationService.toObject<V>(*event.oldValue);
-                        oldValue = serializationService.toObject<V>(*event.mergingValue);
+                        val = serializationService.toObject<V>(*value);
+                        oldVal = serializationService.toObject<V>(*oldValue);
+                        mergingVal = serializationService.toObject<V>(*mergingValue);
                     }
-                    boost::shared_ptr<K> key = serializationService.toObject<K>(*event.key);
-                    std::auto_ptr<Member> member = clusterService.getMember(*event.uuid);
-                    EntryEvent<K, V> entryEvent(instanceName, *member, type, key, value, oldValue, mergingValue);
+                    boost::shared_ptr<K> eventKey = serializationService.toObject<K>(*key);
+                    std::auto_ptr<Member> member = clusterService.getMember(uuid);
+                    EntryEvent<K, V> entryEvent(instanceName, *member, type, eventKey, val, oldVal, mergingVal);
                     if (type == EntryEventType::ADDED) {
                         listener.entryAdded(entryEvent);
                     } else if (type == EntryEventType::REMOVED) {

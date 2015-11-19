@@ -22,7 +22,6 @@
 #define HAZELCAST_TransactionalMultiMapProxy
 
 #include "hazelcast/client/proxy/TransactionalObject.h"
-#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
 
 namespace hazelcast {
     namespace client {
@@ -38,11 +37,11 @@ namespace hazelcast {
 
                 bool put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::auto_ptr<protocol::DataArray> get(const serialization::pimpl::Data& key);
+                std::vector<serialization::pimpl::Data> get(const serialization::pimpl::Data& key);
 
                 bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::auto_ptr<protocol::DataArray> remove(const serialization::pimpl::Data& key);
+                std::vector<serialization::pimpl::Data> remove(const serialization::pimpl::Data& key);
 
                 int valueCount(const serialization::pimpl::Data& key);
 

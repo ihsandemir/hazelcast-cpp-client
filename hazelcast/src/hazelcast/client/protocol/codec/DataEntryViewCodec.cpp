@@ -51,7 +51,7 @@ namespace hazelcast {
                     clientMessage.set(view.getHits());
                     clientMessage.set(view.getLastAccessTime());
                     clientMessage.set(view.getLastStoredTime());
-                    clientMessage.set(view.getLastUpdateTime()());
+                    clientMessage.set(view.getLastUpdateTime());
                     clientMessage.set(view.getVersion());
                     clientMessage.set(view.getEvictionCriteriaNumber());
                     clientMessage.set(view.getTtl());

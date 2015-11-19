@@ -85,6 +85,14 @@ namespace hazelcast {
                     }
 
                     template<typename T>
+                    inline boost::shared_ptr<T> toObject(const Data *data) {
+                        if (NULL == data) {
+                            return boost::shared_ptr<T>();
+                        }
+                        return toObject<T>(*data);
+                    }
+
+                    template<typename T>
                     inline boost::shared_ptr<T> toObject(const Data &data) {
                         CHECK_NULL(T);
 

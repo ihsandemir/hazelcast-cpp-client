@@ -23,6 +23,7 @@
 #include "hazelcast/client/exception/InstanceNotActiveException.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/AtomicBoolean.h"
+#include "hazelcast/util/Util.h"
 #include <iostream>
 #include <cstdlib>
 #include <ctime>

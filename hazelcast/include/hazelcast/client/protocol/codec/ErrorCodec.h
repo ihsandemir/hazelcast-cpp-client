@@ -58,6 +58,8 @@ namespace hazelcast {
 
 
                     std::string toString() const;
+
+                    ErrorCodec(const ErrorCodec &rhs);
                 private:
                     ErrorCodec(ClientMessage &message);
                 };

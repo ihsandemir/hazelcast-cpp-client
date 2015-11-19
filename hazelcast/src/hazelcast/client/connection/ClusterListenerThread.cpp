@@ -213,11 +213,11 @@ namespace hazelcast {
                 std::auto_ptr<std::map<Address, Member, addressComparator> > addrMap;
                 std::vector<Member>::const_iterator foundMember = members.end();
                 MemberAttributeEvent::MemberAttributeOperationType type = (MemberAttributeEvent::MemberAttributeOperationType)operationType;
-                for (std::vector<Member>::const_iterator it = members.begin(); it != members.end(); ++it) {
+                for (std::vector<Member>::iterator it = members.begin(); it != members.end(); ++it) {
                     if (it->getUuid() == uuid) {
                         switch (operationType) {
                             case MemberAttributeEvent::PUT:
-                                it->setAttribute(key, value);
+                                it->setAttribute(key, *value);
                                 break;
                             case MemberAttributeEvent::REMOVE:
                                 it->removeAttribute(key);
@@ -236,7 +236,7 @@ namespace hazelcast {
                     clientContext.getClusterService().setMembers(addrMap);
 
                     // fire event
-                    MemberAttributeEvent event(clientContext.getCluster(), *foundMember, type, key, *value);
+                    MemberAttributeEvent event(clientContext.getCluster(), *foundMember, type, key, *value, members);
 
                     clientContext.getClusterService().fireMemberAttributeEvent(event);
                 }

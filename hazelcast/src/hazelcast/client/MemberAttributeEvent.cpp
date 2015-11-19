@@ -23,12 +23,12 @@
 namespace hazelcast {
     namespace client {
 
-        MemberAttributeEvent::MemberAttributeEvent(Cluster &cluster, const Member &member, Member::MemberAttributeOperationType operationType, const std::string &key, const std::string &value)
-        :MembershipEvent(cluster, MembershipEvent::MEMBER_ADDED, member)
-        , operationType(operationType)
-        , key(key)
-        , value(value) {
-
+        MemberAttributeEvent::MemberAttributeEvent(Cluster &cluster, const Member &member,
+                                                   MemberAttributeEvent::MemberAttributeOperationType operationType,
+                                                   const std::string &key, std::string &value,
+                                                   const std::vector<Member> &memberList)
+                : MembershipEvent(cluster, member, MembershipEvent::MEMBER_ADDED, memberList),
+                  operationType(operationType), key(key), value(value) {
         }
 
         MemberAttributeEvent::MemberAttributeOperationType MemberAttributeEvent::getOperationType() const {
@@ -38,6 +38,7 @@ namespace hazelcast {
         const std::string &MemberAttributeEvent::getKey() const {
             return key;
         }
+
         const std::string &MemberAttributeEvent::getValue() const {
             return value;
         }

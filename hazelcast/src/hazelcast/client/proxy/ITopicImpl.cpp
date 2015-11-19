@@ -30,12 +30,12 @@
 namespace hazelcast {
     namespace client {
         namespace proxy {
-            ITopicImpl::ITopicImpl(const std::string& instanceName, spi::ClientContext *context)
-            : proxy::ProxyImpl("hz:impl:topicService", instanceName, context) {
+            ITopicImpl::ITopicImpl(const std::string &instanceName, spi::ClientContext *context)
+                    : proxy::ProxyImpl("hz:impl:topicService", instanceName, context) {
                 partitionId = getPartitionId(toData(instanceName));
             }
 
-            void ITopicImpl::publish(const serialization::pimpl::Data& data) {
+            void ITopicImpl::publish(const serialization::pimpl::Data &data) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::TopicPublishCodec::RequestParameters::encode(getName(), data);
 
@@ -43,25 +43,18 @@ namespace hazelcast {
             }
 
 
-            std::auto_ptr<std::string> ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
-                std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::TopicAddMessageListenerCodec::RequestParameters::encode(getName());
+            std::string ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
+                std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec =
+                        std::auto_ptr<protocol::codec::IAddListenerCodec>(
+                                new protocol::codec::TopicAddMessageListenerCodec(getName(), false));
 
-                return registerListener(request, topicEventHandler);
+                return registerListener(addCodec, topicEventHandler);
             }
 
-            bool ITopicImpl::removeMessageListener(const std::string& registrationId) {
-                bool result = false;
+            bool ITopicImpl::removeMessageListener(const std::string &registrationId) {
+                protocol::codec::TopicRemoveMessageListenerCodec removeCodec(getName(), registrationId);
 
-                std::string effectiveRegistrationId = registrationId;
-                if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
-                    std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::codec::TopicRemoveMessageListenerCodec::RequestParameters::encode(getName(), effectiveRegistrationId);
-
-                    result = invokeAndGetResult<bool>(request);
-                }
-
-                return result;
+                return context->getServerListenerService().deRegisterListener(removeCodec);
             }
         }
     }

@@ -31,7 +31,7 @@ namespace hazelcast {
             protected:
                 IListImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                std::auto_ptr<std::string> addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
+                std::string addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
 
                 bool removeItemListener(const std::string& registrationId);
 
@@ -39,7 +39,7 @@ namespace hazelcast {
 
                 bool contains(const serialization::pimpl::Data& element);
 
-                std::auto_ptr<protocol::DataArray> toArray();
+                std::vector<serialization::pimpl::Data> toArray();
 
                 bool add(const serialization::pimpl::Data& element);
 
@@ -57,19 +57,19 @@ namespace hazelcast {
 
                 void clear();
 
-                serialization::pimpl::Data get(int index);
+                std::auto_ptr<serialization::pimpl::Data> get(int index);
 
-                serialization::pimpl::Data set(int index, const serialization::pimpl::Data& element);
+                std::auto_ptr<serialization::pimpl::Data> set(int index, const serialization::pimpl::Data& element);
 
                 void add(int index, const serialization::pimpl::Data& element);
 
-                serialization::pimpl::Data remove(int index);
+                std::auto_ptr<serialization::pimpl::Data> remove(int index);
 
                 int indexOf(const serialization::pimpl::Data& element);
 
                 int lastIndexOf(const serialization::pimpl::Data& element);
 
-                std::auto_ptr<protocol::DataArray> subList(int fromIndex, int toIndex);
+                std::vector<serialization::pimpl::Data> subList(int fromIndex, int toIndex);
 
             private:
                 int partitionId;

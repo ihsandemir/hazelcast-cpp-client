@@ -148,15 +148,14 @@ namespace hazelcast {
             }
 
             bool PartitionService::processPartitionResponse(protocol::ClientMessage &response) {
-                bool isSuccess = false;
-
                 protocol::codec::ClientGetPartitionsCodec::ResponseParameters result =
                         protocol::codec::ClientGetPartitionsCodec::ResponseParameters::decode(response);
 
                 partitions.clear();
-                for (std::map<Address, std::vector<int32_t> >::const_iterator it = result.partitions.begin();it != result.partitions.end();++it) {
+                for (std::vector<std::pair<Address, std::vector<int32_t > > >::const_iterator it = result.partitions.begin();
+                     it != result.partitions.end(); ++it) {
                     boost::shared_ptr<Address> addr(new Address(it->first));
-                    for (std::vector<int32_t>::const_iterator partIt = it->second.begin(); partIt != it->second.end(); ++it) {
+                    for (std::vector<int32_t>::const_iterator partIt = it->second.begin(); partIt != it->second.end(); ++partIt) {
                         partitions.put(*partIt, addr);
                     }
                 }

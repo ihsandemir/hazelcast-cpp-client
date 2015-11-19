@@ -13,39 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_SETSIZEPARAMETERS_H_
-#define HAZELCAST_CLIENT_SETSIZEPARAMETERS_H_
-
-#include <memory>
-#include <stdint.h>
-#include <string>
+//
+// Created by ihsan demir on 5/11/15.
+//
+#ifndef HAZELCAST_CLIENT_PROTOCOL_CODEC_DISTRIBUTEDOBJECTINFOCODEC_
+#define HAZELCAST_CLIENT_PROTOCOL_CODEC_DISTRIBUTEDOBJECTINFOCODEC_
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/protocol/GeneratedMessageType.h"
 
 namespace hazelcast {
     namespace client {
+        class DistributedObjectInfo;
+
         namespace protocol {
             class ClientMessage;
 
-            namespace parameters {
-                class HAZELCAST_API SetSizeParameters {
+            namespace codec {
+                class HAZELCAST_API DistributedObjectInfoCodec {
                 public:
-                    static const protocol::GeneratedMessageType TYPE = protocol::SET_SIZE;
+                    static DistributedObjectInfo decode(ClientMessage &clientMessage);
 
-                    static std::auto_ptr<ClientMessage> encode(
-                            const std::string &name);
+                    static void encode(const DistributedObjectInfo &info, ClientMessage &clientMessage);
 
-                    static int32_t calculateDataSize(
-                            const std::string &name);
-
-                private:
-                    // Preventing public access to constructors
-                    SetSizeParameters ();
+                    static int calculateDataSize(const DistributedObjectInfo &info);
                 };
             }
         }
     }
 }
 
-#endif /* HAZELCAST_CLIENT_SETSIZEPARAMETERS_H_ */
+#endif //HAZELCAST_CLIENT_PROTOCOL_CODEC_DISTRIBUTEDOBJECTINFOCODEC_
+

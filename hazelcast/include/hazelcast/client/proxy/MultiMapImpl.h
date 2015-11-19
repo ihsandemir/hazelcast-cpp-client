@@ -18,6 +18,7 @@
 
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
+#include <vector>
 
 namespace hazelcast {
     namespace client {
@@ -28,18 +29,17 @@ namespace hazelcast {
 
                 bool put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::auto_ptr<protocol::DataArray> get(const serialization::pimpl::Data& key);
+                std::vector<serialization::pimpl::Data> get(const serialization::pimpl::Data& key);
 
                 bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::auto_ptr<protocol::DataArray> remove(const serialization::pimpl::Data& key);
+                std::vector<serialization::pimpl::Data> remove(const serialization::pimpl::Data& key);
 
-                std::auto_ptr<protocol::DataArray> keySet();
+                std::vector<serialization::pimpl::Data> keySet();
 
-                std::auto_ptr<protocol::DataArray> values();
+                std::vector<serialization::pimpl::Data> values();
 
-                void entrySet(std::auto_ptr<protocol::DataArray> &resultKeys,
-                              std::auto_ptr<protocol::DataArray> &resultValue);
+                std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entrySet();
 
                 bool containsKey(const serialization::pimpl::Data& key);
 
@@ -53,9 +53,9 @@ namespace hazelcast {
 
                 int valueCount(const serialization::pimpl::Data& key);
 
-                std::auto_ptr<std::string> addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
+                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
 
-                std::auto_ptr<std::string> addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue);
+                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue);
 
                 bool removeEntryListener(const std::string& registrationId);
 

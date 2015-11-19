@@ -20,19 +20,6 @@
 #include "hazelcast/client/proxy/IListImpl.h"
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "hazelcast/client/spi/ServerListenerService.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
 #include "hazelcast/client/impl/PortableCollection.h"
@@ -70,102 +57,106 @@ namespace hazelcast {
     namespace client {
         namespace proxy {
 
-            IListImpl::IListImpl(const std::string& instanceName, spi::ClientContext *context)
-            : ProxyImpl("hz:impl:listService", instanceName, context) {
-                serialization::pimpl::Data keyData = context->getSerializationService().toData<std::string>(&instanceName);
+            IListImpl::IListImpl(const std::string &instanceName, spi::ClientContext *context)
+                    : ProxyImpl("hz:impl:listService", instanceName, context) {
+                serialization::pimpl::Data keyData = context->getSerializationService().toData<std::string>(
+                        &instanceName);
                 partitionId = getPartitionId(keyData);
             }
 
-            std::auto_ptr<std::string> IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::ListAddListenerCodec::RequestParameters::encode(getName(), includeValue);
+            std::string IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+                std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
+                        new protocol::codec::ListAddListenerCodec(getName(), includeValue,
+                                                                  false));
 
-                return registerListener(request, entryEventHandler);
+                return registerListener(addCodec, entryEventHandler);
             }
 
-            bool IListImpl::removeItemListener(const std::string& registrationId) {
-                bool result = false;
+            bool IListImpl::removeItemListener(const std::string &registrationId) {
+                protocol::codec::ListRemoveListenerCodec removeCodec(getName(), registrationId);
 
-                std::string effectiveRegistrationId = registrationId;
-                if (context->getServerListenerService().deRegisterListener(effectiveRegistrationId)) {
-                    std::auto_ptr<protocol::ClientMessage> request =
-                            protocol::codec::ListRemoveListenerCodec::RequestParameters::encode(getName(), effectiveRegistrationId);
-
-                    result = invokeAndGetResult<bool>(request);
-                }
-
-                return result;
-
+                return context->getServerListenerService().deRegisterListener(removeCodec);
             }
 
             int IListImpl::size() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSizeCodec::RequestParameters::encode(getName());
 
-                return invokeAndGetResult<int>(request, partitionId);
+                return invokeAndGetResult<int, protocol::codec::ListSizeCodec::ResponseParameters>(request,
+                                                                                                   partitionId);
             }
 
-            bool IListImpl::contains(const serialization::pimpl::Data& element) {
+            bool IListImpl::contains(const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListContainsCodec::RequestParameters::encode(getName(), element);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListContainsCodec::ResponseParameters>(request,
+                                                                                                        partitionId);
             }
 
-            std::auto_ptr<protocol::DataArray> IListImpl::toArray() {
+            std::vector<serialization::pimpl::Data> IListImpl::toArray() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListGetAllCodec::RequestParameters::encode(getName());
 
-                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
+                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::ListGetAllCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
-            bool IListImpl::add(const serialization::pimpl::Data& element) {
+            bool IListImpl::add(const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddCodec::RequestParameters::encode(getName(), element);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListAddCodec::ResponseParameters>(request,
+                                                                                                   partitionId);
             }
 
-            bool IListImpl::remove(const serialization::pimpl::Data& element) {
+            bool IListImpl::remove(const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListRemoveCodec::RequestParameters::encode(getName(), element);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListRemoveCodec::ResponseParameters>(request,
+                                                                                                      partitionId);
             }
 
-            bool IListImpl::containsAll(const std::vector<serialization::pimpl::Data>& elements) {
+            bool IListImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListContainsAllCodec::RequestParameters::encode(getName(), elements);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListContainsAllCodec::ResponseParameters>(request,
+                                                                                                           partitionId);
             }
 
-            bool IListImpl::addAll(const std::vector<serialization::pimpl::Data>& elements) {
+            bool IListImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddAllCodec::RequestParameters::encode(getName(), elements);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListAddAllCodec::ResponseParameters>(request,
+                                                                                                      partitionId);
             }
 
-            bool IListImpl::addAll(int index, const std::vector<serialization::pimpl::Data>& elements) {
+            bool IListImpl::addAll(int index, const std::vector<serialization::pimpl::Data> &elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
-                        protocol::codec::ListAddAllWithIndexCodec::RequestParameters::encode(getName(), index, elements);
+                        protocol::codec::ListAddAllWithIndexCodec::RequestParameters::encode(getName(), index,
+                                                                                             elements);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListAddAllWithIndexCodec::ResponseParameters>(request,
+                                                                                                               partitionId);
             }
 
-            bool IListImpl::removeAll(const std::vector<serialization::pimpl::Data>& elements) {
+            bool IListImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListCompareAndRemoveAllCodec::RequestParameters::encode(getName(), elements);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListCompareAndRemoveAllCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
-            bool IListImpl::retainAll(const std::vector<serialization::pimpl::Data>& elements) {
+            bool IListImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListCompareAndRetainAllCodec::RequestParameters::encode(getName(), elements);
 
-                return invokeAndGetResult<bool>(request, partitionId);
+                return invokeAndGetResult<bool, protocol::codec::ListCompareAndRetainAllCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
             void IListImpl::clear() {
@@ -175,53 +166,60 @@ namespace hazelcast {
                 invoke(request, partitionId);
             }
 
-            serialization::pimpl::Data IListImpl::get(int index) {
+            std::auto_ptr<serialization::pimpl::Data> IListImpl::get(int index) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListGetCodec::RequestParameters::encode(getName(), index);
 
-                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
+                return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::ListGetCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
-            serialization::pimpl::Data IListImpl::set(int index, const serialization::pimpl::Data& element) {
+            std::auto_ptr<serialization::pimpl::Data> IListImpl::set(int index,
+                                                                     const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSetCodec::RequestParameters::encode(getName(), index, element);
 
-                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
+                return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::ListSetCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
-            void IListImpl::add(int index, const serialization::pimpl::Data& element) {
+            void IListImpl::add(int index, const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddWithIndexCodec::RequestParameters::encode(getName(), index, element);
 
                 invoke(request, partitionId);
             }
 
-            serialization::pimpl::Data IListImpl::remove(int index) {
+            std::auto_ptr<serialization::pimpl::Data> IListImpl::remove(int index) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListRemoveWithIndexCodec::RequestParameters::encode(getName(), index);
 
-                return *invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data> >(request, partitionId);
+                return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::ListRemoveWithIndexCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
-            int IListImpl::indexOf(const serialization::pimpl::Data& element) {
+            int IListImpl::indexOf(const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListIndexOfCodec::RequestParameters::encode(getName(), element);
 
-                return invokeAndGetResult<int>(request, partitionId);
+                return invokeAndGetResult<int, protocol::codec::ListIndexOfCodec::ResponseParameters>(request,
+                                                                                                      partitionId);
             }
 
-            int IListImpl::lastIndexOf(const serialization::pimpl::Data& element) {
+            int IListImpl::lastIndexOf(const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListLastIndexOfCodec::RequestParameters::encode(getName(), element);
 
-                return invokeAndGetResult<int>(request, partitionId);
+                return invokeAndGetResult<int, protocol::codec::ListLastIndexOfCodec::ResponseParameters>(request,
+                                                                                                          partitionId);
             }
 
-            std::auto_ptr<protocol::DataArray> IListImpl::subList(int fromIndex, int toIndex) {
+            std::vector<serialization::pimpl::Data> IListImpl::subList(int fromIndex, int toIndex) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSubCodec::RequestParameters::encode(getName(), fromIndex, toIndex);
 
-                return invokeAndGetResult<std::auto_ptr<protocol::DataArray> >(request, partitionId);
+                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::ListSubCodec::ResponseParameters>(
+                        request, partitionId);
             }
 
         }

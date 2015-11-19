@@ -27,6 +27,7 @@
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "HazelcastServer.h"
+#include "hazelcast/client/MemberAttributeEvent.h"
 
 #include <memory>
 

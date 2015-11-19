@@ -32,7 +32,7 @@ namespace hazelcast {
                  * this exception is thrown.
                  *
                  */
-                class HAZELCAST_API UnexpectedMessageTypeException : public exception::IException {
+                class HAZELCAST_API UnexpectedMessageTypeException : public hazelcast::client::exception::IException {
                 public:
                     /**
                      * Constructor

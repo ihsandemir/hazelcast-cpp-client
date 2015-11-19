@@ -80,22 +80,22 @@ namespace hazelcast {
                 const Member &getMember(Address &address);
 
                 // TODO: Double check if using shared_ptr for Member would eliminate this deep copying
-                std::vector<Member> getMemberList() const;
+                std::vector<Member> getMemberList();
 
                 std::auto_ptr<Address> getFirstMemberAddress();
 
                 void updateMemberAttribute(const std::string &uuid, const std::string &key,
                                            std::auto_ptr<std::string> value, int operationType);
 
-                std::string membersString() const;
+                std::string membersString();
             private:
                 ClientContext &clientContext;
 
                 connection::ClusterListenerThread clusterThread;
 
                 std::auto_ptr<std::map<Address, Member, addressComparator> > members;
-                std::set< MembershipListener *> listeners;
-                std::set< InitialMembershipListener *> initialListeners;
+                std::set<MembershipListener *> listeners;
+                std::set<InitialMembershipListener *> initialListeners;
                 util::Mutex listenerLock;
                 util::Mutex membersLock;
 

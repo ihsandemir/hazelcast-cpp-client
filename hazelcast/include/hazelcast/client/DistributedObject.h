@@ -23,6 +23,7 @@
 #define HAZELCAST_DistributedObject
 
 #include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/client/DistributedObjectInfo.h"
 #include <string>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -71,6 +72,11 @@ namespace hazelcast {
 
         public:
             /**
+            * Constructor.
+            */
+            DistributedObject(const std::string& serviceName, const std::string& objectName);
+
+            /**
             * Returns the service name for this object.
             */
             const std::string& getServiceName() const;
@@ -95,19 +101,13 @@ namespace hazelcast {
 
         protected:
             /**
-            * Constructor.
-            */
-            DistributedObject(const std::string& serviceName, const std::string& objectName);
-
-
-            /**
             * method to be called when cluster-wide destroy method is called.
             */
             virtual void onDestroy();
 
-            const std::string name;
-            const std::string serviceName;
+            DistributedObjectInfo info;
         };
+
     }
 }
 

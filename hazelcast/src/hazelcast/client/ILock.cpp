@@ -69,28 +69,28 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::LockIsLockedCodec::RequestParameters::encode(getName());
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::LockIsLockedCodec::ResponseParameters>(request, partitionId);
         }
 
         bool ILock::isLockedByCurrentThread() {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::LockIsLockedByCurrentThreadCodec::RequestParameters::encode(getName(), util::getThreadId());
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::LockIsLockedByCurrentThreadCodec::ResponseParameters>(request, partitionId);
         }
 
         int ILock::getLockCount() {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::LockGetLockCountCodec::RequestParameters::encode(getName());
 
-            return invokeAndGetResult<int>(request, partitionId);
+            return invokeAndGetResult<int,  protocol::codec::LockGetLockCountCodec::ResponseParameters>(request, partitionId);
         }
 
         long ILock::getRemainingLeaseTime() {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::LockGetRemainingLeaseTimeCodec::RequestParameters::encode(getName());
 
-            return invokeAndGetResult<long>(request, partitionId);
+            return invokeAndGetResult<long, protocol::codec::LockGetRemainingLeaseTimeCodec::ResponseParameters>(request, partitionId);
         }
 
         bool ILock::tryLock() {
@@ -99,9 +99,9 @@ namespace hazelcast {
 
         bool ILock::tryLock(long timeInMillis) {
             std::auto_ptr<protocol::ClientMessage> request =
-                    protocol::codec::LockTryLockCodec::RequestParameters::encode(getName(), util::getThreadId(), timeInMillis);
+                    protocol::codec::LockTryLockCodec::RequestParameters::encode(getName(), util::getThreadId(), LONG_MAX, timeInMillis);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::LockTryLockCodec::ResponseParameters>(request, partitionId);
         }
     }
 }

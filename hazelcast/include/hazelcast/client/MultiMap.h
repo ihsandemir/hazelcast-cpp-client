@@ -17,11 +17,14 @@
 #define HAZELCAST_MULTI_MAP
 
 #include "hazelcast/client/proxy/MultiMapImpl.h"
+#include "hazelcast/client/multimap/PortableEntrySetResponse.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
+#include "hazelcast/client/protocol/codec/MultiMapAddEntryListenerCodec.h"
 #include <string>
 #include <map>
 #include <set>
 #include <vector>
+#include <stdexcept>
 
 namespace hazelcast {
     namespace client {
@@ -45,7 +48,7 @@ namespace hazelcast {
             * @return true if size of the multimap is increased, false if the multimap
             *         already contains the key-value pair.
             */
-            bool put(const K& key, const V& value) {
+            bool put(const K &key, const V &value) {
                 return proxy::MultiMapImpl::put(toData(key), toData(value));
             }
 
@@ -55,10 +58,8 @@ namespace hazelcast {
             * @param key the key whose associated values are to be returned
             * @return the multimap of the values associated with the key.
             */
-            std::vector<V> get(const K& key) {
-                std::auto_ptr<protocol::DataArray> values(proxy::MultiMapImpl::get(toData(key)));
-
-                return toObjectCollection<V>(values);
+            std::vector<V> get(const K &key) {
+                return toObjectCollection<V>(proxy::MultiMapImpl::get(toData(key)));
             }
 
             /**
@@ -68,8 +69,8 @@ namespace hazelcast {
             * @param value
             * @return true if the size of the multimap changed after the remove operation, false otherwise.
             */
-            bool remove(const K& key, const V& value) {
-                return proxy::MultiMapImpl::remove(toData(key), toData(value));                
+            bool remove(const K &key, const V &value) {
+                return proxy::MultiMapImpl::remove(toData(key), toData(value));
             }
 
             /**
@@ -79,10 +80,8 @@ namespace hazelcast {
             * @return the multimap of removed values associated with the given key. Returned multimap
             *         might be modifiable but it has no effect on the multimap
             */
-            std::vector<V> remove(const K& key) {
-                std::auto_ptr<protocol::DataArray> values(proxy::MultiMapImpl::remove(toData(key)));
-
-                return toObjectCollection<V>(values);
+            std::vector<V> remove(const K &key) {
+                return toObjectCollection<V>(proxy::MultiMapImpl::remove(toData(key)));
             }
 
             /**
@@ -92,9 +91,7 @@ namespace hazelcast {
             *         but it has no effect on the multimap
             */
             std::vector<K> keySet() {
-                std::auto_ptr<protocol::DataArray> keys(proxy::MultiMapImpl::keySet());
-
-                return toObjectCollection<V>(keys);
+                return toObjectCollection<K>(proxy::MultiMapImpl::keySet());
             }
 
             /**
@@ -104,9 +101,7 @@ namespace hazelcast {
             *         but it has no effect on the multimap
             */
             std::vector<V> values() {
-                std::auto_ptr<protocol::DataArray> values(proxy::MultiMapImpl::values());
-
-                return toObjectCollection<V>(values);
+                return toObjectCollection<V>(proxy::MultiMapImpl::values());
             }
 
             /**
@@ -116,12 +111,8 @@ namespace hazelcast {
             *         but it has no effect on the multimap
             */
             std::vector<std::pair<K, V> > entrySet() {
-                std::auto_ptr<protocol::DataArray> keys;
-                std::auto_ptr<protocol::DataArray> values;
-                proxy::MultiMapImpl::entrySet(keys, values);
-
-                return toObjectEntrySet<K, V>(keys, values);
-            }            
+                return toObjectEntrySet<K, V>(proxy::MultiMapImpl::entrySet());
+            }
 
             /**
             * Returns whether the multimap contains an entry with the key.
@@ -129,7 +120,7 @@ namespace hazelcast {
             * @param key the key whose existence is checked.
             * @return true if the multimap contains an entry with the key, false otherwise.
             */
-            bool containsKey(const K& key) {
+            bool containsKey(const K &key) {
                 return proxy::MultiMapImpl::containsKey(toData(key));
             }
 
@@ -139,7 +130,7 @@ namespace hazelcast {
             * @param value the value whose existence is checked.
             * @return true if the multimap contains an entry with the value, false otherwise.
             */
-            bool containsValue(const V& value) {
+            bool containsValue(const V &value) {
                 return proxy::MultiMapImpl::containsValue(toData(value));
             }
 
@@ -150,7 +141,7 @@ namespace hazelcast {
             * @param value the value whose existence is checked.
             * @return true if the multimap contains the key-value pair, false otherwise.
             */
-            bool containsEntry(const K& key, const V& value) {
+            bool containsEntry(const K &key, const V &value) {
                 return proxy::MultiMapImpl::containsEntry(toData(key), toData(value));
             }
 
@@ -160,7 +151,7 @@ namespace hazelcast {
             * @return the number of key-value pairs in the multimap.
             */
             int size() {
-                return  proxy::MultiMapImpl::size();
+                return proxy::MultiMapImpl::size();
             }
 
             /**
@@ -177,7 +168,7 @@ namespace hazelcast {
             * @param key the key whose values count are to be returned
             * @return number of values matching to given key in the multimap.
             */
-            int valueCount(const K& key) {
+            int valueCount(const K &key) {
                 return proxy::MultiMapImpl::valueCount(toData(key));
             }
 
@@ -195,11 +186,13 @@ namespace hazelcast {
             *                     contain the value.
             * @return returns registration id.
             */
-            std::string addEntryListener(EntryListener<K, V>& listener, bool includeValue) {
-                spi::ClusterService& clusterService = context->getClusterService();
-                serialization::pimpl::SerializationService& ss = context->getSerializationService();
-                impl::EntryEventHandler<K, V> *entryEventHandler = new impl::EntryEventHandler<K, V>(getName(), clusterService, ss, listener, includeValue);
-                return *proxy::MultiMapImpl::addEntryListener(entryEventHandler, includeValue);
+            std::string addEntryListener(EntryListener<K, V> &listener, bool includeValue) {
+                spi::ClusterService &clusterService = context->getClusterService();
+                serialization::pimpl::SerializationService &ss = context->getSerializationService();
+                impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
+                        new impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(
+                                getName(), clusterService, ss, listener, includeValue);
+                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, includeValue);
             }
 
             /**
@@ -218,9 +211,12 @@ namespace hazelcast {
             *                     contain the value.
             * @return returns registration id.
             */
-            std::string addEntryListener(EntryListener<K, V>& listener, const K& key, bool includeValue) {
-                impl::EntryEventHandler<K, V> *entryEventHandler = new impl::EntryEventHandler<K, V>(getName(), context->getClusterService(), context->getSerializationService(), listener, includeValue);
-                return *proxy::MultiMapImpl::addEntryListener(entryEventHandler, toData(key), includeValue);
+            std::string addEntryListener(EntryListener<K, V> &listener, const K &key, bool includeValue) {
+                impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
+                        new impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(
+                                getName(), context->getClusterService(), context->getSerializationService(), listener,
+                                includeValue);
+                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, toData(key), includeValue);
             }
 
             /**
@@ -231,7 +227,7 @@ namespace hazelcast {
             *
             * @return true if registration is removed, false otherwise
             */
-            bool removeEntryListener(const std::string& registrationId) {
+            bool removeEntryListener(const std::string &registrationId) {
                 return proxy::MultiMapImpl::removeEntryListener(registrationId);
             }
 
@@ -250,7 +246,7 @@ namespace hazelcast {
             *
             * @param key key to lock.
             */
-            void lock(const K& key) {
+            void lock(const K &key) {
                 proxy::MultiMapImpl::lock(toData(key));
             }
 
@@ -270,7 +266,7 @@ namespace hazelcast {
             * @param key key to lock.
             * @param leaseTimeInMillis time in milliseconds to wait before releasing the lock.
             */
-            void lock(const K& key, long leaseTimeInMillis) {
+            void lock(const K &key, long leaseTimeInMillis) {
                 proxy::MultiMapImpl::lock(toData(key), leaseTimeInMillis);
             }
 
@@ -281,7 +277,7 @@ namespace hazelcast {
             * @param key key to lock to be checked.
             * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
             */
-            bool isLocked(const K& key) {
+            bool isLocked(const K &key) {
                 return proxy::MultiMapImpl::isLocked(toData(key));
             }
 
@@ -294,7 +290,7 @@ namespace hazelcast {
             * @param key key to lock.
             * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
             */
-            bool tryLock(const K& key) {
+            bool tryLock(const K &key) {
                 return proxy::MultiMapImpl::tryLock(toData(key));
             }
 
@@ -314,7 +310,7 @@ namespace hazelcast {
             * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
             *         if the waiting time elapsed before the lock was acquired.
             */
-            bool tryLock(const K& key, long timeoutInMillis) {
+            bool tryLock(const K &key, long timeoutInMillis) {
                 return proxy::MultiMapImpl::tryLock(toData(key), timeoutInMillis);
             }
 
@@ -325,7 +321,7 @@ namespace hazelcast {
             *
             * @param key key to lock.
             */
-            void unlock(const K& key) {
+            void unlock(const K &key) {
                 proxy::MultiMapImpl::unlock(toData(key));
             }
 
@@ -335,13 +331,13 @@ namespace hazelcast {
             * and returns immediately.
             * @param key key to lock.
             */
-            void forceUnlock(const K& key) {
+            void forceUnlock(const K &key) {
                 proxy::MultiMapImpl::forceUnlock(toData(key));
             }
-            
+
         private:
-            MultiMap(const std::string& instanceName, spi::ClientContext *context)
-            : proxy::MultiMapImpl(instanceName, context){
+            MultiMap(const std::string &instanceName, spi::ClientContext *context)
+                    : proxy::MultiMapImpl(instanceName, context) {
 
             }
         };

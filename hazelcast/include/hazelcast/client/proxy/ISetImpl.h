@@ -31,7 +31,7 @@ namespace hazelcast {
             protected:
                 ISetImpl(const std::string& instanceName, spi::ClientContext *clientContext);
 
-                std::auto_ptr<std::string> addItemListener(impl::BaseEventHandler *handler, bool includeValue);
+                std::string addItemListener(impl::BaseEventHandler *handler, bool includeValue);
 
                 bool removeItemListener(const std::string& registrationId);
 
@@ -39,7 +39,7 @@ namespace hazelcast {
 
                 bool contains(const serialization::pimpl::Data& element);
 
-                std::auto_ptr<protocol::DataArray> toArray();
+                std::vector<serialization::pimpl::Data> toArray();
 
                 bool add(const serialization::pimpl::Data& element);
 

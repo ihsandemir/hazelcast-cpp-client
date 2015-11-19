@@ -17,6 +17,7 @@
 // Created by sancar koyunlu on 21/04/14.
 //
 
+#include "hazelcast/util/Util.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "HazelcastServerFactory.h"

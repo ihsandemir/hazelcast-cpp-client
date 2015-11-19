@@ -24,10 +24,12 @@ namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace exception {
-                UnexpectedMessageTypeException::UnexpectedMessageTypeException(const std::string &source, int actualType, int expectedType)
-                        : exception::IException(source, "") {
+                UnexpectedMessageTypeException::UnexpectedMessageTypeException(const std::string &source,
+                                                                               int actualType, int expectedType)
+                        : hazelcast::client::exception::IException(source, "") {
                     std::ostringstream os;
-                    os << "[" << exception::IException::what() << "] Expected type:" << expected << ", but message type is:" << actual;
+                    os << "[" << hazelcast::client::exception::IException::what() << "] Expected type:" << expected <<
+                    ", but message type is:" << actual;
                     message = os.str();
                 }
 

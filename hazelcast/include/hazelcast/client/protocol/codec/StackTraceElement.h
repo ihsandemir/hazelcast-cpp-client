@@ -33,6 +33,8 @@ namespace hazelcast {
             namespace codec {
                 HAZELCAST_API class StackTraceElement {
                 public:
+                    StackTraceElement();
+
                     StackTraceElement(const std::string &declaringClass, const std::string &methodName,
                                       const std::string &fileName, int lineNumber);
 

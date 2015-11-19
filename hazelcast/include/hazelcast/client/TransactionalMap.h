@@ -177,7 +177,7 @@ namespace hazelcast {
             * @see IMap#keySet()
             */
             std::vector<K> keySet() {
-                return toObjectCollection<K>(*proxy::TransactionalMapImpl::keySet());
+                return toObjectCollection<K>(proxy::TransactionalMapImpl::keySet());
             }
 
             /**
@@ -187,7 +187,7 @@ namespace hazelcast {
             * @see IMap#keySet(predicate)
             */
             std::vector<K> keySet(const std::string& predicate) {
-                return toObjectCollection<K>(*proxy::TransactionalMapImpl::keySet(predicate));
+                return toObjectCollection<K>(proxy::TransactionalMapImpl::keySet(predicate));
             }
 
             /**
@@ -197,7 +197,7 @@ namespace hazelcast {
             * @see IMap#values()
             */
             std::vector<V> values() {
-                return toObjectCollection<K>(*proxy::TransactionalMapImpl::values());
+                return toObjectCollection<K>(proxy::TransactionalMapImpl::values());
             }
 
             /**
@@ -206,7 +206,7 @@ namespace hazelcast {
             * @see IMap#values(Predicate)
             */
             std::vector<V> values(const std::string& predicate) {
-                return toObjectCollection<K>(*proxy::TransactionalMapImpl::values(predicate));
+                return toObjectCollection<K>(proxy::TransactionalMapImpl::values(predicate));
             }
 
         private:

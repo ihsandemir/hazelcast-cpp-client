@@ -41,10 +41,7 @@ namespace hazelcast {
         namespace serialization {
             namespace pimpl {
                 class Data;
-
-
             }
-
         }
         namespace impl {
             class ClientRequest;
@@ -80,11 +77,11 @@ namespace hazelcast {
 
                 connection::CallFuture invokeOnTarget(std::auto_ptr<protocol::ClientMessage> request, const Address& target);
 
-                connection::CallFuture invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *handler);
+                connection::CallFuture invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request, hazelcast::client::impl::BaseEventHandler *handler);
 
-                connection::CallFuture invokeOnTarget(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *handler, const Address& target);
+                connection::CallFuture invokeOnTarget(std::auto_ptr<protocol::ClientMessage> request, hazelcast::client::impl::BaseEventHandler *handler, const Address& target);
 
-                connection::CallFuture invokeOnPartitionOwner(std::auto_ptr<protocol::ClientMessage> request, impl::BaseEventHandler *handler, int partitionId);
+                connection::CallFuture invokeOnPartitionOwner(std::auto_ptr<protocol::ClientMessage> request, hazelcast::client::impl::BaseEventHandler *handler, int partitionId);
 
                 connection::CallFuture invokeOnConnection(std::auto_ptr<protocol::ClientMessage> request, boost::shared_ptr<connection::Connection> connection);
 
@@ -134,7 +131,7 @@ namespace hazelcast {
 
                 bool isAllowedToSentRequest(connection::Connection& connection, protocol::ClientMessage const&);
 
-                connection::CallFuture doSend(std::auto_ptr<protocol::ClientMessage> request, std::auto_ptr<impl::BaseEventHandler> eventHandler, boost::shared_ptr<connection::Connection>, int);
+                connection::CallFuture doSend(std::auto_ptr<protocol::ClientMessage> request, std::auto_ptr<hazelcast::client::impl::BaseEventHandler> eventHandler, boost::shared_ptr<connection::Connection>, int);
 
                 /**
                 * Returns the actual connection that request is send over,

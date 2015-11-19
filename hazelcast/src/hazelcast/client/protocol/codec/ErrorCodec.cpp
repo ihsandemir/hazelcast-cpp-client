@@ -34,27 +34,38 @@ namespace hazelcast {
                 }
 
                 ErrorCodec::ErrorCodec(ClientMessage &message) :
-                    errorCode(message.getInt32()),
-                    className(message.getStringUtf8()),
-                    message(message.getStringUtf8()),
-                    stackTrace(message.getArray<StackTraceElement>()),
-                    causeErrorCode(message.getInt32()),
-                    causeClassName(message.getNullable<std::string>()) {
+                        errorCode(message.getInt32()),
+                        className(message.getStringUtf8()),
+                        message(message.getStringUtf8()),
+                        stackTrace(message.getArray<StackTraceElement>()),
+                        causeErrorCode(message.getInt32()),
+                        causeClassName(message.getNullable<std::string>()) {
                     assert(ErrorCodec::TYPE == message.getMessageType());
                 }
 
                 std::string ErrorCodec::toString() const {
                     std::ostringstream out;
-                    out << "Error code:" << errorCode << ", Class name that generated the error:" << className << ", " << message << " Stack trace:" << std::endl ;
-                    for (std::vector<StackTraceElement>::const_iterator it = stackTrace.begin(); it != stackTrace.end(); ++it) {
+                    out << "Error code:" << errorCode << ", Class name that generated the error:" << className <<
+                    ", " << message << " Stack trace:" << std::endl;
+                    for (std::vector<StackTraceElement>::const_iterator it = stackTrace.begin();
+                         it != stackTrace.end(); ++it) {
                         out << (*it) << std::endl;
                     }
 
                     out << std::endl << "Cause error code:" << causeErrorCode << std::endl;
                     if (NULL != causeClassName.get()) {
-                        out << "Caused by:" << causeClassName << std::endl;
+                        out << "Caused by:" << *causeClassName << std::endl;
                     }
                     return out.str();
+                }
+
+                ErrorCodec::ErrorCodec(const ErrorCodec &rhs) {
+                    errorCode = rhs.errorCode;
+                    className = rhs.className;
+                    message = rhs.message;
+                    stackTrace = rhs.stackTrace;
+                    causeErrorCode = rhs.causeErrorCode;
+                    causeClassName = std::auto_ptr<std::string>(new std::string(*rhs.causeClassName));
                 }
             }
         }

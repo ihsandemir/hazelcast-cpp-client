@@ -39,7 +39,7 @@ namespace hazelcast {
 
                     virtual const std::string &getRegistrationId() const = 0;
 
-                    virtual void setRegistrationId(const std::string id) const = 0;
+                    virtual void setRegistrationId(const std::string &id) = 0;
                 };
             }
         }

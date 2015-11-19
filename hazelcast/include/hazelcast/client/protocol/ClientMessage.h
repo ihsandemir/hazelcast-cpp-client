@@ -72,6 +72,8 @@ namespace hazelcast {
 
         class Socket;
 
+        class DistributedObjectInfo;
+
         namespace map {
             class DataEntryView;
         }
@@ -146,6 +148,9 @@ namespace hazelcast {
                 static ClientMessage createForEncode(int32_t size);
 
                 //----- Setter methods begin --------------------------------------
+                // bring base class set methods into the derived class
+                using common::containers::LittleEndianBufferWrapper::set;
+
                 void setFrameLength(int32_t length);
 
                 void setMessageType(uint16_t type);
@@ -165,7 +170,7 @@ namespace hazelcast {
                 template<typename T>
                 void setNullable(const T *value) {
                     bool isNull = (NULL == value);
-                    common::containers::LittleEndianBufferWrapper::set(isNull);
+                    set(isNull);
                     if (!isNull) {
                         set(*value);
                     }
@@ -189,10 +194,20 @@ namespace hazelcast {
 
                 void set(const map::DataEntryView *value);
 
+                void set(const DistributedObjectInfo &value);
+
+                void set(const DistributedObjectInfo *value);
+
+                template<typename K, typename V>
+                void set(const std::pair<K, V> &entry) {
+                    set(entry.first);
+                    set(entry.second);
+                }
+
                 template<typename T>
-                void set(const std::vector<T> &values) {
+                void setArray(const std::vector<T> &values) {
                     int32_t len = (int32_t) values.size();
-                    common::containers::LittleEndianBufferWrapper::set(len);
+                    set(len);
 
                     if (len > 0) {
                         for (typename std::vector<T>::const_iterator it = values.begin(); it != values.end(); ++it) {
@@ -202,34 +217,34 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                void set(const std::vector<T> *value) {
+                void setArray(const std::vector<T> *value) {
                     bool isNull = (NULL == value);
-                    common::containers::LittleEndianBufferWrapper::set(isNull);
+                    set(isNull);
                     if (!isNull) {
-                        set<T>(*value);
+                        setArray<T>(*value);
                     }
                 }
 
                 template<typename K, typename V>
-                void set(const std::map<K, V> &values) {
+                void setEntryArray(const std::vector<std::pair<K, V> > &values) {
+                    setArray<std::pair<K, V> >(values);
+                }
+
+                template<typename K, typename V>
+                void setMap(const std::map<K, V> &values) {
                     int32_t len = (int32_t) values.size();
-                    common::containers::LittleEndianBufferWrapper::set(len);
+                    set(len);
 
                     if (len > 0) {
                         for (typename std::map<K, V>::const_iterator it = values.begin(); it != values.end(); ++it) {
-                            set((*it).first);
-                            set((*it).second);
+                            set(*it);
                         }
                     }
                 }
 
                 template<typename K, typename V>
-                void set(const std::map<K, V> *value) {
-                    bool isNull = (NULL == value);
-                    common::containers::LittleEndianBufferWrapper::set(isNull);
-                    if (!isNull) {
-                        set<K, V>(*value);
-                    }
+                void setNullableEntryArray(const std::vector<std::pair<K, V> > *values) {
+                    setArray<std::pair<K, V> >(values);
                 }
                 //----- Setter methods end ---------------------
 
@@ -259,6 +274,11 @@ namespace hazelcast {
                     assert(0);
                 }
 
+                template<typename KEY, typename VALUE>
+                std::pair<KEY, VALUE> getEntry() {
+                    return std::pair<KEY, VALUE>(get<KEY>(), get<VALUE>());
+                }
+
                 template<typename T>
                 std::auto_ptr<T> getNullable() {
                     std::auto_ptr<T> result;
@@ -281,7 +301,7 @@ namespace hazelcast {
 
                 template<typename T>
                 std::auto_ptr<std::vector<T> > getNullableArray() {
-                    std::auto_ptr<T> result;
+                    std::auto_ptr<std::vector<T> > result;
                     if (getBoolean()) {
                         return result;
                     }
@@ -289,25 +309,25 @@ namespace hazelcast {
                 }
 
                 template<typename KEY, typename VALUE>
-                std::map<KEY, VALUE> getMap() {
+                std::vector<std::pair<KEY, VALUE> > getEntryArray() {
                     int32_t len = getInt32();
 
-                    std::map<KEY, VALUE> result;
+                    std::vector<std::pair<KEY, VALUE> > result(len);
                     for (int i = 0; i < len; ++i) {
-                        KEY k = get<KEY>();
-                        VALUE v = get<VALUE>();
-                        result[k] = v;
+                        result[i] = getEntry<KEY, VALUE>();
                     }
                     return result;
                 }
 
                 template<typename KEY, typename VALUE>
-                std::auto_ptr<std::map<KEY, VALUE> > getNullableMap() {
-                    std::auto_ptr<std::map<KEY, VALUE> > result;
+                std::auto_ptr<std::vector<std::pair<KEY, VALUE> > > getNullableEntryArray() {
+                    std::auto_ptr<std::vector<std::pair<KEY, VALUE> > > result;
                     if (getBoolean()) {
                         return result;
                     }
-                    return std::auto_ptr<std::map<KEY, VALUE> >(new std::map<KEY, VALUE>(getMap<KEY, VALUE>()));
+
+                    return std::auto_ptr<std::vector<std::pair<KEY, VALUE> > >(
+                            new std::vector<std::pair<KEY, VALUE> >(getEntryArray<KEY, VALUE>()));
                 }
                 //----- Getter methods end --------------------------
 
@@ -329,7 +349,9 @@ namespace hazelcast {
                 static int32_t calculateDataSize(int64_t param);
 
 #ifdef HZ_PLATFORM_DARWIN
+
                 static int32_t calculateDataSize(long param);
+
 #endif
 
                 static int32_t calculateDataSize(uint64_t param);
@@ -345,9 +367,7 @@ namespace hazelcast {
 
                 static int32_t calculateDataSize(const std::string &param);
 
-                static int32_t calculateDataSize(const std::string *param) {
-                    return calculateDataSizeNullable<std::string>(param);
-                }
+                static int32_t calculateDataSize(const std::string *param);
 
                 static int32_t calculateDataSize(const serialization::pimpl::Data &param);
 
@@ -364,6 +384,15 @@ namespace hazelcast {
                 static int32_t calculateDataSize(const map::DataEntryView &param);
 
                 static int32_t calculateDataSize(const map::DataEntryView *param);
+
+                static int32_t calculateDataSize(const DistributedObjectInfo &param);
+
+                static int32_t calculateDataSize(const DistributedObjectInfo *param);
+
+                template<typename K, typename V>
+                static int32_t calculateDataSize(const std::pair<K, V> &param) {
+                    return calculateDataSize(param.first) + calculateDataSize(param.second);
+                }
 
                 template<typename T>
                 static int32_t calculateDataSize(const std::vector<T> &param) {
@@ -384,17 +413,17 @@ namespace hazelcast {
                 }
 
                 template<typename KEY, typename VALUE>
-                static int32_t calculateDataSize(const std::map<KEY, VALUE> &param) {
+                static int32_t calculateDataSize(const std::vector<std::pair<KEY, VALUE> > &param) {
                     int32_t size = INT32_SIZE;
-                    for (typename std::map<KEY, VALUE>::const_iterator it = param.begin(); param.end() != it; ++it) {
-                        size += calculateDataSize(it->first);
-                        size += calculateDataSize(it->second);
+                    for (typename std::vector<std::pair<KEY, VALUE> >::const_iterator it = param.begin();
+                         param.end() != it; ++it) {
+                        size += calculateDataSize<KEY, VALUE>(*it);
                     }
                     return size;
                 }
 
                 template<typename KEY, typename VALUE>
-                static int32_t calculateDataSize(const std::map<KEY, VALUE> *param) {
+                static int32_t calculateDataSize(const std::vector<std::pair<KEY, VALUE> > *param) {
                     int32_t size = INT8_SIZE;
 
                     if (NULL != param) {
@@ -487,6 +516,9 @@ namespace hazelcast {
 
             template<>
             map::DataEntryView ClientMessage::get();
+
+            template<>
+            DistributedObjectInfo ClientMessage::get();
 
             template<>
             codec::StackTraceElement ClientMessage::get();

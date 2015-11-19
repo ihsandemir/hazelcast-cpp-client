@@ -56,7 +56,8 @@ namespace hazelcast {
             /**
             * InternalAPI. constructor
             */
-            MemberAttributeEvent(Cluster &cluster, const Member &member, MemberAttributeOperationType operationType, const std::string &key, const std::string &value);
+            MemberAttributeEvent(Cluster &cluster, const Member &member, MemberAttributeOperationType operationType,
+                                 const std::string &key, std::string &value, const std::vector<Member> &memberList);
 
             /**
              *
@@ -86,6 +87,7 @@ namespace hazelcast {
             MemberAttributeOperationType operationType;
             std::string key;
             std::string value;
+            std::vector<Member> members;
         };
 
     }

@@ -23,8 +23,6 @@
 #define HAZELCAST_TransactionalObject
 
 #include "hazelcast/client/txn/TransactionProxy.h"
-#include "hazelcast/client/protocol/codec/GenericResultCodec.h"
-#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
 
 #include <string>
 #include <vector>
@@ -78,12 +76,22 @@ namespace hazelcast {
                     return context->getSerializationService().template toObject<T>(data);
                 }
 
+                template<typename T>
+                boost::shared_ptr<T> toObject(const serialization::pimpl::Data *data) {
+                    return context->getSerializationService().template toObject<T>(data);
+                }
+
+                template<typename T>
+                boost::shared_ptr<T> toObject(std::auto_ptr<serialization::pimpl::Data> data) {
+                    return context->getSerializationService().template toObject<T>(data.get());
+                }
+
                 template<typename K>
-                std::vector<K> toObjectCollection(protocol::DataArray &keyDataSet) {
+                std::vector<K> toObjectCollection(const std::vector<serialization::pimpl::Data> &keyDataSet) {
                     int size = keyDataSet.size();
                     std::vector<K> keys(size);
                     for (int i = 0; i < size; i++) {
-                        boost::shared_ptr<K> v = toObject<K>(*keyDataSet[i]);
+                        boost::shared_ptr<K> v = toObject<K>(keyDataSet[i]);
                         keys[i] = *v;
                     }
                     return keys;
@@ -95,42 +103,17 @@ namespace hazelcast {
 
                 std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request);
 
-                template<typename T>
+                template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request);
 
-                    return getResponseResult<T>(response);
+                    return CODEC::decode(*response).response;
                 }
-
             private:
-                template<typename T>
-                inline T getResponseResult(std::auto_ptr<protocol::ClientMessage> response) {
-                    std::auto_ptr<protocol::parameters::GenericResultParameters> resultParameters =
-                            protocol::parameters::GenericResultParameters::decode(*response);
-
-                    return *this->context->getSerializationService().toObject<T>(
-                            *resultParameters->data);
-                }
-
                 const std::string serviceName;
                 const std::string name;
                 txn::TransactionProxy *context;
             };
-
-            template<>
-            bool TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            int TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<std::string> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<serialization::pimpl::Data> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
-
-            template<>
-            std::auto_ptr<protocol::DataArray> TransactionalObject::getResponseResult(std::auto_ptr<protocol::ClientMessage> response);
         }
     }
 }

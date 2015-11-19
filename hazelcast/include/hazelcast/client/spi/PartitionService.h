@@ -108,7 +108,7 @@ namespace hazelcast {
 
                 bool getInitialPartitions();
 
-                void refreshTask(util::ThreadArgs &args);
+                static void refreshTask(util::ThreadArgs &args);
             };
         }
     }

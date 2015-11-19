@@ -36,7 +36,7 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::CountDownLatchAwaitCodec::RequestParameters::encode(getName(), timeoutInMillis);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::CountDownLatchAwaitCodec::ResponseParameters>(request, partitionId);
         }
 
         void ICountDownLatch::countDown() {
@@ -50,14 +50,14 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::CountDownLatchGetCountCodec::RequestParameters::encode(getName());
 
-            return invokeAndGetResult<int>(request, partitionId);
+            return invokeAndGetResult<int, protocol::codec::CountDownLatchGetCountCodec::ResponseParameters>(request, partitionId);
         }
 
         bool ICountDownLatch::trySetCount(int count) {
             std::auto_ptr<protocol::ClientMessage> request =
                     protocol::codec::CountDownLatchTrySetCountCodec::RequestParameters::encode(getName(), count);
 
-            return invokeAndGetResult<bool>(request, partitionId);
+            return invokeAndGetResult<bool, protocol::codec::CountDownLatchTrySetCountCodec::ResponseParameters>(request, partitionId);
         }
     }
 }
