@@ -47,7 +47,7 @@ namespace hazelcast {
             struct ClientMessage::MessageHeaderType ClientMessage::DEFAULT_HEADER = getDefaultHeader();
 
             ClientMessage::ClientMessage() : isOwner(false), numBytesWrittenToConnection(0), numBytesFilled(0),
-                                             retryable(false), isBoundToSingleConnection(false) {}
+                                             retryable(false), isBoundToSingleConnection(false) { }
 
             ClientMessage::ClientMessage(int32_t size) : numBytesWrittenToConnection(0), numBytesFilled(0),
                                                          retryable(false),
@@ -57,8 +57,6 @@ namespace hazelcast {
 
                 isOwner = true;
 
-                wrapForWrite(byteBuffer, size, DATA_OFFSET_FIELD_OFFSET);
-
                 header = reinterpret_cast<MessageHeaderType *> (byteBuffer);
 
                 setFrameLength(size);
@@ -66,7 +64,7 @@ namespace hazelcast {
 
             ClientMessage::~ClientMessage() {
                 if (isOwner) {
-                    delete [] byteBuffer;
+                    delete[] byteBuffer;
                 }
             }
 
@@ -86,12 +84,16 @@ namespace hazelcast {
                 setFrameLength(size);
             }
 
-            ClientMessage ClientMessage::createForEncode(int32_t size) {
-                ClientMessage msg;
+            std::auto_ptr<ClientMessage> ClientMessage::createForEncode(int32_t size) {
+                std::auto_ptr<ClientMessage> msg(new ClientMessage());
                 byte *buffer = new byte[size];
                 memset(buffer, 0, size);
-                msg.wrapForEncode(buffer, size, true);
+                msg->wrapForEncode(buffer, size, true);
                 return msg;
+            }
+
+            std::auto_ptr<ClientMessage> ClientMessage::create(int32_t size) {
+                return std::auto_ptr<ClientMessage>(new ClientMessage(size));
             }
 
             //----- Setter methods begin --------------------------------------
@@ -128,7 +130,7 @@ namespace hazelcast {
             }
 
             void ClientMessage::set(const std::string *value) {
-                setNullable<std::string> (value);
+                setNullable<std::string>(value);
             }
 
             void ClientMessage::set(const serialization::pimpl::Data &value) {
@@ -230,69 +232,96 @@ namespace hazelcast {
                 return flag == (header->flags & flag);
             }
 
-            template <>
+            template<>
             uint8_t ClientMessage::get() {
                 return getUint8();
             }
 
-            template <>
+            template<>
+            bool ClientMessage::get() {
+                return getBoolean();
+            }
+
+            template<>
             int8_t ClientMessage::get() {
                 return getInt8();
             }
 
-            template <>
+            template<>
             int16_t ClientMessage::get() {
                 return getInt16();
             }
 
-            template <>
+            template<>
             uint16_t ClientMessage::get() {
                 return getUint16();
             }
 
-            template <>
+            template<>
             uint32_t ClientMessage::get() {
                 return getUint32();
             }
 
-            template <>
+            template<>
             int32_t ClientMessage::get() {
                 return getInt32();
             }
 
-            template <>
+            template<>
             int64_t ClientMessage::get() {
                 return getInt64();
             }
 
-            template <>
+            template<>
             uint64_t ClientMessage::get() {
                 return getUint64();
             }
 
-            template <>
+            template<>
+            std::string ClientMessage::get() {
+                return getStringUtf8();
+            }
+
+            template<>
             Address ClientMessage::get() {
                 return codec::AddressCodec::decode(*this);
             }
 
-            template <>
+            template<>
             Member ClientMessage::get() {
                 return codec::MemberCodec::decode(*this);
             }
 
-            template <>
+            template<>
             map::DataEntryView ClientMessage::get() {
                 return codec::DataEntryViewCodec::decode(*this);
             }
 
-            template <>
+            template<>
+            serialization::pimpl::Data ClientMessage::get() {
+                return serialization::pimpl::Data(
+                        std::auto_ptr<std::vector<byte> >(new std::vector<byte>(getArray<byte>())));
+            }
+
+            template<>
             DistributedObjectInfo ClientMessage::get() {
                 return codec::DistributedObjectInfoCodec::decode(*this);
             }
 
-            template <>
+            template<>
             codec::StackTraceElement ClientMessage::get() {
                 return codec::StackTraceElementCodec::decode(*this);
+            }
+
+            template<>
+            std::vector<int32_t> ClientMessage::get() {
+                return getArray<int32_t>();
+            }
+
+            template<>
+            std::pair<serialization::pimpl::Data, serialization::pimpl::Data> ClientMessage::get() {
+                return std::pair<serialization::pimpl::Data, serialization::pimpl::Data>(
+                        get<serialization::pimpl::Data>(), get<serialization::pimpl::Data>());
             }
             //----- Getter methods end --------------------------
 
@@ -329,11 +358,13 @@ namespace hazelcast {
                 return INT64_SIZE;
             }
 
-            #ifdef HZ_PLATFORM_DARWIN
+#ifdef HZ_PLATFORM_DARWIN
+
             int32_t ClientMessage::calculateDataSize(long param) {
-                return calculateDataSize((int64_t)param);
+                return calculateDataSize((int64_t) param);
             }
-            #endif
+
+#endif
 
             int32_t ClientMessage::calculateDataSize(uint64_t param) {
                 return UINT64_SIZE;
@@ -350,7 +381,7 @@ namespace hazelcast {
 
             int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data &param) {
                 return INT32_SIZE +  // bytes for the length field
-                       (int32_t)param.totalSize();
+                       (int32_t) param.totalSize();
             }
 
             int32_t ClientMessage::calculateDataSize(const serialization::pimpl::Data *param) {
@@ -397,7 +428,7 @@ namespace hazelcast {
                 int32_t existingFrameLen = getFrameLength();
                 int32_t newFrameLen = existingFrameLen + dataSize;
                 ensureBufferSize(newFrameLen);
-                memcpy(byteBuffer + existingFrameLen, msg->byteBuffer, (size_t)dataSize);
+                memcpy(byteBuffer + existingFrameLen, msg->byteBuffer, (size_t) dataSize);
                 setFrameLength(newFrameLen);
             }
 
@@ -417,7 +448,7 @@ namespace hazelcast {
                         memcpy(newBuffer, byteBuffer, (size_t) currentCapacity);
                         // swap the new buffer with the old one
                         // free the old memory
-                        delete [] byteBuffer;
+                        delete[] byteBuffer;
                         byteBuffer = newBuffer;
                         wrapForWrite(byteBuffer, newSize, getIndex());
                         header = reinterpret_cast<MessageHeaderType *>(byteBuffer);
@@ -453,7 +484,7 @@ namespace hazelcast {
                 isBoundToSingleConnection = isSingleConnection;
             }
 
-            bool ClientMessage::writeTo(Socket & socket) {
+            bool ClientMessage::writeTo(Socket &socket) {
                 bool result = false;
 
                 int32_t frameLen = getFrameLength();

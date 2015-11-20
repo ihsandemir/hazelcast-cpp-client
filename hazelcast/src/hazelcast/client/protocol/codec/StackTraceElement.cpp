@@ -24,15 +24,40 @@ namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace codec {
-                StackTraceElement::StackTraceElement() {
+                const std::string StackTraceElement::EMPTY_STRING("");
+
+                StackTraceElement::StackTraceElement() : fileName((std::string *)NULL) {
                 }
 
-                StackTraceElement::StackTraceElement(const std::string &declaringClass, const std::string &methodName,
-                                  const std::string &fileName, int lineNumber) : declaringClass(declaringClass),
-                                                                                 methodName(methodName),
-                                                                                 fileName(fileName),
-                                                                                 lineNumber(lineNumber) { }
+                StackTraceElement::StackTraceElement(const std::string &className, const std::string &method,
+                                  std::auto_ptr<std::string> file, int line) : declaringClass(className),
+                                                                                 methodName(method),
+                                                                                 fileName(file),
+                                                                                 lineNumber(line) { }
 
+
+                StackTraceElement::StackTraceElement(const StackTraceElement &rhs) {
+                    declaringClass = rhs.declaringClass;
+                    methodName = rhs.methodName;
+                    if (NULL == rhs.fileName.get()) {
+                        fileName = std::auto_ptr<std::string>();
+                    } else {
+                        fileName = std::auto_ptr<std::string>(new std::string(*rhs.fileName));
+                    }
+                    lineNumber = rhs.lineNumber;
+                }
+
+                StackTraceElement &StackTraceElement::operator=(const StackTraceElement &rhs) {
+                    declaringClass = rhs.declaringClass;
+                    methodName = rhs.methodName;
+                    if (NULL == rhs.fileName.get()) {
+                        fileName = std::auto_ptr<std::string>();
+                    } else {
+                        fileName = std::auto_ptr<std::string>(new std::string(*rhs.fileName));
+                    }
+                    lineNumber = rhs.lineNumber;
+                    return *this;
+                }
 
                 const std::string &StackTraceElement::getDeclaringClass() const {
                     return declaringClass;
@@ -43,7 +68,11 @@ namespace hazelcast {
                 }
 
                 const std::string &StackTraceElement::getFileName() const {
-                    return fileName;
+                    if (NULL == fileName.get()) {
+                        return EMPTY_STRING;
+                    }
+
+                    return *fileName;
                 }
 
                 int StackTraceElement::getLineNumber() const {

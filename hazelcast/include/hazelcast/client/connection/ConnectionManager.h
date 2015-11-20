@@ -183,7 +183,7 @@ namespace hazelcast {
 
                 void checkLive();
 
-                void processSuccessfulAuthenticationResult(Connection *connection, const Address &addr,
+                void processSuccessfulAuthenticationResult(Connection *connection, std::auto_ptr<Address> addr,
                                                            std::auto_ptr<std::string> uuid,
                                                            std::auto_ptr<std::string> ownerUuid);
 

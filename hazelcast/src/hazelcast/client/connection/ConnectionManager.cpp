@@ -18,6 +18,8 @@
 
 
 
+#include <hazelcast/client/protocol/AuthenticationStatus.h>
+#include <hazelcast/client/protocol/exception/AuthenticationException.h>
 #include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/spi/ClusterService.h"
@@ -45,8 +47,8 @@ namespace hazelcast {
                       outSelectorThread(NULL), live(true), principal(NULL), heartBeater(clientContext),
                       heartBeatThread(NULL), smartRouting(smartRouting), ownerConnectionFuture(clientContext),
                       callIdGenerator(UINT32_C(0)) {
-                const byte protocol_bytes[6] = {'C', 'B', '2'};
-                PROTOCOL.insert(PROTOCOL.begin(), &protocol_bytes[0], &protocol_bytes[2]);
+                const byte protocol_bytes[3] = {'C', 'B', '2'};
+                PROTOCOL.insert(PROTOCOL.begin(), &protocol_bytes[0], &protocol_bytes[3]);
             }
 
             bool ConnectionManager::start() {
@@ -177,13 +179,14 @@ namespace hazelcast {
                 const Credentials *credentials = clientContext.getClientConfig().getCredentials();
 
                 std::auto_ptr<protocol::ClientMessage> authenticationMessage;
+                byte serializationVersion = clientContext.getSerializationService().getVersion();
                 if (NULL == credentials) {
                     GroupConfig &groupConfig = clientContext.getClientConfig().getGroupConfig();
                     const protocol::UsernamePasswordCredentials cr(groupConfig.getName(), groupConfig.getPassword());
                     authenticationMessage = protocol::codec::ClientAuthenticationCodec::RequestParameters::encode(
                             cr.getPrincipal(), cr.getPassword(), principal ? principal->getUuid() : NULL,
                             principal ? principal->getOwnerUuid() : NULL, connection->isOwnerConnection(),
-                            protocol::ClientTypes::CPP, clientContext.getSerializationService().getVersion());
+                            protocol::ClientTypes::CPP, serializationVersion);
                 } else {
                     serialization::pimpl::Data data =
                             clientContext.getSerializationService().toData<Credentials>(credentials);
@@ -191,7 +194,7 @@ namespace hazelcast {
                     authenticationMessage = protocol::codec::ClientAuthenticationCustomCodec::RequestParameters::encode(
                             data, principal ? principal->getUuid() : NULL,
                             principal ? principal->getOwnerUuid() : NULL, connection->isOwnerConnection(),
-                            protocol::ClientTypes::CPP, clientContext.getSerializationService().getVersion());
+                            protocol::ClientTypes::CPP, serializationVersion);
                 }
 
                 connection->init(PROTOCOL);
@@ -211,14 +214,72 @@ namespace hazelcast {
                     protocol::codec::ClientAuthenticationCodec::ResponseParameters resultParameters = protocol::codec::ClientAuthenticationCodec::ResponseParameters::decode(
                             *clientResponse);
 
-                    processSuccessfulAuthenticationResult(connection, *resultParameters.address, resultParameters.uuid,
-                                                          resultParameters.ownerUuid);
+                    protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) resultParameters.status;
+                    switch (authenticationStatus) {
+                        case protocol::AUTHENTICATED:
+                        {
+                            processSuccessfulAuthenticationResult(connection, resultParameters.address,
+                                                                  resultParameters.uuid,
+                                                                  resultParameters.ownerUuid);
+                            break;
+                        }
+                        case protocol::CREDENTIALS_FAILED:
+                        {
+                            throw protocol::exception::AuthenticationException("ConnectionManager::authenticate",
+                                                                               "Invalid credentials!");
+                        }
+                        case protocol::SERIALIZATION_VERSION_MISMATCH:
+                        {
+                            //we do not need serialization version here as we already connected to master and agreed on the version
+                            char msg[100];
+                            sprintf(msg, "Serialization version does not match the server side. client serailization version:%d",
+                                    serializationVersion);
+                            throw protocol::exception::AuthenticationException("ConnectionManager::authenticate", msg);
+                        }
+                        default:
+                        {
+                            //we do not need serialization version here as we already connected to master and agreed on the version
+                            char msg[70];
+                            sprintf(msg, "Authentication status code not supported. status:%d",
+                                    resultParameters.status);
+                            throw protocol::exception::AuthenticationException("ConnectionManager::authenticate", msg);
+                        }
+                    }
                 } else {
                     protocol::codec::ClientAuthenticationCustomCodec::ResponseParameters resultParameters = protocol::codec::ClientAuthenticationCustomCodec::ResponseParameters::decode(
                             *clientResponse);
 
-                    processSuccessfulAuthenticationResult(connection, *resultParameters.address, resultParameters.uuid,
-                                                          resultParameters.ownerUuid);
+                    protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) resultParameters.status;
+                    switch (authenticationStatus) {
+                        case protocol::AUTHENTICATED:
+                        {
+                            processSuccessfulAuthenticationResult(connection, resultParameters.address,
+                                                                  resultParameters.uuid,
+                                                                  resultParameters.ownerUuid);
+                            break;
+                        }
+                        case protocol::CREDENTIALS_FAILED:
+                        {
+                            throw protocol::exception::AuthenticationException("ConnectionManager::authenticate",
+                                                                               "Invalid credentials!");
+                        }
+                        case protocol::SERIALIZATION_VERSION_MISMATCH:
+                        {
+                            //we do not need serialization version here as we already connected to master and agreed on the version
+                            char msg[100];
+                            sprintf(msg, "Serialization version does not match the server side. client serailization version:%d",
+                                    serializationVersion);
+                            throw protocol::exception::AuthenticationException("ConnectionManager::authenticate", msg);
+                        }
+                        default:
+                        {
+                            //we do not need serialization version here as we already connected to master and agreed on the version
+                            char msg[70];
+                            sprintf(msg, "Authentication status code not supported. status:%d",
+                                    resultParameters.status);
+                            throw protocol::exception::AuthenticationException("ConnectionManager::authenticate", msg);
+                        }
+                    }
                 }
             }
 
@@ -281,12 +342,13 @@ namespace hazelcast {
                 return ++callIdGenerator;
             }
 
-            void ConnectionManager::processSuccessfulAuthenticationResult(Connection *connection, const Address &addr,
+            void ConnectionManager::processSuccessfulAuthenticationResult(Connection *connection,
+                                                                          std::auto_ptr<Address> addr,
                                                                           std::auto_ptr<std::string> uuid,
                                                                           std::auto_ptr<std::string> ownerUuid) {
-                connection->setRemoteEndpoint(addr);
+                connection->setRemoteEndpoint(*addr);
                 std::__1::stringstream message;
-                (message << "client authenticated by " << addr);
+                (message << "client authenticated by " << *addr);
                 util::ILogger::getLogger().info(message.str());
                 if (connection->isOwnerConnection()) {
                     principal = new protocol::Principal(uuid, ownerUuid);

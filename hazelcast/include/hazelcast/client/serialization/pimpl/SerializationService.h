@@ -76,9 +76,9 @@ namespace hazelcast {
 
                         ObjectDataOutput dataOutput(output, portableContext);
 
-                        writeObject<T>(dataOutput, object);
-
                         writeHash(output);
+
+                        writeObject<T>(dataOutput, object);
 
                         Data data(output.toByteArray());
                         return data;
@@ -96,7 +96,7 @@ namespace hazelcast {
                     inline boost::shared_ptr<T> toObject(const Data &data) {
                         CHECK_NULL(T);
 
-                        DataInput dataInput(data.toByteArray());
+                        DataInput dataInput(data.toByteArray(), Data::TYPE_OFFSET);
 
                         return readObject<T>(dataInput);
                     }

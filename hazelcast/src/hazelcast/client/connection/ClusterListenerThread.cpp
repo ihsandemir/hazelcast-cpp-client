@@ -35,15 +35,13 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            ClusterListenerThread::ClusterListenerThread(spi::ClientContext& clientContext)
-            : startLatch(1)
-            , clientContext(clientContext)
-            , deletingConnection(false) {
+            ClusterListenerThread::ClusterListenerThread(spi::ClientContext &clientContext)
+                    : startLatch(1), clientContext(clientContext), deletingConnection(false) {
 
             }
 
-            void ClusterListenerThread::staticRun(util::ThreadArgs& args) {
-                ClusterListenerThread *clusterListenerThread = (ClusterListenerThread *)args.arg0;
+            void ClusterListenerThread::staticRun(util::ThreadArgs &args) {
+                ClusterListenerThread *clusterListenerThread = (ClusterListenerThread *) args.arg0;
                 clusterListenerThread->run(args.currentThread);
             }
 
@@ -57,8 +55,9 @@ namespace hazelcast {
                         if (conn.get() == NULL) {
                             try {
                                 conn = clientContext.getClusterService().connectToOne();
-                            } catch (std::exception& e) {
-                                util::ILogger::getLogger().severe(std::string("Error while connecting to cluster! =>") + e.what());
+                            } catch (std::exception &e) {
+                                util::ILogger::getLogger().severe(
+                                        std::string("Error while connecting to cluster! =>") + e.what());
                                 isStartedSuccessfully = false;
                                 startLatch.countDown();
                                 return;
@@ -71,9 +70,10 @@ namespace hazelcast {
                         startLatch.countDown();
                         listenMembershipEvents();
                         currentThread->interruptibleSleep(1);
-                    } catch (std::exception& e) {
+                    } catch (std::exception &e) {
                         if (clientContext.getLifecycleService().isRunning()) {
-                            util::ILogger::getLogger().warning(std::string("Error while listening cluster events! -> ") + e.what());
+                            util::ILogger::getLogger().warning(
+                                    std::string("Error while listening cluster events! -> ") + e.what());
                         }
 
                         clientContext.getConnectionManager().onCloseOwnerConnection();
@@ -110,20 +110,22 @@ namespace hazelcast {
                 addresses.insert(addresses.end(), configAddresses.begin(), configAddresses.end());
                 return addresses;
             }
-            
+
             void ClusterListenerThread::loadInitialMemberList() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ClientAddMembershipListenerCodec::RequestParameters::encode(false);
 
                 std::auto_ptr<protocol::ClientMessage> response = conn->sendAndReceive(*request);
 
+/*
                 protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters result = protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters::decode(*response);
 
                 registrationId = result.response;
 
                 std::auto_ptr<protocol::ClientMessage> clientMessage = conn->readBlocking();
+*/
 
-                handle(clientMessage);
+                handle(response);
             }
 
             void ClusterListenerThread::listenMembershipEvents() {
@@ -138,7 +140,8 @@ namespace hazelcast {
             }
 
             void ClusterListenerThread::updateMembersRef() {
-                std::auto_ptr<std::map<Address, Member, addressComparator> > addrMap;
+                std::auto_ptr<std::map<Address, Member, addressComparator> > addrMap(
+                        new std::map<Address, Member, addressComparator>());
                 for (std::vector<Member>::const_iterator it = members.begin(); it != members.end(); ++it) {
                     (*addrMap)[it->getAddress()] = *it;
                 }
@@ -155,7 +158,7 @@ namespace hazelcast {
 
             std::vector<Address>  ClusterListenerThread::getConfigAddresses() const {
                 std::vector<Address> socketAddresses;
-                std::set<Address, addressComparator>& configAddresses = clientContext.getClientConfig().getAddresses();
+                std::set<Address, addressComparator> &configAddresses = clientContext.getClientConfig().getAddresses();
                 std::set<Address, addressComparator>::iterator it;
 
                 for (it = configAddresses.begin(); it != configAddresses.end(); ++it) {
@@ -189,13 +192,15 @@ namespace hazelcast {
                 std::auto_ptr<std::map<std::string, Member> > prevMembers;
                 if (members.size() > 0) {
                     prevMembers = std::auto_ptr<std::map<std::string, Member> >(new std::map<std::string, Member>);
-                    for (std::vector<Member>::const_iterator member = members.begin(); member != members.end(); ++member) {
+                    for (std::vector<Member>::const_iterator member = members.begin();
+                         member != members.end(); ++member) {
                         (*prevMembers)[member->getUuid()] = *member;
                     }
                     members.clear();
                 }
 
-                for (std::vector<Member>::const_iterator initialMember = initialMembers.begin(); initialMember != initialMembers.end(); ++initialMember) {
+                for (std::vector<Member>::const_iterator initialMember = initialMembers.begin();
+                     initialMember != initialMembers.end(); ++initialMember) {
                     members.push_back(*initialMember);
                 }
 
@@ -212,7 +217,7 @@ namespace hazelcast {
                 // find and update the member in local list
                 std::auto_ptr<std::map<Address, Member, addressComparator> > addrMap;
                 std::vector<Member>::const_iterator foundMember = members.end();
-                MemberAttributeEvent::MemberAttributeOperationType type = (MemberAttributeEvent::MemberAttributeOperationType)operationType;
+                MemberAttributeEvent::MemberAttributeOperationType type = (MemberAttributeEvent::MemberAttributeOperationType) operationType;
                 for (std::vector<Member>::iterator it = members.begin(); it != members.end(); ++it) {
                     if (it->getUuid() == uuid) {
                         switch (operationType) {
@@ -253,7 +258,7 @@ namespace hazelcast {
             }
 
             void ClusterListenerThread::memberRemoved(const Member &member) {
-                for (std::vector<Member>::const_iterator it = members.begin();it != members.end(); ++it) {
+                for (std::vector<Member>::const_iterator it = members.begin(); it != members.end(); ++it) {
                     if (member == *it) {
                         members.erase(it);
                         break;
@@ -265,7 +270,7 @@ namespace hazelcast {
                 clientContext.getConnectionManager().removeEndpoint(member.getAddress());
 
                 MembershipEvent event(clientContext.getCluster(), member, MembershipEvent::MEMBER_REMOVED,
-                                                            members);
+                                      members);
 
                 clientContext.getClusterService().fireMembershipEvent(event);
             }
@@ -274,22 +279,36 @@ namespace hazelcast {
                     std::auto_ptr<std::map<std::string, Member> > prevMembers) const {
                 std::vector<MembershipEvent> events;
                 std::vector<Member> eventMembers(members);
-                for (std::vector<Member>::const_iterator member = members.begin();member != members.end(); ++member) {
-                    std::map<std::string, Member>::const_iterator former = prevMembers->find(member->getUuid());
-                    if (former == prevMembers->end()) {
-                        events.push_back(MembershipEvent(clientContext.getCluster(), *member, MembershipEvent::MEMBER_ADDED, eventMembers));
-                    } else {
-                        prevMembers->erase(former);
+                if (NULL != prevMembers.get()) {
+                    for (std::vector<Member>::const_iterator member = members.begin();
+                         member != members.end(); ++member) {
+                        std::map<std::string, Member>::const_iterator former = prevMembers->find(member->getUuid());
+                        if (former == prevMembers->end()) {
+                            events.push_back(
+                                    MembershipEvent(clientContext.getCluster(), *member, MembershipEvent::MEMBER_ADDED,
+                                                    eventMembers));
+                        } else {
+                            prevMembers->erase(former);
+                        }
                     }
-                }
-                for (std::map<std::string, Member>::const_iterator it = prevMembers->begin();it != prevMembers->end(); ++it) {
-                    MembershipEvent event(clientContext.getCluster(), it->second, MembershipEvent::MEMBER_REMOVED, eventMembers);
-                    events.push_back(event);
-                    const Address &address = it->second.getAddress();
+                    for (std::map<std::string, Member>::const_iterator it = prevMembers->begin();
+                         it != prevMembers->end(); ++it) {
+                        MembershipEvent event(clientContext.getCluster(), it->second, MembershipEvent::MEMBER_REMOVED,
+                                              eventMembers);
+                        events.push_back(event);
+                        const Address &address = it->second.getAddress();
 
-                    // TODO:: check on this condition
-                    if (!clientContext.getClusterService().isMemberExists(address)) {
-                        clientContext.getConnectionManager().removeEndpoint(address);
+                        // TODO:: check on this condition
+                        if (!clientContext.getClusterService().isMemberExists(address)) {
+                            clientContext.getConnectionManager().removeEndpoint(address);
+                        }
+                    }
+                } else {
+                    for (std::vector<Member>::const_iterator member = members.begin();
+                         member != members.end(); ++member) {
+                        events.push_back(
+                                MembershipEvent(clientContext.getCluster(), *member, MembershipEvent::MEMBER_ADDED,
+                                                eventMembers));
                     }
                 }
                 return events;
@@ -302,7 +321,7 @@ namespace hazelcast {
             }
 
             void ClusterListenerThread::fireMembershipEvents(const std::vector<MembershipEvent> &events) const {
-                for (std::vector<MembershipEvent>::const_iterator it=events.begin();it != events.end(); ++it) {
+                for (std::vector<MembershipEvent>::const_iterator it = events.begin(); it != events.end(); ++it) {
                     clientContext.getClusterService().fireMembershipEvent(*it);
                 }
             }

@@ -36,7 +36,7 @@ namespace hazelcast {
                 ErrorCodec::ErrorCodec(ClientMessage &message) :
                         errorCode(message.getInt32()),
                         className(message.getStringUtf8()),
-                        message(message.getStringUtf8()),
+                        message(message.getNullable<std::string>()),
                         stackTrace(message.getArray<StackTraceElement>()),
                         causeErrorCode(message.getInt32()),
                         causeClassName(message.getNullable<std::string>()) {
@@ -46,15 +46,23 @@ namespace hazelcast {
                 std::string ErrorCodec::toString() const {
                     std::ostringstream out;
                     out << "Error code:" << errorCode << ", Class name that generated the error:" << className <<
-                    ", " << message << " Stack trace:" << std::endl;
+                    ", ";
+                    if (NULL != message.get()) {
+                        out << *message;
+                    }
+                    out << std::endl;
                     for (std::vector<StackTraceElement>::const_iterator it = stackTrace.begin();
                          it != stackTrace.end(); ++it) {
-                        out << (*it) << std::endl;
+                        out << "\t" << (*it) << std::endl;
                     }
 
                     out << std::endl << "Cause error code:" << causeErrorCode << std::endl;
                     if (NULL != causeClassName.get()) {
-                        out << "Caused by:" << *causeClassName << std::endl;
+                        out << "Caused by:";
+                        if (NULL != causeClassName.get()) {
+                            out << *causeClassName;
+                        }
+                        out << std::endl;
                     }
                     return out.str();
                 }
@@ -62,10 +70,14 @@ namespace hazelcast {
                 ErrorCodec::ErrorCodec(const ErrorCodec &rhs) {
                     errorCode = rhs.errorCode;
                     className = rhs.className;
-                    message = rhs.message;
+                    if (NULL != rhs.message.get()) {
+                        message = std::auto_ptr<std::string>(new std::string(*rhs.message));
+                    }
                     stackTrace = rhs.stackTrace;
                     causeErrorCode = rhs.causeErrorCode;
-                    causeClassName = std::auto_ptr<std::string>(new std::string(*rhs.causeClassName));
+                    if (NULL != rhs.causeClassName.get()) {
+                        causeClassName = std::auto_ptr<std::string>(new std::string(*rhs.causeClassName));
+                    }
                 }
             }
         }

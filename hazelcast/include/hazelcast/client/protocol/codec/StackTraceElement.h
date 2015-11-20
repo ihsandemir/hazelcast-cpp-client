@@ -31,13 +31,16 @@ namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace codec {
-                HAZELCAST_API class StackTraceElement {
+                class HAZELCAST_API StackTraceElement {
                 public:
                     StackTraceElement();
 
-                    StackTraceElement(const std::string &declaringClass, const std::string &methodName,
-                                      const std::string &fileName, int lineNumber);
+                    StackTraceElement(const std::string &className, const std::string &method,
+                                      std::auto_ptr<std::string> file, int line);
 
+                    StackTraceElement(const StackTraceElement &rhs);
+
+                    StackTraceElement &operator=(const StackTraceElement &rhs);
 
                     const std::string &getDeclaringClass() const;
 
@@ -48,9 +51,10 @@ namespace hazelcast {
                     int getLineNumber() const;
 
                 private:
+                    static const std::string EMPTY_STRING;
                     std::string declaringClass;
                     std::string methodName;
-                    std::string fileName;
+                    std::auto_ptr<std::string> fileName;
                     int lineNumber;
                 };
 

@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by ihsan demir on 5/11/15.
-//
+#ifndef HAZELCAST_CLIENT_PROTOCOL_AUTHENTICATIONSTATUS_H_
+#define HAZELCAST_CLIENT_PROTOCOL_AUTHENTICATIONSTATUS_H_
 
-#include "hazelcast/client/protocol/codec/StackTraceElementCodec.h"
-#include "hazelcast/client/protocol/ClientMessage.h"
-#include "hazelcast/client/protocol/codec/StackTraceElement.h"
+#include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
     namespace client {
         namespace protocol {
-            namespace codec {
-                StackTraceElement StackTraceElementCodec::decode(ClientMessage &clientMessage) {
-                    return StackTraceElement(clientMessage.getStringUtf8(), clientMessage.getStringUtf8(),
-                                             clientMessage.getNullable<std::string>(), clientMessage.getInt32());
-                }
-            }
+            enum HAZELCAST_API AuthenticationStatus {
+                AUTHENTICATED = 0,
+                CREDENTIALS_FAILED = 1,
+                SERIALIZATION_VERSION_MISMATCH = 2
+            };
         }
     }
 }
+
+#endif // HAZELCAST_CLIENT_PROTOCOL_AUTHENTICATIONSTATUS_H_

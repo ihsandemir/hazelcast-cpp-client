@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 //
-// Created by ihsan demir on 5/11/15.
-//
+// Created by ihsan demir on 10/11/15.
 
-#include "hazelcast/client/protocol/codec/StackTraceElementCodec.h"
-#include "hazelcast/client/protocol/ClientMessage.h"
-#include "hazelcast/client/protocol/codec/StackTraceElement.h"
+#include "hazelcast/client/protocol/exception/AuthenticationException.h"
+
+#include <sstream>
 
 namespace hazelcast {
     namespace client {
         namespace protocol {
-            namespace codec {
-                StackTraceElement StackTraceElementCodec::decode(ClientMessage &clientMessage) {
-                    return StackTraceElement(clientMessage.getStringUtf8(), clientMessage.getStringUtf8(),
-                                             clientMessage.getNullable<std::string>(), clientMessage.getInt32());
+            namespace exception {
+                AuthenticationException::AuthenticationException(const std::string &source, const std::string &msg)
+                        : hazelcast::client::exception::IException(source, msg) {
+                }
+
+                AuthenticationException::~AuthenticationException()  throw() {
                 }
             }
         }
     }
 }
+

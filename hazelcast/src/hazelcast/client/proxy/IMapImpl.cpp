@@ -413,15 +413,12 @@ namespace hazelcast {
                 // wait for all futures
                 for (std::vector<connection::CallFuture>::iterator it = futures.begin();
                      it != futures.end(); ++it) {
-                    try {
                         std::auto_ptr<protocol::ClientMessage> responseForPartition = it->get();
                         protocol::codec::MapGetAllCodec::ResponseParameters resultForPartition = protocol::codec::MapGetAllCodec::ResponseParameters::decode(
                                 *responseForPartition);
                         result.insert(result.end(), resultForPartition.response.begin(),
                                       resultForPartition.response.end());
-                    } catch (...) {
-                        throw;
-                    }
+
                 }
 
                 return result;

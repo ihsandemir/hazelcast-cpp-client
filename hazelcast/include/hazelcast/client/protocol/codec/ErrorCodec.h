@@ -41,7 +41,7 @@ namespace hazelcast {
                 public:
                     int errorCode;
                     std::string className;
-                    std::string message;
+                    std::auto_ptr<std::string> message;
                     std::vector<StackTraceElement> stackTrace;
                     int causeErrorCode;
                     std::auto_ptr<std::string> causeClassName;

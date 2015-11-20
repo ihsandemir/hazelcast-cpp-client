@@ -56,6 +56,7 @@
 #include <vector>
 #include <assert.h>
 #include <map>
+#include <hazelcast/client/serialization/pimpl/Data.h>
 
 #include "hazelcast/client/common/containers/LittleEndianBufferWrapper.h"
 #include "hazelcast/util/HazelcastDll.h"
@@ -139,13 +140,13 @@ namespace hazelcast {
 
                 ClientMessage();
 
-                ClientMessage(int32_t size);
-
                 virtual ~ClientMessage();
 
                 void wrapForDecode(byte *buffer, int32_t size, bool owner);
 
-                static ClientMessage createForEncode(int32_t size);
+                static std::auto_ptr<ClientMessage> createForEncode(int32_t size);
+
+                static std::auto_ptr<ClientMessage> create(int32_t size);
 
                 //----- Setter methods begin --------------------------------------
                 // bring base class set methods into the derived class
@@ -464,7 +465,9 @@ namespace hazelcast {
                     uint16_t dataOffset;
                 };
 
-                void wrapForEncode(byte *buffer, int32_t size, bool owner);
+                ClientMessage(int32_t size);
+
+                inline void wrapForEncode(byte *buffer, int32_t size, bool owner);
 
                 void ensureBufferSize(int32_t newCapacity);
 
@@ -488,6 +491,9 @@ namespace hazelcast {
             uint8_t ClientMessage::get();
 
             template<>
+            bool ClientMessage::get();
+
+            template<>
             int8_t ClientMessage::get();
 
             template<>
@@ -509,6 +515,9 @@ namespace hazelcast {
             uint64_t ClientMessage::get();
 
             template<>
+            std::string ClientMessage::get();
+
+            template<>
             Address ClientMessage::get();
 
             template<>
@@ -518,10 +527,19 @@ namespace hazelcast {
             map::DataEntryView ClientMessage::get();
 
             template<>
+            serialization::pimpl::Data ClientMessage::get();
+
+            template<>
             DistributedObjectInfo ClientMessage::get();
 
             template<>
             codec::StackTraceElement ClientMessage::get();
+
+            template<>
+            std::vector<int32_t> ClientMessage::get();
+
+            template<>
+            std::pair<serialization::pimpl::Data, serialization::pimpl::Data> ClientMessage::get();
 
         }
 
