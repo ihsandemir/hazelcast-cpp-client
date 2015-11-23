@@ -29,7 +29,7 @@
 #include "hazelcast/client/protocol/codec/ClientPingCodec.h"
 
 #include <ctime>
-#include <hazelcast/client/protocol/codec/ClientPingCodec.h>
+#include "hazelcast/client/protocol/codec/ClientPingCodec.h"
 
 namespace hazelcast {
     namespace client {

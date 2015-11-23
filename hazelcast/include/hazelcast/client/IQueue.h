@@ -20,7 +20,7 @@
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
 #include <stdexcept>
-#include <hazelcast/client/protocol/codec/QueueAddListenerCodec.h>
+#include "hazelcast/client/protocol/codec/QueueAddListenerCodec.h"
 
 namespace hazelcast {
     namespace client {

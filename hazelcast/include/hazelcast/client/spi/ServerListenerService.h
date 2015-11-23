@@ -22,8 +22,8 @@
 #ifndef HAZELCAST_SERVER_LISTENER_SERVICE
 #define HAZELCAST_SERVER_LISTENER_SERVICE
 
-#include <hazelcast/client/connection/CallFuture.h>
-#include <hazelcast/client/protocol/codec/IRemoveListenerCodec.h>
+#include "hazelcast/client/connection/CallFuture.h"
+#include "hazelcast/client/protocol/codec/IRemoveListenerCodec.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/HazelcastDll.h"

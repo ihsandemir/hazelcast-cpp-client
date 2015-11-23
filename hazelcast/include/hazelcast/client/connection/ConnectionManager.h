@@ -30,7 +30,7 @@
 #include "hazelcast/util/Thread.h"
 #include "hazelcast/util/Future.h"
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/util/Atomic.h>
+#include "hazelcast/util/Atomic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

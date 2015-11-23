@@ -97,6 +97,9 @@ namespace hazelcast {
 
                 std::auto_ptr<util::Thread> clusterListenerThread;
 
+                bool isInitialMembersLoaded;
+                bool isRegistrationIdReceived;
+
                 void loadInitialMemberList();
 
                 void listenMembershipEvents();

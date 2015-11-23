@@ -23,7 +23,7 @@
 #ifndef HAZELCAST_ITEM_EVENT_HANDLER
 #define HAZELCAST_ITEM_EVENT_HANDLER
 
-#include <hazelcast/client/protocol/codec/QueueAddListenerCodec.h>
+#include "hazelcast/client/protocol/codec/QueueAddListenerCodec.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/ItemEvent.h"

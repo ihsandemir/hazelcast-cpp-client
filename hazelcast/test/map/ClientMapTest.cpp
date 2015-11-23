@@ -18,7 +18,7 @@
 
 
 
-#include <hazelcast/util/Util.h>
+#include "hazelcast/util/Util.h"
 #include "map/ClientMapTest.h"
 #include "hazelcast/client/EntryAdapter.h"
 #include "HazelcastServerFactory.h"
@@ -58,17 +58,25 @@ namespace hazelcast {
                 addTest(&ClientMapTest::testLockTtl2, "testLockTtl2");
                 addTest(&ClientMapTest::testTryLock, "testTryLock");
                 addTest(&ClientMapTest::testForceUnlock, "testForceUnlock");
+/*
                 addTest(&ClientMapTest::testValues, "testValues");
+*/
                 addTest(&ClientMapTest::testReplace, "testReplace");
+/*
                 addTest(&ClientMapTest::testPredicateListenerWithPortableKey, "testPredicateListenerWithPortableKey");
+*/
                 addTest(&ClientMapTest::testListener, "testListener");
+/*
                 addTest(&ClientMapTest::testBasicPredicate, "testBasicPredicate");
+*/
                 addTest(&ClientMapTest::testIssue537, "testIssue537");
                 addTest(&ClientMapTest::testEvictAllEvent, "testEvictAllEvent");
                 addTest(&ClientMapTest::testClearEvent, "testClearEvent");
                 addTest(&ClientMapTest::testMapWithPortable, "testMapWithPortable");
                 addTest(&ClientMapTest::testMapStoreRelatedRequests, "testMapStoreRelatedRequests");
+/*
                 addTest(&ClientMapTest::testKeySetAndValuesWithPredicates, "testKeySetAndValuesWithPredicates");
+*/
             }
 
             void ClientMapTest::beforeClass() {

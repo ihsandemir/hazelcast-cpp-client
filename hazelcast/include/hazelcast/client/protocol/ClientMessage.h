@@ -56,7 +56,7 @@
 #include <vector>
 #include <assert.h>
 #include <map>
-#include <hazelcast/client/serialization/pimpl/Data.h>
+#include "hazelcast/client/serialization/pimpl/Data.h"
 
 #include "hazelcast/client/common/containers/LittleEndianBufferWrapper.h"
 #include "hazelcast/util/HazelcastDll.h"
@@ -349,12 +349,6 @@ namespace hazelcast {
 
                 static int32_t calculateDataSize(int64_t param);
 
-#ifdef HZ_PLATFORM_DARWIN
-
-                static int32_t calculateDataSize(long param);
-
-#endif
-
                 static int32_t calculateDataSize(uint64_t param);
 
                 template<typename T>
@@ -453,6 +447,9 @@ namespace hazelcast {
                  * Returns true if all bytes of the frame are written to Socket, false otherwise.
                  **/
                 bool writeTo(Socket &socket);
+
+
+                void setNumBytesWrittenToConnection(int32_t numBytes);
 
             private:
                 struct MessageHeaderType {

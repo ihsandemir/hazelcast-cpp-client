@@ -17,7 +17,7 @@
 // Created by sancar koyunlu on 30/09/14.
 //
 
-#include <hazelcast/client/protocol/ProtocolTypeDefs.h>
+#include "hazelcast/client/protocol/ProtocolTypeDefs.h"
 #include "hazelcast/client/proxy/MultiMapImpl.h"
 #include "hazelcast/client/impl/PortableCollection.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
@@ -106,8 +106,6 @@ namespace hazelcast {
             std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > MultiMapImpl::entrySet() {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapEntrySetCodec::RequestParameters::encode(getName());
-
-                std::auto_ptr<protocol::ClientMessage> response = invoke(request);
 
                 return invokeAndGetResult<std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >, protocol::codec::MultiMapEntrySetCodec::ResponseParameters>(request);
             }

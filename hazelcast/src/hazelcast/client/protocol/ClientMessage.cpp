@@ -358,14 +358,6 @@ namespace hazelcast {
                 return INT64_SIZE;
             }
 
-#ifdef HZ_PLATFORM_DARWIN
-
-            int32_t ClientMessage::calculateDataSize(long param) {
-                return calculateDataSize((int64_t) param);
-            }
-
-#endif
-
             int32_t ClientMessage::calculateDataSize(uint64_t param) {
                 return UINT64_SIZE;
             }
@@ -509,6 +501,10 @@ namespace hazelcast {
                 msg.setDataOffset(HEADER_SIZE);
 
                 return *msg.header;
+            }
+
+            void ClientMessage::setNumBytesWrittenToConnection(int32_t numBytes) {
+                numBytesWrittenToConnection = numBytes;
             }
         }
     }

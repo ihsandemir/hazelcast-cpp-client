@@ -20,7 +20,7 @@
 #ifndef HAZELCAST_CLIENT_TEST_PROTOCOL_CLIENTMESSAGE_H
 #define HAZELCAST_CLIENT_TEST_PROTOCOL_CLIENTMESSAGE_H
 
-#include <hazelcast/client/Socket.h>
+#include "hazelcast/client/Socket.h"
 #include "iTest/iTest.h"
 
 namespace hazelcast {

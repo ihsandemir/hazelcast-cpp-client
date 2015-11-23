@@ -64,6 +64,8 @@ namespace hazelcast {
                             }
                         }
 
+                        isInitialMembersLoaded = false;
+                        isRegistrationIdReceived = false;
                         loadInitialMemberList();
                         clientContext.getServerListenerService().triggerFailedListeners();
                         isStartedSuccessfully = true;
@@ -115,17 +117,22 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ClientAddMembershipListenerCodec::RequestParameters::encode(false);
 
-                std::auto_ptr<protocol::ClientMessage> response = conn->sendAndReceive(*request);
+                conn->writeBlocking(*request);
 
-/*
-                protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters result = protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters::decode(*response);
+                std::auto_ptr<protocol::ClientMessage> response;
 
-                registrationId = result.response;
-
-                std::auto_ptr<protocol::ClientMessage> clientMessage = conn->readBlocking();
-*/
-
-                handle(response);
+                do {
+                    response = conn->readBlocking();
+                    if (protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters::TYPE ==
+                        response->getMessageType()) {
+                        protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters result = protocol::codec::ClientAddMembershipListenerCodec::ResponseParameters::decode(
+                                *response);
+                        registrationId = result.response;
+                        isRegistrationIdReceived = true;
+                    } else {
+                        handle(response);
+                    }
+                } while (!isInitialMembersLoaded || !isRegistrationIdReceived);
             }
 
             void ClusterListenerThread::listenMembershipEvents() {
@@ -209,13 +216,15 @@ namespace hazelcast {
                     applyMemberListChanges();
                 }
                 fireMembershipEvents(events);
+
+                isInitialMembersLoaded = true;
             }
 
             void ClusterListenerThread::handleMemberAttributeChange(const std::string &uuid, const std::string &key,
                                                                     const int32_t &operationType,
                                                                     std::auto_ptr<std::string> value) {
                 // find and update the member in local list
-                std::auto_ptr<std::map<Address, Member, addressComparator> > addrMap;
+                std::auto_ptr<std::map<Address, Member, addressComparator> > addrMap(new std::map<Address, Member, addressComparator>());
                 std::vector<Member>::const_iterator foundMember = members.end();
                 MemberAttributeEvent::MemberAttributeOperationType type = (MemberAttributeEvent::MemberAttributeOperationType) operationType;
                 for (std::vector<Member>::iterator it = members.begin(); it != members.end(); ++it) {

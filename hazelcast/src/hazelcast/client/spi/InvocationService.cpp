@@ -16,10 +16,10 @@
 //
 // Created by sancar koyunlu on 5/23/13.
 
-#include <hazelcast/client/protocol/codec/ClientPingCodec.h>
-#include <hazelcast/util/Util.h>
-#include <hazelcast/client/protocol/ResponseMessageConst.h>
-#include <hazelcast/client/protocol/codec/ErrorCodec.h>
+#include "hazelcast/client/protocol/codec/ClientPingCodec.h"
+#include "hazelcast/util/Util.h"
+#include "hazelcast/client/protocol/ResponseMessageConst.h"
+#include "hazelcast/client/protocol/codec/ErrorCodec.h"
 #include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/PartitionService.h"
@@ -233,6 +233,8 @@ namespace hazelcast {
                                                  boost::shared_ptr<connection::CallPromise> promise) {
                 int callId = clientContext.getConnectionManager().getNextCallId();
                 promise->getRequest()->setCorrelationId(callId);
+                // set the bytes written to zero
+                promise->getRequest()->setNumBytesWrittenToConnection(0);
                 getCallPromiseMap(connection)->put(callId, promise);
                 if (promise->getEventHandler() != NULL) {
                     registerEventHandler(callId, connection, promise);

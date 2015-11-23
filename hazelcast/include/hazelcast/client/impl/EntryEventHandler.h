@@ -94,11 +94,20 @@ namespace hazelcast {
                     boost::shared_ptr<V> oldVal;
                     boost::shared_ptr<V> mergingVal;
                     if (includeValue) {
-                        val = serializationService.toObject<V>(*value);
-                        oldVal = serializationService.toObject<V>(*oldValue);
-                        mergingVal = serializationService.toObject<V>(*mergingValue);
+                        if (NULL != value.get()) {
+                            val = serializationService.toObject<V>(*value);
+                        }
+                        if (NULL != oldValue.get()) {
+                            oldVal = serializationService.toObject<V>(*oldValue);
+                        }
+                        if (NULL != mergingValue.get()) {
+                            mergingVal = serializationService.toObject<V>(*mergingValue);
+                        }
                     }
-                    boost::shared_ptr<K> eventKey = serializationService.toObject<K>(*key);
+                    boost::shared_ptr<K> eventKey;
+                    if (NULL != key.get()) {
+                        eventKey = serializationService.toObject<K>(*key);
+                    }
                     std::auto_ptr<Member> member = clusterService.getMember(uuid);
                     EntryEvent<K, V> entryEvent(instanceName, *member, type, eventKey, val, oldVal, mergingVal);
                     if (type == EntryEventType::ADDED) {
@@ -114,7 +123,6 @@ namespace hazelcast {
                     } else if (type == EntryEventType::MERGED) {
                         listener.entryMerged(entryEvent);
                     }
-
                 }
 
             private:

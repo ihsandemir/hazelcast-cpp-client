@@ -53,41 +53,41 @@ namespace hazelcast {
                 }
 
                 void ClientMessageTest::testMessageFields() {
-                    hazelcast::client::protocol::ClientMessage msg =
+                    std::auto_ptr<hazelcast::client::protocol::ClientMessage> msg =
                             hazelcast::client::protocol::ClientMessage::createForEncode(
                                     hazelcast::client::protocol::ClientMessage::HEADER_SIZE);
 
-                    ASSERT_EQUAL(0, msg.getDataSize());
+                    ASSERT_EQUAL(0, msg->getDataSize());
 
-                    ASSERT_EQUAL(false, msg.isRetryable());
+                    ASSERT_EQUAL(false, msg->isRetryable());
 
-                    ASSERT_EQUAL(false, msg.isBindToSingleConnection());
+                    ASSERT_EQUAL(false, msg->isBindToSingleConnection());
 
-                    ASSERT_EQUAL(hazelcast::client::protocol::ClientMessage::HEADER_SIZE, msg.getFrameLength());
+                    ASSERT_EQUAL(hazelcast::client::protocol::ClientMessage::HEADER_SIZE, msg->getFrameLength());
 
-                    msg.setIsBoundToSingleConnection(true);
-                    msg.setRetryable(true);
-                    msg.setCorrelationId(0xABCDEF12);
-                    msg.setFlags(0x05);
-                    msg.setMessageType(0xABCD);
-                    msg.setPartitionId(0x8ABCDEF1);
-                    msg.setVersion(4);
-                    msg.updateFrameLength();
+                    msg->setIsBoundToSingleConnection(true);
+                    msg->setRetryable(true);
+                    msg->setCorrelationId(0xABCDEF12);
+                    msg->setFlags(0x05);
+                    msg->setMessageType(0xABCD);
+                    msg->setPartitionId(0x8ABCDEF1);
+                    msg->setVersion(4);
+                    msg->updateFrameLength();
 
-                    ASSERT_EQUAL(true, msg.isBindToSingleConnection());
-                    ASSERT_EQUAL(true, msg.isRetryable());
-                    ASSERT_EQUAL(0xABCDEF12, msg.getCorrelationId());
-                    ASSERT_EQUAL(false, msg.isFlagSet(2));
-                    ASSERT_EQUAL(true, msg.isFlagSet(4));
-                    ASSERT_EQUAL(true, msg.isFlagSet(0x05));
-                    ASSERT_EQUAL(0xABCD, msg.getMessageType());
-                    ASSERT_EQUAL((int32_t)0x8ABCDEF1, msg.getPartitionId());
-                    ASSERT_EQUAL(4, msg.getVersion());
-                    ASSERT_EQUAL(hazelcast::client::protocol::ClientMessage::HEADER_SIZE, msg.getFrameLength());
-                    ASSERT_EQUAL(0, msg.getDataSize());
+                    ASSERT_EQUAL(true, msg->isBindToSingleConnection());
+                    ASSERT_EQUAL(true, msg->isRetryable());
+                    ASSERT_EQUAL(0xABCDEF12, msg->getCorrelationId());
+                    ASSERT_EQUAL(false, msg->isFlagSet(2));
+                    ASSERT_EQUAL(true, msg->isFlagSet(4));
+                    ASSERT_EQUAL(true, msg->isFlagSet(0x05));
+                    ASSERT_EQUAL(0xABCD, msg->getMessageType());
+                    ASSERT_EQUAL((int32_t)0x8ABCDEF1, msg->getPartitionId());
+                    ASSERT_EQUAL(4, msg->getVersion());
+                    ASSERT_EQUAL(hazelcast::client::protocol::ClientMessage::HEADER_SIZE, msg->getFrameLength());
+                    ASSERT_EQUAL(0, msg->getDataSize());
 
                     SocketStub sock;
-                    ASSERT_EQUAL(true, msg.writeTo(sock));
+                    ASSERT_EQUAL(true, msg->writeTo(sock));
 
                 }
 

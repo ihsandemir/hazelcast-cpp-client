@@ -18,8 +18,8 @@
 
 
 
-#include <hazelcast/client/protocol/AuthenticationStatus.h>
-#include <hazelcast/client/protocol/exception/AuthenticationException.h>
+#include "hazelcast/client/protocol/AuthenticationStatus.h"
+#include "hazelcast/client/protocol/exception/AuthenticationException.h"
 #include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/spi/ClusterService.h"

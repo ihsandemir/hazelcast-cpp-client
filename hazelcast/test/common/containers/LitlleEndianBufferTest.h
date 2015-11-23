@@ -20,7 +20,7 @@
 #ifndef HAZELCAST_CLIENT_COMMON_CONTAINERS_LITLLEENDIANBUFFERTEST_H
 #define HAZELCAST_CLIENT_COMMON_CONTAINERS_LITLLEENDIANBUFFERTEST_H
 
-#include <HazelcastServerFactory.h>
+#include "HazelcastServerFactory.h"
 #include <iTest/iTestFixture.h>
 #include "hazelcast/client/common/containers/LittleEndianBufferWrapper.h"
 

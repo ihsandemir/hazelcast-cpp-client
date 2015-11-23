@@ -20,7 +20,7 @@
 #ifndef HAZELCAST_PARTITION_SERVICE
 #define HAZELCAST_PARTITION_SERVICE
 
-#include <hazelcast/util/ThreadArgs.h>
+#include "hazelcast/util/ThreadArgs.h"
 #include "hazelcast/client/Address.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/AtomicInt.h"

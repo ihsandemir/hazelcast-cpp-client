@@ -17,9 +17,9 @@
 // Created by sancar koyunlu on 01/10/14.
 //
 
-#include <hazelcast/client/protocol/codec/IAddListenerCodec.h>
-#include <hazelcast/client/protocol/codec/IRemoveListenerCodec.h>
-#include <hazelcast/client/protocol/codec/ClientDestroyProxyCodec.h>
+#include "hazelcast/client/protocol/codec/IAddListenerCodec.h"
+#include "hazelcast/client/protocol/codec/IRemoveListenerCodec.h"
+#include "hazelcast/client/protocol/codec/ClientDestroyProxyCodec.h"
 #include "hazelcast/client/proxy/ProxyImpl.h"
 
 #include "hazelcast/client/spi/ServerListenerService.h"

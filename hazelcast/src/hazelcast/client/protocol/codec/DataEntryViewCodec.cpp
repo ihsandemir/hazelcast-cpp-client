@@ -28,16 +28,16 @@ namespace hazelcast {
                 map::DataEntryView DataEntryViewCodec::decode(ClientMessage &clientMessage) {
                     return map::DataEntryView(clientMessage.get<serialization::pimpl::Data>(), // key
                                               clientMessage.get<serialization::pimpl::Data>(), // value
-                                              clientMessage.get<long>(), // cost
-                                              clientMessage.get<long>(), // creationTime
-                                              clientMessage.get<long>(), // expirationTime
-                                              clientMessage.get<long>(), // hits
-                                              clientMessage.get<long>(), // lastAccessTime
-                                              clientMessage.get<long>(), // lastStoredTime
-                                              clientMessage.get<long>(), // lastUpdateTime
-                                              clientMessage.get<long>(), // version
-                                              clientMessage.get<long>(), // evictionCriteriaNumber
-                                              clientMessage.get<long>()  // ttl
+                                              clientMessage.get<int64_t>(), // cost
+                                              clientMessage.get<int64_t>(), // creationTime
+                                              clientMessage.get<int64_t>(), // expirationTime
+                                              clientMessage.get<int64_t>(), // hits
+                                              clientMessage.get<int64_t>(), // lastAccessTime
+                                              clientMessage.get<int64_t>(), // lastStoredTime
+                                              clientMessage.get<int64_t>(), // lastUpdateTime
+                                              clientMessage.get<int64_t>(), // version
+                                              clientMessage.get<int64_t>(), // evictionCriteriaNumber
+                                              clientMessage.get<int64_t>()  // ttl
 
                         );
                 }
