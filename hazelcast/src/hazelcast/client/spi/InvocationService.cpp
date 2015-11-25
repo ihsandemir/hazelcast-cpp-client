@@ -367,6 +367,10 @@ namespace hazelcast {
                     connection::Connection &connection) {
                 return eventHandlerPromises.getOrPutIfAbsent(&connection);
             }
+
+            InvocationService::~InvocationService() {
+
+            }
         }
     }
 }

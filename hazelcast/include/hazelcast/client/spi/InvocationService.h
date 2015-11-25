@@ -69,6 +69,8 @@ namespace hazelcast {
             public:
                 InvocationService(spi::ClientContext& clientContext);
 
+                virtual ~InvocationService();
+
                 void start();
 
                 connection::CallFuture invokeOnRandomTarget(std::auto_ptr<protocol::ClientMessage> request);
