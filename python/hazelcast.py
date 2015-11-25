@@ -98,7 +98,7 @@ class ClientConfig(_object):
     __repr__ = _swig_repr
 
     def __init__(self):
-        this = _hazelcast.new_hazelcast_client_ClientConfig()
+        this = _hazelcast.new_ClientConfig()
         try:
             self.this.append(this)
         except:
@@ -193,7 +193,7 @@ class ClientConfig(_object):
 
     def setProperty(self, name, value):
         return _hazelcast.ClientConfig_setProperty(self, name, value)
-    __swig_destroy__ = _hazelcast.delete_hazelcast_client_ClientConfig
+    __swig_destroy__ = _hazelcast.delete_ClientConfig
     __del__ = lambda self: None
 ClientConfig_swigregister = _hazelcast.ClientConfig_swigregister
 ClientConfig_swigregister(ClientConfig)
@@ -216,7 +216,7 @@ class DistributedObject(_object):
 
     def destroy(self):
         return _hazelcast.DistributedObject_destroy(self)
-    __swig_destroy__ = _hazelcast.delete_hazelcast_client_DistributedObject
+    __swig_destroy__ = _hazelcast.delete_DistributedObject
     __del__ = lambda self: None
 DistributedObject_swigregister = _hazelcast.DistributedObject_swigregister
 DistributedObject_swigregister(DistributedObject)
@@ -253,7 +253,7 @@ class IMapImpl(ProxyImpl):
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined")
     __repr__ = _swig_repr
-    __swig_destroy__ = _hazelcast.delete_hazelcast_client_proxy_IMapImpl
+    __swig_destroy__ = _hazelcast.delete_IMapImpl
     __del__ = lambda self: None
 IMapImpl_swigregister = _hazelcast.IMapImpl_swigregister
 IMapImpl_swigregister(IMapImpl)
@@ -266,12 +266,12 @@ class HazelcastClient(_object):
     __repr__ = _swig_repr
 
     def __init__(self, arg2):
-        this = _hazelcast.new_hazelcast_client_HazelcastClient(arg2)
+        this = _hazelcast.new_HazelcastClient(arg2)
         try:
             self.this.append(this)
         except:
             self.this = this
-    __swig_destroy__ = _hazelcast.delete_hazelcast_client_HazelcastClient
+    __swig_destroy__ = _hazelcast.delete_HazelcastClient
     __del__ = lambda self: None
 
     def getClientConfig(self):
@@ -293,7 +293,7 @@ class HazelcastClient(_object):
         return _hazelcast.HazelcastClient_getIntMapDistributedObject(self, name)
 
     def getIntMap(self, name):
-        return _hazelcast.hazelcast_client_HazelcastClient_getIntMap(self, name)
+        return _hazelcast.HazelcastClient_getIntMap(self, name)
 HazelcastClient_swigregister = _hazelcast.HazelcastClient_swigregister
 HazelcastClient_swigregister(HazelcastClient)
 
@@ -467,7 +467,7 @@ class IntMap(IMapImpl):
 
     def clear(self):
         return _hazelcast.IntMap_clear(self)
-    __swig_destroy__ = _hazelcast.delete_hazelcast_client_IntMap
+    __swig_destroy__ = _hazelcast.delete_IntMap
     __del__ = lambda self: None
 IntMap_swigregister = _hazelcast.IntMap_swigregister
 IntMap_swigregister(IntMap)

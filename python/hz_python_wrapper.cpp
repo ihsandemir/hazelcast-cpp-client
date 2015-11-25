@@ -2963,14 +2963,13 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_std__setT_hazelcast__client__LifecycleListener_p_t swig_types[26]
 #define SWIGTYPE_p_std__setT_hazelcast__client__MembershipListener_p_t swig_types[27]
 #define SWIGTYPE_p_std__setT_int_t swig_types[28]
-#define SWIGTYPE_p_std__string swig_types[29]
-#define SWIGTYPE_p_std__vectorT_Address_t swig_types[30]
-#define SWIGTYPE_p_std__vectorT_int_t swig_types[31]
-#define SWIGTYPE_p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t swig_types[32]
-#define SWIGTYPE_p_std__vectorT_std__pairT_int_int_t_t swig_types[33]
-#define SWIGTYPE_p_unsigned_char swig_types[34]
-static swig_type_info *swig_types[36];
-static swig_module_info swig_module = {swig_types, 35, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__vectorT_Address_t swig_types[29]
+#define SWIGTYPE_p_std__vectorT_int_t swig_types[30]
+#define SWIGTYPE_p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t swig_types[31]
+#define SWIGTYPE_p_std__vectorT_std__pairT_int_int_t_t swig_types[32]
+#define SWIGTYPE_p_unsigned_char swig_types[33]
+static swig_type_info *swig_types[35];
+static swig_module_info swig_module = {swig_types, 34, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3085,6 +3084,9 @@ namespace swig {
 
 using namespace hazelcast::client;
 
+
+
+#include <string>
 
 
 #include <limits.h>
@@ -3257,6 +3259,158 @@ SWIGINTERNINLINE PyObject*
   SWIG_From_bool  (bool value)
 {
   return PyBool_FromLong(value ? 1 : 0);
+}
+
+
+SWIGINTERN swig_type_info*
+SWIG_pchar_descriptor(void)
+{
+  static int init = 0;
+  static swig_type_info* info = 0;
+  if (!init) {
+    info = SWIG_TypeQuery("_p_char");
+    init = 1;
+  }
+  return info;
+}
+
+
+SWIGINTERN int
+SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
+{
+#if PY_VERSION_HEX>=0x03000000
+  if (PyUnicode_Check(obj))
+#else  
+  if (PyString_Check(obj))
+#endif
+  {
+    char *cstr; Py_ssize_t len;
+#if PY_VERSION_HEX>=0x03000000
+    if (!alloc && cptr) {
+        /* We can't allow converting without allocation, since the internal
+           representation of string in Python 3 is UCS-2/UCS-4 but we require
+           a UTF-8 representation.
+           TODO(bhy) More detailed explanation */
+        return SWIG_RuntimeError;
+    }
+    obj = PyUnicode_AsUTF8String(obj);
+    PyBytes_AsStringAndSize(obj, &cstr, &len);
+    if(alloc) *alloc = SWIG_NEWOBJ;
+#else
+    PyString_AsStringAndSize(obj, &cstr, &len);
+#endif
+    if (cptr) {
+      if (alloc) {
+	/* 
+	   In python the user should not be able to modify the inner
+	   string representation. To warranty that, if you define
+	   SWIG_PYTHON_SAFE_CSTRINGS, a new/copy of the python string
+	   buffer is always returned.
+
+	   The default behavior is just to return the pointer value,
+	   so, be careful.
+	*/ 
+#if defined(SWIG_PYTHON_SAFE_CSTRINGS)
+	if (*alloc != SWIG_OLDOBJ) 
+#else
+	if (*alloc == SWIG_NEWOBJ) 
+#endif
+	  {
+	    *cptr = reinterpret_cast< char* >(memcpy((new char[len + 1]), cstr, sizeof(char)*(len + 1)));
+	    *alloc = SWIG_NEWOBJ;
+	  }
+	else {
+	  *cptr = cstr;
+	  *alloc = SWIG_OLDOBJ;
+	}
+      } else {
+        #if PY_VERSION_HEX>=0x03000000
+        assert(0); /* Should never reach here in Python 3 */
+        #endif
+	*cptr = SWIG_Python_str_AsChar(obj);
+      }
+    }
+    if (psize) *psize = len + 1;
+#if PY_VERSION_HEX>=0x03000000
+    Py_XDECREF(obj);
+#endif
+    return SWIG_OK;
+  } else {
+    swig_type_info* pchar_descriptor = SWIG_pchar_descriptor();
+    if (pchar_descriptor) {
+      void* vptr = 0;
+      if (SWIG_ConvertPtr(obj, &vptr, pchar_descriptor, 0) == SWIG_OK) {
+	if (cptr) *cptr = (char *) vptr;
+	if (psize) *psize = vptr ? (strlen((char *)vptr) + 1) : 0;
+	if (alloc) *alloc = SWIG_OLDOBJ;
+	return SWIG_OK;
+      }
+    }
+  }
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsPtr_std_string (PyObject * obj, std::string **val) 
+{
+  char* buf = 0 ; size_t size = 0; int alloc = SWIG_OLDOBJ;
+  if (SWIG_IsOK((SWIG_AsCharPtrAndSize(obj, &buf, &size, &alloc)))) {
+    if (buf) {
+      if (val) *val = new std::string(buf, size - 1);
+      if (alloc == SWIG_NEWOBJ) delete[] buf;
+      return SWIG_NEWOBJ;
+    } else {
+      if (val) *val = 0;
+      return SWIG_OLDOBJ;
+    }
+  } else {
+    static int init = 0;
+    static swig_type_info* descriptor = 0;
+    if (!init) {
+      descriptor = SWIG_TypeQuery("std::string" " *");
+      init = 1;
+    }
+    if (descriptor) {
+      std::string *vptr;
+      int res = SWIG_ConvertPtr(obj, (void**)&vptr, descriptor, 0);
+      if (SWIG_IsOK(res) && val) *val = vptr;
+      return res;
+    }
+  }
+  return SWIG_ERROR;
+}
+
+
+SWIGINTERNINLINE PyObject *
+SWIG_FromCharPtrAndSize(const char* carray, size_t size)
+{
+  if (carray) {
+    if (size > INT_MAX) {
+      swig_type_info* pchar_descriptor = SWIG_pchar_descriptor();
+      return pchar_descriptor ? 
+	SWIG_InternalNewPointerObj(const_cast< char * >(carray), pchar_descriptor, 0) : SWIG_Py_Void();
+    } else {
+#if PY_VERSION_HEX >= 0x03000000
+#if PY_VERSION_HEX >= 0x03010000
+      return PyUnicode_DecodeUTF8(carray, static_cast< int >(size), "surrogateescape");
+#else
+      return PyUnicode_FromStringAndSize(carray, static_cast< int >(size));
+#endif
+#else
+      return PyString_FromStringAndSize(carray, static_cast< int >(size));
+#endif
+    }
+  } else {
+    return SWIG_Py_Void();
+  }
+}
+
+
+SWIGINTERNINLINE PyObject *
+SWIG_From_std_string  (const std::string& s)
+{
+  return SWIG_FromCharPtrAndSize(s.data(), s.size());
 }
 
 
@@ -4194,10 +4348,8 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_ClientConfig_setProperty(PyObject *S
   std::string *arg3 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  int res3 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
@@ -4209,26 +4361,36 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_ClientConfig_setProperty(PyObject *S
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "1"" of type '" "hazelcast::client::ClientConfig *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::ClientConfig * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res3 = SWIG_AsPtr_std_string(obj2, &ptr);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    arg3 = ptr;
   }
-  arg2 = reinterpret_cast< std::string * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "3"" of type '" "std::string const &""'"); 
-  }
-  if (!argp3) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_ClientConfig_setProperty" "', argument " "3"" of type '" "std::string const &""'"); 
-  }
-  arg3 = reinterpret_cast< std::string * >(argp3);
   result = (hazelcast::client::ClientConfig *) &(arg1)->setProperty((std::string const &)*arg2,(std::string const &)*arg3);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_hazelcast__client__ClientConfig, 0 |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  if (SWIG_IsNewObj(res3)) delete arg3;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  if (SWIG_IsNewObj(res3)) delete arg3;
   return NULL;
 }
 
@@ -4276,7 +4438,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_DistributedObject_getServiceName(PyO
   }
   arg1 = reinterpret_cast< hazelcast::client::DistributedObject * >(argp1);
   result = (std::string *) &((hazelcast::client::DistributedObject const *)arg1)->getServiceName();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__string, 0 |  0 );
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -4298,7 +4460,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_DistributedObject_getName(PyObject *
   }
   arg1 = reinterpret_cast< hazelcast::client::DistributedObject * >(argp1);
   result = (std::string *) &((hazelcast::client::DistributedObject const *)arg1)->getName();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__string, 0 |  0 );
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
   return resultobj;
 fail:
   return NULL;
@@ -4588,8 +4750,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_HazelcastClient_getIntMapDistributed
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   SwigValueWrapper< hazelcast::client::IMap< int,int > > result;
@@ -4600,18 +4761,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_HazelcastClient_getIntMapDistributed
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_HazelcastClient_getIntMapDistributedObject" "', argument " "1"" of type '" "hazelcast::client::HazelcastClient *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::HazelcastClient * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_HazelcastClient_getIntMapDistributedObject" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_HazelcastClient_getIntMapDistributedObject" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_HazelcastClient_getIntMapDistributedObject" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_HazelcastClient_getIntMapDistributedObject" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   result = (arg1)->SWIGTEMPLATEDISAMBIGUATOR getDistributedObject< hazelcast::client::IMap< int,int > >((std::string const &)*arg2);
   resultobj = SWIG_NewPointerObj((new hazelcast::client::IMap< int,int >(static_cast< const hazelcast::client::IMap< int,int >& >(result))), SWIGTYPE_p_hazelcast__client__IMapT_int_int_t, SWIG_POINTER_OWN |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -4622,8 +4788,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_HazelcastClient_getIntMap(PyObject *
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   SwigValueWrapper< hazelcast::client::IMap< int,int > > result;
@@ -4634,18 +4799,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_HazelcastClient_getIntMap(PyObject *
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_HazelcastClient_getIntMap" "', argument " "1"" of type '" "hazelcast::client::HazelcastClient *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::HazelcastClient * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_HazelcastClient_getIntMap" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_HazelcastClient_getIntMap" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_HazelcastClient_getIntMap" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_HazelcastClient_getIntMap" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   result = (arg1)->SWIGTEMPLATEDISAMBIGUATOR getMap< int,int >((std::string const &)*arg2);
   resultobj = SWIG_NewPointerObj((new hazelcast::client::IMap< int,int >(static_cast< const hazelcast::client::IMap< int,int >& >(result))), SWIGTYPE_p_hazelcast__client__IMapT_int_int_t, SWIG_POINTER_OWN |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -6596,8 +6766,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_removeInterceptor(PyObject *S
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   
@@ -6607,18 +6776,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_removeInterceptor(PyObject *S
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_IntMap_removeInterceptor" "', argument " "1"" of type '" "hazelcast::client::IMap< int,int > *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::IMap< int,int > * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_removeInterceptor" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_removeInterceptor" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_removeInterceptor" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_removeInterceptor" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   (arg1)->removeInterceptor((std::string const &)*arg2);
   resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -6659,7 +6833,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_addEntryListener__SWIG_0(PyOb
   } 
   arg3 = static_cast< bool >(val3);
   result = (arg1)->addEntryListener(*arg2,arg3);
-  resultobj = SWIG_NewPointerObj((new std::string(static_cast< const std::string& >(result))), SWIGTYPE_p_std__string, SWIG_POINTER_OWN |  0 );
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
   return resultobj;
 fail:
   return NULL;
@@ -6672,8 +6846,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_removeEntryListener(PyObject 
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   bool result;
@@ -6684,18 +6857,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_removeEntryListener(PyObject 
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_IntMap_removeEntryListener" "', argument " "1"" of type '" "hazelcast::client::IMap< int,int > *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::IMap< int,int > * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_removeEntryListener" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_removeEntryListener" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_removeEntryListener" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_removeEntryListener" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   result = (bool)(arg1)->removeEntryListener((std::string const &)*arg2);
   resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -6747,7 +6925,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_addEntryListener__SWIG_1(PyOb
   } 
   arg4 = static_cast< bool >(val4);
   result = (arg1)->addEntryListener(*arg2,(int const &)*arg3,arg4);
-  resultobj = SWIG_NewPointerObj((new std::string(static_cast< const std::string& >(result))), SWIGTYPE_p_std__string, SWIG_POINTER_OWN |  0 );
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
   return resultobj;
 fail:
   return NULL;
@@ -7013,8 +7191,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_keySet__SWIG_1(PyObject *SWIG
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   std::vector< int > result;
@@ -7025,18 +7202,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_keySet__SWIG_1(PyObject *SWIG
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_IntMap_keySet" "', argument " "1"" of type '" "hazelcast::client::IMap< int,int > *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::IMap< int,int > * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_keySet" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_keySet" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_keySet" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_keySet" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   result = (arg1)->keySet((std::string const &)*arg2);
   resultobj = SWIG_NewPointerObj((new std::vector< int >(static_cast< const std::vector< int >& >(result))), SWIGTYPE_p_std__vectorT_int_t, SWIG_POINTER_OWN |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -7066,7 +7248,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_keySet(PyObject *self, PyObje
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_hazelcast__client__IMapT_int_int_t, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_std__string, 0);
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
       _v = SWIG_CheckState(res);
       if (_v) {
         return _wrap_hazelcast_client_IntMap_keySet__SWIG_1(self, args);
@@ -7089,8 +7271,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_entrySet__SWIG_1(PyObject *SW
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   std::vector< std::pair< int,int > > result;
@@ -7101,18 +7282,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_entrySet__SWIG_1(PyObject *SW
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_IntMap_entrySet" "', argument " "1"" of type '" "hazelcast::client::IMap< int,int > *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::IMap< int,int > * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_entrySet" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_entrySet" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_entrySet" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_entrySet" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   result = (arg1)->entrySet((std::string const &)*arg2);
   resultobj = SWIG_NewPointerObj((new std::vector< std::pair< int,int > >(static_cast< const std::vector< std::pair< int,int > >& >(result))), SWIGTYPE_p_std__vectorT_std__pairT_int_int_t_t, SWIG_POINTER_OWN |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -7142,7 +7328,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_entrySet(PyObject *self, PyOb
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_hazelcast__client__IMapT_int_int_t, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_std__string, 0);
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
       _v = SWIG_CheckState(res);
       if (_v) {
         return _wrap_hazelcast_client_IntMap_entrySet__SWIG_1(self, args);
@@ -7165,8 +7351,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_values__SWIG_1(PyObject *SWIG
   std::string *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   std::vector< int > result;
@@ -7177,18 +7362,23 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_values__SWIG_1(PyObject *SWIG
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_IntMap_values" "', argument " "1"" of type '" "hazelcast::client::IMap< int,int > *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::IMap< int,int > * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_values" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_values" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_values" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_values" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   result = (arg1)->values((std::string const &)*arg2);
   resultobj = SWIG_NewPointerObj((new std::vector< int >(static_cast< const std::vector< int >& >(result))), SWIGTYPE_p_std__vectorT_int_t, SWIG_POINTER_OWN |  0 );
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -7218,7 +7408,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_values(PyObject *self, PyObje
     int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_hazelcast__client__IMapT_int_int_t, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_std__string, 0);
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
       _v = SWIG_CheckState(res);
       if (_v) {
         return _wrap_hazelcast_client_IntMap_values__SWIG_1(self, args);
@@ -7242,8 +7432,7 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_addIndex(PyObject *SWIGUNUSED
   bool arg3 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
   bool val3 ;
   int ecode3 = 0 ;
   PyObject * obj0 = 0 ;
@@ -7256,14 +7445,17 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_addIndex(PyObject *SWIGUNUSED
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "hazelcast_client_IntMap_addIndex" "', argument " "1"" of type '" "hazelcast::client::IMap< int,int > *""'"); 
   }
   arg1 = reinterpret_cast< hazelcast::client::IMap< int,int > * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__string,  0  | 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_addIndex" "', argument " "2"" of type '" "std::string const &""'"); 
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "hazelcast_client_IntMap_addIndex" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_addIndex" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
   }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "hazelcast_client_IntMap_addIndex" "', argument " "2"" of type '" "std::string const &""'"); 
-  }
-  arg2 = reinterpret_cast< std::string * >(argp2);
   ecode3 = SWIG_AsVal_bool(obj2, &val3);
   if (!SWIG_IsOK(ecode3)) {
     SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "hazelcast_client_IntMap_addIndex" "', argument " "3"" of type '" "bool""'");
@@ -7271,8 +7463,10 @@ SWIGINTERN PyObject *_wrap_hazelcast_client_IntMap_addIndex(PyObject *SWIGUNUSED
   arg3 = static_cast< bool >(val3);
   (arg1)->addIndex((std::string const &)*arg2,arg3);
   resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return resultobj;
 fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
   return NULL;
 }
 
@@ -7679,7 +7873,6 @@ static swig_type_info _swigt__p_std__setT_hazelcast__client__InitialMembershipLi
 static swig_type_info _swigt__p_std__setT_hazelcast__client__LifecycleListener_p_t = {"_p_std__setT_hazelcast__client__LifecycleListener_p_t", "std::set< hazelcast::client::LifecycleListener * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__setT_hazelcast__client__MembershipListener_p_t = {"_p_std__setT_hazelcast__client__MembershipListener_p_t", "std::set< hazelcast::client::MembershipListener * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__setT_int_t = {"_p_std__setT_int_t", "std::set< int > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__string = {"_p_std__string", "std::string *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_Address_t = {"_p_std__vectorT_Address_t", "std::vector< Address > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_int_t = {"_p_std__vectorT_int_t", "std::vector< int > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t = {"_p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t", "std::vector< std::pair< hazelcast::client::serialization::pimpl::Data,hazelcast::client::serialization::pimpl::Data > > *|hazelcast::client::EntryVector *", 0, 0, (void*)0, 0};
@@ -7716,7 +7909,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__setT_hazelcast__client__LifecycleListener_p_t,
   &_swigt__p_std__setT_hazelcast__client__MembershipListener_p_t,
   &_swigt__p_std__setT_int_t,
-  &_swigt__p_std__string,
   &_swigt__p_std__vectorT_Address_t,
   &_swigt__p_std__vectorT_int_t,
   &_swigt__p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t,
@@ -7753,7 +7945,6 @@ static swig_cast_info _swigc__p_std__setT_hazelcast__client__InitialMembershipLi
 static swig_cast_info _swigc__p_std__setT_hazelcast__client__LifecycleListener_p_t[] = {  {&_swigt__p_std__setT_hazelcast__client__LifecycleListener_p_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__setT_hazelcast__client__MembershipListener_p_t[] = {  {&_swigt__p_std__setT_hazelcast__client__MembershipListener_p_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__setT_int_t[] = {  {&_swigt__p_std__setT_int_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__string[] = {  {&_swigt__p_std__string, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_Address_t[] = {  {&_swigt__p_std__vectorT_Address_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_int_t[] = {  {&_swigt__p_std__vectorT_int_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t[] = {  {&_swigt__p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -7790,7 +7981,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__setT_hazelcast__client__LifecycleListener_p_t,
   _swigc__p_std__setT_hazelcast__client__MembershipListener_p_t,
   _swigc__p_std__setT_int_t,
-  _swigc__p_std__string,
   _swigc__p_std__vectorT_Address_t,
   _swigc__p_std__vectorT_int_t,
   _swigc__p_std__vectorT_std__pairT_hazelcast__client__serialization__pimpl__Data_hazelcast__client__serialization__pimpl__Data_t_t,

@@ -22,6 +22,8 @@ using namespace hazelcast::client;
 
 %}
 
+%include "std_string.i"
+
 %include "HazelcastDll.h"
 
 %include "ClientConfig.h"
