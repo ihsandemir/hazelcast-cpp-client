@@ -98,7 +98,7 @@ class ClientConfig(_object):
     __repr__ = _swig_repr
 
     def __init__(self):
-        this = _hazelcast.new_ClientConfig()
+        this = _hazelcast.new_hazelcast_client_ClientConfig()
         try:
             self.this.append(this)
         except:
