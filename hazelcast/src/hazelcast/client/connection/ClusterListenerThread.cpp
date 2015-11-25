@@ -195,7 +195,7 @@ namespace hazelcast {
                 clientContext.getPartitionService().refreshPartitions();
             }
 
-            void ClusterListenerThread::handleMemberSet(const std::vector<Member> &initialMembers) {
+            void ClusterListenerThread::handleMemberList(const std::vector<Member> &initialMembers) {
                 std::auto_ptr<std::map<std::string, Member> > prevMembers;
                 if (members.size() > 0) {
                     prevMembers = std::auto_ptr<std::map<std::string, Member> >(new std::map<std::string, Member>);

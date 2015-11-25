@@ -26,7 +26,9 @@ namespace hazelcast {
         namespace protocol {
             namespace codec {
                 Address AddressCodec::decode(ClientMessage &clientMessage) {
-                    return Address(clientMessage.getStringUtf8(), clientMessage.getInt32());
+                    std::string host = clientMessage.getStringUtf8();
+                    int32_t port = clientMessage.getInt32();
+                    return Address(host, port);
                 }
 
                 void AddressCodec::encode(const Address &address, ClientMessage &clientMessage) {

@@ -15,7 +15,7 @@
  */
 //
 // Created by sancar koyunlu on 5/20/13.
-// Copyright (c) 2013 sancar koyunlu. All rights reserved.
+
 #ifndef HAZELCAST_SERVER_ERROR
 #define HAZELCAST_SERVER_ERROR
 

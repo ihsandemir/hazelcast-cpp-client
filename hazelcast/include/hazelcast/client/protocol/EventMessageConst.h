@@ -21,7 +21,7 @@ namespace hazelcast {
         namespace protocol {
             enum EventMessageConst {
                 EVENT_MEMBER = 200,
-                EVENT_MEMBERSET = 201,
+                EVENT_MEMBERLIST = 201,
                 EVENT_MEMBERATTRIBUTECHANGE = 202,
                 EVENT_ENTRY = 203,
                 EVENT_ITEM = 204,
@@ -37,7 +37,9 @@ namespace hazelcast {
                 EVENT_QUERYCACHESINGLE = 212,
                 EVENT_QUERYCACHEBATCH = 213,
 
-                EVENT_CACHEPARTITIONLOST = 214
+                EVENT_CACHEPARTITIONLOST = 214,
+                EVENT_IMAPINVALIDATION = 215,
+                EVENT_IMAPBATCHINVALIDATION = 216
             };
         }
     }

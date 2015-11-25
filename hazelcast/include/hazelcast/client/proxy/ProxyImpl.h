@@ -81,7 +81,6 @@ namespace hazelcast {
                 * @param partitionId that given request will be send to.
                 * @param request ClientRequest ptr.
                 */
-                // TODO: Add response decode here to check for the returned message type in runtime
                 std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request,
                                                               int partitionId);
 

@@ -63,7 +63,7 @@ namespace hazelcast {
 
                     short readShort();
 
-                    // TODO: change to return 2 bytes char
+                    // TODO: change to return 2 bytes char as in java
                     char readChar();
 
                     int readInt();

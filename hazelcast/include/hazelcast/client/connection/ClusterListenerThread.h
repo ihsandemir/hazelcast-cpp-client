@@ -78,7 +78,7 @@ namespace hazelcast {
 
                 virtual void handleMember(const Member &member, const int32_t &eventType);
 
-                virtual void handleMemberSet(const std::vector<Member> &initialMembers);
+                virtual void handleMemberList(const std::vector<Member> &initialMembers);
 
                 virtual void handleMemberAttributeChange(const std::string &uuid, const std::string &key,
                                                          const int32_t &operationType,

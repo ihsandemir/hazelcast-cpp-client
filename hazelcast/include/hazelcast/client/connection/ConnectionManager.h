@@ -15,7 +15,7 @@
  */
 //
 // Created by sancar koyunlu on 5/21/13.
-// Copyright (c) 2013 sancar koyunlu. All rights reserved.
+
 
 #ifndef HAZELCAST_CONNECTION_MANAGER
 #define HAZELCAST_CONNECTION_MANAGER
@@ -166,8 +166,8 @@ namespace hazelcast {
 
                 /**
                  *
-                 * TODO: Keep the call id per connection inside the connection object and we may not need to use atomic int since only one connection io thread
-                 * shall call it during the actual send operation!!!
+                 * TODO: Keep the call id per connection inside the connection object and we may not need to use atomic
+                 * int since only one connection io thread shall call it during the actual send operation!!!
                  */
                 uint32_t getNextCallId();
 
@@ -189,8 +189,6 @@ namespace hazelcast {
 
                 std::vector<byte> PROTOCOL;
                 util::SynchronizedMap<Address, Connection, addressComparator> connections;
-                // TODO: Would prefer to use map<int, IOHandler *> but due to the implementation of
-                // util::SynchronizedMap I had to use something of type shared pointer
                 util::SynchronizedMap<int, Connection> socketConnections;
                 spi::ClientContext &clientContext;
                 SocketInterceptor *socketInterceptor;

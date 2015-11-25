@@ -26,20 +26,20 @@ namespace hazelcast {
         namespace protocol {
             namespace codec {
                 map::DataEntryView DataEntryViewCodec::decode(ClientMessage &clientMessage) {
-                    return map::DataEntryView(clientMessage.get<serialization::pimpl::Data>(), // key
-                                              clientMessage.get<serialization::pimpl::Data>(), // value
-                                              clientMessage.get<int64_t>(), // cost
-                                              clientMessage.get<int64_t>(), // creationTime
-                                              clientMessage.get<int64_t>(), // expirationTime
-                                              clientMessage.get<int64_t>(), // hits
-                                              clientMessage.get<int64_t>(), // lastAccessTime
-                                              clientMessage.get<int64_t>(), // lastStoredTime
-                                              clientMessage.get<int64_t>(), // lastUpdateTime
-                                              clientMessage.get<int64_t>(), // version
-                                              clientMessage.get<int64_t>(), // evictionCriteriaNumber
-                                              clientMessage.get<int64_t>()  // ttl
-
-                        );
+                    serialization::pimpl::Data key = clientMessage.get<serialization::pimpl::Data>(); // key
+                    serialization::pimpl::Data value = clientMessage.get<serialization::pimpl::Data>(); // value
+                    int64_t cost = clientMessage.get<int64_t>(); // cost
+                    int64_t creationTime = clientMessage.get<int64_t>(); // creationTime
+                    int64_t expirationTime = clientMessage.get<int64_t>(); // expirationTime
+                    int64_t hits = clientMessage.get<int64_t>(); // hits
+                    int64_t lastAccessTime = clientMessage.get<int64_t>(); // lastAccessTime
+                    int64_t lastStoredTime = clientMessage.get<int64_t>(); // lastStoredTime
+                    int64_t lastUpdateTime = clientMessage.get<int64_t>(); // lastUpdateTime
+                    int64_t version = clientMessage.get<int64_t>(); // version
+                    int64_t evictionCriteria = clientMessage.get<int64_t>(); // evictionCriteriaNumber
+                    int64_t ttl = clientMessage.get<int64_t>();  // ttl
+                    return map::DataEntryView(key, value, cost, creationTime, expirationTime, hits, lastAccessTime,
+                                              lastStoredTime, lastUpdateTime, version, evictionCriteria, ttl);
                 }
 
                 void DataEntryViewCodec::encode(const map::DataEntryView &view, ClientMessage &clientMessage) {

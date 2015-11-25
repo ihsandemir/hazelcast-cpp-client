@@ -82,7 +82,6 @@ namespace hazelcast {
                 std::vector<State> values;
             };
 
-            // TODO: Check if we also need the "prepare" method that exists in java code
             class HAZELCAST_API TransactionProxy {
             public:
 

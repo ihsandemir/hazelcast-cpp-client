@@ -59,6 +59,11 @@ namespace hazelcast {
                 */
                 bool onData(util::ByteBuffer &buffer);
 
+                /**
+                 * Reset the builder so that the message is null pointer
+                 */
+                void reset();
+
             private:
                 void addToPartialMessages(std::auto_ptr<ClientMessage> message);
 
@@ -69,7 +74,6 @@ namespace hazelcast {
 
                 typedef std::map<uint32_t, ClientMessage * > MessageMap;
 
-                // TODO: change with ordered_map
                 MessageMap partialMessages;
 
                 ClientMessage wrapperMessage;

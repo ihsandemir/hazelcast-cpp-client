@@ -29,18 +29,21 @@ namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace codec {
-                ErrorCodec ErrorCodec::decode(ClientMessage &message) {
-                    return ErrorCodec(message);
+                ErrorCodec ErrorCodec::decode(ClientMessage &clientMessage) {
+                    return ErrorCodec(clientMessage);
                 }
 
-                ErrorCodec::ErrorCodec(ClientMessage &message) :
-                        errorCode(message.getInt32()),
-                        className(message.getStringUtf8()),
-                        message(message.getNullable<std::string>()),
-                        stackTrace(message.getArray<StackTraceElement>()),
-                        causeErrorCode(message.getInt32()),
-                        causeClassName(message.getNullable<std::string>()) {
-                    assert(ErrorCodec::TYPE == message.getMessageType());
+                ErrorCodec::ErrorCodec(ClientMessage &clientMessage) {
+                    assert(ErrorCodec::TYPE == clientMessage.getMessageType());
+
+                    errorCode = clientMessage.getInt32();
+                    className = clientMessage.getStringUtf8();
+                    message = clientMessage.getNullable<std::string>();
+/*
+                    stackTrace = clientMessage.getArray<StackTraceElement>();
+                    causeErrorCode = clientMessage.getInt32();
+                    causeClassName = clientMessage.getNullable<std::string>();
+*/
                 }
 
                 std::string ErrorCodec::toString() const {

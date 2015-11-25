@@ -15,7 +15,7 @@
  */
 //
 // Created by sancar koyunlu on 5/20/13.
-// Copyright (c) 2013 sancar koyunlu. All rights reserved.
+
 
 
 #include "hazelcast/client/protocol/Principal.h"

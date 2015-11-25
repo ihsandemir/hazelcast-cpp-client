@@ -26,7 +26,9 @@ namespace hazelcast {
         namespace protocol {
             namespace codec {
                 DistributedObjectInfo DistributedObjectInfoCodec::decode(ClientMessage &clientMessage) {
-                    return DistributedObjectInfo(clientMessage.getStringUtf8(), clientMessage.getStringUtf8());
+                    std::string serviceName = clientMessage.getStringUtf8();
+                    std::string name = clientMessage.getStringUtf8();
+                    return DistributedObjectInfo(serviceName, name);
                 }
 
                 void DistributedObjectInfoCodec::encode(const DistributedObjectInfo &info,

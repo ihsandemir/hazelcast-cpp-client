@@ -26,8 +26,12 @@ namespace hazelcast {
         namespace protocol {
             namespace codec {
                 StackTraceElement StackTraceElementCodec::decode(ClientMessage &clientMessage) {
-                    return StackTraceElement(clientMessage.getStringUtf8(), clientMessage.getStringUtf8(),
-                                             clientMessage.getNullable<std::string>(), clientMessage.getInt32());
+                    std::string className = clientMessage.getStringUtf8();
+                    std::string methodName = clientMessage.getStringUtf8();
+                    std::auto_ptr<std::string> fileName = clientMessage.getNullable<std::string>();
+                    int32_t lineNumber = clientMessage.getInt32();
+                    
+                    return StackTraceElement(className, methodName, fileName, lineNumber);
                 }
             }
         }

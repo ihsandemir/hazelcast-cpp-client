@@ -15,7 +15,7 @@
  */
 //
 // Created by sancar koyunlu on 5/21/13.
-// Copyright (c) 2013 sancar koyunlu. All rights reserved.
+
 
 
 #ifndef HAZELCAST_CLUSTER_SERVICE
@@ -79,13 +79,10 @@ namespace hazelcast {
 
                 const Member &getMember(Address &address);
 
-                // TODO: Double check if using shared_ptr for Member would eliminate this deep copying
+                // TODO: Using shared_ptr for Member would eliminate this deep copying
                 std::vector<Member> getMemberList();
 
                 std::auto_ptr<Address> getFirstMemberAddress();
-
-                void updateMemberAttribute(const std::string &uuid, const std::string &key,
-                                           std::auto_ptr<std::string> value, int operationType);
 
                 std::string membersString();
             private:

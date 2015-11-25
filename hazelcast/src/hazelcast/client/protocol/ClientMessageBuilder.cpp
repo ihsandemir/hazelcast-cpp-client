@@ -109,6 +109,10 @@ namespace hazelcast {
 
                 return result;
             }
+
+            void ClientMessageBuilder::reset() {
+                message.reset(NULL);
+            }
         }
     }
 }

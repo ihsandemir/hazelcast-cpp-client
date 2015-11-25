@@ -103,6 +103,7 @@ namespace hazelcast {
         private:
             Cluster &cluster;
             //TODO: no need to make a copy since the event is only used in the lifetime of the member in the members list
+            // This copy makes sense if the event delivery is off-loaded to another thread
             Member member;
             MembershipEventType eventType;
             std::vector<Member> members;
