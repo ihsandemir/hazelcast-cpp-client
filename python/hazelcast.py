@@ -266,7 +266,7 @@ class HazelcastClient(_object):
     __repr__ = _swig_repr
 
     def __init__(self, arg2):
-        this = _hazelcast.new_HazelcastClient(arg2)
+        this = _hazelcast.new_hazelcast_client_HazelcastClient(arg2)
         try:
             self.this.append(this)
         except:
