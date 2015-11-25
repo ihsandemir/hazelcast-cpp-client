@@ -78,6 +78,7 @@ namespace hazelcast {
             lifecycleService.shutdown();
         }
 
+/*
         IdGenerator HazelcastClient::getIdGenerator(const std::string &instanceName) {
             return getDistributedObject< IdGenerator >(instanceName);
         }
@@ -106,6 +107,7 @@ namespace hazelcast {
         TransactionContext HazelcastClient::newTransactionContext(const TransactionOptions &options) {
             return TransactionContext(clientContext, options);
         }
+*/
 
     }
 }

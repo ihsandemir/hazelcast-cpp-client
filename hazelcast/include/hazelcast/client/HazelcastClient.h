@@ -455,21 +455,25 @@ namespace hazelcast {
             * @param name name of the distributed multimap
             * @return distributed multimap instance with the specified name
             */
+/*
             template<typename K, typename V>
             MultiMap<K, V> getMultiMap(const std::string& name) {
                 return getDistributedObject<MultiMap<K, V> >(name);
             };
 
+*/
             /**
             * Returns the distributed queue instance with the specified name and entry type E.
             *
             * @param name name of the distributed queue
             * @return distributed queue instance with the specified name
             */
+/*
             template<typename E>
             IQueue<E> getQueue(const std::string& name) {
                 return getDistributedObject<IQueue<E> >(name);
             };
+*/
 
             /**
             * Returns the distributed set instance with the specified name and entry type E.
@@ -479,10 +483,12 @@ namespace hazelcast {
             * @return distributed set instance with the specified name
             */
 
+/*
             template<typename E>
             ISet<E> getSet(const std::string& name) {
                 return getDistributedObject<ISet<E> >(name);
             };
+*/
 
             /**
             * Returns the distributed list instance with the specified name.
@@ -491,10 +497,12 @@ namespace hazelcast {
             * @param name name of the distributed list
             * @return distributed list instance with the specified name
             */
+/*
             template<typename E>
             IList<E> getList(const std::string& name) {
                 return getDistributedObject<IList<E> >(name);
             };
+*/
 
             /**
             * Returns the distributed topic instance with the specified name and entry type E.
@@ -502,10 +510,12 @@ namespace hazelcast {
             * @param name name of the distributed topic
             * @return distributed topic instance with the specified name
             */
+/*
             template<typename E>
             ITopic<E> getTopic(const std::string& name) {
                 return getDistributedObject<ITopic<E> >(name);
             };
+*/
 
             /**
             * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
@@ -515,7 +525,9 @@ namespace hazelcast {
             * @param name name of the IdGenerator
             * @return IdGenerator for the given name
             */
+/*
             IdGenerator getIdGenerator(const std::string& name);
+*/
 
             /**
             * Creates cluster-wide atomic long. Hazelcast IAtomicLong is distributed
@@ -524,7 +536,9 @@ namespace hazelcast {
             * @param name name of the IAtomicLong proxy
             * @return IAtomicLong proxy for the given name
             */
+/*
             IAtomicLong getIAtomicLong(const std::string& name);
+*/
 
             /**
             * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed
@@ -534,7 +548,9 @@ namespace hazelcast {
             * @return ICountDownLatch proxy for the given name
             */
 
+/*
             ICountDownLatch getICountDownLatch(const std::string& name);
+*/
 
             /**
             * Returns the distributed lock instance for the specified key object.
@@ -560,7 +576,9 @@ namespace hazelcast {
             * @param name name of the lock instance
             * @return distributed lock instance for the specified name.
             */
+/*
             ILock getILock(const std::string& name);
+*/
 
             /**
             * Creates cluster-wide semaphore. Hazelcast ISemaphore is distributed
@@ -569,7 +587,9 @@ namespace hazelcast {
             * @param name name of the ISemaphore proxy
             * @return ISemaphore proxy for the given name
             */
+/*
             ISemaphore getISemaphore(const std::string& name);
+*/
 
             /**
             *
@@ -582,7 +602,9 @@ namespace hazelcast {
             *
             * @return new TransactionContext
             */
+/*
             TransactionContext newTransactionContext();
+*/
 
             /**
             * Creates a new TransactionContext associated with the current thread with given options.
@@ -590,7 +612,9 @@ namespace hazelcast {
             * @param options options for this transaction
             * @return new TransactionContext
             */
+/*
             TransactionContext newTransactionContext(const TransactionOptions& options);
+*/
 
             /**
             * Returns the Cluster that connected Hazelcast instance is a part of.

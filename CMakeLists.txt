@@ -10,7 +10,7 @@ project (HazelcastClient)
 
 INCLUDE(TestBigEndian)
 
-SET(HZ_VERSION 3.7-SNAPSHOT)
+SET(HZ_VERSION 3.6-SNAPSHOT)
 
 message(STATUS "Preparing hazelcast client ..... ")
 
@@ -29,7 +29,9 @@ FILE(GLOB_RECURSE HZ_GENERATED_SOURCES "./hazelcast/generated-sources/src/*cpp")
 FILE(GLOB_RECURSE HZ_HEADERS "./hazelcast/include/*h")
 FILE(GLOB_RECURSE HZ_GENERATED_HEADERS "./hazelcast/generated-sources/include/*h")
 
-include_directories(${CMAKE_SOURCE_DIR}/hazelcast/include ${CMAKE_SOURCE_DIR}/hazelcast/generated-sources/include)
+SET(PYTHON_INCLUDE /usr/include/python2.7)
+
+include_directories(${CMAKE_SOURCE_DIR}/hazelcast/include ${CMAKE_SOURCE_DIR}/hazelcast/generated-sources/include ${PYTHON_INCLUDE})
 
 IF(NOT (${HZ_BIT} MATCHES "32") AND NOT (${HZ_BIT} MATCHES "64") )
   message( STATUS "Build needs HZ_BIT. Setting default as -DHZ_BIT=64 (other option -DHZ_BIT=32)" )
@@ -52,7 +54,7 @@ message(STATUS "Generating ${HZ_LIB_TYPE} Library")
 
 SET(HZ_LIB_NAME HazelcastClient${HZ_VERSION}_${HZ_BIT})
 
-add_library(${HZ_LIB_NAME} ${HZ_LIB_TYPE} ${HZ_SOURCES} ${HZ_GENERATED_SOURCES} ${HZ_HEADERS} ${HZ_GENERATED_HEADERS})
+add_library(${HZ_LIB_NAME} ${HZ_LIB_TYPE} ${HZ_SOURCES} ${HZ_GENERATED_SOURCES} ${HZ_HEADERS} ${HZ_GENERATED_HEADERS} ${CMAKE_SOURCE_DIR}/python/hz_python_wrapper.cpp)
 
 set(HZ_CODE_COVERAGE_COMPILE_FLAGS " ")
 set(HZ_CODE_COVERAGE_LINK_FLAGS " ") 
@@ -113,5 +115,5 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
-ADD_SUBDIRECTORY(hazelcast/test)
-ADD_SUBDIRECTORY(examples)
+#ADD_SUBDIRECTORY(hazelcast/test)
+#ADD_SUBDIRECTORY(examples)
