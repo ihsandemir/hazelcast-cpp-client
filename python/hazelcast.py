@@ -293,7 +293,7 @@ class HazelcastClient(_object):
         return _hazelcast.HazelcastClient_getIntMapDistributedObject(self, name)
 
     def getIntMap(self, name):
-        return _hazelcast.HazelcastClient_getIntMap(self, name)
+        return _hazelcast.hazelcast_client_HazelcastClient_getIntMap(self, name)
 HazelcastClient_swigregister = _hazelcast.HazelcastClient_swigregister
 HazelcastClient_swigregister(HazelcastClient)
 
