@@ -17,6 +17,7 @@
 // Created by ihsan demir on 12/11/15.
 
 #include "hazelcast/client/spi/impl/listener/EventRegistration.h"
+#include "hazelcast/client/protocol/codec/IAddListenerCodec.h"
 
 namespace hazelcast {
     namespace client {
