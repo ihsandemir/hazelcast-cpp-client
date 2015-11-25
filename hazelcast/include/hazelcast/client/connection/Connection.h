@@ -67,7 +67,7 @@ namespace hazelcast {
             public:
                 Connection(const Address& address, spi::ClientContext& clientContext, InSelector& iListener, OutSelector& listener, bool isOwner);
 
-                ~Connection();
+                virtual ~Connection();
 
                 void init(const std::vector<byte>& PROTOCOL);
 

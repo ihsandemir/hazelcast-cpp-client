@@ -72,7 +72,7 @@ namespace hazelcast {
             /**
              * Destructor
              */
-            ~Socket();
+            virtual ~Socket();
             /**
              * connects to given address in constructor.
              * @param timeoutInMillis if not connected within timeout, it will return errorCode
