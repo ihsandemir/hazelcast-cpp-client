@@ -26,6 +26,7 @@ ENDIF (${IS_BIG_ENDIAN})
 
 FILE(GLOB_RECURSE HZ_SOURCES "./hazelcast/src/*cpp")
 FILE(GLOB_RECURSE HZ_GENERATED_SOURCES "./hazelcast/generated-sources/src/*cpp")
+FILE(GLOB_RECURSE PYTHON_WRAPPER_SOURCES "./python/*cpp")
 FILE(GLOB_RECURSE HZ_HEADERS "./hazelcast/include/*h")
 FILE(GLOB_RECURSE HZ_GENERATED_HEADERS "./hazelcast/generated-sources/include/*h")
 
@@ -54,7 +55,7 @@ message(STATUS "Generating ${HZ_LIB_TYPE} Library")
 
 SET(HZ_LIB_NAME HazelcastClient${HZ_VERSION}_${HZ_BIT})
 
-add_library(${HZ_LIB_NAME} ${HZ_LIB_TYPE} ${HZ_SOURCES} ${HZ_GENERATED_SOURCES} ${HZ_HEADERS} ${HZ_GENERATED_HEADERS} ${CMAKE_SOURCE_DIR}/python/hz_python_wrapper.cpp)
+add_library(${HZ_LIB_NAME} ${HZ_LIB_TYPE} ${HZ_SOURCES} ${HZ_GENERATED_SOURCES} ${PYTHON_WRAPPER_SOURCES} ${HZ_HEADERS} ${HZ_GENERATED_HEADERS})
 
 set(HZ_CODE_COVERAGE_COMPILE_FLAGS " ")
 set(HZ_CODE_COVERAGE_LINK_FLAGS " ") 
@@ -80,7 +81,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Wall -Werror -DHZ_PLATFORM_DARWIN")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall -DHZ_PLATFORM_DARWIN")
 
-	target_link_libraries(${HZ_LIB_NAME} )
+	target_link_libraries(${HZ_LIB_NAME} python)
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
@@ -93,7 +94,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	set_target_properties(${HZ_LIB_NAME} PROPERTIES COMPILE_FLAGS "${HZ_BIT_FLAG} ${HZ_CODE_COVERAGE_COMPILE_FLAGS} ${HZ_VALGRIND_COMPILE_FLAGS}" LINK_FLAGS "${HZ_BIT_FLAG} ${HZ_CODE_COVERAGE_LINK_FLAGS} ${HZ_VALGRIND_LINK_FLAGS}")
 	
-	target_link_libraries(${HZ_LIB_NAME} pthread rt )
+	target_link_libraries(${HZ_LIB_NAME} pthread rt  python)
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
@@ -111,7 +112,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP")
 
 	set_target_properties(${HZ_LIB_NAME} PROPERTIES COMPILE_FLAGS " /EHsc " )
-	target_link_libraries(${HZ_LIB_NAME}  )
+	target_link_libraries(${HZ_LIB_NAME} python)
 	
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
