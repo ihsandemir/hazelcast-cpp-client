@@ -98,102 +98,102 @@ class ClientConfig(_object):
     __repr__ = _swig_repr
 
     def __init__(self):
-        this = _hazelcast.new_ClientConfig()
+        this = _hazelcast.new_hazelcast_client_ClientConfig()
         try:
             self.this.append(this)
         except:
             self.this = this
 
     def addAddress(self, address):
-        return _hazelcast.ClientConfig_addAddress(self, address)
+        return _hazelcast.hazelcast_client_ClientConfig_addAddress(self, address)
 
     def addAddresses(self, addresses):
-        return _hazelcast.ClientConfig_addAddresses(self, addresses)
+        return _hazelcast.hazelcast_client_ClientConfig_addAddresses(self, addresses)
 
     def getAddresses(self):
-        return _hazelcast.ClientConfig_getAddresses(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getAddresses(self)
 
     def setGroupConfig(self, groupConfig):
-        return _hazelcast.ClientConfig_setGroupConfig(self, groupConfig)
+        return _hazelcast.hazelcast_client_ClientConfig_setGroupConfig(self, groupConfig)
 
     def getGroupConfig(self):
-        return _hazelcast.ClientConfig_getGroupConfig(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getGroupConfig(self)
 
     def setCredentials(self, credentials):
-        return _hazelcast.ClientConfig_setCredentials(self, credentials)
+        return _hazelcast.hazelcast_client_ClientConfig_setCredentials(self, credentials)
 
     def getCredentials(self):
-        return _hazelcast.ClientConfig_getCredentials(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getCredentials(self)
 
     def setConnectionAttemptLimit(self, connectionAttemptLimit):
-        return _hazelcast.ClientConfig_setConnectionAttemptLimit(self, connectionAttemptLimit)
+        return _hazelcast.hazelcast_client_ClientConfig_setConnectionAttemptLimit(self, connectionAttemptLimit)
 
     def getConnectionAttemptLimit(self):
-        return _hazelcast.ClientConfig_getConnectionAttemptLimit(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getConnectionAttemptLimit(self)
 
     def setConnectionTimeout(self, connectionTimeoutInMillis):
-        return _hazelcast.ClientConfig_setConnectionTimeout(self, connectionTimeoutInMillis)
+        return _hazelcast.hazelcast_client_ClientConfig_setConnectionTimeout(self, connectionTimeoutInMillis)
 
     def getConnectionTimeout(self):
-        return _hazelcast.ClientConfig_getConnectionTimeout(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getConnectionTimeout(self)
 
     def setAttemptPeriod(self, attemptPeriodInMillis):
-        return _hazelcast.ClientConfig_setAttemptPeriod(self, attemptPeriodInMillis)
+        return _hazelcast.hazelcast_client_ClientConfig_setAttemptPeriod(self, attemptPeriodInMillis)
 
     def getAttemptPeriod(self):
-        return _hazelcast.ClientConfig_getAttemptPeriod(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getAttemptPeriod(self)
 
     def setRedoOperation(self, redoOperation):
-        return _hazelcast.ClientConfig_setRedoOperation(self, redoOperation)
+        return _hazelcast.hazelcast_client_ClientConfig_setRedoOperation(self, redoOperation)
 
     def isRedoOperation(self):
-        return _hazelcast.ClientConfig_isRedoOperation(self)
+        return _hazelcast.hazelcast_client_ClientConfig_isRedoOperation(self)
 
     def isSmart(self):
-        return _hazelcast.ClientConfig_isSmart(self)
+        return _hazelcast.hazelcast_client_ClientConfig_isSmart(self)
 
     def setSmart(self, smart):
-        return _hazelcast.ClientConfig_setSmart(self, smart)
+        return _hazelcast.hazelcast_client_ClientConfig_setSmart(self, smart)
 
     def setSocketInterceptor(self, socketInterceptor):
-        return _hazelcast.ClientConfig_setSocketInterceptor(self, socketInterceptor)
+        return _hazelcast.hazelcast_client_ClientConfig_setSocketInterceptor(self, socketInterceptor)
 
     def getSocketInterceptor(self):
-        return _hazelcast.ClientConfig_getSocketInterceptor(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getSocketInterceptor(self)
 
     def getLifecycleListeners(self):
-        return _hazelcast.ClientConfig_getLifecycleListeners(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getLifecycleListeners(self)
 
     def getMembershipListeners(self):
-        return _hazelcast.ClientConfig_getMembershipListeners(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getMembershipListeners(self)
 
     def addListener(self, *args):
-        return _hazelcast.ClientConfig_addListener(self, *args)
+        return _hazelcast.hazelcast_client_ClientConfig_addListener(self, *args)
 
     def getInitialMembershipListeners(self):
-        return _hazelcast.ClientConfig_getInitialMembershipListeners(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getInitialMembershipListeners(self)
 
     def getLoadBalancer(self):
-        return _hazelcast.ClientConfig_getLoadBalancer(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getLoadBalancer(self)
 
     def setLoadBalancer(self, loadBalancer):
-        return _hazelcast.ClientConfig_setLoadBalancer(self, loadBalancer)
+        return _hazelcast.hazelcast_client_ClientConfig_setLoadBalancer(self, loadBalancer)
 
     def setLogLevel(self, loggerLevel):
-        return _hazelcast.ClientConfig_setLogLevel(self, loggerLevel)
+        return _hazelcast.hazelcast_client_ClientConfig_setLogLevel(self, loggerLevel)
 
     def getSerializationConfig(self):
-        return _hazelcast.ClientConfig_getSerializationConfig(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getSerializationConfig(self)
 
     def setSerializationConfig(self, serializationConfig):
-        return _hazelcast.ClientConfig_setSerializationConfig(self, serializationConfig)
+        return _hazelcast.hazelcast_client_ClientConfig_setSerializationConfig(self, serializationConfig)
 
     def getProperties(self):
-        return _hazelcast.ClientConfig_getProperties(self)
+        return _hazelcast.hazelcast_client_ClientConfig_getProperties(self)
 
     def setProperty(self, name, value):
-        return _hazelcast.ClientConfig_setProperty(self, name, value)
-    __swig_destroy__ = _hazelcast.delete_ClientConfig
+        return _hazelcast.hazelcast_client_ClientConfig_setProperty(self, name, value)
+    __swig_destroy__ = _hazelcast.delete_hazelcast_client_ClientConfig
     __del__ = lambda self: None
 ClientConfig_swigregister = _hazelcast.ClientConfig_swigregister
 ClientConfig_swigregister(ClientConfig)
@@ -209,14 +209,14 @@ class DistributedObject(_object):
     __repr__ = _swig_repr
 
     def getServiceName(self):
-        return _hazelcast.DistributedObject_getServiceName(self)
+        return _hazelcast.hazelcast_client_DistributedObject_getServiceName(self)
 
     def getName(self):
-        return _hazelcast.DistributedObject_getName(self)
+        return _hazelcast.hazelcast_client_DistributedObject_getName(self)
 
     def destroy(self):
-        return _hazelcast.DistributedObject_destroy(self)
-    __swig_destroy__ = _hazelcast.delete_DistributedObject
+        return _hazelcast.hazelcast_client_DistributedObject_destroy(self)
+    __swig_destroy__ = _hazelcast.delete_hazelcast_client_DistributedObject
     __del__ = lambda self: None
 DistributedObject_swigregister = _hazelcast.DistributedObject_swigregister
 DistributedObject_swigregister(DistributedObject)
@@ -236,7 +236,7 @@ class ProxyImpl(DistributedObject):
     __repr__ = _swig_repr
 
     def destroy(self):
-        return _hazelcast.ProxyImpl_destroy(self)
+        return _hazelcast.hazelcast_client_ProxyImpl_destroy(self)
 ProxyImpl_swigregister = _hazelcast.ProxyImpl_swigregister
 ProxyImpl_swigregister(ProxyImpl)
 
@@ -253,7 +253,7 @@ class IMapImpl(ProxyImpl):
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined")
     __repr__ = _swig_repr
-    __swig_destroy__ = _hazelcast.delete_IMapImpl
+    __swig_destroy__ = _hazelcast.delete_hazelcast_client_proxy_IMapImpl
     __del__ = lambda self: None
 IMapImpl_swigregister = _hazelcast.IMapImpl_swigregister
 IMapImpl_swigregister(IMapImpl)
@@ -266,34 +266,34 @@ class HazelcastClient(_object):
     __repr__ = _swig_repr
 
     def __init__(self, arg2):
-        this = _hazelcast.new_HazelcastClient(arg2)
+        this = _hazelcast.new_hazelcast_client_HazelcastClient(arg2)
         try:
             self.this.append(this)
         except:
             self.this = this
-    __swig_destroy__ = _hazelcast.delete_HazelcastClient
+    __swig_destroy__ = _hazelcast.delete_hazelcast_client_HazelcastClient
     __del__ = lambda self: None
 
     def getClientConfig(self):
-        return _hazelcast.HazelcastClient_getClientConfig(self)
+        return _hazelcast.hazelcast_client_HazelcastClient_getClientConfig(self)
 
     def getCluster(self):
-        return _hazelcast.HazelcastClient_getCluster(self)
+        return _hazelcast.hazelcast_client_HazelcastClient_getCluster(self)
 
     def addLifecycleListener(self, lifecycleListener):
-        return _hazelcast.HazelcastClient_addLifecycleListener(self, lifecycleListener)
+        return _hazelcast.hazelcast_client_HazelcastClient_addLifecycleListener(self, lifecycleListener)
 
     def removeLifecycleListener(self, lifecycleListener):
-        return _hazelcast.HazelcastClient_removeLifecycleListener(self, lifecycleListener)
+        return _hazelcast.hazelcast_client_HazelcastClient_removeLifecycleListener(self, lifecycleListener)
 
     def shutdown(self):
-        return _hazelcast.HazelcastClient_shutdown(self)
+        return _hazelcast.hazelcast_client_HazelcastClient_shutdown(self)
 
     def getIntMapDistributedObject(self, name):
-        return _hazelcast.HazelcastClient_getIntMapDistributedObject(self, name)
+        return _hazelcast.hazelcast_client_HazelcastClient_getIntMapDistributedObject(self, name)
 
     def getIntMap(self, name):
-        return _hazelcast.HazelcastClient_getIntMap(self, name)
+        return _hazelcast.hazelcast_client_HazelcastClient_getIntMap(self, name)
 HazelcastClient_swigregister = _hazelcast.HazelcastClient_swigregister
 HazelcastClient_swigregister(HazelcastClient)
 
@@ -305,7 +305,7 @@ class IntEntryView(_object):
     __repr__ = _swig_repr
 
     def __init__(self, key, value, rhs):
-        this = _hazelcast.new_IntEntryView(key, value, rhs)
+        this = _hazelcast.new_hazelcast_client_IntEntryView(key, value, rhs)
         try:
             self.this.append(this)
         except:
@@ -376,7 +376,7 @@ class IntMap(IMapImpl):
         return _hazelcast.IntMap_containsValue(self, value)
 
     def get(self, key):
-        return _hazelcast.IntMap_get(self, key)
+        return _hazelcast.hazelcast_client_IntMap_get(self, key)
 
     def remove(self, *args):
         return _hazelcast.IntMap_remove(self, *args)
@@ -394,13 +394,13 @@ class IntMap(IMapImpl):
         return _hazelcast.IntMap_tryPut(self, key, value, timeoutInMillis)
 
     def put(self, *args):
-        return _hazelcast.IntMap_put(self, *args)
+        return _hazelcast.hazelcast_client_IntMap_put(self, *args)
 
     def putTransient(self, key, value, ttlInMillis):
-        return _hazelcast.IntMap_putTransient(self, key, value, ttlInMillis)
+        return _hazelcast.hazelcast_client_IntMap_putTransient(self, key, value, ttlInMillis)
 
     def putIfAbsent(self, *args):
-        return _hazelcast.IntMap_putIfAbsent(self, *args)
+        return _hazelcast.hazelcast_client_IntMap_putIfAbsent(self, *args)
 
     def replace(self, *args):
         return _hazelcast.IntMap_replace(self, *args)
@@ -467,7 +467,7 @@ class IntMap(IMapImpl):
 
     def clear(self):
         return _hazelcast.IntMap_clear(self)
-    __swig_destroy__ = _hazelcast.delete_IntMap
+    __swig_destroy__ = _hazelcast.delete_hazelcast_client_IntMap
     __del__ = lambda self: None
 IntMap_swigregister = _hazelcast.IntMap_swigregister
 IntMap_swigregister(IntMap)
