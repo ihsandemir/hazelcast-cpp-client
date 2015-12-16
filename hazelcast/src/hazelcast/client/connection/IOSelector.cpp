@@ -18,6 +18,7 @@
 //
 
 #include <string.h>
+#include <unistd.h>
 #include "hazelcast/client/connection/IOSelector.h"
 #include "hazelcast/client/connection/ListenerTask.h"
 #include "hazelcast/client/connection/IOHandler.h"
@@ -52,12 +53,9 @@ namespace hazelcast {
             }
 
             void IOSelector::wakeUp() {
-                int wakeUpSignal = 9;
-                try {
-                    wakeUpSocket->send(&wakeUpSignal, sizeof(int));
-                } catch(exception::IOException &e) {
-                    util::ILogger::getLogger().warning(std::string("Exception at IOSelector::wakeUp ") + e.what());
-                    throw e;
+                char wakeUpSignal = 9;
+                if (write(wakeupFileDescriptors[1], &wakeUpSignal, 1) < 0) {
+                    util::ILogger::getLogger().warning("Exception at IOSelector::wakeUp ");
                 }
             }
 
@@ -72,31 +70,19 @@ namespace hazelcast {
                 }
             }
 
-            bool IOSelector::initListenSocket(util::SocketSet &wakeUpSocketSet) {
-                hazelcast::util::ServerSocket serverSocket(0);
-                int p = serverSocket.getPort();
-                std::string localAddress;
-                if (serverSocket.isIpv4())
-                    localAddress = "127.0.0.1";
-                else
-                    localAddress = "::1";
+                bool IOSelector::initListenSocket(util::SocketSet &wakeUpSocketSet) {
+                    if (pipe(wakeupFileDescriptors)) {
+                        util::ILogger::getLogger().severe("Could not allocate create wakeup pipe!");
+                        return false;
+                    }
 
-                wakeUpSocket.reset(new Socket(Address(localAddress, p)));
-                int error = wakeUpSocket->connect(5000);
-                if (error == 0) {
-                    sleepingSocket.reset(serverSocket.accept());
-                    sleepingSocket->setBlocking(false);
-                    wakeUpSocketSet.insertSocket(sleepingSocket.get());
-                    wakeUpListenerSocketId = sleepingSocket->getSocketId();
+                    wakeUpSocketSet.setWakeUpFd(wakeupFileDescriptors[0]);
                     return true;
-                } else {
-                    util::ILogger::getLogger().severe("IOSelector::initListenSocket " + std::string(strerror(errno)));
-                    return false;
                 }
-            }
 
             void IOSelector::shutdown() {
                 isAlive = false;
+                // TODO: Should we close the wakeup pipe descriptors?
             }
 
             void IOSelector::addTask(ListenerTask *listenerTask) {

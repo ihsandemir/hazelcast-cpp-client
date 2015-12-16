@@ -47,9 +47,10 @@ namespace hazelcast {
                util::SocketSet::FdRange socketRange = socketSet.fillFdSet(write_fds);
 
                 fd_set wakeUp_fds;
-                util::SocketSet::FdRange wakeupSocketRange = wakeUpSocketSet.fillFdSet(wakeUp_fds);
+                FD_SET(wakeupFileDescriptors[0], &wakeUp_fds);
 
-                int maxFd = (socketRange.max > wakeupSocketRange.max ? socketRange.max : wakeupSocketRange.max);
+                int maxFd = (socketRange.max > wakeupFileDescriptors[0] ? socketRange.max : wakeupFileDescriptors[0]);
+                int minFd = (wakeupFileDescriptors[0] < socketRange.min ? wakeupFileDescriptors[0] : socketRange.min);
 
                 errno = 0;
                 t.tv_sec = 5;
@@ -68,20 +69,24 @@ namespace hazelcast {
                     return;
                 }
 		
-                if (FD_ISSET(wakeUpListenerSocketId, &wakeUp_fds)) {
-                    int wakeUpSignal;
-                    sleepingSocket->receive(&wakeUpSignal, sizeof(int));
+                if (FD_ISSET(wakeupFileDescriptors[0], &wakeUp_fds)) {
+                    char wakeUpSignal;
+                    if (read(wakeupFileDescriptors[0], &wakeUpSignal, 1) < 0) {
+                        util::ILogger::getLogger().warning("[OutSelector::listenInternal] wakeup read failed!");
+                    }
                     --numSelected;
                 }
 
-                for (int fd = socketRange.min;numSelected > 0 && fd <= socketRange.max; ++fd) {
-                    if (FD_ISSET(fd, &write_fds)) {
-                        --numSelected;
-                        boost::shared_ptr<Connection> conn = connectionManager.getConnectionIfAvailable(fd);
+                for (int fd = minFd;numSelected > 0 && fd <= maxFd; ++fd) {
+                    if (wakeupFileDescriptors[0] != fd) {
+                        if (FD_ISSET(fd, &write_fds)) {
+                            --numSelected;
+                            boost::shared_ptr<Connection> conn = connectionManager.getConnectionIfAvailable(fd);
 
-                        if (conn.get() != NULL) {
-                            socketSet.removeSocket(&conn->getSocket());
-                            conn->getWriteHandler().handle();
+                            if (conn.get() != NULL) {
+                                socketSet.removeSocket(&conn->getSocket());
+                                conn->getWriteHandler().handle();
+                            }
                         }
                     }
                 }

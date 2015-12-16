@@ -45,10 +45,16 @@ namespace hazelcast {
             void InSelector::listenInternal() {
                 fd_set read_fds;
                 util::SocketSet::FdRange socketRange = socketSet.fillFdSet(read_fds);
+
+                FD_SET(wakeupFileDescriptors[0], &read_fds);
+
+                int maxFd = (socketRange.max > wakeupFileDescriptors[0] ? socketRange.max : wakeupFileDescriptors[0]);
+                int minFd = (wakeupFileDescriptors[0] < socketRange.min ? wakeupFileDescriptors[0] : socketRange.min);
+
                 errno = 0;
                 t.tv_sec = 5;
                 t.tv_usec = 0;
-                int numSelected = select(socketRange.max + 1, &read_fds, NULL, NULL, &t);
+                int numSelected = select(maxFd + 1, &read_fds, NULL, NULL, &t);
                 if (numSelected == 0) {
                     return;
                 }
@@ -60,12 +66,12 @@ namespace hazelcast {
                     }
                     return;
                 }
-                for (int fd = socketRange.min;numSelected > 0 && fd <= socketRange.max; ++fd) {
+                for (int fd = minFd;numSelected > 0 && fd <= maxFd; ++fd) {
                     if (FD_ISSET(fd, &read_fds)) {
                         --numSelected;
-                        if (wakeUpListenerSocketId == fd) {
-                            int wakeUpSignal;
-                            sleepingSocket->receive(&wakeUpSignal, sizeof(int));
+                        if (wakeupFileDescriptors[0] == fd) {
+                            char wakeUpSignal;
+                            read(fd, &wakeUpSignal, 1);
                         } else {
                             boost::shared_ptr<Connection> conn = connectionManager.getConnectionIfAvailable(fd);
                             if (conn.get() != NULL) {

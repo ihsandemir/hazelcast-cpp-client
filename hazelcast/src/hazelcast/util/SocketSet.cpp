@@ -77,5 +77,9 @@ namespace hazelcast {
 
             return result;
         }
+
+        void SocketSet::setWakeUpFd(int fd) {
+            wakeUpFd = fd;
+        }
     }
 }

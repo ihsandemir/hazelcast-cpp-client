@@ -82,7 +82,6 @@ namespace hazelcast {
             std::auto_ptr<ClientMessage> ClientMessage::createForEncode(int32_t size) {
                 std::auto_ptr<ClientMessage> msg(new ClientMessage());
                 byte *buffer = new byte[size];
-                memset(buffer, 0, size);
                 msg->wrapForEncode(buffer, size, true);
                 return msg;
             }

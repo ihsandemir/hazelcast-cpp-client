@@ -43,10 +43,13 @@ namespace hazelcast {
             void insertSocket(client::Socket const *);
 
             void removeSocket(client::Socket const *);
+
+            void setWakeUpFd(int fd);
         private:
             typedef std::set<client::Socket const *, client::socketPtrComp> SocketContainer;
             SocketContainer sockets;
             util::Mutex accessLock;
+            int wakeUpFd;
         };
 
     }

@@ -72,13 +72,13 @@ namespace hazelcast {
 
                 struct timeval t;
                 util::SocketSet socketSet;
-                int wakeUpListenerSocketId;
+
+                int wakeupFileDescriptors[2];
+
                 ConnectionManager &connectionManager;
-                std::auto_ptr<Socket> sleepingSocket;
             private:
                 void processListenerQueue();
 
-                std::auto_ptr<Socket> wakeUpSocket;
                 util::ConcurrentQueue<ListenerTask> listenerTasks;
                 util::AtomicBoolean isAlive;
             };
