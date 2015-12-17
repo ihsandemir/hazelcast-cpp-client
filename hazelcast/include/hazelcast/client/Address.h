@@ -19,6 +19,7 @@
 #include "hazelcast/util/HazelcastDll.h"
 #include <string>
 #include <sstream>
+#include <boost/functional/hash/hash.hpp>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -76,10 +77,20 @@ namespace hazelcast {
             bool operator ()(const Address &lhs, const Address &rhs) const;
         };
 
+        struct HAZELCAST_API AddressHash
+                : std::unary_function<Address, std::size_t> {
+            std::size_t operator()(Address const &p) const {
+                std::size_t seed = 0;
+                boost::hash_combine(seed, p.getHost());
+                boost::hash_combine(seed, p.getPort());
+                return seed;
+            }
+        };
+
         std::ostream& operator<<(std::ostream &stream, const Address &address);
 
     }
-};
+}
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)

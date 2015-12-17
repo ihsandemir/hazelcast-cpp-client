@@ -172,7 +172,7 @@ namespace hazelcast {
                                                            std::auto_ptr<std::string> ownerUuid);
 
                 std::vector<byte> PROTOCOL;
-                util::SynchronizedMap<Address, Connection, addressComparator> connections;
+                util::SynchronizedMap<Address, Connection, AddressHash> connections;
                 util::SynchronizedMap<int, Connection> socketConnections;
                 spi::ClientContext &clientContext;
                 SocketInterceptor *socketInterceptor;

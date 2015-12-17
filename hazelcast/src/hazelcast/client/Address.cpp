@@ -54,6 +54,5 @@ namespace hazelcast {
         std::ostream &operator <<(std::ostream &stream, const Address &address) {
             return stream << "Address[" << address.getHost() << ":" << address.getPort() << "]";
         }
-
     }
 }

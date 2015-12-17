@@ -26,17 +26,17 @@
 #include "hazelcast/util/Mutex.h"
 #include "hazelcast/util/LockGuard.h"
 #include <boost/shared_ptr.hpp>
-#include <map>
+#include <boost/unordered_map.hpp>
 #include <vector>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
 #pragma warning(disable: 4251) //for dll export	
-#endif 
+#endif
 
 namespace hazelcast {
     namespace util {
-        template <typename K, typename V, typename Comparator  = std::less<K> >
+        template<typename K, typename V, typename HASH = boost::hash<K> >
         class SynchronizedMap {
         public:
             SynchronizedMap() {
@@ -49,7 +49,7 @@ namespace hazelcast {
             };
 
             bool containsKey(const K &key) const {
-                util::LockGuard guard (mapLock);
+                util::LockGuard guard(mapLock);
                 return internalMap.count(key) > 0;
             };
 
@@ -116,9 +116,9 @@ namespace hazelcast {
             std::vector<std::pair<K, boost::shared_ptr<V> > > entrySet() {
                 util::LockGuard lg(mapLock);
                 std::vector<std::pair<K, boost::shared_ptr<V> > > entries(internalMap.size());
-                typename std::map<K, boost::shared_ptr<V>, Comparator>::iterator it;
                 int i = 0;
-                for (it = internalMap.begin(); it != internalMap.end(); it++) {
+                for (typename boost::unordered_map<K, boost::shared_ptr<V> >::iterator it = internalMap.begin();
+                     it != internalMap.end(); it++) {
                     entries[i++] = std::pair<K, boost::shared_ptr<V> >(it->first, it->second);
                 }
                 return entries;
@@ -127,9 +127,9 @@ namespace hazelcast {
             std::vector<std::pair<K, boost::shared_ptr<V> > > clear() {
                 util::LockGuard lg(mapLock);
                 std::vector<std::pair<K, boost::shared_ptr<V> > > entries(internalMap.size());
-                typename std::map<K, boost::shared_ptr<V>, Comparator>::iterator it;
                 int i = 0;
-                for (it = internalMap.begin(); it != internalMap.end(); it++) {
+                for (typename boost::unordered_map<K, boost::shared_ptr<V> >::iterator it = internalMap.begin();
+                     it != internalMap.end(); it++) {
                     entries[i++] = std::pair<K, boost::shared_ptr<V> >(it->first, it->second);
                 }
                 internalMap.clear();
@@ -139,9 +139,9 @@ namespace hazelcast {
             std::vector<boost::shared_ptr<V> > values() {
                 util::LockGuard lg(mapLock);
                 std::vector<boost::shared_ptr<V> > valueArray(internalMap.size());
-                typename std::map<K, boost::shared_ptr<V>, Comparator>::iterator it;
                 int i = 0;
-                for (it = internalMap.begin(); it != internalMap.end(); it++) {
+                for (typename boost::unordered_map<K, boost::shared_ptr<V> >::iterator it = internalMap.begin();
+                     it != internalMap.end(); it++) {
                     valueArray[i++] = it->second;
                 }
                 return valueArray;
@@ -150,15 +150,15 @@ namespace hazelcast {
             std::vector<K> keys() {
                 util::LockGuard lg(mapLock);
                 std::vector<boost::shared_ptr<V> > keysArray(internalMap.size());
-                typename std::map<K, boost::shared_ptr<V>, Comparator>::iterator it;
                 int i = 0;
-                for (it = internalMap.begin(); it != internalMap.end(); it++) {
+                for (typename boost::unordered_map<K, boost::shared_ptr<V> >::iterator it = internalMap.begin();
+                     it != internalMap.end(); it++) {
                     keysArray[i++] = it->first;
                 }
                 return keysArray;
             }
 
-            boost::shared_ptr<V> getOrPutIfAbsent(const K& key) {
+            boost::shared_ptr<V> getOrPutIfAbsent(const K &key) {
                 boost::shared_ptr<V> value = get(key);
                 if (value.get() == NULL) {
                     value.reset(new V());
@@ -172,8 +172,9 @@ namespace hazelcast {
                 util::LockGuard lg(mapLock);
                 return internalMap.size();
             }
+
         private:
-            std::map<K, boost::shared_ptr<V>, Comparator> internalMap;
+            boost::unordered_map<K, boost::shared_ptr<V>, HASH > internalMap;
             mutable util::Mutex mapLock;
         };
     }
@@ -181,7 +182,7 @@ namespace hazelcast {
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
-#endif 
+#endif
 
 #endif //HAZELCAST_SYNCHRONIZED_MAP
 

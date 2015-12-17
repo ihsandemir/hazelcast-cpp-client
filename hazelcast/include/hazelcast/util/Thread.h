@@ -94,7 +94,16 @@ namespace hazelcast {
 
         class Thread {
         public:
+            static const int LOW_PRIORITY;
+            static const int HIGH_PRIORITY;
+
             Thread(const std::string &name, void (func)(ThreadArgs &),
+                    void *arg0 = NULL,
+                    void *arg1 = NULL,
+                    void *arg2 = NULL,
+                    void *arg3 = NULL);
+
+            Thread(const std::string &name, int priority, void (func)(ThreadArgs &),
                     void *arg0 = NULL,
                     void *arg1 = NULL,
                     void *arg2 = NULL,
@@ -123,10 +132,13 @@ namespace hazelcast {
 
             void init(void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3 );
 
+            int setPriority(pthread_t thr, int priority);
+
             std::string threadName;
             bool isJoined;
             pthread_t thread;
             pthread_attr_t attr;
+            int requestedPriority;
         };
     }
 }

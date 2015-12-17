@@ -132,6 +132,8 @@ namespace hazelcast {
 
 namespace hazelcast {
     namespace util {
+        const int Thread::LOW_PRIORITY = 1;
+        const int Thread::HIGH_PRIORITY = 4;
 
         Thread::Thread(const std::string &name, void (func)(ThreadArgs &),
                 void *arg0,
@@ -139,7 +141,19 @@ namespace hazelcast {
                 void *arg2,
                 void *arg3)
         : threadName(name)
-        , isJoined(false) {
+        , isJoined(false)
+        , requestedPriority(LOW_PRIORITY) {
+            init(func, arg0, arg1, arg2, arg3);
+        }
+
+        Thread::Thread(const std::string &name, int priority, void (func)(ThreadArgs &),
+                void *arg0,
+                void *arg1,
+                void *arg2,
+                void *arg3)
+        : threadName(name)
+        , isJoined(false)
+        , requestedPriority(priority) {
             init(func, arg0, arg1, arg2, arg3);
         }
 
@@ -149,7 +163,8 @@ namespace hazelcast {
                 void *arg2,
                 void *arg3)
         : threadName("hz.unnamed")
-        , isJoined(false) {
+        , isJoined(false)
+        , requestedPriority(LOW_PRIORITY) {
             init(func, arg0, arg1, arg2, arg3);
         }
 
@@ -211,7 +226,20 @@ namespace hazelcast {
             threadArgs->arg3 = arg3;
             threadArgs->currentThread = this;
             threadArgs->func = func;
+            setPriority(thread, requestedPriority);
             pthread_create(&thread, &attr, controlledThread, threadArgs);
+        }
+
+        int Thread::setPriority(pthread_t thr, int priority) {
+            struct sched_param sp;
+
+            memset(&sp, 0, sizeof(struct sched_param));
+            sp.sched_priority=priority;
+            if (pthread_setschedparam(thr, SCHED_RR, &sp)  == -1) {
+                printf("Failed to change priority.\n");
+                return -1;
+            }
+            return 0;
         }
 
     }

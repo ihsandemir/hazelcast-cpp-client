@@ -14,7 +14,7 @@ SET(HZ_VERSION 3.6-RC2-SNAPSHOT)
 
 message(STATUS "Preparing hazelcast client ..... ")
 
-include_directories( ${CMAKE_SOURCE_DIR}/external/include/)
+include_directories( ${BOOST_HOME}/include)
 
 #detect endianness
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)

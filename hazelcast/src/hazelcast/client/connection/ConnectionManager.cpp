@@ -59,8 +59,8 @@ namespace hazelcast {
                 if (!outSelector.start()) {
                     return false;
                 }
-                inSelectorThread.reset(new util::Thread("hz.inListener", InSelector::staticListen, &inSelector));
-                outSelectorThread.reset(new util::Thread("hz.outListener", OutSelector::staticListen, &outSelector));
+                inSelectorThread.reset(new util::Thread("hz.inListener", util::Thread::HIGH_PRIORITY, InSelector::staticListen, &inSelector));
+                outSelectorThread.reset(new util::Thread("hz.outListener", util::Thread::HIGH_PRIORITY, OutSelector::staticListen, &outSelector));
                 heartBeatThread.reset(new util::Thread("hz.heartbeater", HeartBeater::staticStart, &heartBeater));
                 return true;
             }

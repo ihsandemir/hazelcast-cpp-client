@@ -13,8 +13,16 @@ SET(HZ_EXE_NAME clientTest_${HZ_LIB_TYPE}_${HZ_BIT})
 add_executable(${HZ_EXE_NAME} ${HZ_TEST_SOURCES} ${HZ_TEST_HEADERS} )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	add_library( boost_system STATIC IMPORTED )
+	# You can define two import-locations: one for debug and one for release.
+	set_target_properties( boost_system PROPERTIES IMPORTED_LOCATION ${BOOST_HOME}/lib/libboost_system.a )
 
-	target_link_libraries(${HZ_EXE_NAME} ${HZ_LIB_NAME} )
+	add_library( boost_thread STATIC IMPORTED )
+	# You can define two import-locations: one for debug and one for release.
+	set_target_properties( boost_thread PROPERTIES IMPORTED_LOCATION ${BOOST_HOME}/lib/libboost_thread.a )
+
+	LINK_DIRECTORIES(${BOOST_HOME}/lib)
+	target_link_libraries(${HZ_EXE_NAME} ${HZ_LIB_NAME} boost_thread boost_system)
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 

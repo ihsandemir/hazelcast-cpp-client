@@ -27,6 +27,9 @@
 #include "hazelcast/util/ILogger.h"
 #include <memory>
 #include <cassert>
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -45,7 +48,7 @@ namespace hazelcast {
             };
 
             void set_value(T& value) {
-                LockGuard guard(mutex);
+                boost::lock_guard<boost::mutex> guard(mutex);
                 if (exceptionReady || resultReady) {
                     util::ILogger::getLogger().warning(std::string("Future.set_value should not be called twice"));
                 }
@@ -55,7 +58,7 @@ namespace hazelcast {
             };
 
             void set_exception(const std::string& exceptionName, const std::string& exceptionDetails) {
-                LockGuard guard(mutex);
+                boost::lock_guard<boost::mutex> guard(mutex);
                 if (exceptionReady || resultReady) {
                     util::ILogger::getLogger().warning(std::string("Future.set_exception should not be called twice : details ") + exceptionDetails);
                 }
@@ -66,14 +69,14 @@ namespace hazelcast {
             };
 
             T get() {
-                LockGuard guard(mutex);
+                boost::unique_lock<boost::mutex> lock(mutex);
                 if (resultReady) {
                     return sharedObject;
                 }
                 if (exceptionReady) {
                     client::exception::pimpl::ExceptionHandler::rethrow(exceptionName, exceptionDetails);
                 }
-                conditionVariable.wait(mutex);
+                conditionVariable.wait(lock);
                 if (resultReady) {
                     return sharedObject;
                 }
@@ -85,17 +88,15 @@ namespace hazelcast {
             };
 
             T get(time_t timeInSeconds) {
-                LockGuard guard(mutex);
+                boost::mutex::scoped_lock lock(mutex);
                 if (resultReady) {
                     return sharedObject;
                 }
                 if (exceptionReady) {
                     client::exception::pimpl::ExceptionHandler::rethrow(exceptionName, exceptionDetails);
                 }
-                time_t endTime = time(NULL) + timeInSeconds;
-                while (!(resultReady || exceptionReady) && endTime > time(NULL)) {
-                    conditionVariable.waitFor(mutex, endTime - time(NULL));
-                }
+
+                conditionVariable.timed_wait<boost::posix_time::seconds>(lock, boost::posix_time::seconds(timeInSeconds));
 
                 if (resultReady) {
                     return sharedObject;
@@ -107,7 +108,7 @@ namespace hazelcast {
             };
 
             void reset() {
-                LockGuard guard(mutex);
+                boost::unique_lock<boost::mutex> lock(mutex);
 
                 resultReady = false;
                 exceptionReady = false;
@@ -115,8 +116,8 @@ namespace hazelcast {
         private:
             bool resultReady;
             bool exceptionReady;
-            ConditionVariable conditionVariable;
-            Mutex mutex;
+            boost::condition_variable conditionVariable;
+            boost::mutex mutex;
             T sharedObject;
             std::string exceptionName;
             std::string exceptionDetails;

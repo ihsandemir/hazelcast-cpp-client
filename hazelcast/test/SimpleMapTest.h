@@ -111,8 +111,12 @@ public:
         int updateIntervalCount = 1000;
         while (running) {
             int key = rand() % ENTRY_COUNT;
-            int operation = (rand() % 100);
+            //int operation = (rand() % 100);
             try {
+                boost::shared_ptr<std::vector<char> > vector = map.put(key, value);
+                ++putCount;
+
+/*
                 if (operation < GET_PERCENTAGE) {
                     map.get(key);
                     ++getCount;
@@ -123,6 +127,7 @@ public:
                     map.remove(key);
                     ++removeCount;
                 }
+*/
                 updateStats(updateIntervalCount, getCount, putCount, removeCount);
             } catch(hazelcast::client::exception::IOException &e) {
                 std::cerr << ">hz " << e.what() << std::endl;

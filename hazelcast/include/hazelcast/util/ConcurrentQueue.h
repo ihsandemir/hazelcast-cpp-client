@@ -23,7 +23,7 @@
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/LockGuard.h"
 #include "hazelcast/util/Mutex.h"
-#include <queue>
+#include <boost/lockfree/queue.hpp>
 #include <iostream>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -37,28 +37,23 @@ namespace hazelcast {
         /* Non blocking - synchronized queue - does not delete memory ever */
         class ConcurrentQueue {
         public:
-            ConcurrentQueue() {
-
+            static const long INITIAL_SIZE = 64 * 1024;
+            ConcurrentQueue() : internalQueue(INITIAL_SIZE) {
             }
 
             void offer(T *e) {
-                util::LockGuard lg(m);
                 internalQueue.push(e);
             }
 
             T *poll() {
-                T *e = NULL;
-                util::LockGuard lg(m);
-                if (!internalQueue.empty()) {
-                    e = internalQueue.front();
-                    internalQueue.pop();
-                }
-                return e;
+                T *result = NULL;
+                internalQueue.pop(result);
+                return result;
             }
 
         private:
             util::Mutex m;
-            std::queue<T *> internalQueue;
+            boost::lockfree::queue<T *> internalQueue;
         };
     }
 }
