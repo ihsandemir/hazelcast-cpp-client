@@ -128,7 +128,14 @@ namespace hazelcast {
             }
 
             void ClientMessage::set(const serialization::pimpl::Data &value) {
-                setArray<byte>(value.toByteArray());
+                std::vector<byte> &valueBytes = value.toByteArray();
+                int32_t len = (int32_t) valueBytes.size();
+                set(len);
+
+                assert(checkWriteAvailable(len));
+
+                memcpy(ix(), &valueBytes[0], len);
+                index += len;
             }
 
             void ClientMessage::set(const serialization::pimpl::Data *value) {
@@ -290,8 +297,17 @@ namespace hazelcast {
 
             template<>
             serialization::pimpl::Data ClientMessage::get() {
+                int32_t len = getInt32();
+
+                assert(checkReadAvailable(len));
+
+                byte *start = ix();
+                std::vector<byte> * result = new std::vector<byte>(start, start + len);
+
+                index += len;
+
                 return serialization::pimpl::Data(
-                        std::auto_ptr<std::vector<byte> >(new std::vector<byte>(getArray<byte>())));
+                        std::auto_ptr<std::vector<byte> >(result));
             }
 
             template<>
