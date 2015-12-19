@@ -48,7 +48,9 @@ namespace hazelcast {
 
                         void afterTest();
 
+/*
                         void testBinaryFormat();
+*/
 
                     };
                 }

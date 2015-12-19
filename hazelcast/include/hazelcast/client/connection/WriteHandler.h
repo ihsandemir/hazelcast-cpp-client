@@ -21,10 +21,7 @@
 #ifndef HAZELCAST_WriteHandler
 #define HAZELCAST_WriteHandler
 
-#include "hazelcast/util/ByteBuffer.h"
-#include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/client/connection/IOHandler.h"
-#include "hazelcast/util/AtomicBoolean.h"
+#include <hazelcast/util/ThreadArgs.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -33,37 +30,10 @@
 
 namespace hazelcast {
     namespace client {
-        namespace serialization {
-        }
-
-        namespace protocol {
-            class ClientMessage;
-        }
-
         namespace connection {
-            class Connection;
-
-            class OutSelector;
-
-            class WriteHandler : public IOHandler {
+            class WriteHandler {
             public:
-                WriteHandler(Connection &connection, OutSelector &oListener, size_t bufferSize);
-
-                ~WriteHandler();
-
-                void handle();
-
-                void enqueueData(protocol::ClientMessage *message);
-
-                void run();
-
-            private:
-                util::ConcurrentQueue<protocol::ClientMessage> writeQueue;
-                bool ready;
-                util::AtomicBoolean informSelector;
-                protocol::ClientMessage *lastMessage;
-                int32_t numBytesWrittenToSocketForMessage;
-                int32_t lastMessageFrameLen;
+                static void staticRun(util::ThreadArgs &args);
             };
         }
     }

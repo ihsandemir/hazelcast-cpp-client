@@ -18,6 +18,7 @@
 #ifndef HAZELCAST_CONNECTION
 #define HAZELCAST_CONNECTION
 
+#include <concurrentqueue/blockingconcurrentqueue.h>
 #include "hazelcast/client/Socket.h"
 #include "hazelcast/client/connection/ReadHandler.h"
 #include "hazelcast/client/connection/WriteHandler.h"
@@ -67,7 +68,7 @@ namespace hazelcast {
 
                 ReadHandler& getReadHandler();
 
-                WriteHandler& getWriteHandler();
+                void start();
 
                 void setAsOwnerConnection(bool isOwnerConnection);
 
@@ -92,7 +93,7 @@ namespace hazelcast {
                 spi::InvocationService& invocationService;
                 Socket socket;
                 ReadHandler readHandler;
-                WriteHandler writeHandler;
+                //WriteHandler writeHandler;
                 bool _isOwnerConnection;
                 util::AtomicBoolean heartBeating;
                 byte* receiveBuffer;
@@ -101,6 +102,9 @@ namespace hazelcast {
                 protocol::ClientMessageBuilder messageBuilder;
                 protocol::ClientMessage wrapperMessage;
                 std::auto_ptr<protocol::ClientMessage> responseMessage;
+
+                moodycamel::BlockingConcurrentQueue<protocol::ClientMessage *> writeQueue;
+                util::Thread *worker;
             };
 
         }

@@ -28,6 +28,7 @@
 #include "hazelcast/client/connection/InputSocketStream.h"
 #include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/protocol/codec/ClientRemoveAllListenersCodec.h"
+#include "hazelcast/util/Thread.h"
 
 #include <stdint.h>
 
@@ -40,19 +41,15 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            Connection::Connection(const Address& address, spi::ClientContext& clientContext, InSelector& iListener, OutSelector& oListener, bool isOwner)
-            : live(true)
-            , clientContext(clientContext)
-            , invocationService(clientContext.getInvocationService())
-            , socket(address)
-            , readHandler(*this, iListener, 16 << 10, clientContext)
-            , writeHandler(*this, oListener, 16 << 10)
-            , _isOwnerConnection(isOwner)
-            , receiveBuffer(new byte[16 << 10])
-            , receiveByteBuffer((char *)receiveBuffer, 16 << 10)
-            , messageBuilder(this, *this) {
-                wrapperMessage.wrapForDecode(receiveBuffer, (int32_t)16 << 10, false);
-                assert(receiveByteBuffer.remaining() >= protocol::ClientMessage::HEADER_SIZE); // Note: Always make sure that the size >= ClientMessage header size.
+            Connection::Connection(const Address &address, spi::ClientContext &clientContext, InSelector &iListener,
+                                   OutSelector &oListener, bool isOwner)
+                    : live(true), clientContext(clientContext), invocationService(clientContext.getInvocationService()),
+                      socket(address), readHandler(*this, iListener, 16 << 10, clientContext),
+                      _isOwnerConnection(isOwner), receiveBuffer(new byte[16 << 10]),
+                      receiveByteBuffer((char *) receiveBuffer, 16 << 10), messageBuilder(this, *this), worker(NULL) {
+                wrapperMessage.wrapForDecode(receiveBuffer, (int32_t) 16 << 10, false);
+                assert(receiveByteBuffer.remaining() >=
+                       protocol::ClientMessage::HEADER_SIZE); // Note: Always make sure that the size >= ClientMessage header size.
             }
 
             Connection::~Connection() {
@@ -67,12 +64,12 @@ namespace hazelcast {
                 } else {
                     std::stringstream message;
                     message << "Connected to " << socket.getAddress() << " with socket id " << socket.getSocketId() <<
-                            (_isOwnerConnection ? " as the owner connection." : ".");
+                    (_isOwnerConnection ? " as the owner connection." : ".");
                     util::ILogger::getLogger().info(message.str());
                 }
             }
 
-            void Connection::init(const std::vector<byte>& PROTOCOL) {
+            void Connection::init(const std::vector<byte> &PROTOCOL) {
                 connection::OutputSocketStream outputSocketStream(socket);
                 outputSocketStream.write(PROTOCOL);
             }
@@ -83,8 +80,9 @@ namespace hazelcast {
                 }
 
                 std::stringstream message;
-                message << "Closing connection to " << getRemoteEndpoint() << " with socket id " << socket.getSocketId() <<
-                        (_isOwnerConnection ? " as the owner connection." : ".");
+                message << "Closing connection to " << getRemoteEndpoint() << " with socket id " <<
+                socket.getSocketId() <<
+                (_isOwnerConnection ? " as the owner connection." : ".");
                 util::ILogger::getLogger().warning(message.str());
                 if (!_isOwnerConnection) {
                     readHandler.deRegisterSocket();
@@ -100,18 +98,19 @@ namespace hazelcast {
 
 
             void Connection::write(protocol::ClientMessage *message) {
-                writeHandler.enqueueData(message);
+                writeQueue.enqueue(message);
             }
 
-            Socket& Connection::getSocket() {
+
+            Socket &Connection::getSocket() {
                 return socket;
             }
 
-            const Address& Connection::getRemoteEndpoint() const {
+            const Address &Connection::getRemoteEndpoint() const {
                 return socket.getRemoteEndpoint();
             }
 
-            void Connection::setRemoteEndpoint(const Address& remoteEndpoint) {
+            void Connection::setRemoteEndpoint(const Address &remoteEndpoint) {
                 socket.setRemoteEndpoint(remoteEndpoint);
             }
 
@@ -138,10 +137,12 @@ namespace hazelcast {
                     int32_t numRead = 0;
                     do {
                         numRead += receiveByteBuffer.readFrom(socket,
-                                protocol::ClientMessage::VERSION_FIELD_OFFSET - numRead, MSG_WAITALL);
-                    } while (numRead < protocol::ClientMessage::VERSION_FIELD_OFFSET); // make sure that we can read the length
+                                                              protocol::ClientMessage::VERSION_FIELD_OFFSET - numRead,
+                                                              MSG_WAITALL);
+                    } while (numRead <
+                             protocol::ClientMessage::VERSION_FIELD_OFFSET); // make sure that we can read the length
 
-                    wrapperMessage.wrapForDecode(receiveBuffer, (int32_t)16 << 10, false);
+                    wrapperMessage.wrapForDecode(receiveBuffer, (int32_t) 16 << 10, false);
                     int32_t size = wrapperMessage.getFrameLength();
 
                     receiveByteBuffer.readFrom(socket, size - numRead, MSG_WAITALL);
@@ -156,12 +157,8 @@ namespace hazelcast {
                 return responseMessage;
             }
 
-            ReadHandler& Connection::getReadHandler() {
+            ReadHandler &Connection::getReadHandler() {
                 return readHandler;
-            }
-
-            WriteHandler& Connection::getWriteHandler() {
-                return writeHandler;
             }
 
             void Connection::setAsOwnerConnection(bool isOwnerConnection) {
@@ -178,10 +175,10 @@ namespace hazelcast {
 
                 std::auto_ptr<protocol::ClientMessage> request = protocol::codec::ClientRemoveAllListenersCodec::RequestParameters::encode();
 
-                spi::InvocationService& invocationService = clientContext.getInvocationService();
+                spi::InvocationService &invocationService = clientContext.getInvocationService();
                 invocationService.invokeOnTarget(request, getRemoteEndpoint()).get();
                 heartBeating = false;
-                ConnectionManager& connectionManager = clientContext.getConnectionManager();
+                ConnectionManager &connectionManager = clientContext.getConnectionManager();
                 connectionManager.onDetectingUnresponsiveConnection(*this);
 
                 //Other resources(request promises) will be handled by CallFuture.get()
@@ -196,12 +193,20 @@ namespace hazelcast {
                 return heartBeating;
             }
 
-            void Connection::handleMessage(connection::Connection &connection, std::auto_ptr<protocol::ClientMessage> message) {
+            void Connection::handleMessage(connection::Connection &connection,
+                                           std::auto_ptr<protocol::ClientMessage> message) {
                 responseMessage = message;
             }
 
             bool Connection::isOwnerConnection() const {
                 return _isOwnerConnection;
+            }
+
+            void Connection::start() {
+                worker = new util::Thread("Connection Writer Thread",
+                                          WriteHandler::staticRun, (void *)this,
+                                          (void *)&writeQueue);
+
             }
         }
     }

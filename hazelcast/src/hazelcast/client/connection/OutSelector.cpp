@@ -81,7 +81,7 @@ namespace hazelcast {
 
                         if (conn.get() != NULL) {
                             socketSet.removeSocket(&conn->getSocket());
-                            conn->getWriteHandler().handle();
+                            //conn->getWriteHandler().handle();
                         }
                     }
                 }

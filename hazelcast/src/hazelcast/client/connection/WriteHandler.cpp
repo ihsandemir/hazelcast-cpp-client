@@ -18,86 +18,79 @@
 //
 
 #include "hazelcast/client/connection/WriteHandler.h"
-#include "hazelcast/client/connection/OutSelector.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/exception/IOException.h"
+#include <hazelcast/util/Util.h>
+#include <hazelcast/util/ILogger.h>
 
 //#define BOOST_THREAD_PROVIDES_FUTURE
 
 namespace hazelcast {
     namespace client {
         namespace connection {
-            WriteHandler::WriteHandler(Connection &connection, OutSelector &oListener, size_t bufferSize)
-                    : IOHandler(connection, oListener), ready(false), informSelector(true), lastMessage(NULL) {
-            }
 
+            void WriteHandler::staticRun(util::ThreadArgs &args) {
+                Connection *conn = (Connection *) args.arg0;
 
-            WriteHandler::~WriteHandler() {
-                // no need to delete the messages since they are owned by their associated future objects
-            }
+                moodycamel::BlockingConcurrentQueue<protocol::ClientMessage *> *writeQueue =
+                        (moodycamel::BlockingConcurrentQueue<protocol::ClientMessage *> *) args.arg1;
 
-            void WriteHandler::run() {
-                informSelector = true;
-                if (ready) {
-                    handle();
-                } else {
-                    registerHandler();
-                }
-                ready = false;
-            }
+                protocol::ClientMessage *lastMessages[10];
+                size_t numMessages;
+                size_t lastMessageNumber;
 
-            // TODO: Add a fragmentation layer here before putting the message into the write queue
-            void WriteHandler::enqueueData(protocol::ClientMessage *message) {
-                writeQueue.offer(message);
-                if (informSelector.compareAndSet(true, false)) {
-                    ioSelector.addTask(this);
-                    ioSelector.wakeUp();
-                }
-            }
+                int32_t numBytesWrittenToSocketForMessage;
+                int32_t lastMessageFrameLen;
 
-            void WriteHandler::handle() {
-                if (!connection.live) {
-                    return;
-                }
+                while (conn->live) {
+                    if (numMessages == 0) {
+                        numMessages = writeQueue->wait_dequeue_bulk(lastMessages, 10);
 
-                if (lastMessage == NULL) {
-                    lastMessage = writeQueue.poll();
-                    if (lastMessage == NULL) {
-                        ready = true;
-                        return;
-                    }
-
-                    if (NULL != lastMessage) {
-                        numBytesWrittenToSocketForMessage = 0;
-                        lastMessageFrameLen = lastMessage->getFrameLength();
-                    }
-                }
-
-                while (NULL != lastMessage) {
-                    try {
-                        numBytesWrittenToSocketForMessage += lastMessage->writeTo(connection.getSocket(),
-                                                               numBytesWrittenToSocketForMessage, lastMessageFrameLen);
-
-                        if (numBytesWrittenToSocketForMessage >= lastMessageFrameLen) {
-                            // Not deleting message since its memory management is at the future object
-                            lastMessage = writeQueue.poll();
-                            if (NULL != lastMessage) {
-                                numBytesWrittenToSocketForMessage = 0;
-                                lastMessageFrameLen = lastMessage->getFrameLength();
-                            }
-                        } else {
-                            // Message could not be sent completely, just continue with another connection
-                            break;
+                        if (numMessages > 0) {
+                            lastMessageNumber = 0;
+                            numBytesWrittenToSocketForMessage = 0;
+                            lastMessageFrameLen = lastMessages[0]->getFrameLength();
                         }
-                    } catch (exception::IOException &e) {
-                        handleSocketException(e.what());
-                        return;
                     }
-                }
 
-                ready = false;
-                registerHandler();
+                    while (numMessages - lastMessageNumber > 0) {
+                        try {
+                            numBytesWrittenToSocketForMessage += lastMessages[lastMessageNumber]->writeTo(
+                                    conn->getSocket(),
+                                    numBytesWrittenToSocketForMessage, lastMessageFrameLen);
+
+                            if (numBytesWrittenToSocketForMessage >= lastMessageFrameLen) {
+                                // Not deleting message since its memory management is at the future object
+                                ++lastMessageNumber;
+
+                                if (lastMessageNumber < numMessages) {
+                                    numBytesWrittenToSocketForMessage = 0;
+                                    lastMessageFrameLen = lastMessages[lastMessageNumber]->getFrameLength();
+                                } else {
+                                    numMessages = 0;
+                                    break;
+                                }
+                            }
+                        } catch (exception::IOException &e) {
+                            Address const &address = conn->getRemoteEndpoint();
+
+                            std::string message = e.what();
+                            size_t len = message.length() + 150;
+                            char *msg = new char[len];
+                            util::snprintf(msg, len,
+                                           "[IOHandler::handleSocketException] Closing socket to endpoint %s:%d, Cause:%s\n",
+                                           address.getHost().c_str(), address.getPort(), message.c_str());
+                            util::ILogger::getLogger().getLogger().warning(msg);
+
+                            // TODO: This call shall resend pending requests and reregister events, hence it can be off-loaded
+                            // to another thread in order not to block the critical IO thread
+                            conn->close();
+                            return;
+                        }
+
+                    }
+
+                }
             }
         }
     }

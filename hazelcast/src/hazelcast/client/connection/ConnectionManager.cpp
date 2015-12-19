@@ -309,6 +309,9 @@ namespace hazelcast {
                 }
 
                 authenticate(conn.get());
+
+                conn->start();
+
                 return conn;
             }
 

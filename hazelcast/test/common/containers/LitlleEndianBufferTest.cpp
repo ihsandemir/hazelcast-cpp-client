@@ -37,7 +37,9 @@ namespace hazelcast {
                     }
 
                     void LittleEndianBufferTest::addTests() {
+/*
                         addTest(&LittleEndianBufferTest::testBinaryFormat, "Test Binary Format");
+*/
 
                     }
 
@@ -54,6 +56,7 @@ namespace hazelcast {
                     void LittleEndianBufferTest::afterTest() {
                     }
 
+/*
                     void LittleEndianBufferTest::testBinaryFormat() {
                         #define TEST_DATA_SIZE 8
                         #define LARGE_BUFFER_SIZE 20
@@ -146,7 +149,9 @@ namespace hazelcast {
                         // ----- Test signed get ends ---------------------------------
 
                         byte firstChar = 'B';
-                        byte strBytes[8] = {4, 0, 0, 0, /* This part is the len field which is 4 bytes */
+                        byte strBytes[8] = {4, 0, 0, 0, */
+/* This part is the len field which is 4 bytes *//*
+
                                             firstChar, firstChar + 1, firstChar + 2, firstChar + 3}; // This is string BCDE
 
                         {
@@ -160,7 +165,9 @@ namespace hazelcast {
                                                                        0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B,
                                                                        0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B,
                                                                        0x8A, 0x9A, 0xAA, 0xBA, 0xCA,
-                                                                       4, 0, 0, 0, /* This part is the len field which is 4 bytes */
+                                                                       4, 0, 0, 0, */
+/* This part is the len field which is 4 bytes *//*
+
                                                                        firstChar, firstChar + 1, firstChar + 2, firstChar + 3,
                                                                        0x8A, 0x01, 0x00, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B};
                             
@@ -290,6 +297,7 @@ namespace hazelcast {
                         ASSERT_EQUAL('e', writeBuffer[17]);
                         ASSERT_EQUAL('a', writeBuffer[24]);
                     }
+*/
                 }
             }
         }
