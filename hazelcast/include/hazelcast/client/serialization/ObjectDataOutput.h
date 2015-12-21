@@ -16,14 +16,9 @@
 //
 // Created by sancar koyunlu on 8/12/13.
 
-
-
-
-
 #ifndef HAZELCAST_ObjectDataOutput
 #define HAZELCAST_ObjectDataOutput
 
-#include <list>
 #include "hazelcast/client/serialization/pimpl/SerializationConstants.h"
 #include "hazelcast/client/exception/HazelcastSerializationException.h"
 #include "hazelcast/client/serialization/pimpl/SerializerHolder.h"

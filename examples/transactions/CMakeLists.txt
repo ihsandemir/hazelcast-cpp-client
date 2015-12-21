@@ -13,10 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-cmake_minimum_required (VERSION 3.1)
-project (CodeSamples)
-
-add_subdirectory(CommandLineTool)
-add_subdirectory(transactions)
-add_subdirectory(spi)
-add_subdirectory(serialization)
+add_subdirectory(transaction-basic)

@@ -43,11 +43,10 @@
 
 namespace hazelcast {
     namespace client {
-        class Portable;
-
-        class IdentifiedDataSerializable;
-
         namespace serialization {
+            class Portable;
+
+            class IdentifiedDataSerializable;
 
             namespace pimpl {
                 class PortableContext;

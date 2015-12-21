@@ -84,8 +84,8 @@ namespace hazelcast {
  *
  *  And each of the folders above contains following
  *  * examples/
- *     + testApp.exe   => example command line client tool to connect hazelcast servers.
- *     + TestApp.cpp   => code  of the example command line tool.
+ *     + CommandLineTool/CommandLineTool.exe   => example command line client tool to connect hazelcast servers.
+ *     + CommandLineTool.cpp   => code  of the example command line tool.
  *
  *  *  hazelcast/
  *      +  lib/        => Contains both shared and static library of hazelcast.
