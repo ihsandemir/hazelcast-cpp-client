@@ -70,7 +70,7 @@ namespace hazelcast {
                     try {
 						using namespace std;
                         time_t waitSeconds = (time_t)min(timeoutInSeconds, (time_t)heartBeatTimeout);
-                        return promise->getFuture().get(waitSeconds);
+                        return std::auto_ptr<protocol::ClientMessage>(promise->getFuture().get(waitSeconds));
                     } catch (exception::TimeoutException&) {
                         if (!connection->isHeartBeating()) {
                             std::string address = util::IOUtil::to_string(connection->getRemoteEndpoint());

@@ -52,7 +52,7 @@ namespace hazelcast {
 
                 protocol::ClientMessage *getRequest() const;
 
-                util::Future<std::auto_ptr<protocol::ClientMessage> > &getFuture();
+                util::Future<protocol::ClientMessage> &getFuture();
 
                 void setEventHandler(std::auto_ptr<impl::BaseEventHandler> eventHandler);
 
@@ -62,7 +62,7 @@ namespace hazelcast {
 
                 void resetFuture();
             private:
-                util::Future<std::auto_ptr<protocol::ClientMessage> > future;
+                util::Future<protocol::ClientMessage> future;
                 std::auto_ptr<protocol::ClientMessage> request;
                 std::auto_ptr<impl::BaseEventHandler> eventHandler;
                 util::AtomicInt resendCount;

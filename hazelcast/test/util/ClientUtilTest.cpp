@@ -126,8 +126,8 @@ namespace hazelcast {
                 util::Future<int> future;
                 int waitSeconds = 3;
                 int expectedValue = 2;
-                future.set_value(expectedValue);
-                int value = future.get(waitSeconds);
+                future.set_value(&expectedValue);
+                int value = *future.get(waitSeconds);
                 assertEqual(expectedValue, value);
             }
 
@@ -149,7 +149,7 @@ namespace hazelcast {
                 int value = *(int *)args.arg1;
                 int wakeUpTime = *(int *)args.arg2;
                 util::sleep(wakeUpTime);
-                future->set_value(value);
+                future->set_value(&value);
             }
 
             void setExceptionToFuture(util::ThreadArgs& args) {
@@ -165,7 +165,7 @@ namespace hazelcast {
                 int wakeUpTime = 3;
                 int expectedValue = 2;
                 util::Thread thread(setValueToFuture, &future, &expectedValue, &wakeUpTime);
-                int value = future.get(waitSeconds);
+                int value = *future.get(waitSeconds);
                 assertEqual(expectedValue, value);
 
             }

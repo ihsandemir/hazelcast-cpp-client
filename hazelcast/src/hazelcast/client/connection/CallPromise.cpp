@@ -31,7 +31,7 @@ namespace hazelcast {
             }
 
             void CallPromise::setResponse(std::auto_ptr<protocol::ClientMessage> message) {
-                this->future.set_value(message);
+                this->future.set_value(message.release());
             }
 
             void CallPromise::setException(const std::string &exceptionName, const std::string &exceptionDetails) {
@@ -46,7 +46,7 @@ namespace hazelcast {
                 return request.get();
             }
 
-            util::Future<std::auto_ptr<protocol::ClientMessage> >  &CallPromise::getFuture() {
+            util::Future<protocol::ClientMessage>  &CallPromise::getFuture() {
                 return future;
             }
 

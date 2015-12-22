@@ -38,92 +38,74 @@ namespace hazelcast {
         template<typename T>
         class Future {
         public:
-            Future()
-            : resultReady(false)
-            , exceptionReady(false) {
-
+            Future() {
+                sharedObject.store(NULL, std::memory_order_release);
+                exceptionReady.store(false, std::memory_order_release);
             };
 
-            void set_value(T& value) {
-                LockGuard guard(mutex);
-                if (exceptionReady || resultReady) {
-                    util::ILogger::getLogger().warning(std::string("Future.set_value should not be called twice"));
-                }
-                sharedObject = value;
-                resultReady = true;
-                conditionVariable.notify_all();
+            void set_value(T *value) {
+                sharedObject.store(value, std::memory_order_release);
             };
 
-            void set_exception(const std::string& exceptionName, const std::string& exceptionDetails) {
-                LockGuard guard(mutex);
-                if (exceptionReady || resultReady) {
-                    util::ILogger::getLogger().warning(std::string("Future.set_exception should not be called twice : details ") + exceptionDetails);
-                }
-                this->exceptionName = exceptionName;
-                this->exceptionDetails = exceptionDetails;
-                exceptionReady = true;
-                conditionVariable.notify_all();
+            void set_exception(const std::string &name, const std::string &details) {
+
+                exceptionReady.store(true, std::memory_order_release);
             };
 
             T get() {
-                LockGuard guard(mutex);
-                if (resultReady) {
-                    return sharedObject;
-                }
-                if (exceptionReady) {
-                    client::exception::pimpl::ExceptionHandler::rethrow(exceptionName, exceptionDetails);
-                }
-                conditionVariable.wait(mutex);
-                if (resultReady) {
-                    return sharedObject;
-                }
-                if (exceptionReady) {
-                    client::exception::pimpl::ExceptionHandler::rethrow(exceptionName, exceptionDetails);
-                }
-                assert(false && "InvalidState");
-                return sharedObject;
+                T *object;
+                std::string exc;
+                do {
+                    object = sharedObject.load(std::memory_order_consume);
+                    if (NULL != object) {
+                        return std::auto_ptr<T>(object);
+                    } else {
+                        if (exceptionReady.load(std::memory_order_consume)) {
+                            client::exception::pimpl::ExceptionHandler::rethrow("", "");
+                        }
+                    }
+                    usleep(1);
+                } while (true);
             };
 
-            T get(time_t timeInSeconds) {
-                LockGuard guard(mutex);
-                if (resultReady) {
-                    return sharedObject;
-                }
-                if (exceptionReady) {
-                    client::exception::pimpl::ExceptionHandler::rethrow(exceptionName, exceptionDetails);
-                }
+            T *get(time_t timeInSeconds) {
+                T *object;
+                std::string exc;
                 time_t endTime = time(NULL) + timeInSeconds;
-                while (!(resultReady || exceptionReady) && endTime > time(NULL)) {
-                    conditionVariable.waitFor(mutex, endTime - time(NULL));
-                }
-
-                if (resultReady) {
-                    return sharedObject;
-                }
-                if (exceptionReady) {
-                    client::exception::pimpl::ExceptionHandler::rethrow(exceptionName, exceptionDetails);
-                }
-                throw client::exception::TimeoutException("Future::get(timeInSeconds)", "Wait is timed out");
+                do {
+                    object = sharedObject.load(std::memory_order_consume);
+                    if (NULL != object) {
+                        return object;
+                    } else {
+                        if (exceptionReady.load(std::memory_order_consume)) {
+                            client::exception::pimpl::ExceptionHandler::rethrow("", "");
+                        }
+                    }
+                    if (time(NULL) < endTime) {
+                        throw client::exception::TimeoutException("Future::get(timeInSeconds)", "Wait is timed out");
+                    }
+                    usleep(1);
+                } while (true);
             };
 
             void reset() {
-                LockGuard guard(mutex);
-
-                resultReady = false;
-                exceptionReady = false;
+                sharedObject.store(NULL, std::memory_order_release);
+                exceptionReady.store(false, std::memory_order_release);
             }
+
         private:
-            bool resultReady;
-            bool exceptionReady;
-            ConditionVariable conditionVariable;
-            Mutex mutex;
-            T sharedObject;
-            std::string exceptionName;
-            std::string exceptionDetails;
+            //std::atomic_flag resultReady;
+            //std::atomic_flag exceptionReady;
+            //ConditionVariable conditionVariable;
+            //Mutex mutex;
+            std::atomic<T *> sharedObject;
+            std::atomic_bool exceptionReady;
+            //std::atomic<std::string exceptionName;
+            //std::atomic<std::string> exceptionDetails;
 
-            Future(const Future& rhs);
+            Future(const Future &rhs);
 
-            void operator=(const Future& rhs);
+            void operator=(const Future &rhs);
         };
     }
 }

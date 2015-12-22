@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
     }
     std::cout << "Server address : "  << address << std::endl;
 
-//    testSpeed(address);
-    return unitTests(address);
+    testSpeed(address);
+//    return unitTests(address);
 }
 
 

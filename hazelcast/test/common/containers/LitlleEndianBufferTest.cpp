@@ -147,7 +147,7 @@ namespace hazelcast {
 
                         byte firstChar = 'B';
                         byte strBytes[8] = {4, 0, 0, 0, /* This part is the len field which is 4 bytes */
-                                            firstChar, firstChar + 1, firstChar + 2, firstChar + 3}; // This is string BCDE
+                                            firstChar, (byte)(firstChar + 1),(byte)(firstChar + 2), (byte)(firstChar + 3)}; // This is string BCDE
 
                         {
                             wrapForRead(strBytes, 8, 0);
@@ -161,7 +161,7 @@ namespace hazelcast {
                                                                        0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B,
                                                                        0x8A, 0x9A, 0xAA, 0xBA, 0xCA,
                                                                        4, 0, 0, 0, /* This part is the len field which is 4 bytes */
-                                                                       firstChar, firstChar + 1, firstChar + 2, firstChar + 3,
+                                                                       firstChar, (byte)(firstChar + 1), (byte)(firstChar + 2), (byte)(firstChar + 3),
                                                                        0x8A, 0x01, 0x00, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B};
                             
                             wrapForRead(continousBuffer, 8 * 10, 0);

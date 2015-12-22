@@ -190,7 +190,7 @@ namespace hazelcast {
                 bool smartRouting;
                 OwnerConnectionFuture ownerConnectionFuture;
 
-                util::Atomic<int64_t> callIdGenerator;
+                std::atomic_int callIdGenerator;
             };
         }
     }

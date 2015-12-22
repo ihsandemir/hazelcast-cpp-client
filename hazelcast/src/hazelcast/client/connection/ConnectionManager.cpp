@@ -339,7 +339,7 @@ namespace hazelcast {
             }
 
             int64_t ConnectionManager::getNextCallId() {
-                return ++callIdGenerator;
+                return callIdGenerator.fetch_add(1, std::memory_order_release);
             }
 
             void ConnectionManager::processSuccessfulAuthenticationResult(Connection *connection,
