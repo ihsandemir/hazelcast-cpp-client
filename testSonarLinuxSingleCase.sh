@@ -90,7 +90,7 @@ fi
 cd ..
 
 echo "Starting the client test now."
-/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
+/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir sonar_dir ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
 result=$?
 
 /root/jenkins/sonar/sonar-runner-2.4/bin/sonar-runner
