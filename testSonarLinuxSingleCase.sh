@@ -36,7 +36,7 @@ echo "Running cmake to compose Makefiles for compilation."
 cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE}
 
 echo "Running make. Building the project."
-/Users/ihsan/Desktop/work/sw/build-wrapper-3.8/macosx-x86/build-wrapper-macosx-x86 --out-dir sonar_dir make -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
+/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir sonar_dir make -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
 if [ $? -ne 0 ]
 then
     echo "Client compilation failed!!!"
@@ -90,7 +90,7 @@ fi
 cd ..
 
 echo "Starting the client test now."
-/Users/ihsan/Desktop/work/sw/build-wrapper-3.8/macosx-x86/build-wrapper-macosx-x86 ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
+/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
 result=$?
 
 sonar_runner
