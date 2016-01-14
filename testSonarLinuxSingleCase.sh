@@ -30,13 +30,16 @@ rm -rf ${BUILD_DIR}
 mkdir ${BUILD_DIR}
 cd ${BUILD_DIR}
 
+SONAR_DIR=sonar
+rm -rf ${SONAR_DIR}
+
 cp ../sonar-project.properties .
 
 echo "Running cmake to compose Makefiles for compilation."
 /root/sw/cmake-3.4.1-Linux-x86_64/bin/cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE}
 
 echo "Running make. Building the project."
-/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir sonar_dir make -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
+/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} make clean all -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
 if [ $? -ne 0 ]
 then
     echo "Client compilation failed!!!"
