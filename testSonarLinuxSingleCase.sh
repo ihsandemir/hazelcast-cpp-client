@@ -109,8 +109,7 @@ else
 fi
 
 cd ${BUILD_DIR}
-GCOVR_BINARY=/root/jenkins/gcovr-3.2/scripts/gcovr
 rm -f cpp_coverage.xml
-python ${GCOVR_BINARY} --xml-pretty -o cpp_coverage.xml -r ..
+python gcovr --xml-pretty -o cpp_coverage.xml -r .. -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*"
 
 exit ${result}
