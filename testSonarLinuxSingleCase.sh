@@ -109,6 +109,6 @@ fi
 
 cd ${BUILD_DIR}
 rm -f cpp_coverage.xml
-../../../sonar/python-2.7.11/bin/python ../../sonar/gcovr-3.2/scripts/gcovr --xml-pretty -o cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
+../../../sonar/python-2.7.11/bin/python ../../../sonar/gcovr-3.2/scripts/gcovr --xml-pretty -o cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
 
 exit ${result}
