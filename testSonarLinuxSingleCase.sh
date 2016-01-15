@@ -111,6 +111,6 @@ fi
 cd ${BUILD_DIR}
 GCOVR_BINARY=/root/jenkins/gcovr-3.2/scripts/gcovr
 rm -f cpp_coverage.xml
-python ${GCOVR_BINARY} --xml-pretty -o cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
+python ${GCOVR_BINARY} --xml-pretty -o cpp_coverage.xml
 
 exit ${result}
