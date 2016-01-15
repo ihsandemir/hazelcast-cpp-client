@@ -107,7 +107,7 @@ else
     echo "Test FAILED. Result:${result}"
 fi
 
-mkdir -p ../gcovr_reports
-../../../sonar/python-2.7.11/bin/python ../../../sonar/gcovr-3.2/scripts/gcovr --xml-pretty -o ../gcovr_reports/hz_cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
+rm -f cpp_coverage.xml
+../../../sonar/python-2.7.11/bin/python ../../../sonar/gcovr-3.2/scripts/gcovr --xml-pretty -o cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
 
 exit ${result}
