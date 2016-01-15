@@ -30,13 +30,14 @@ rm -rf ${BUILD_DIR}
 mkdir ${BUILD_DIR}
 cd ${BUILD_DIR}
 
-SONAR_DIR=sonar
-rm -rf ${SONAR_DIR}
+#SONAR_DIR=sonar
+#rm -rf ${SONAR_DIR}
 
 #cp ../sonar-project.properties .
 
 echo "Running cmake to compose Makefiles for compilation."
-/root/sw/cmake-3.4.1-Linux-x86_64/bin/cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
+#/root/sw/cmake-3.4.1-Linux-x86_64/bin/cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
+cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
 
 echo "Running make. Building the project."
 #/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} make clean all -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
@@ -94,7 +95,7 @@ fi
 cd ..
 
 echo "Starting the client test now."
-/#root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
+#root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
 ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
 result=$?
 
@@ -108,7 +109,8 @@ else
 fi
 
 cd ${BUILD_DIR}
+GCOVR_BINARY=/root/jenkins/gcovr-3.2/scripts/gcovr
 rm -f cpp_coverage.xml
-../../../sonar/python-2.7.11/bin/python ../../../sonar/gcovr-3.2/scripts/gcovr --xml-pretty -o cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
+python ${GCOVR_BINARY} --xml-pretty -o cpp_coverage.xml -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*" -r .. -d
 
 exit ${result}
