@@ -110,6 +110,6 @@ fi
 
 cd ${BUILD_DIR}
 rm -f cpp_coverage.xml
-python gcovr --xml-pretty -o cpp_coverage.xml -r .. -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*"
+gcovr --xml-pretty -o cpp_coverage.xml -r .. -e ".*boost.*" -e ".*test.*" -e ".*iTest.*" -e ".*usr.*include.*"
 
 exit ${result}
