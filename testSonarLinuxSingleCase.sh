@@ -30,18 +30,15 @@ rm -rf ${BUILD_DIR}
 mkdir ${BUILD_DIR}
 cd ${BUILD_DIR}
 
-#SONAR_DIR=sonar
-#rm -rf ${SONAR_DIR}
-
-#cp ../sonar-project.properties .
+SONAR_DIR=sonar
+rm -rf ${SONAR_DIR}
 
 echo "Running cmake to compose Makefiles for compilation."
-#/root/sw/cmake-3.4.1-Linux-x86_64/bin/cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
-cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
+/root/sw/cmake-3.4.1-Linux-x86_64/bin/cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
+#cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} -DHZ_CODE_COVERAGE=ON
 
 echo "Running make. Building the project."
-#/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} make clean all -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
-make clean all -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
+/root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} make clean all -j 8 -l 4  # run 8 jobs in parallel and a maximum load of 4
 if [ $? -ne 0 ]
 then
     echo "Client compilation failed!!!"
@@ -95,11 +92,10 @@ fi
 cd ..
 
 echo "Starting the client test now."
-#root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
-${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
+root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
 result=$?
 
-#/root/jenkins/sonar/sonar-runner-2.4/bin/sonar-runner
+/root/jenkins/sonar/sonar-runner-2.4/bin/sonar-runner
 
 if [ ${result} -eq 0 ]
 then
