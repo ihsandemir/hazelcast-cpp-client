@@ -95,7 +95,7 @@ echo "Starting the client test now."
 /root/jenkins/sonar/build-wrapper-3.8/linux-x86-64/build-wrapper-linux-x86-64 --out-dir ${SONAR_DIR} ${BUILD_DIR}/hazelcast/test/${EXECUTABLE_NAME}
 result=$?
 
-/root/jenkins/sonar/sonar-runner-2.4/bin/sonar-runner
+/root/jenkins/sonar/sonar-runner-2.4/bin/sonar-runner -e -X
 
 if [ ${result} -eq 0 ]
 then
