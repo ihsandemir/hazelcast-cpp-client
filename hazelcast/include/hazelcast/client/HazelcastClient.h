@@ -16,6 +16,7 @@
 #ifndef HAZELCAST_CLIENT
 #define HAZELCAST_CLIENT
 
+#include <hazelcast/client/api/IMap.h>
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/client/MultiMap.h"
 #include "hazelcast/client/IQueue.h"
@@ -446,6 +447,8 @@ namespace hazelcast {
             IMap<K, V> getMap(const std::string& name) {
                 return getDistributedObject<IMap<K, V> >(name);
             };
+
+            hazelcast::client::api::IMap *getMap(const char *name);
 
             /**
             * Returns the distributed multimap instance with the specified name.

@@ -107,6 +107,9 @@ namespace hazelcast {
             return TransactionContext(clientContext, options);
         }
 
+        hazelcast::client::api::IMap *HazelcastClient::getMap(const char *name) {
+            return new api::NewMap;
+        }
     }
 }
 
