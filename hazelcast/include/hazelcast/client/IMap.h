@@ -34,9 +34,6 @@
 
 namespace hazelcast {
     namespace client {
-
-        class IMap2 {};
-
         /**
         * Concurrent, distributed, observable and queryable map client.
         *

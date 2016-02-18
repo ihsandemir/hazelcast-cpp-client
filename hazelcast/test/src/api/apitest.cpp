@@ -106,7 +106,7 @@ namespace hazelcast {
                 hazelcast::client::IMap<int, std::string> map2 = client->getMap<int, std::string>("original map");
 
                 std::string key1("myKey");
-                struct hazelcast::client::api::Result result = map1->get(&key1);
+                struct hazelcast::client::api::ObjectType result = map1->get(&key1);
 
                 if (NULL != result.object) {
                     std::cout << "The returned object for key " << key1 << " is " << (std::string *) result.object << std::endl;

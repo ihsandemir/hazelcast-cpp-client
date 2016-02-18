@@ -7,8 +7,8 @@
 namespace hazelcast {
     namespace client {
         namespace api {
-            struct Result NewMap::get(const void *key, IAllocator *alloc) {
-                Result res;
+            struct ObjectType NewMap::get(const void *key, IAllocator *alloc) {
+                ObjectType res;
                 res.object = alloc->allocate(IdentifiedDataSerializable);
 
                 // res.serializer = ...; // This shall be retrieved during deserialization getSerializerFor
@@ -16,8 +16,8 @@ namespace hazelcast {
                 return res;
             }
 
-            std::vector<struct Result> NewMap::getAll(void *key, IAllocator *alloc) {
-                std::vector<struct Result> results(1);
+            std::vector<struct ObjectType> NewMap::getAll(void *key, IAllocator *alloc) {
+                std::vector<struct ObjectType> results(1);
                 results[0].object = alloc->allocate(IdentifiedDataSerializable);
 
                 return results;

@@ -129,7 +129,13 @@ namespace hazelcast {
                 HAZELCAST_API Data SerializationService::toData<char>(const char  *object);
 
                 template<>
+                HAZELCAST_API Data SerializationService::toData<unsigned char>(const unsigned char  *object);
+
+                template<>
                 HAZELCAST_API Data SerializationService::toData<short>(const short  *object);
+
+                template<>
+                HAZELCAST_API Data SerializationService::toData< unsigned short>(const unsigned short  *object);
 
                 template<>
                 HAZELCAST_API Data SerializationService::toData<int>(const int  *object);
@@ -180,7 +186,13 @@ namespace hazelcast {
                 HAZELCAST_API boost::shared_ptr<char> SerializationService::toObject(const Data &data) ;
 
                 template<>
+                HAZELCAST_API boost::shared_ptr<unsigned char> SerializationService::toObject(const Data &data) ;
+
+                template<>
                 HAZELCAST_API boost::shared_ptr<short> SerializationService::toObject(const Data &data);
+
+                template<>
+                HAZELCAST_API boost::shared_ptr<unsigned short> SerializationService::toObject(const Data &data);
 
                 template<>
                 HAZELCAST_API boost::shared_ptr<int> SerializationService::toObject(const Data &data);
