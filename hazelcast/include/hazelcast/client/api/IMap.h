@@ -36,13 +36,6 @@ namespace hazelcast {
                 virtual T *release() = 0;
             };
 
-
-            struct ObjectType {
-                int type;
-                int factoryId = -1;
-                int classId = -1;
-            };
-
             class IMap {
             public:
                 virtual ResultObject get(const ParamObject key) = 0;
@@ -50,6 +43,8 @@ namespace hazelcast {
                 virtual std::vector<ResultObject> getAll(const ParamObject key) = 0;
 
                 virtual ResultObject put(const ParamObject key, const ParamObject value) = 0;
+
+                virtual putAll(const std::vector<K, V> &entries);
             };
 
             class NewMap : public IMap {
