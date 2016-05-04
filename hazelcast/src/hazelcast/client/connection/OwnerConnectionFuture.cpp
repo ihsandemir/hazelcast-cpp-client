@@ -53,11 +53,11 @@ namespace hazelcast {
                 int tryCount = 2 * config.getAttemptPeriod() * config.getConnectionAttemptLimit() / 1000;
 				
                 while (currentOwnerConnection.get() == NULL) {
-                    currentOwnerConnection = ownerConnectionPtr;
                     util::sleep(1);
-                    if (--tryCount == 0) {
+                    if (--tryCount < 0) {
                         throw exception::IOException("ConnectionManager", "Wait for owner connection is timed out");
                     }
+                    currentOwnerConnection = ownerConnectionPtr;
                 }
                 return currentOwnerConnection;
             }

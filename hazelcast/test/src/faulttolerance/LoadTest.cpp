@@ -52,18 +52,51 @@ namespace hazelcast {
                             int mod = rand() % 3;
                             switch (mod) {
                                 case 0:
-                                    ASSERT_NO_THROW(map->put(i, i));
-                                    break;
-                                case 1:
-                                    ASSERT_NO_THROW(map->remove(i));
-                                case 2: {
-                                    boost::shared_ptr<int> val;
-                                    ASSERT_NO_THROW(val = map->get(i));
-                                    if ((int *) NULL != val.get()) {
-                                        ASSERT_EQ(*val, i);
-                                    }
+                                {
+                                    ASSERT_NO_THROW(
+                                            try {
+                                                map->put(i, i);
+                                            } catch (exception::IException &e) {
+                                                std::ostringstream out;
+                                                out << "[loadClient] Exception received during map->put for i:" << i << ", Exception:" << e.what();
+                                                util::ILogger::getLogger().warning(out.str());
+                                                throw;
+                                            };
+                                    );
                                     break;
                                 }
+                                case 1:
+                                {
+                                    ASSERT_NO_THROW(
+                                            try {
+                                                map->remove(i);
+                                            } catch (exception::IException &e) {
+                                                std::ostringstream out;
+                                                out << "[loadClient] Exception received during map->remove for i:" << i << ", Exception:" << e.what();
+                                                util::ILogger::getLogger().warning(out.str());
+                                                throw;
+                                            };
+                                    );
+                                    break;
+                                }
+                                case 2:
+                                    {
+                                        ASSERT_NO_THROW(
+                                                try {
+                                                    boost::shared_ptr<int> val;
+                                                    ASSERT_NO_THROW(val = map->get(i));
+                                                    if ((int *) NULL != val.get()) {
+                                                        ASSERT_EQ(*val, i);
+                                                    }
+                                                } catch (exception::IException &e) {
+                                                    std::ostringstream out;
+                                                    out << "[loadClient] Exception received during map->get for i:" << i << ", Exception:" << e.what();
+                                                    util::ILogger::getLogger().warning(out.str());
+                                                    throw;
+                                                };
+                                        );
+                                        break;
+                                    }
                                 default:
                                     abort();
                             }
@@ -78,13 +111,17 @@ namespace hazelcast {
                         return threads[i];
                     }
 
-                    ~LoadTest() {
+                    void deleteThreads() {
                         for (std::vector<util::Thread *>::const_iterator it = threads.begin();
                              it != threads.end(); ++it) {
                             delete *it;
                         }
+                        threads.clear();
                     }
 
+                    ~LoadTest() {
+                        deleteThreads();
+                    }
                 protected:
                     std::vector<util::Thread *> threads;
                 };
@@ -135,6 +172,8 @@ namespace hazelcast {
 
                     util::ILogger::getLogger().info(
                             "[LoadTest::loadIntMapTestWithConfig] Finished the test successfully :)");
+
+                    test.deleteThreads();
                 }
 
                 TEST_F(LoadTest, testIntMapSmartClientServerRestart) {
@@ -145,10 +184,12 @@ namespace hazelcast {
                 }
 
                 TEST_F(LoadTest, testIntMapDummyClientServerRestart) {
-                    std::auto_ptr<ClientConfig> config = getConfig();
-                    config->setSmart(false);
+                    for (int i = 0; i < 20; ++i) {
+                        std::auto_ptr<ClientConfig> config = getConfig();
+                        config->setSmart(false);
 
-                    loadIntMapTestWithConfig(*config, *this);
+                        loadIntMapTestWithConfig(*config, *this);
+                    }
                 }
             }
         }
