@@ -49,7 +49,6 @@ namespace hazelcast {
             assert(NULL != socket);
 
             int socketId = socket->getSocketId();
-            assert(socketId >= 0);
 
             bool found = false;
 
@@ -63,14 +62,14 @@ namespace hazelcast {
                         break;
                     }
                 }
-            }
 
-            if (!found) {
-                char msg[200];
-                util::snprintf(msg, 200,
-                               "[SocketSet::removeSocket] Socket with id %d  was not found among the sockets.",
-                               socketId);
-                util::ILogger::getLogger().finest(msg);
+                if (!found) {
+                    char msg[200];
+                    util::snprintf(msg, 200,
+                                   "[SocketSet::removeSocket] Socket with id %d  was not found among the sockets.",
+                                   socketId);
+                    util::ILogger::getLogger().finest(msg);
+                }
             }
         }
 
