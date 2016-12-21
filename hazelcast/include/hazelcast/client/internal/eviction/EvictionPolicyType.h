@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
-#define HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
+#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONPOLICYTYPE_H_
+#define HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONPOLICYTYPE_H_
 
 #include "hazelcast/util/HazelcastDll.h"
 
@@ -28,20 +28,30 @@ namespace hazelcast {
         namespace internal {
             namespace eviction {
                 /**
-                 * Interface for configuration information about eviction.
+                 * Enum for eviction policy types.
                  */
-                class HAZELCAST_API EvictionStrategyType {
-                public:
-                    enum Type {
-                        /**
-                         * Sampling based eviction strategy type
-                         */
-                                SAMPLING_BASED_EVICTION
-                    };
+                enum HAZELCAST_API EvictionPolicyType {
                     /**
-                     * Default value of {@link com.hazelcast.internal.eviction.EvictionStrategyType}
+                     * Least Recently Used
                      */
-                    static const HAZELCAST_API Type DEFAULT_EVICTION_STRATEGY;
+                            LRU,
+
+                    /**
+                     * Least Frequently Used
+                     */
+                            LFU,
+
+                    /**
+                     * Picks a random entry
+                     */
+                            RANDOM,
+
+                    /**
+                     * Doesn't evict entries (will not add new entries to the Near Cache when it's full)
+                     */
+                            NONE,
+
+                    // TODO: maybe another "CUSTOM" type for user defined eviction policies
                 };
             }
         }
@@ -50,6 +60,6 @@ namespace hazelcast {
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
-#endif
+#endif 
 
-#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_ */
+#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONPOLICYTYPE_H_ */

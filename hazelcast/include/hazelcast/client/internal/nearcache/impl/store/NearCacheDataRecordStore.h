@@ -16,7 +16,8 @@
 #ifndef HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_NEARCACHEDATARESCORDSTORE_H_
 #define HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_NEARCACHEDATARESCORDSTORE_H_
 
-#include "hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h"
+#include "hazelcast/client/internal/nearcache/impl/store/BaseHeapNearCacheRecordStore.h"
+#include "hazelcast/client/internal/nearcache/impl/record/NearCacheDataRecord.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -30,7 +31,7 @@ namespace hazelcast {
                 namespace impl {
                     namespace store {
                         template <typename K, typename V>
-                        class NearCacheDataRecordStore : public NearCacheRecordStore<K, V> {
+                        class NearCacheDataRecordStore : public BaseHeapNearCacheRecordStore<K, V, record::NearCacheDataRecord> {
                             // TODO to be implemented
                         public:
                             NearCacheDataRecordStore(const std::string &name, const boost::shared_ptr<config::NearCacheConfig> &config,

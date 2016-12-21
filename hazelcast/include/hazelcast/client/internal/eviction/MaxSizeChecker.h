@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
-#define HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
-
+#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_MAXSIZECHECKER_H_
+#define HAZELCAST_CLIENT_INTERNAL_EVICTION_MAXSIZECHECKER_H_
 #include "hazelcast/util/HazelcastDll.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -28,20 +27,17 @@ namespace hazelcast {
         namespace internal {
             namespace eviction {
                 /**
-                 * Interface for configuration information about eviction.
+                 * Interface for implementations of {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}.
                  */
-                class HAZELCAST_API EvictionStrategyType {
+                class HAZELCAST_API MaxSizeChecker {
                 public:
-                    enum Type {
-                        /**
-                         * Sampling based eviction strategy type
-                         */
-                                SAMPLING_BASED_EVICTION
-                    };
                     /**
-                     * Default value of {@link com.hazelcast.internal.eviction.EvictionStrategyType}
+                     * Checks the state to see if it has reached its maximum configured size
+                     * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}
+                     *
+                     * @return <code>true</code> if maximum size has been reached, <code>false</code> otherwise
                      */
-                    static const HAZELCAST_API Type DEFAULT_EVICTION_STRATEGY;
+                    virtual bool isReachedToMaxSize() const = 0;
                 };
             }
         }
@@ -50,6 +46,6 @@ namespace hazelcast {
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
-#endif
+#endif 
 
-#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_ */
+#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_MAXSIZECHECKER_H_ */

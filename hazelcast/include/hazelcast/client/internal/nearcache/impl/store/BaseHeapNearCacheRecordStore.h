@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
-#define HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
+#ifndef HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_BASEHEAPNEARCACHERESCORDSTORE_H_
+#define HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_BASEHEAPNEARCACHERESCORDSTORE_H_
 
-#include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/client/internal/nearcache/impl/store/HeapNearCacheRecordMap.h"
+#include "hazelcast/client/internal/nearcache/impl/store/AbstractNearCacheRecordStore.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -26,30 +27,24 @@
 namespace hazelcast {
     namespace client {
         namespace internal {
-            namespace eviction {
-                /**
-                 * Interface for configuration information about eviction.
-                 */
-                class HAZELCAST_API EvictionStrategyType {
-                public:
-                    enum Type {
-                        /**
-                         * Sampling based eviction strategy type
-                         */
-                                SAMPLING_BASED_EVICTION
-                    };
-                    /**
-                     * Default value of {@link com.hazelcast.internal.eviction.EvictionStrategyType}
-                     */
-                    static const HAZELCAST_API Type DEFAULT_EVICTION_STRATEGY;
-                };
+            namespace nearcache {
+                namespace impl {
+                    namespace store {
+                        template <typename K, typename V, typename R>
+                        class BaseHeapNearCacheRecordStore
+                                : public AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> > {
+                        public:
+                        };
+                    }
+                }
             }
         }
     }
-};
+}
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
 
-#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_ */
+#endif /* HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_BASEHEAPNEARCACHERESCORDSTORE_H_ */
+

@@ -18,6 +18,9 @@
 
 #include <string>
 #include <stdint.h>
+#include <hazelcast/client/internal/eviction/EvictionPolicyComparator.h>
+#include <boost/shared_ptr.hpp>
+#include <hazelcast/util/Preconditions.h>
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/internal/eviction/EvictionConfiguration.h"
@@ -61,8 +64,6 @@ namespace hazelcast {
                             FREE_NATIVE_MEMORY_PERCENTAGE
                 };
 
-                EvictionConfig();
-
                 /**
                  * Default maximum entry count.
                  */
@@ -83,22 +84,52 @@ namespace hazelcast {
                  */
                 static const EvictionPolicy DEFAULT_EVICTION_POLICY;
 
+                EvictionConfig();
+
+/*
+                EvictionConfig(int size, MaxSizePolicy maxSizePolicy,
+                               const internal::eviction::EvictionPolicyComparator<K, V, > &comparator) {
+                    */
+/**
+                     * ===== NOTE =====
+                     *
+                     * Do not use setters, because they are overridden in the readonly version of this config and
+                     * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
+                     *//*
+
+
+                    this->sizeConfigured = true;
+                    this->size = util::Preconditions::checkPositive(size, "Size must be positive number!");
+                    this->maxSizePolicy = maxSizePolicy;
+                    this->comparator = util::Preconditions::checkNotNull<internal::eviction::EvictionPolicyComparator>(
+                            comparator, "Comparator cannot be null!");
+                }
+*/
+
                 int32_t getSize() const;
 
                 EvictionConfig &setSize(int32_t size);
 
-                EvictionPolicy getEvictionPolicy() const;
+                const boost::shared_ptr<MaxSizePolicy> &getMaximumSizePolicy() const;
 
                 EvictionConfig &setMaximumSizePolicy(const MaxSizePolicy &maxSizePolicy);
+
+                const boost::shared_ptr<EvictionPolicy> &getEvictionPolicy() const;
+
+                const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> &getComparator() const {
+                    return comparator;
+                }
+
+                EvictionConfig &setComparator(
+                        const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> &comparator);
+
 
             protected:
                 int32_t size;
                 MaxSizePolicy maxSizePolicy;
                 EvictionPolicy evictionPolicy;
                 std::string comparatorClassName;
-/*
-           const EvictionPolicyComparator comparator;
-*/
+                const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> comparator;
 
                 std::auto_ptr<EvictionConfig> readOnly;
 

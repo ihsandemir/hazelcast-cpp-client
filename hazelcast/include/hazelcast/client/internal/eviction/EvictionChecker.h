@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
-#define HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_
+#ifndef HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONCHECKER_H
+#define HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONCHECKER_H
+
+#include <stdint.h>
+#include <memory>
 
 #include "hazelcast/util/HazelcastDll.h"
 
@@ -28,20 +31,27 @@ namespace hazelcast {
         namespace internal {
             namespace eviction {
                 /**
-                 * Interface for configuration information about eviction.
+                 * Interface for checking about if eviction is required or not.
                  */
-                class HAZELCAST_API EvictionStrategyType {
+                class HAZELCAST_API EvictionChecker {
                 public:
-                    enum Type {
-                        /**
-                         * Sampling based eviction strategy type
-                         */
-                                SAMPLING_BASED_EVICTION
-                    };
                     /**
-                     * Default value of {@link com.hazelcast.internal.eviction.EvictionStrategyType}
+                     * Empty {@link} EvictionChecker to allow eviction always.
                      */
-                    static const HAZELCAST_API Type DEFAULT_EVICTION_STRATEGY;
+                    static const std::auto_ptr <EvictionChecker> EVICT_ALWAYS;
+
+                    /**
+                     * Checks for if eviction is required or not.
+                     *
+                     * @return <code>true</code> if eviction is required, otherwise <code>false</code>
+                     */
+                    virtual bool isEvictionRequired() const = 0;
+                };
+
+                class HAZELCAST_API EvictAlways : public EvictionChecker {
+                public:
+                    //@override
+                    bool isEvictionRequired() const;
                 };
             }
         }
@@ -52,4 +62,4 @@ namespace hazelcast {
 #pragma warning(pop)
 #endif
 
-#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONSTRATEGYTYPE_H_ */
+#endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONCHECKER_H */
