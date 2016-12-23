@@ -42,6 +42,7 @@ namespace hazelcast {
                  */
                 template <typename A, typename E, typename S>
                 class EvictionStrategy {
+                public:
                     /**
                      * Does eviction if eviction is required by given {@link EvictionChecker}.
                      *

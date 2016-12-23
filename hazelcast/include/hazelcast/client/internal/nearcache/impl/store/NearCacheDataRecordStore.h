@@ -30,59 +30,100 @@ namespace hazelcast {
             namespace nearcache {
                 namespace impl {
                     namespace store {
-                        template <typename K, typename V>
-                        class NearCacheDataRecordStore : public BaseHeapNearCacheRecordStore<K, V, record::NearCacheDataRecord> {
-                            // TODO to be implemented
+                        template<typename K, typename V>
+                        class NearCacheDataRecordStore
+                                : public BaseHeapNearCacheRecordStore<K, V, record::NearCacheDataRecord> {
                         public:
-                            NearCacheDataRecordStore(const std::string &name, const boost::shared_ptr<config::NearCacheConfig> &config,
-                                                         serialization::pimpl::SerializationService &ss) {
-
+                            NearCacheDataRecordStore(const std::string &name,
+                                                     const config::NearCacheConfig &config,
+                                                     serialization::pimpl::SerializationService &ss)
+                                    : BaseHeapNearCacheRecordStore(name, config, ss) {
                             }
 
-                            void initialize() {
+                            //@Override
+                            const boost::shared_ptr<V> selectToSave(const boost::shared_ptr<V> &value,
+                                                                    const boost::shared_ptr<serialization::pimpl::Data> &valueData) const {
+                                if (NULL != valueData.get()) {
+                                    return valueData;
+                                }
 
-                            }
+                                if (NULL != value.get()) {
+                                    return boost::shared_ptr<V>(new serialization::pimpl::Data(
+                                            serializationService.toData<V>(value.get())));
+                                }
 
-                            virtual boost::shared_ptr<V> get(const boost::shared_ptr<K> &key) {
                                 return boost::shared_ptr<V>();
                             }
-
-                            virtual void put(const boost::shared_ptr<K> &key, const boost::shared_ptr<V> &value) {
-
+                        protected:
+                            //@Override
+/*
+                        int64_t getKeyStorageMemoryCost(K key) const {
+                                if (key instanceof Data) {
+                                    return
+                                        // reference to this key data inside map ("store" field)
+                                            REFERENCE_SIZE
+                                            // heap cost of this key data
+                                            + ((Data) key).getHeapCost();
+                                } else {
+                                    // memory cost for non-data typed instance is not supported
+                                    return 0L;
+                                }
                             }
 
-                            virtual void put(const boost::shared_ptr<K> &key,
-                                             const boost::shared_ptr<serialization::pimpl::Data> &value) {
+                            // TODO: we don't handle object header (mark, class definition) for heap memory cost
+                            @Override
+                        int64_t getRecordStorageMemoryCost(NearCacheDataRecord record) {
+                                if (record == null) {
+                                    return 0L;
+                                }
+                                Data value = record.getValue();
+                                return
+                                    // reference to this record inside map ("store" field)
+                                        REFERENCE_SIZE
+                                        // reference to "value" field
+                                        + REFERENCE_SIZE
+                                        // heap cost of this value data
+                                        + (value != null ? value.getHeapCost() : 0)
+                                        // 3 primitive int64_t typed fields: "creationTime", "expirationTime" and "accessTime"
+                                        + (3 * (Long.SIZE / Byte.SIZE))
+                                        // reference to "accessHit" field
+                                        + REFERENCE_SIZE
+                                        // primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
+                                        + (Integer.SIZE / Byte.SIZE);
+                            }
+*/
 
+                            //@Override
+                            std::auto_ptr<record::NearCacheDataRecord> valueToRecord(const boost::shared_ptr<V> &value) {
+                                const boost::shared_ptr<serialization::pimpl::Data> data = toData<V>(value);
+                                int64_t creationTime = util::currentTimeMillis();
+                                if (timeToLiveMillis > 0) {
+                                    return std::auto_ptr<record::NearCacheDataRecord>(
+                                            new record::NearCacheDataRecord(data, creationTime,
+                                                                            creationTime + timeToLiveMillis));
+                                } else {
+                                    return std::auto_ptr<record::NearCacheDataRecord>(
+                                            new record::NearCacheDataRecord(data, creationTime,
+                                                                            NearCacheRecord::TIME_NOT_SET));
+                                }
                             }
 
-                            virtual bool remove(const boost::shared_ptr<K> &key) {
-                                return false;
+                            //@Override
+                            boost::shared_ptr<V> recordToValue(const record::NearCacheDataRecord *record) {
+                                const boost::shared_ptr<serialization::pimpl::Data> value = record->getValue();
+                                if (value.get() == NULL) {
+/*
+                                    nearCacheStats.incrementMisses();
+*/
+                                    return NearCache<K, V>::NULL_OBJECT;
+                                }
+                                return dataToValue(value);
                             }
 
-                            virtual void clear() {
-
-                            }
-
-                            virtual void destroy() {
-
-                            }
-
-                            virtual int size() {
-                                return -1;
-                            }
-
-                            virtual void doExpiration() {
-
-                            }
-
-                            virtual void doEvictionIfRequired() {
-                            }
-
-                            virtual void doEviction() {
-                            }
-
-                            virtual void storeKeys() {
+                            //@Override
+                            void putToRecord(boost::shared_ptr<record::NearCacheDataRecord> &record,
+                                             const boost::shared_ptr<V> &value) {
+                                record->setValue(toData(value));
                             }
                         };
 

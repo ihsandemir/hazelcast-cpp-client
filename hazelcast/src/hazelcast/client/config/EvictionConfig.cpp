@@ -60,13 +60,27 @@ namespace hazelcast {
                 return evictionPolicy;
             }
 
+            void EvictionConfig::setEvictionPolicy(EvictionPolicy evictionPolicy) {
+                EvictionConfig::evictionPolicy = evictionPolicy;
+            }
+
             EvictionConfig &EvictionConfig::setMaximumSizePolicy(const EvictionConfig::MaxSizePolicy &maxSizePolicy) {
                 this->maxSizePolicy = maxSizePolicy;
                 return *this;
             }
 
+            MaxSizePolicy EvictionConfig::getMaximumSizePolicy() const {
+                return FREE_NATIVE_MEMORY_PERCENTAGE;
+            }
+
             std::ostream &operator<<(std::ostream &out, const EvictionConfig &config) {
-                //TODO
+                out << "EvictionConfig{"
+                       << "size=" << size
+                       << ", maxSizePolicy=" << maxSizePolicy
+                       << ", evictionPolicy=" << evictionPolicy
+                       << ", comparator=" << comparator
+                       << '}';
+
                 return out;
             }
         }

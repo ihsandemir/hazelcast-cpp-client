@@ -35,7 +35,7 @@ namespace hazelcast {
                 /**
                  * Interface for configuration information about eviction.
                  */
-                template <typename K, typename V, typename E>
+                template <typename K, typename V>
                 class EvictionConfiguration {
                 public:
                     /**
@@ -67,9 +67,9 @@ namespace hazelcast {
                      * @return instance of the configured {@link EvictionPolicyComparator} implementation.
                      */
 
-                    virtual const boost::shared_ptr<EvictionPolicyComparator<K, V, E> > &getComparator() const {
+                    virtual const boost::shared_ptr<EvictionPolicyComparator<K, V> > &getComparator() const {
                         assert(0);
-                        return boost::shared_ptr<EvictionPolicyComparator<K, V, E> >();
+                        return boost::shared_ptr<EvictionPolicyComparator<K, V> >();
                     }
                 };
             }

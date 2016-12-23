@@ -16,8 +16,13 @@
 #ifndef HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_BASEHEAPNEARCACHERESCORDSTORE_H_
 #define HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_BASEHEAPNEARCACHERESCORDSTORE_H_
 
+#include <memory>
+
 #include "hazelcast/client/internal/nearcache/impl/store/HeapNearCacheRecordMap.h"
 #include "hazelcast/client/internal/nearcache/impl/store/AbstractNearCacheRecordStore.h"
+#include "hazelcast/client/internal/nearcache/impl/preloader/NearCachePreloader.h"
+#include "hazelcast/client/internal/nearcache/impl/maxsize/EntryCountNearCacheMaxSizeChecker.h"
+#include "hazelcast/client/internal/adapter/DataStructureAdapter.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -30,10 +35,126 @@ namespace hazelcast {
             namespace nearcache {
                 namespace impl {
                     namespace store {
-                        template <typename K, typename V, typename R>
+                        template<typename K, typename V, typename R>
                         class BaseHeapNearCacheRecordStore
                                 : public AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> > {
                         public:
+                            BaseHeapNearCacheRecordStore(const std::string &name,
+                                                         const config::NearCacheConfig &nearCacheConfig,
+                                                         serialization::pimpl::SerializationService &serializationService
+                            ) : AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> >(nearCacheConfig,
+                                                                                                        serializationService),
+                                nearCachePreloader(nearCacheConfig.getPreloaderConfig()->isEnabled()
+                                                   ? new preloader::NearCachePreloader<K>(name,
+                                                                                          nearCacheConfig.getPreloaderConfig(),
+                                                                                          serializationService)
+                                                   : boost::shared_ptr<preloader::NearCachePreloader<K> >()) {
+                            }
+
+                            //@Override
+                            const boost::shared_ptr<R> &getRecord(const boost::shared_ptr<K> &key) {
+                                return records->get(key);
+                            }
+
+                            //@Override
+                            void onEvict(const boost::shared_ptr<K> &key, const boost::shared_ptr<R> &record,
+                                         bool wasExpired) {
+                                AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> >::onEvict(key,
+                                                                                                                 record,
+                                                                                                                 wasExpired);
+/*
+                                nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+*/
+                            }
+
+                            //@Override
+                            void doExpiration() {
+                                std::vector<std::pair<K, boost::shared_ptr<R> > > entries = records->entrySet();
+                                for (std::vector<std::pair<boost::shared_ptr<K>, boost::shared_ptr<R> > >::const_iterator it = entries.begin();
+                                     it != entries.end(); ++it) {
+                                    const std::pair<boost::shared_ptr<K>, boost::shared_ptr<R> > &entry = (*it);
+                                    const boost::shared_ptr<K> &key = entry.first;
+                                    const boost::shared_ptr<R> &value = entry.second;
+                                    if (isRecordExpired(value)) {
+                                        remove(key);
+                                        onExpire(key, value);
+                                    }
+                                }
+                            }
+
+/*
+                            //@Override
+                        void loadKeys(adaptor::DataStructureAdapter<serialization::pimpl::Data, ?> &adapter) {
+                                if (nearCachePreloader != NULL) {
+                                    nearCachePreloader.loadKeys(adapter);
+                                }
+                            }
+*/
+
+                            //@Override
+                            void storeKeys() {
+                                if (nearCachePreloader.get() != NULL) {
+/*
+                                    nearCachePreloader->storeKeys(records);
+*/
+                                }
+                            }
+                        protected:
+                            //@Override
+                            std::auto_ptr<eviction::MaxSizeChecker> createNearCacheMaxSizeChecker(
+                                    const boost::shared_ptr<config::EvictionConfig> &evictionConfig,
+                                    const boost::shared_ptr<config::NearCacheConfig> &nearCacheConfig) {
+                                config::EvictionConfig::MaxSizePolicy maxSizePolicy = evictionConfig->getMaximumSizePolicy();
+                                if (maxSizePolicy == config::EvictionConfig::ENTRY_COUNT) {
+                                    return std::auto_ptr<eviction::MaxSizeChecker>(
+                                            new maxsize::EntryCountNearCacheMaxSizeChecker(evictionConfig->getSize(),
+                                                                                           *records));
+                                }
+                                std::ostringstream out;
+                                out << "Invalid max-size policy " << '(' << maxSizePolicy << ") for " <<
+                                nearCacheConfig->getName() << "! Only " << config::EvictionConfig::ENTRY_COUNT <<
+                                " is supported.";
+                                throw exception::IllegalArgumentException(out.str());
+                            }
+
+                            //@Override
+                            std::auto_ptr<HeapNearCacheRecordMap<K, R> > createNearCacheRecordMap(
+                                    const config::NearCacheConfig &nearCacheConfig) {
+                                return std::auto_ptr<HeapNearCacheRecordMap<K, R> >(
+                                        new HeapNearCacheRecordMap<K, R>(serializationService,
+                                                                         DEFAULT_INITIAL_CAPACITY));
+                            }
+
+                            //@Override
+                            boost::shared_ptr<R> putRecord(const boost::shared_ptr<K> &key,
+                                                           const boost::shared_ptr<R> &record) {
+                                boost::shared_ptr<R> oldRecord = records->put(key, record);
+/*
+                                nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+*/
+                                return oldRecord;
+                            }
+
+                            //@OverrideR
+                            boost::shared_ptr<R> removeRecord(const boost::shared_ptr<K> &key) {
+                                boost::shared_ptr<R> removedRecord = records->remove(key);
+                                if (removedRecord.get() != NULL) {
+/*
+                                    nearCacheStats.decrementOwnedEntryMemoryCost(
+                                            getTotalStorageMemoryCost(key, removedRecord));
+*/
+                                }
+                                return removedRecord;
+                            }
+
+                            //@Override
+                            bool containsRecordKey(const boost::shared_ptr<K> &key) const {
+                                return records->containsKey(key);
+                            }
+
+                            static const int32_t DEFAULT_INITIAL_CAPACITY = 1000;
+                        private:
+                            const boost::shared_ptr<preloader::NearCachePreloader<K> > nearCachePreloader;
                         };
                     }
                 }

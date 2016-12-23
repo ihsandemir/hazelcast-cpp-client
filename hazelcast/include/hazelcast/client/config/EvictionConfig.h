@@ -34,7 +34,12 @@
 namespace hazelcast {
     namespace client {
         namespace config {
-            class HAZELCAST_API EvictionConfig : public internal::eviction::EvictionConfiguration {
+            /**
+             * Configuration for eviction.
+             * You can set a limit for number of entries or total memory cost of entries.
+             */
+            template<typename K, typename V>
+            class HAZELCAST_API EvictionConfig : public internal::eviction::EvictionConfiguration<K, V, E> {
             public:
                 /**
                  * Maximum Size Policy
@@ -110,26 +115,49 @@ namespace hazelcast {
 
                 EvictionConfig &setSize(int32_t size);
 
-                const boost::shared_ptr<MaxSizePolicy> &getMaximumSizePolicy() const;
+                MaxSizePolicy getMaximumSizePolicy() const;
 
                 EvictionConfig &setMaximumSizePolicy(const MaxSizePolicy &maxSizePolicy);
 
-                const boost::shared_ptr<EvictionPolicy> &getEvictionPolicy() const;
+                EvictionPolicy getEvictionPolicy() const;
+
+
+                void setEvictionPolicy(EvictionPolicy evictionPolicy);
 
                 const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> &getComparator() const {
                     return comparator;
                 }
 
                 EvictionConfig &setComparator(
-                        const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> &comparator);
+                        const boost::shared_ptr<internal::eviction::EvictionPolicyComparator<K, V> > &comparator) {
+                    this->comparator = comparator;
+                    return *this;
+                }
 
+                internal::eviction::EvictionStrategyType::Type getEvictionStrategyType() const {
+                    // TODO: add support for other/custom eviction strategies
+                    return internal::eviction::EvictionStrategyType::DEFAULT_EVICTION_STRATEGY;
+                }
+
+                internal::eviction::EvictionPolicyType getEvictionPolicyType() const {
+                    if (evictionPolicy == EvictionPolicy::LFU) {
+                        return internal::eviction::EvictionPolicyType::LFU;
+                    } else if (evictionPolicy == EvictionPolicy::LRU) {
+                        return internal::eviction::EvictionPolicyType::LRU;
+                    } else if (evictionPolicy == EvictionPolicy::RANDOM) {
+                        return internal::eviction::EvictionPolicyType::RANDOM;
+                    } else if (evictionPolicy == EvictionPolicy::NONE) {
+                        return internal::eviction::EvictionPolicyType::NONE;
+                    } else {
+                        assert(0);
+                    }
+                }
 
             protected:
                 int32_t size;
                 MaxSizePolicy maxSizePolicy;
                 EvictionPolicy evictionPolicy;
-                std::string comparatorClassName;
-                const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> comparator;
+                boost::shared_ptr<internal::eviction::EvictionPolicyComparator<K, V> > comparator;
 
                 std::auto_ptr<EvictionConfig> readOnly;
 
@@ -138,7 +166,6 @@ namespace hazelcast {
                  * Used by the {@link NearCacheConfigAccessor} to initialize the proper default value for on-heap maps.
                  */
                 bool sizeConfigured;
-
             };
 
             std::ostream &operator<<(std::ostream &out, const EvictionConfig &config);

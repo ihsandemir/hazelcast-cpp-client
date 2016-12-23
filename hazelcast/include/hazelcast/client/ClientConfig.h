@@ -73,7 +73,7 @@ namespace hazelcast {
             * @param address
             * @return itself ClientConfig
             */
-            ClientConfig& addAddress(const Address& address);
+            ClientConfig &addAddress(const Address &address);
 
             /**
             * Adds all address in given vector to list of the initial addresses.
@@ -82,7 +82,7 @@ namespace hazelcast {
             * @param addresses vector of addresses
             * @return itself ClientConfig
             */
-            ClientConfig& addAddresses(const std::vector<Address>& addresses);
+            ClientConfig &addAddresses(const std::vector<Address> &addresses);
 
             /**
             * Returns set of the initial addresses.
@@ -90,7 +90,7 @@ namespace hazelcast {
             *
             * @return vector of addresses
             */
-            std::set<Address, addressComparator>& getAddresses();
+            std::set<Address, addressComparator> &getAddresses();
 
             /**
             * The Group Configuration properties like:
@@ -99,20 +99,20 @@ namespace hazelcast {
             * @param groupConfig
             * @return itself ClientConfig
             */
-            ClientConfig& setGroupConfig(GroupConfig& groupConfig);
+            ClientConfig &setGroupConfig(GroupConfig &groupConfig);
 
             /**
             *
             * @return groupConfig
             */
-            GroupConfig& getGroupConfig();
+            GroupConfig &getGroupConfig();
 
             /**
             * Can be used instead of GroupConfig in Hazelcast Extensions.
             *
             *  @return itself ClientConfig
             */
-            ClientConfig& setCredentials(Credentials *credentials);
+            ClientConfig &setCredentials(Credentials *credentials);
 
             /**
             * Can be used instead of GroupConfig in Hazelcast Extensions.
@@ -127,7 +127,7 @@ namespace hazelcast {
             * @param connectionAttemptLimit
             * @return itself ClientConfig
             */
-            ClientConfig& setConnectionAttemptLimit(int connectionAttemptLimit);
+            ClientConfig &setConnectionAttemptLimit(int connectionAttemptLimit);
 
             /**
             * While client is trying to connect initially to one of the members in the ClientConfig#addressList,
@@ -144,7 +144,7 @@ namespace hazelcast {
             *
             * @return itself ClientConfig
             */
-            ClientConfig& setConnectionTimeout(int connectionTimeoutInMillis);
+            ClientConfig &setConnectionTimeout(int connectionTimeoutInMillis);
 
             /**
             * Timeout value for nodes to accept client connection requests.
@@ -159,7 +159,7 @@ namespace hazelcast {
             * @param attemptPeriodInMillis
             * @return itself ClientConfig
             */
-            ClientConfig& setAttemptPeriod(int attemptPeriodInMillis);
+            ClientConfig &setAttemptPeriod(int attemptPeriodInMillis);
 
             /**
             * Period for the next attempt to find a member to connect. (see ClientConfig#connectionAttemptLimit ).
@@ -179,7 +179,7 @@ namespace hazelcast {
             * @param redoOperation
             * return itself ClientConfig
             */
-            ClientConfig& setRedoOperation(bool redoOperation);
+            ClientConfig &setRedoOperation(bool redoOperation);
 
             /**
             *
@@ -204,19 +204,19 @@ namespace hazelcast {
             *
             * @return itself ClientConfig
             */
-            ClientConfig& setSmart(bool smart);
+            ClientConfig &setSmart(bool smart);
 
             /**
             * Will be called with the Socket, each time client creates a connection to any Member.
             *
             * @return itself ClientConfig
             */
-            ClientConfig& setSocketInterceptor(SocketInterceptor *socketInterceptor);
+            ClientConfig &setSocketInterceptor(SocketInterceptor *socketInterceptor);
 
             /**
             * Will be called with the Socket, each time client creates a connection to any Member.
             */
-            SocketInterceptor* getSocketInterceptor();
+            SocketInterceptor *getSocketInterceptor();
 
             /**
             * Adds a listener to configuration to be registered when HazelcastClient starts.
@@ -228,13 +228,13 @@ namespace hazelcast {
             * @param listener LifecycleListener *listener
             * @return itself ClientConfig
             */
-            ClientConfig& addListener(LifecycleListener *listener);
+            ClientConfig &addListener(LifecycleListener *listener);
 
             /**
             *
             * @return registered lifecycleListeners
             */
-            const std::set<LifecycleListener *>& getLifecycleListeners() const;
+            const std::set<LifecycleListener *> &getLifecycleListeners() const;
 
             /**
             * Adds a listener to configuration to be registered when HazelcastClient starts.
@@ -246,14 +246,14 @@ namespace hazelcast {
             * @param listener MembershipListener *listener
             * @return itself ClientConfig
             */
-            ClientConfig& addListener(MembershipListener *listener);
+            ClientConfig &addListener(MembershipListener *listener);
 
             /**
             * Returns registered membershipListeners
             *
             * @return registered membershipListeners
             */
-            const std::set<MembershipListener *>& getMembershipListeners() const;
+            const std::set<MembershipListener *> &getMembershipListeners() const;
 
             /**
             * Adds a listener to configuration to be registered when HazelcastClient starts.
@@ -261,14 +261,14 @@ namespace hazelcast {
             * @param listener InitialMembershipListener *listener
             * @return itself ClientConfig
             */
-            ClientConfig& addListener(InitialMembershipListener *listener);
+            ClientConfig &addListener(InitialMembershipListener *listener);
 
             /**
             * Returns registered initialMembershipListeners
             *
             * @return registered initialMembershipListeners
             */
-            const std::set<InitialMembershipListener *>& getInitialMembershipListeners() const;
+            const std::set<InitialMembershipListener *> &getInitialMembershipListeners() const;
 
             /**
             * Used to distribute the operations to multiple Endpoints.
@@ -285,7 +285,7 @@ namespace hazelcast {
             *
             * @return itself ClientConfig
             */
-            ClientConfig& setLoadBalancer(LoadBalancer *loadBalancer);
+            ClientConfig &setLoadBalancer(LoadBalancer *loadBalancer);
 
             /**
             *  enum LogLevel { SEVERE = 100, WARNING = 90, INFO = 50 };
@@ -296,14 +296,14 @@ namespace hazelcast {
             *  Default log level is INFO
             * @return itself ClientConfig
             */
-            ClientConfig& setLogLevel(LogLevel loggerLevel);
+            ClientConfig &setLogLevel(LogLevel loggerLevel);
 
 
             /**
             *
             *  @return serializationConfig
             */
-            SerializationConfig const& getSerializationConfig() const;
+            SerializationConfig const &getSerializationConfig() const;
 
             /**
             * SerializationConfig is used to
@@ -314,14 +314,14 @@ namespace hazelcast {
             * @param serializationConfig
             * @return itself ClientConfig
             */
-            ClientConfig& setSerializationConfig(SerializationConfig const& serializationConfig);
+            ClientConfig &setSerializationConfig(SerializationConfig const &serializationConfig);
 
             /**
             * Gets a reference to properties map
             *
             * @return properties map
             */
-            std::map<std::string, std::string>& getProperties();
+            std::map<std::string, std::string> &getProperties();
 
             /**
             * Sets the value of a named property
@@ -332,7 +332,7 @@ namespace hazelcast {
             * @param value value of the property
             * @return itself ClientConfig
             */
-            ClientConfig& setProperty(const std::string& name, const std::string& value);
+            ClientConfig &setProperty(const std::string &name, const std::string &value);
 
             /**
              * Adds a ClientReliableTopicConfig.
@@ -357,7 +357,7 @@ namespace hazelcast {
              * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
              * @see com.hazelcast.config.NearCacheConfig
              */
-            ClientConfig &addNearCacheConfig(const boost::shared_ptr<config::NearCacheConfig> &nearCacheConfig);
+            ClientConfig &addNearCacheConfig(const config::NearCacheConfig &nearCacheConfig);
 
             /**
              * Gets the {@link NearCacheConfig} configured for the map / cache with name
@@ -366,7 +366,8 @@ namespace hazelcast {
              * @return Configured {@link NearCacheConfig}
              * @see com.hazelcast.config.NearCacheConfig
              */
-            boost::shared_ptr<config::NearCacheConfig> getNearCacheConfig(const std::string &name);
+            const config::NearCacheConfig *getNearCacheConfig(const std::string &name) const;
+
         private:
 
             GroupConfig groupConfig;
@@ -405,11 +406,11 @@ namespace hazelcast {
 
             std::map<std::string, config::ReliableTopicConfig> reliableTopicConfigMap;
 
-            util::SynchronizedMap<std::string, config::NearCacheConfig> nearCacheConfigMap;
+            std::map<std::string, config::NearCacheConfig> nearCacheConfigMap;
 
-            const boost::shared_ptr<config::NearCacheConfig>
-            lookupByPattern(util::SynchronizedMap<std::string, config::NearCacheConfig> &nearCacheConfigMap,
-                            const std::string &name) const;
+            const config::NearCacheConfig *lookupByPattern(
+                    const std::map<std::string, config::NearCacheConfig> &nearCacheConfigMap,
+                    const std::string &name) const;
         };
 
     }

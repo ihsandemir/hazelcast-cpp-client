@@ -41,7 +41,6 @@ namespace hazelcast {
                              */
                             template <typename A, typename E>
                             class SampleableEvictableStore : public EvictableStore<A, E> {
-
                                 /**
                                  * The sample method is used to sample a number of entries (defined by the samples parameter) from
                                  * the internal data structure. This method should be executed in a constant time to deliver predictable
@@ -51,9 +50,9 @@ namespace hazelcast {
                                  *
                                  * @return Multiple {@link EvictionCandidate} to be evicted
                                  */
-                                std::vector<boost::shraed_ptr<EvictionCandidate> > sample(int32_t sampleCount) {
+                                std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > sample(int32_t sampleCount) {
                                     assert(0);
-                                    return std::vector<boost::shraed_ptr<EvictionCandidate> >();
+                                    return std::vector<boost::shared_ptr<EvictionCandidate<A, E> > >();
                                 }
                             };
                         }

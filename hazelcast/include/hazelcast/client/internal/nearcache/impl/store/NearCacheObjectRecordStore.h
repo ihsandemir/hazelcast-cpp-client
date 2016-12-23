@@ -33,7 +33,7 @@ namespace hazelcast {
                         class NearCacheObjectRecordStore : public NearCacheRecordStore<K, V> {
                             // TODO
                         public:
-                            NearCacheObjectRecordStore(const std::string &name, const boost::shared_ptr<config::NearCacheConfig> &config,
+                            NearCacheObjectRecordStore(const std::string &name, const config::NearCacheConfig &config,
                                                            serialization::pimpl::SerializationService &ss) {
                             }
 

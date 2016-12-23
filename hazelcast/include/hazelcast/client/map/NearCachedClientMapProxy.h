@@ -51,7 +51,7 @@ namespace hazelcast {
             class NearCachedClientMapProxy : public ClientMapProxy<K, V> {
             public:
                 NearCachedClientMapProxy(const std::string &instanceName, spi::ClientContext *context,
-                                         boost::shared_ptr<config::NearCacheConfig> config)
+                                         const config::NearCacheConfig &config)
                         : ClientMapProxy<K, V>(instanceName, context), nearCacheConfig(config) {
                 }
             protected:
@@ -60,7 +60,7 @@ namespace hazelcast {
                     ClientMapProxy<K, V>::onInitialize();
 
                     internal::nearcache::NearCacheManager &nearCacheManager = this->context->getNearCacheManager();
-                    boost::shared_ptr<internal::adapter::DataStructureAdapter<K, V> > adapter(
+                    std::auto_ptr<internal::adapter::DataStructureAdapter<K, V> > adapter(
                             new internal::adapter::IMapDataStructureAdapter<K, V>(*this));
                     int partitionCount = this->context->getPartitionService().getPartitionCount();
                     nearCache = nearCacheManager.getOrCreateNearCache<serialization::pimpl::Data, K, V>(
@@ -373,7 +373,7 @@ namespace hazelcast {
                     nearCache->remove(key);
                 }
 
-                const boost::shared_ptr<config::NearCacheConfig> nearCacheConfig;
+                const config::NearCacheConfig &nearCacheConfig;
                 boost::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V> > nearCache;
                 impl::nearcache::KeyStateMarker *keyStateMarker;
                 bool invalidateOnChange;

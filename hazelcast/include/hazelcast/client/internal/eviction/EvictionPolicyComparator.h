@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include "hazelcast/util/Comparator.h"
+#include "EvictableEntryView.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -32,10 +33,9 @@ namespace hazelcast {
                 /**
                  * A kind of {@link java.util.Comparator} to be used while comparing
                  * entries to be evicted.
-                 * @param E An implementation of EvictableEntryView<K, V>
                  */
-                template<typename K, typename V, typename E>
-                class EvictionPolicyComparator : util::Comparator<E> {
+                template<typename K, typename V>
+                class EvictionPolicyComparator : util::Comparator<EvictableEntryView<K, V> > {
                 public:
                     /**
                      * Integer constant for representing behaviour for giving higher priority to first entry to be evicted.
@@ -67,7 +67,7 @@ namespace hazelcast {
                      * @return the result of comparison
                      */
                     //@Override
-                    virtual int compare(const E *e1, const E *e2) const {
+                    virtual int compare(const EvictableEntryView<K, V> *e1, const EvictableEntryView<K, V> *e2) const {
                         assert(0);
                         return 0;
                     }

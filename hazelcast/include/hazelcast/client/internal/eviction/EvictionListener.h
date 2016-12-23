@@ -52,7 +52,7 @@ namespace hazelcast {
                      * @param evictedEntry         {@link Evictable} entry that is evicted.
                      * @param wasExpired           {@code true} if the entry was evicted due to expiration, {@code false} otherwise
                      */
-                    virtual void onEvict(boost::shared_ptr<A> &evictedEntryAccessor, boost::shared_ptr<E> &evictedEntry, bool wasExpired) {
+                    virtual void onEvict(const boost::shared_ptr<A> &evictedEntryAccessor, const boost::shared_ptr<E> &evictedEntry, bool wasExpired) {
                         assert(0);
                     }
                 };

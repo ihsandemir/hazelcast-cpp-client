@@ -36,6 +36,8 @@ namespace hazelcast {
                  */
                 class HAZELCAST_API Expirable {
                 public:
+                    virtual ~Expirable() {}
+
                     /**
                      * Gets the expiration time in milliseconds.
                      * @return expiration time.

@@ -80,8 +80,8 @@ namespace hazelcast {
                      */
                     template <typename CACHEKEY, typename K, typename V>
                     boost::shared_ptr<NearCache<CACHEKEY, V> > getOrCreateNearCache(
-                            const std::string &name, const boost::shared_ptr<config::NearCacheConfig> &nearCacheConfig,
-                            boost::shared_ptr<adapter::DataStructureAdapter<K, V> > &dataStructureAdapter) {
+                            const std::string &name, const config::NearCacheConfig &nearCacheConfig,
+                            std::auto_ptr<adapter::DataStructureAdapter<K, V> > &dataStructureAdapter) {
                         boost::shared_ptr<spi::InitializingObject> nearCache = nearCacheMap.get(name);
                         if (NULL == nearCache.get()) {
                             {
@@ -158,7 +158,7 @@ namespace hazelcast {
                 protected:
                     template <typename K, typename V>
                     std::auto_ptr<NearCache<K, V> > createNearCache(
-                            const std::string &name, const boost::shared_ptr<config::NearCacheConfig> &nearCacheConfig) {
+                            const std::string &name, const config::NearCacheConfig &nearCacheConfig) {
                         return std::auto_ptr<NearCache<K, V> >(
                                 new impl::DefaultNearCache<K, V>(
                                         name, nearCacheConfig, serializationService));

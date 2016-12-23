@@ -18,6 +18,7 @@
 
 #include <assert.h>
 #include <vector>
+#include <memory>
 #include <boost/shared_ptr.hpp>
 
 #include "hazelcast/client/internal/eviction/EvictionPolicyComparator.h"
@@ -47,7 +48,7 @@ namespace hazelcast {
                      *
                      * @return the underlying {@link EvictionPolicyComparator}
                      */
-                    const EvictionPolicyComparator &getEvictionPolicyComparator() const = 0;
+                    virtual const EvictionPolicyComparator &getEvictionPolicyComparator() const = 0;
 
                     /**
                      * The evaluate method implements the actual policy rules and is called on every eviction to select one or
@@ -59,9 +60,9 @@ namespace hazelcast {
                      *
                      * @return multiple {@link EvictionCandidate}s that are available to be evicted
                      */
-                    std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > evaluate(const std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > &evictionCandidates) const {
+                    virtual std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > > evaluate(const std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > &evictionCandidates) const {
                         assert(0);
-                        return std::vector<boost::shared_ptr<EvictionCandidate<A, E> > >();
+                        return std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > >();
                     };
                 };
             }

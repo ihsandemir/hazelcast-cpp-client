@@ -29,11 +29,11 @@
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
 #pragma warning(disable: 4251) //for dll export	
-#endif 
+#endif
 
 namespace hazelcast {
     namespace util {
-        template <typename K, typename V, typename Comparator  = std::less<K> >
+        template<typename K, typename V, typename Comparator  = std::less<K> >
         class SynchronizedMap {
         public:
             SynchronizedMap() {
@@ -51,7 +51,7 @@ namespace hazelcast {
             };
 
             bool containsKey(const K &key) const {
-                util::LockGuard guard (mapLock);
+                util::LockGuard guard(mapLock);
                 return internalMap.count(key) > 0;
             };
 
@@ -160,7 +160,7 @@ namespace hazelcast {
                 return keysArray;
             }
 
-            boost::shared_ptr<V> getOrPutIfAbsent(const K& key) {
+            boost::shared_ptr<V> getOrPutIfAbsent(const K &key) {
                 boost::shared_ptr<V> value = get(key);
                 if (value.get() == NULL) {
                     value.reset(new V());
@@ -174,6 +174,16 @@ namespace hazelcast {
                 util::LockGuard lg(mapLock);
                 return internalMap.size();
             }
+
+            std::auto_ptr<std::pair<K, boost::shared_ptr<V> > > getEntry(size_t index) const {
+                util::LockGuard lg(mapLock);
+                if (index < 0 || index >= internalMap.size()) {
+                    return std::auto_ptr<std::pair<K, boost::shared_ptr<V> > >();
+                }
+                std::map<K, boost::shared_ptr<V>, Comparator>::const_iterator &it = (internalMap.begin() + index);
+                return std::auto_ptr<std::pair<K, boost::shared_ptr<V> > >(
+                        new std::pair<K, boost::shared_ptr<V> >(it->first, it->second));
+            }
         private:
             std::map<K, boost::shared_ptr<V>, Comparator> internalMap;
             mutable util::Mutex mapLock;
@@ -183,7 +193,7 @@ namespace hazelcast {
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
-#endif 
+#endif
 
 #endif //HAZELCAST_UTIL_SYNCHRONIZEDMAP_H_
 
