@@ -50,7 +50,7 @@ namespace hazelcast {
                                  *
                                  * @return Multiple {@link EvictionCandidate} to be evicted
                                  */
-                                std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > sample(int32_t sampleCount) {
+                                std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > sample(int32_t sampleCount) const {
                                     assert(0);
                                     return std::vector<boost::shared_ptr<EvictionCandidate<A, E> > >();
                                 }

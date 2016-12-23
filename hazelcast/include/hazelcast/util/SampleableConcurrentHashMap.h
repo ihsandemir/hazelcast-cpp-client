@@ -19,8 +19,8 @@
 
 #include <hazelcast/client/internal/eviction/Expirable.h>
 #include "hazelcast/util/SynchronizedMap.h"
-#include "Iterator.h"
-#include "Iterable.h"
+#include "hazelcast/util/Iterator.h"
+#include "hazelcast/util/Iterable.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -180,17 +180,16 @@ namespace hazelcast {
              */
             typedef boost::shared_ptr<SamplingEntry> E;
 
-            std::vector<E> getRandomSamples(int sampleCount) {
+            std::auto_ptr<util::Iterable<E> > getRandomSamples(int sampleCount) const {
                 if (sampleCount < 0) {
                     throw client::exception::IllegalArgumentException("Sample count cannot be a negative value.");
                 }
                 if (sampleCount == 0 || size() == 0) {
-                    return std::vector<E>();
+                    return NULL;
                 }
 
-                return new LazySamplingEntryIterableIterator<E>(sampleCount);
+                return std::auto_ptr<util::Iterable<E> >(new LazySamplingEntryIterableIterator<E>(sampleCount, *this));
             }
-
         protected:
             virtual bool isValidForFetching(const boost::shared_ptr<V> &value, int64_t now) const {
                 const boost::shared_ptr<client::internal::eviction::Expirable> &expirable = boost::dynamic_pointer_cast<client::internal::eviction::Expirable>(
@@ -216,6 +215,16 @@ namespace hazelcast {
             class LazySamplingEntryIterableIterator<E>
                     : public util::Iterable<E>, public util::Iterator<E> {
             public:
+                LazySamplingEntryIterableIterator(int maxCount, SampleableConcurrentHashMap &sampleableMap)
+                        : maxEntryCount(maxCount), randomNumber(std::abs(rand())), returnedEntryCount(0), currentIndex(-1),
+                          internalMap(sampleableMap) {
+                    size_t mapSize = internalMap.size();
+                    startIndex = (int) (randomNumber % mapSize);
+                    if (startIndex < 0) {
+                        startIndex = 0;
+                    }
+                }
+
                 //@Override
                 util::Iterator<E> *iterator() {
                     return this;
@@ -232,10 +241,10 @@ namespace hazelcast {
                     }
                     // If current entry is not initialized yet, initialize it
                     if (currentEntry.get() == NULL) {
-                        currentEntry = internalMap.getEntry(currentIndex);
+                        currentEntry = internalMap.getEntry((size_t) currentIndex);
                     }
                     do {
-                        currentEntry = internalMap.getEntry(currentIndex);
+                        currentEntry = internalMap.getEntry((size_t) currentIndex);
                         // Advance to next entry
                         ++currentIndex;
                         if (currentIndex >= internalMap.size()) {
@@ -244,9 +253,9 @@ namespace hazelcast {
                         while (currentEntry.get() != NULL) {
                             boost::shared_ptr<V> &value = currentEntry->second;
                             boost::shared_ptr<K> &key = currentEntry->first;
-                            currentEntry = internalMap.getEntry(currentIndex);
-                            if (sampleableMap.isValidForSampling(value)) {
-                                currentSample = sampleableMap.createSamplingEntry(key, value);
+                            currentEntry = internalMap.getEntry((size_t) currentIndex);
+                            if (internalMap.isValidForSampling(value)) {
+                                currentSample = internalMap.createSamplingEntry(key, value);
                                 returnedEntryCount++;
                                 return;
                             }
@@ -284,20 +293,8 @@ namespace hazelcast {
                 int currentIndex;
                 bool reachedToEnd;
                 boost::shared_ptr<E> currentSample;
-                util::SynchronizedMap &internalMap;
-                SampleableConcurrentHashMap &sampleableMap;
+                SampleableConcurrentHashMap &internalMap;
                 int startIndex;
-
-                LazySamplingEntryIterableIterator(int maxCount, util::SynchronizedMap &map,
-                                                  SampleableConcurrentHashMap &sampleableConcurrentMap)
-                        : maxEntryCount(maxCount), randomNumber(std::abs(rand())), returnedEntryCount(0), currentIndex(-1),
-                          internalMap(map), sampleableMap(sampleableConcurrentMap) {
-                    size_t mapSize = internalMap.size();
-                    startIndex = (int) (randomNumber % mapSize);
-                    if (startIndex < 0) {
-                        startIndex = 0;
-                    }
-                }
             };
         };
     }

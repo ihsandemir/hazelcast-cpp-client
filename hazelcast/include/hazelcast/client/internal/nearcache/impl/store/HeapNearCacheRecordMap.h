@@ -98,19 +98,22 @@ namespace hazelcast {
                             };
 
                             typedef eviction::EvictionCandidate<K, V> C;
+
                             //@Override
                             int evict(const std::vector<boost::shared_ptr<C> > *evictionCandidates,
-                            const boost::shared_ptr<eviction::EvictionListener<K, V> > &evictionListener) {
+                                      const boost::shared_ptr<eviction::EvictionListener<K, V> > &evictionListener) {
                                 if (evictionCandidates == NULL) {
                                     return 0;
                                 }
                                 int actualEvictedCount = 0;
-                                for (std::vector<boost::shared_ptr<C> >::const_iterator it = evictionCandidates->begin();it != evictionCandidates->end();++it) {
+                                for (std::vector<boost::shared_ptr<C> >::const_iterator it = evictionCandidates->begin();
+                                     it != evictionCandidates->end(); ++it) {
                                     const boost::shared_ptr<C> &evictionCandidate = *it;
                                     if (remove(evictionCandidate->getAccessor()).get() != NULL) {
                                         actualEvictedCount++;
                                         if (evictionListener.get() != NULL) {
-                                            evictionListener->onEvict(evictionCandidate->getAccessor(), evictionCandidate->getEvictable(), false);
+                                            evictionListener->onEvict(evictionCandidate->getAccessor(),
+                                                                      evictionCandidate->getEvictable(), false);
                                         }
                                     }
                                 }
@@ -118,15 +121,15 @@ namespace hazelcast {
                             }
 
                             //@Override
-                        Iterable<NearCacheEvictableSamplingEntry> sample(int sampleCount) {
+                            std::auto_ptr<util::Iterable<NearCacheEvictableSamplingEntry> > sample(int sampleCount) const {
                                 return util::SampleableConcurrentHashMap<K, V>::getRandomSamples(sampleCount);
                             }
-                            
-                            
                         protected:
                             typedef util::SampleableConcurrentHashMap<K, V>::SamplingEntry E;
+
                             //@Override
-                            std::auto_ptr<E> createSamplingEntry(boost::shared_ptr<K> &key, boost::shared_ptr<V> &value) const {
+                            std::auto_ptr<E> createSamplingEntry(boost::shared_ptr<K> &key,
+                                                                 boost::shared_ptr<V> &value) const {
                                 return std::auto_ptr<E>(
                                         new NearCacheEvictableSamplingEntry(key, value, serializationService));
                             }
