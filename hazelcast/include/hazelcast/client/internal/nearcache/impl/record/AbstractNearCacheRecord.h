@@ -43,6 +43,7 @@ namespace hazelcast {
                         template<typename V>
                         class AbstractNearCacheRecord : public NearCacheRecord<V> {
                         public:
+                            typedef V RECORD_TYPE;
                             AbstractNearCacheRecord(const boost::shared_ptr<V> &v, int64_t createTime,
                                                     int64_t expiryTime)
                                     : value(v), creationTime(createTime), sequence(0), expirationTime(expiryTime),
@@ -111,7 +112,8 @@ namespace hazelcast {
 
                             //@Override
                             bool isExpiredAt(int64_t now) {
-                                return (expirationTime > NearCacheRecord<V>::TIME_NOT_SET) && (expirationTime <= now);
+                                int64_t expiration = expirationTime;
+                                return (expiration > NearCacheRecord<V>::TIME_NOT_SET) && (expiration <= now);
                             }
 
                             //@Override

@@ -40,8 +40,8 @@ namespace hazelcast {
                      * @see NearCacheRecord
                      * @see com.hazelcast.internal.eviction.EvictableStore
                      */
-                    template<typename K, typename V>
-                    class NearCacheRecordMap : public util::SynchronizedMap<K, V>, eviction::EvictableStore<K, V> {
+                    template<typename K, typename V, typename KS, typename VS>
+                    class NearCacheRecordMap : eviction::EvictableStore<K, V, KS, VS> {
                     public:
                     };
                 }

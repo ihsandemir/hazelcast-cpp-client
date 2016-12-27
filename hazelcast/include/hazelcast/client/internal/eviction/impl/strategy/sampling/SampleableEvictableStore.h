@@ -17,12 +17,13 @@
 #define HAZELCAST_CLIENT_INTERNAL_EVICTION_IMPL_STRATEGY_SAMPLING_H_
 
 #include <assert.h>
-#include <vector>
+#include <memory>
+#include <stdint.h>
 #include <boost/shared_ptr.hpp>
 
-#include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/internal/eviction/EvictableStore.h"
 #include "hazelcast/client/internal/eviction/EvictionCandidate.h"
+#include "hazelcast/util/Iterable.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -39,8 +40,8 @@ namespace hazelcast {
                             /**
                              * Interface for sampleable store implementations that holds {@link Evictable} entries to evict.
                              */
-                            template <typename A, typename E>
-                            class SampleableEvictableStore : public EvictableStore<A, E> {
+                            template <typename K, typename V, typename A, typename E>
+                            class SampleableEvictableStore : public EvictableStore<K, V, A, E> {
                                 /**
                                  * The sample method is used to sample a number of entries (defined by the samples parameter) from
                                  * the internal data structure. This method should be executed in a constant time to deliver predictable
@@ -50,9 +51,9 @@ namespace hazelcast {
                                  *
                                  * @return Multiple {@link EvictionCandidate} to be evicted
                                  */
-                                std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > sample(int32_t sampleCount) const {
+                                std::auto_ptr<util::Iterable<EvictionCandidate<K, V, A, E> > > sample(int32_t sampleCount) const {
                                     assert(0);
-                                    return std::vector<boost::shared_ptr<EvictionCandidate<A, E> > >();
+                                    return std::auto_ptr<util::Iterable<EvictionCandidate<K, V, A, E> > >();
                                 }
                             };
                         }

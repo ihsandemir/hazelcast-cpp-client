@@ -37,6 +37,9 @@ namespace hazelcast {
                 template<typename K, typename V>
                 class EvictionPolicyComparator : util::Comparator<EvictableEntryView<K, V> > {
                 public:
+                    virtual ~EvictionPolicyComparator() {
+                    }
+
                     /**
                      * Integer constant for representing behaviour for giving higher priority to first entry to be evicted.
                      */

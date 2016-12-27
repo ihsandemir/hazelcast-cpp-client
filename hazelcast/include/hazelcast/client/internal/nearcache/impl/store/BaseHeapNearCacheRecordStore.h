@@ -35,33 +35,35 @@ namespace hazelcast {
             namespace nearcache {
                 namespace impl {
                     namespace store {
-                        template<typename K, typename V, typename R>
+                        template<typename K, typename V, typename KS, typename R>
                         class BaseHeapNearCacheRecordStore
-                                : public AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> > {
+                                : public AbstractNearCacheRecordStore<K, V, KS, R, HeapNearCacheRecordMap<K, V, KS, R> > {
                         public:
+                            typedef AbstractNearCacheRecordStore<K, V, KS, R, HeapNearCacheRecordMap<K, V, KS, R> > ANCRS;
+
                             BaseHeapNearCacheRecordStore(const std::string &name,
-                                                         const config::NearCacheConfig &nearCacheConfig,
+                                                         const config::NearCacheConfig<K, V> &nearCacheConfig,
                                                          serialization::pimpl::SerializationService &serializationService
-                            ) : AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> >(nearCacheConfig,
-                                                                                                        serializationService),
+                            ) : ANCRS(nearCacheConfig,
+                                      serializationService),
                                 nearCachePreloader(nearCacheConfig.getPreloaderConfig()->isEnabled()
                                                    ? new preloader::NearCachePreloader<K>(name,
                                                                                           nearCacheConfig.getPreloaderConfig(),
                                                                                           serializationService)
-                                                   : boost::shared_ptr<preloader::NearCachePreloader<K> >()) {
+                                                   : (preloader::NearCachePreloader<K> *) NULL) {
                             }
 
                             //@Override
-                            const boost::shared_ptr<R> &getRecord(const boost::shared_ptr<K> &key) {
-                                return records->get(key);
+                            const boost::shared_ptr<R> getRecord(const boost::shared_ptr<KS> &key) {
+                                return ANCRS::records->get(key);
                             }
 
                             //@Override
-                            void onEvict(const boost::shared_ptr<K> &key, const boost::shared_ptr<R> &record,
+                            void onEvict(const boost::shared_ptr<KS> &key, const boost::shared_ptr<R> &record,
                                          bool wasExpired) {
-                                AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R> >::onEvict(key,
-                                                                                                                 record,
-                                                                                                                 wasExpired);
+                                ANCRS::onEvict(key,
+                                               record,
+                                               wasExpired);
 /*
                                 nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
 */
@@ -69,15 +71,15 @@ namespace hazelcast {
 
                             //@Override
                             void doExpiration() {
-                                std::vector<std::pair<K, boost::shared_ptr<R> > > entries = records->entrySet();
-                                for (std::vector<std::pair<boost::shared_ptr<K>, boost::shared_ptr<R> > >::const_iterator it = entries.begin();
+                                std::vector<std::pair<boost::shared_ptr<KS>, boost::shared_ptr<R> > > entries = ANCRS::records->entrySet();
+                                for (typename std::vector<std::pair<boost::shared_ptr<KS>, boost::shared_ptr<R> > >::const_iterator it = entries.begin();
                                      it != entries.end(); ++it) {
-                                    const std::pair<boost::shared_ptr<K>, boost::shared_ptr<R> > &entry = (*it);
-                                    const boost::shared_ptr<K> &key = entry.first;
+                                    const std::pair<boost::shared_ptr<KS>, boost::shared_ptr<R> > &entry = (*it);
+                                    const boost::shared_ptr<KS> &key = entry.first;
                                     const boost::shared_ptr<R> &value = entry.second;
-                                    if (isRecordExpired(value)) {
-                                        remove(key);
-                                        onExpire(key, value);
+                                    if (ANCRS::isRecordExpired(value)) {
+                                        ANCRS::remove(key);
+                                        ANCRS::onExpire(key, value);
                                     }
                                 }
                             }
@@ -99,36 +101,38 @@ namespace hazelcast {
 */
                                 }
                             }
+
                         protected:
                             //@Override
                             std::auto_ptr<eviction::MaxSizeChecker> createNearCacheMaxSizeChecker(
-                                    const boost::shared_ptr<config::EvictionConfig> &evictionConfig,
-                                    const boost::shared_ptr<config::NearCacheConfig> &nearCacheConfig) {
-                                config::EvictionConfig::MaxSizePolicy maxSizePolicy = evictionConfig->getMaximumSizePolicy();
-                                if (maxSizePolicy == config::EvictionConfig::ENTRY_COUNT) {
+                                    const boost::shared_ptr<config::EvictionConfig<K, V> > &evictionConfig,
+                                    const config::NearCacheConfig<K, V> &nearCacheConfig) {
+                                typename config::EvictionConfig<K, V>::MaxSizePolicy maxSizePolicy = evictionConfig->getMaximumSizePolicy();
+                                if (maxSizePolicy == config::EvictionConfig<K, V>::ENTRY_COUNT) {
                                     return std::auto_ptr<eviction::MaxSizeChecker>(
-                                            new maxsize::EntryCountNearCacheMaxSizeChecker(evictionConfig->getSize(),
-                                                                                           *records));
+                                            new maxsize::EntryCountNearCacheMaxSizeChecker<K, V, KS, R>(
+                                                    evictionConfig->getSize(),
+                                                    *ANCRS::records));
                                 }
                                 std::ostringstream out;
                                 out << "Invalid max-size policy " << '(' << maxSizePolicy << ") for " <<
-                                nearCacheConfig->getName() << "! Only " << config::EvictionConfig::ENTRY_COUNT <<
+                                nearCacheConfig.getName() << "! Only " << config::EvictionConfig<K, V>::ENTRY_COUNT <<
                                 " is supported.";
                                 throw exception::IllegalArgumentException(out.str());
                             }
 
                             //@Override
-                            std::auto_ptr<HeapNearCacheRecordMap<K, R> > createNearCacheRecordMap(
-                                    const config::NearCacheConfig &nearCacheConfig) {
-                                return std::auto_ptr<HeapNearCacheRecordMap<K, R> >(
-                                        new HeapNearCacheRecordMap<K, R>(serializationService,
-                                                                         DEFAULT_INITIAL_CAPACITY));
+                            std::auto_ptr<HeapNearCacheRecordMap<K, V, KS, R> > createNearCacheRecordMap(
+                                    const config::NearCacheConfig<K, V> &nearCacheConfig) {
+                                return std::auto_ptr<HeapNearCacheRecordMap<K, V, KS, R> >(
+                                        new HeapNearCacheRecordMap<K, V, KS, R>(ANCRS::serializationService,
+                                                                                DEFAULT_INITIAL_CAPACITY));
                             }
 
                             //@Override
-                            boost::shared_ptr<R> putRecord(const boost::shared_ptr<K> &key,
+                            boost::shared_ptr<R> putRecord(const boost::shared_ptr<KS> &key,
                                                            const boost::shared_ptr<R> &record) {
-                                boost::shared_ptr<R> oldRecord = records->put(key, record);
+                                boost::shared_ptr<R> oldRecord = ANCRS::records->put(key, record);
 /*
                                 nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
 */
@@ -136,8 +140,8 @@ namespace hazelcast {
                             }
 
                             //@OverrideR
-                            boost::shared_ptr<R> removeRecord(const boost::shared_ptr<K> &key) {
-                                boost::shared_ptr<R> removedRecord = records->remove(key);
+                            boost::shared_ptr<R> removeRecord(const boost::shared_ptr<KS> &key) {
+                                boost::shared_ptr<R> removedRecord = ANCRS::records->remove(key);
                                 if (removedRecord.get() != NULL) {
 /*
                                     nearCacheStats.decrementOwnedEntryMemoryCost(
@@ -148,8 +152,8 @@ namespace hazelcast {
                             }
 
                             //@Override
-                            bool containsRecordKey(const boost::shared_ptr<K> &key) const {
-                                return records->containsKey(key);
+                            bool containsRecordKey(const boost::shared_ptr<KS> &key) const {
+                                return ANCRS::records->containsKey(key);
                             }
 
                             static const int32_t DEFAULT_INITIAL_CAPACITY = 1000;

@@ -30,17 +30,20 @@ namespace hazelcast {
             namespace nearcache {
                 namespace impl {
                     namespace store {
-                        template<typename K, typename V>
+                        template<typename K, typename V, typename KS>
                         class NearCacheDataRecordStore
-                                : public BaseHeapNearCacheRecordStore<K, V, record::NearCacheDataRecord> {
+                                : public BaseHeapNearCacheRecordStore<K, V, KS, record::NearCacheDataRecord> {
                         public:
+                            typedef AbstractNearCacheRecordStore<K, V, serialization::pimpl::Data, record::NearCacheDataRecord, HeapNearCacheRecordMap<K, V, serialization::pimpl::Data, record::NearCacheDataRecord> > ANCRS;
+
                             NearCacheDataRecordStore(const std::string &name,
-                                                     const config::NearCacheConfig &config,
+                                                     const config::NearCacheConfig<K, V> &config,
                                                      serialization::pimpl::SerializationService &ss)
-                                    : BaseHeapNearCacheRecordStore(name, config, ss) {
+                                    : BaseHeapNearCacheRecordStore<K, V, serialization::pimpl::Data, record::NearCacheDataRecord>(name, config, ss) {
                             }
 
                             //@Override
+/*
                             const boost::shared_ptr<V> selectToSave(const boost::shared_ptr<V> &value,
                                                                     const boost::shared_ptr<serialization::pimpl::Data> &valueData) const {
                                 if (NULL != valueData.get()) {
@@ -49,11 +52,14 @@ namespace hazelcast {
 
                                 if (NULL != value.get()) {
                                     return boost::shared_ptr<V>(new serialization::pimpl::Data(
-                                            serializationService.toData<V>(value.get())));
+                                            ANCRS::serializationService.template toData<V>(
+                                                    value.get())));
                                 }
 
                                 return boost::shared_ptr<V>();
                             }
+*/
+
                         protected:
                             //@Override
 /*
@@ -94,17 +100,18 @@ namespace hazelcast {
 */
 
                             //@Override
-                            std::auto_ptr<record::NearCacheDataRecord> valueToRecord(const boost::shared_ptr<V> &value) {
-                                const boost::shared_ptr<serialization::pimpl::Data> data = toData<V>(value);
+                            std::auto_ptr<record::NearCacheDataRecord> valueToRecord(
+                                    const boost::shared_ptr<V> &value) {
+                                const boost::shared_ptr<serialization::pimpl::Data> data = ANCRS::toData(value);
                                 int64_t creationTime = util::currentTimeMillis();
-                                if (timeToLiveMillis > 0) {
+                                if (ANCRS::timeToLiveMillis > 0) {
                                     return std::auto_ptr<record::NearCacheDataRecord>(
                                             new record::NearCacheDataRecord(data, creationTime,
-                                                                            creationTime + timeToLiveMillis));
+                                                                            creationTime + ANCRS::timeToLiveMillis));
                                 } else {
                                     return std::auto_ptr<record::NearCacheDataRecord>(
                                             new record::NearCacheDataRecord(data, creationTime,
-                                                                            NearCacheRecord::TIME_NOT_SET));
+                                                                            NearCacheRecord<V>::TIME_NOT_SET));
                                 }
                             }
 
@@ -117,16 +124,15 @@ namespace hazelcast {
 */
                                     return NearCache<K, V>::NULL_OBJECT;
                                 }
-                                return dataToValue(value);
+                                return ANCRS::dataToValue(value);
                             }
 
                             //@Override
                             void putToRecord(boost::shared_ptr<record::NearCacheDataRecord> &record,
                                              const boost::shared_ptr<V> &value) {
-                                record->setValue(toData(value));
+                                record->setValue(ANCRS::toData(value));
                             }
                         };
-
                     }
                 }
             }

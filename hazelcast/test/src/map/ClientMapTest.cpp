@@ -67,17 +67,17 @@ namespace hazelcast {
             class NearCachedMapClientConfig : public MapClientConfig {
             public:
                 NearCachedMapClientConfig() {
-                    boost::shared_ptr<config::NearCacheConfig> intMapNearCacheConfig(
-                            new config::NearCacheConfig(intMapName));
-                    addNearCacheConfig(intMapNearCacheConfig);
+                    std::auto_ptr<config::NearCacheConfig<int, int> > intMapNearCacheConfig(
+                            new config::NearCacheConfig<int, int>(intMapName));
+                    addNearCacheConfig<int, int>(intMapNearCacheConfig);
 
-                    boost::shared_ptr<config::NearCacheConfig> employeesCacheConfig(
-                            new config::NearCacheConfig(employeesMapName));
-                    addNearCacheConfig(employeesCacheConfig);
+                    std::auto_ptr<config::NearCacheConfig<int, Employee> > employeesCacheConfig(
+                            new config::NearCacheConfig<int, Employee>(employeesMapName));
+                    addNearCacheConfig<int, Employee>(employeesCacheConfig);
 
-                    boost::shared_ptr<config::NearCacheConfig> imapNearCacheConfig(
-                            new config::NearCacheConfig(imapName));
-                    addNearCacheConfig(imapNearCacheConfig);
+                    std::auto_ptr<config::NearCacheConfig<std::string, std::string> > imapNearCacheConfig(
+                            new config::NearCacheConfig<std::string, std::string>(imapName));
+                    addNearCacheConfig<std::string, std::string>(imapNearCacheConfig);
                 }
             };
 

@@ -199,32 +199,5 @@ namespace hazelcast {
             }
             return &reliableTopicConfigMap[name];
         }
-
-        ClientConfig &ClientConfig::addNearCacheConfig(const config::NearCacheConfig &nearCacheConfig) {
-            nearCacheConfigMap[nearCacheConfig.getName()] = nearCacheConfig;
-            return *this;
-        }
-
-        const config::NearCacheConfig *ClientConfig::getNearCacheConfig(const std::string &name) const {
-            const config::NearCacheConfig *nearCacheConfig = lookupByPattern(nearCacheConfigMap, name);
-            if (nearCacheConfig == NULL) {
-                if (nearCacheConfigMap.count("default")) {
-                    nearCacheConfig = &nearCacheConfigMap["default"];
-                }
-            }
-            // not needed for c++ client since it is always native memory
-            //initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
-            return nearCacheConfig;
-        }
-
-        const config::NearCacheConfig *ClientConfig::lookupByPattern(
-                const std::map<std::string, config::NearCacheConfig> &nearCacheConfigMap,
-                const std::string &name) const {
-            // TODO: implement the lookup
-            if (nearCacheConfigMap.count(name)) {
-                return &nearCacheConfigMap[name];
-            }
-            return NULL;
-        }
     }
 }

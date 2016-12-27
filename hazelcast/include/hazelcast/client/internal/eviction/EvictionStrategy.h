@@ -40,9 +40,12 @@ namespace hazelcast {
                  *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
                  * @param <S> Type of the {@link com.hazelcast.internal.eviction.EvictableStore}
                  */
-                template <typename A, typename E, typename S>
+                template <typename MAPKEY, typename MAPVALUE,typename A, typename E, typename S>
                 class EvictionStrategy {
                 public:
+                    virtual ~EvictionStrategy() {
+                    }
+
                     /**
                      * Does eviction if eviction is required by given {@link EvictionChecker}.
                      *
@@ -57,9 +60,9 @@ namespace hazelcast {
                      * @return evicted entry count
                      */
                     virtual int evict(S *evictableStore,
-                              const EvictionPolicyEvaluator<A, E> *evictionPolicyEvaluator,
-                              const EvictionChecker *evictionChecker,
-                              const EvictionListener<A, E> *evictionListener) {
+                              EvictionPolicyEvaluator<MAPKEY, MAPVALUE, A, E> *evictionPolicyEvaluator,
+                              EvictionChecker *evictionChecker,
+                              EvictionListener<A, E> *evictionListener) {
                         assert(0);
                         return 0;
                     }

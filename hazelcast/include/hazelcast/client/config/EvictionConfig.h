@@ -18,10 +18,10 @@
 
 #include <string>
 #include <stdint.h>
-#include <hazelcast/client/internal/eviction/EvictionPolicyComparator.h>
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/util/Preconditions.h>
 
+#include "hazelcast/client/internal/eviction/EvictionPolicyComparator.h"
+#include "hazelcast/util/Preconditions.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/internal/eviction/EvictionConfiguration.h"
 #include "hazelcast/client/config/EvictionPolicy.h"
@@ -39,7 +39,7 @@ namespace hazelcast {
              * You can set a limit for number of entries or total memory cost of entries.
              */
             template<typename K, typename V>
-            class HAZELCAST_API EvictionConfig : public internal::eviction::EvictionConfiguration<K, V, E> {
+            class EvictionConfig : public internal::eviction::EvictionConfiguration<K, V> {
             public:
                 /**
                  * Maximum Size Policy
@@ -89,7 +89,9 @@ namespace hazelcast {
                  */
                 static const EvictionPolicy DEFAULT_EVICTION_POLICY;
 
-                EvictionConfig();
+                EvictionConfig() : size(DEFAULT_MAX_ENTRY_COUNT), maxSizePolicy(DEFAULT_MAX_SIZE_POLICY),
+                            evictionPolicy(DEFAULT_EVICTION_POLICY), sizeConfigured(false) {
+                }
 
 /*
                 EvictionConfig(int size, MaxSizePolicy maxSizePolicy,
@@ -111,20 +113,34 @@ namespace hazelcast {
                 }
 */
 
-                int32_t getSize() const;
+                int32_t getSize() const {
+                    return size;
+                }
 
-                EvictionConfig &setSize(int32_t size);
+                EvictionConfig &setSize(int32_t size) {
+                    this->sizeConfigured = true;
+                    this->size = util::Preconditions::checkPositive(size, "Size must be positive number!");
+                    return *this;
+                }
 
-                MaxSizePolicy getMaximumSizePolicy() const;
+                MaxSizePolicy getMaximumSizePolicy() const {
+                    return FREE_NATIVE_MEMORY_PERCENTAGE;
+                }
 
-                EvictionConfig &setMaximumSizePolicy(const MaxSizePolicy &maxSizePolicy);
+                EvictionConfig &setMaximumSizePolicy(const MaxSizePolicy &maxSizePolicy) {
+                    this->maxSizePolicy = maxSizePolicy;
+                    return *this;
+                }
 
-                EvictionPolicy getEvictionPolicy() const;
+                EvictionPolicy getEvictionPolicy() const {
+                    return evictionPolicy;
+                }
 
+                void setEvictionPolicy(EvictionPolicy policy) {
+                    evictionPolicy = evictionPolicy;
+                }
 
-                void setEvictionPolicy(EvictionPolicy evictionPolicy);
-
-                const boost::shared_ptr<internal::eviction::EvictionPolicyComparator> &getComparator() const {
+                const boost::shared_ptr<internal::eviction::EvictionPolicyComparator<K, V> > getComparator() const {
                     return comparator;
                 }
 
@@ -140,27 +156,23 @@ namespace hazelcast {
                 }
 
                 internal::eviction::EvictionPolicyType getEvictionPolicyType() const {
-                    if (evictionPolicy == EvictionPolicy::LFU) {
-                        return internal::eviction::EvictionPolicyType::LFU;
-                    } else if (evictionPolicy == EvictionPolicy::LRU) {
-                        return internal::eviction::EvictionPolicyType::LRU;
-                    } else if (evictionPolicy == EvictionPolicy::RANDOM) {
-                        return internal::eviction::EvictionPolicyType::RANDOM;
-                    } else if (evictionPolicy == EvictionPolicy::NONE) {
-                        return internal::eviction::EvictionPolicyType::NONE;
+                    if (evictionPolicy == LFU) {
+                        return internal::eviction::LFU;
+                    } else if (evictionPolicy == LRU) {
+                        return internal::eviction::LRU;
+                    } else if (evictionPolicy == RANDOM) {
+                        return internal::eviction::RANDOM;
+                    } else if (evictionPolicy == NONE) {
+                        return internal::eviction::NONE;
                     } else {
                         assert(0);
                     }
                 }
-
             protected:
                 int32_t size;
                 MaxSizePolicy maxSizePolicy;
                 EvictionPolicy evictionPolicy;
                 boost::shared_ptr<internal::eviction::EvictionPolicyComparator<K, V> > comparator;
-
-                std::auto_ptr<EvictionConfig> readOnly;
-
             private:
                 /**
                  * Used by the {@link NearCacheConfigAccessor} to initialize the proper default value for on-heap maps.
@@ -168,7 +180,42 @@ namespace hazelcast {
                 bool sizeConfigured;
             };
 
-            std::ostream &operator<<(std::ostream &out, const EvictionConfig &config);
+/*TODO
+            template <typename K, typename V>
+            std::ostream &operator<<(std::ostream &out, const EvictionConfig<K, V> &config) {
+                out << "EvictionConfig{"
+                << "size=" << config.getSize()
+                << ", maxSizePolicy=" << config.getMaximumSizePolicy()
+                << ", evictionPolicy=" << config.getEvictionPolicy()
+                << ", comparator=" << config.getComparator()
+                << '}';
+
+                return out;
+            }
+*/
+            /**
+             * Default maximum entry count.
+             */
+            template <typename K, typename V>
+            const int EvictionConfig<K, V>::DEFAULT_MAX_ENTRY_COUNT = 10000;
+
+            /**
+             * Default maximum entry count for Map on-heap Near Caches.
+             */
+            template <typename K, typename V>
+            const int32_t EvictionConfig<K, V>::DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP = INT32_MAX;
+
+            /**
+             * Default Max-Size Policy.
+             */
+            template <typename K, typename V>
+            const typename EvictionConfig<K, V>::MaxSizePolicy EvictionConfig<K, V>::DEFAULT_MAX_SIZE_POLICY = ENTRY_COUNT;
+
+            /**
+             * Default Eviction Policy.
+             */
+            template <typename K, typename V>
+            const EvictionPolicy EvictionConfig<K, V>::DEFAULT_EVICTION_POLICY = LRU;
         }
     }
 }

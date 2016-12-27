@@ -40,7 +40,7 @@ namespace hazelcast {
                  * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
                  *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
                  */
-                template <typename A, typename E>
+                template<typename MAPKEY, typename MAPVALUE, typename A, typename E>
                 class EvictionPolicyEvaluator {
                 public:
                     /**
@@ -48,7 +48,10 @@ namespace hazelcast {
                      *
                      * @return the underlying {@link EvictionPolicyComparator}
                      */
-                    virtual const EvictionPolicyComparator &getEvictionPolicyComparator() const = 0;
+                    virtual const boost::shared_ptr<EvictionPolicyComparator<MAPKEY, MAPVALUE> > getEvictionPolicyComparator() const {
+                        assert(0);
+                        return boost::shared_ptr<EvictionPolicyComparator<MAPKEY, MAPVALUE> >();
+                    }
 
                     /**
                      * The evaluate method implements the actual policy rules and is called on every eviction to select one or
@@ -60,9 +63,10 @@ namespace hazelcast {
                      *
                      * @return multiple {@link EvictionCandidate}s that are available to be evicted
                      */
-                    virtual std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > > evaluate(const std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > &evictionCandidates) const {
+                    virtual std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > > evaluate(
+                            const std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > &evictionCandidates) const {
                         assert(0);
-                        return std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > >();
+                        return std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > >();
                     };
                 };
             }
@@ -72,6 +76,6 @@ namespace hazelcast {
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
-#endif 
+#endif
 
 #endif /* HAZELCAST_CLIENT_INTERNAL_EVICTION_EVICTIONPOLICYEVALUATOR_H_ */

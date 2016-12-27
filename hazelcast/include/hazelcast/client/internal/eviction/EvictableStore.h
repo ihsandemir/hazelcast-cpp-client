@@ -39,7 +39,7 @@ namespace hazelcast {
                  * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
                  *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
                  */
-                template<typename A, typename E>
+                template<typename MAPKEY, typename MAPVALUE, typename A, typename E>
                 class EvictableStore {
                 public:
                     /**
@@ -51,11 +51,11 @@ namespace hazelcast {
                      *
                      * @return evicted entry count
                      */
-                    virtual boost::shared_ptr<EvictionCandidate<A, E> > int evict(
-                            std::vector<boost::shared_ptr<EvictionCandidate<A, E> > >::const_iterator &evictionCandidates,
-                            EvictionListener<A, E> &evictionListener) {
+                    virtual int evict(
+                            std::vector<boost::shared_ptr<EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > *evictionCandidates,
+                            EvictionListener<A, E> *evictionListener) {
                         assert(0);
-                        return boost::shared_ptr<EvictionCandidate<A, E> >();
+                        return 0;
                     }
                 };
             }

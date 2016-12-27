@@ -39,10 +39,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace config {
-            class NearCacheConfig;
-        }
-
         class MembershipListener;
 
         class InitialMembershipListener;
@@ -356,8 +352,14 @@ namespace hazelcast {
              * @param nearCacheConfig {@link com.hazelcast.config.NearCacheConfig} to be added
              * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
              * @see com.hazelcast.config.NearCacheConfig
+             * 
+             * Memory ownership of the config is passed to the client config
              */
-            ClientConfig &addNearCacheConfig(const config::NearCacheConfig &nearCacheConfig);
+            template <typename K, typename V>
+            ClientConfig &addNearCacheConfig(std::auto_ptr<config::NearCacheConfig<K, V> > nearCacheConfig) {
+                nearCacheConfigMap.put(nearCacheConfig->getName(), boost::shared_ptr<config::NearCacheConfigBase>(nearCacheConfig));
+                return *this;
+            }
 
             /**
              * Gets the {@link NearCacheConfig} configured for the map / cache with name
@@ -366,8 +368,16 @@ namespace hazelcast {
              * @return Configured {@link NearCacheConfig}
              * @see com.hazelcast.config.NearCacheConfig
              */
-            const config::NearCacheConfig *getNearCacheConfig(const std::string &name) const;
-
+            template <typename K, typename V>
+            const config::NearCacheConfig<K, V> *getNearCacheConfig(const std::string &name) {
+                boost::shared_ptr<config::NearCacheConfigBase> nearCacheConfig = lookupByPattern(name);
+                if (nearCacheConfig.get() == NULL) {
+                    nearCacheConfig = nearCacheConfigMap.get("default");
+                }
+                // not needed for c++ client since it is always native memory
+                //initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
+                return boost::static_pointer_cast<config::NearCacheConfig<K, V> >(nearCacheConfig).get();
+            }
         private:
 
             GroupConfig groupConfig;
@@ -406,11 +416,12 @@ namespace hazelcast {
 
             std::map<std::string, config::ReliableTopicConfig> reliableTopicConfigMap;
 
-            std::map<std::string, config::NearCacheConfig> nearCacheConfigMap;
+            util::SynchronizedMap<std::string, config::NearCacheConfigBase> nearCacheConfigMap;
 
-            const config::NearCacheConfig *lookupByPattern(
-                    const std::map<std::string, config::NearCacheConfig> &nearCacheConfigMap,
-                    const std::string &name) const;
+            const boost::shared_ptr<config::NearCacheConfigBase> lookupByPattern(const std::string &name) {
+                    // TODO: implement the lookup
+                    return nearCacheConfigMap.get(name);
+            }
         };
 
     }

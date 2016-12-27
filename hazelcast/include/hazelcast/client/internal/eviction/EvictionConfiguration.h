@@ -66,8 +66,7 @@ namespace hazelcast {
                      *
                      * @return instance of the configured {@link EvictionPolicyComparator} implementation.
                      */
-
-                    virtual const boost::shared_ptr<EvictionPolicyComparator<K, V> > &getComparator() const {
+                    virtual const boost::shared_ptr<EvictionPolicyComparator<K, V> > getComparator() const {
                         assert(0);
                         return boost::shared_ptr<EvictionPolicyComparator<K, V> >();
                     }

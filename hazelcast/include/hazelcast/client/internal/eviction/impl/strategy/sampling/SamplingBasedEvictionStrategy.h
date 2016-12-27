@@ -41,8 +41,9 @@ namespace hazelcast {
                              * Sampling based {@link EvictionStrategy} implementation.
                              * This strategy select sample {@link Evictable} entries from {@link SampleableEvictableStore}.
                              */
-                            template<typename A, typename E, typename S>
-                            class SamplingBasedEvictionStrategy : public AbstractEvictionStrategy<A, E, S> {
+                            template<typename MAPKEY, typename MAPVALUE, typename A, typename E, typename S>
+                            class SamplingBasedEvictionStrategy
+                                    : public AbstractEvictionStrategy<MAPKEY, MAPVALUE, A, E, S> {
                             protected:
                                 /**
                                  * Processes sampling based eviction logic on {@link SampleableEvictableStore}.
@@ -55,15 +56,14 @@ namespace hazelcast {
                                  */
                                 //@Override
                                 int evictInternal(S *sampleableEvictableStore,
-                                                  EvictionPolicyEvaluator<A, E> *evictionPolicyEvaluator,
+                                                  EvictionPolicyEvaluator<MAPKEY, MAPVALUE, A, E> *evictionPolicyEvaluator,
                                                   EvictionListener<A, E> *evictionListener) {
-                                    const std::vector<boost::shared_ptr<EvictionCandidate<A, E> > > samples =
-                                            sampleableEvictableStore->sample(SAMPLE_COUNT);
-                                    std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > > evictionCandidates =
+                                    std::vector<boost::shared_ptr<EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > samples;
+                                    sampleableEvictableStore->sample(SAMPLE_COUNT);
+                                    std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > > evictionCandidates =
                                             evictionPolicyEvaluator->evaluate(samples);
-                                    return sampleableEvictableStore->evict(evictionCandidates, evictionListener);
+                                    return sampleableEvictableStore->evict(evictionCandidates.get(), evictionListener);
                                 }
-
                             private:
                                 static const int SAMPLE_COUNT = 15;
                             };

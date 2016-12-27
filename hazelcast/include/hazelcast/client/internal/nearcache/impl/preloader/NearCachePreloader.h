@@ -38,16 +38,9 @@ namespace hazelcast {
                             //TODO
                         public:
                             NearCachePreloader(const std::string &name, const boost::shared_ptr<config::NearCachePreloaderConfig> &config,
-                           serialization::pimpl::SerializationService &ss);
+                           serialization::pimpl::SerializationService &ss) {
+                            }
                         };
-
-                        NearCachePreloader::NearCachePreloader(const std::string &name,
-                                                               const boost::shared_ptr<config::NearCachePreloaderConfig> &config,
-                                                               serialization::pimpl::SerializationService &ss) {
-
-                        }
-
-
                     }
                 }
             }

@@ -36,7 +36,7 @@ namespace hazelcast {
                 /**
                  * Provider to get any kind ({@link EvictionStrategyType}) of {@link EvictionStrategy}.
                  */
-                template<typename A, typename E, typename S>
+                template<typename MAPKEY, typename MAPVALUE, typename A, typename E, typename S>
                 class EvictionStrategyProvider {
                 public:
                     /**
@@ -45,15 +45,14 @@ namespace hazelcast {
                      * @param evictionConfig {@link EvictionConfiguration} for the requested {@link EvictionStrategy} implementation
                      * @return the requested {@link EvictionStrategy} implementation
                      */
-                    static boost::shared_ptr<EvictionStrategy<A, E, S> > getEvictionStrategy(
-                            const boost::shared_ptr<EvictionConfiguration> &evictionConfig) {
+                    static boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> > getEvictionStrategy(
+                            const boost::shared_ptr<EvictionConfiguration<MAPKEY, MAPVALUE> > &evictionConfig) {
                         if (evictionConfig.get() == NULL) {
-                            return boost::shared_ptr<EvictionStrategy<A, E, S> >();
+                            return boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> >();
                         }
                         EvictionStrategyType::Type evictionStrategyType = evictionConfig->getEvictionStrategyType();
 
-                        //noinspection unchecked
-                        return EVICTION_STRATEGY_MAP[evictionStrategyType];
+                        return EvictionStrategyProvider<MAPKEY, MAPVALUE, A, E, S>::EVICTION_STRATEGY_MAP[evictionStrategyType];
 
                         // TODO "evictionStrategyFactory" can be handled here from a single point
                         // for user defined custom implementations.
@@ -65,19 +64,22 @@ namespace hazelcast {
                      *
                      * @return the default {@link EvictionStrategy} implementation
                      */
-                    static EvictionStrategy getDefaultEvictionStrategy() {
-                        return EVICTION_STRATEGY_MAP.[EvictionStrategyType::DEFAULT_EVICTION_STRATEGY];
+                    static boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> > &getDefaultEvictionStrategy() {
+                        return EvictionStrategyProvider<MAPKEY, MAPVALUE, A, E, S>::EVICTION_STRATEGY_MAP[EvictionStrategyType::DEFAULT_EVICTION_STRATEGY];
                     }
 
-                private:
-                    static std::map<EvictionStrategyType, boost::shared_ptr<EvictionStrategy<A, E, S> > > init() {
-                        std::map<EvictionStrategyType, boost::shared_ptr<EvictionStrategy> > map;
-                        map[EvictionStrategyType::SAMPLING_BASED_EVICTION] = new impl::strategy::sampling::SamplingBasedEvictionStrategy<A, E, S>();
+                    static std::map<EvictionStrategyType::Type, boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> > > init() {
+                        std::map<EvictionStrategyType::Type, boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> > > map;
+                        map[EvictionStrategyType::SAMPLING_BASED_EVICTION] = boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> >(new impl::strategy::sampling::SamplingBasedEvictionStrategy<MAPKEY, MAPVALUE, A, E, S>());
                         return map;
                     }
 
-                    static std::map<EvictionStrategyType, boost::shared_ptr<EvictionStrategy<A, E, S> > > EVICTION_STRATEGY_MAP = init();
+                private:
+                    static std::map<EvictionStrategyType::Type, boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> > > EVICTION_STRATEGY_MAP;
                 };
+
+                template<typename MAPKEY, typename MAPVALUE, typename A, typename E, typename S>
+                std::map<EvictionStrategyType::Type, boost::shared_ptr<EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> > > EvictionStrategyProvider<MAPKEY, MAPVALUE, A, E, S>::EVICTION_STRATEGY_MAP = EvictionStrategyProvider<MAPKEY, MAPVALUE, A, E, S>::init();
             }
         }
     }

@@ -38,8 +38,8 @@ namespace hazelcast {
                  * @param <A> Type of the accessor
                  * @param <E> Type of the {@link Evictable} value
                  */
-                template <typename A, typename E>
-                class EvictionCandidate : public EvictableEntryView<A, E> {
+                template <typename MAPKEY, typename MAPVALUE, typename A, typename E>
+                class EvictionCandidate : public EvictableEntryView<MAPKEY, MAPVALUE> {
                 public:
                     /**
                      * The accessor (key or id) of {@link Evictable} entry or record or whatever.

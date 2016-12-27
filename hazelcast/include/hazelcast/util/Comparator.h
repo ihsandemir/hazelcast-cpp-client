@@ -31,7 +31,7 @@ namespace hazelcast {
              * @rhs Second value to compare
              * @return Returns < 0 if lhs is less, >0 if lhs is greater, else returns 0.
              */
-            virtual int compare(const T &lhs, const T &rhs) const = 0;
+            virtual int compare(const T *lhs, const T *rhs) const = 0;
         };
     }
 }

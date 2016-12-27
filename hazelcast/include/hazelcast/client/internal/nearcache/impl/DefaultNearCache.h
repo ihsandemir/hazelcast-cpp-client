@@ -39,10 +39,10 @@ namespace hazelcast {
         namespace internal {
             namespace nearcache {
                 namespace impl {
-                    template <typename K, typename V>
-                    class DefaultNearCache : public NearCache<K, V> {
+                    template <typename K, typename V, typename KS>
+                    class DefaultNearCache : public NearCache<KS, V> {
                     public:
-                        DefaultNearCache(const std::string &cacheName, const config::NearCacheConfig &config,
+                        DefaultNearCache(const std::string &cacheName, const config::NearCacheConfig<K, V> &config,
                                          serialization::pimpl::SerializationService &ss)
                                 : name(cacheName), nearCacheConfig(config), serializationService(ss) {
                         }
@@ -66,14 +66,14 @@ namespace hazelcast {
                         }
 
                         //@Override
-                        boost::shared_ptr<V> get(const boost::shared_ptr<K> &key) {
+                        boost::shared_ptr<V> get(const boost::shared_ptr<KS> &key) {
                             util::Preconditions::checkNotNull(key, "key cannot be null on get!");
 
                             return nearCacheRecordStore->get(key);
                         }
 
                         //@Override
-                        void put(const boost::shared_ptr<K> &key, const boost::shared_ptr<V> &value) {
+                        void put(const boost::shared_ptr<KS> &key, const boost::shared_ptr<V> &value) {
                             util::Preconditions::checkNotNull(key, "key cannot be null on put!");
 
                             nearCacheRecordStore->doEvictionIfRequired();
@@ -82,7 +82,7 @@ namespace hazelcast {
                         }
 
                         //@Override
-                        void put(const boost::shared_ptr<K> &key, const boost::shared_ptr<serialization::pimpl::Data> &value) {
+                        void put(const boost::shared_ptr<KS> &key, const boost::shared_ptr<serialization::pimpl::Data> &value) {
                             util::Preconditions::checkNotNull(key, "key cannot be null on put!");
 
                             nearCacheRecordStore->doEvictionIfRequired();
@@ -91,7 +91,7 @@ namespace hazelcast {
                         }
 
                         //@Override
-                        bool remove(const boost::shared_ptr<K> &key) {
+                        bool remove(const boost::shared_ptr<KS> &key) {
                             util::Preconditions::checkNotNull(key, "key cannot be null on remove!");
 
                             return nearCacheRecordStore->remove(key);
@@ -168,16 +168,16 @@ namespace hazelcast {
                             return preloadDone;
                         }
                     private:
-                        std::auto_ptr<NearCacheRecordStore<K, V> > createNearCacheRecordStore(const std::string &name,
-                                                                                              const config::NearCacheConfig &nearCacheConfig) {
+                        std::auto_ptr<NearCacheRecordStore<KS, V> > createNearCacheRecordStore(const std::string &name,
+                                                                                              const config::NearCacheConfig<K, V> &nearCacheConfig) {
                             config::InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
                             switch (inMemoryFormat) {
                                 case config::BINARY:
-                                    return std::auto_ptr<NearCacheRecordStore<K, V> >(
-                                    new store::NearCacheDataRecordStore<K, V>(name, nearCacheConfig, serializationService));
+                                    return std::auto_ptr<NearCacheRecordStore<KS, V> >(
+                                    new store::NearCacheDataRecordStore<K, V, KS>(name, nearCacheConfig, serializationService));
                                 case config::OBJECT:
-                                    return std::auto_ptr<NearCacheRecordStore<K, V> >(
-                                    new store::NearCacheObjectRecordStore<K, V>(name, nearCacheConfig, serializationService));
+                                    return std::auto_ptr<NearCacheRecordStore<KS, V> >(
+                                    new store::NearCacheObjectRecordStore<K, V, KS>(name, nearCacheConfig, serializationService));
                                 default:
                                     std::ostringstream out;
                                     out << "Invalid in memory format: " << inMemoryFormat;
@@ -187,7 +187,7 @@ namespace hazelcast {
 
                         class ExpirationTask {
                         public:
-                            ExpirationTask(NearCacheRecordStore<K, V> &store)
+                            ExpirationTask(NearCacheRecordStore<KS, V> &store)
                                     : expirationInProgress(false), nearCacheRecordStore(store),
                                       initialDelayInSeconds(NearCache<K, V>::DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS),
                                       periodInSeconds(NearCache<K, V>::DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS),
@@ -234,7 +234,7 @@ namespace hazelcast {
                             }
                         private:
                             util::AtomicBoolean expirationInProgress;
-                            NearCacheRecordStore<K, V> &nearCacheRecordStore;
+                            NearCacheRecordStore<KS, V> &nearCacheRecordStore;
                             int initialDelayInSeconds;
                             int periodInSeconds;
                             std::auto_ptr<util::Thread> task;
@@ -251,10 +251,10 @@ namespace hazelcast {
                         }
 
                         const std::string &name;
-                        const config::NearCacheConfig &nearCacheConfig;
+                        const config::NearCacheConfig<K, V> &nearCacheConfig;
                         serialization::pimpl::SerializationService &serializationService;
 
-                        std::auto_ptr<NearCacheRecordStore<K, V> > nearCacheRecordStore;
+                        std::auto_ptr<NearCacheRecordStore<KS, V> > nearCacheRecordStore;
                         std::auto_ptr<ExpirationTask> expirationTaskFuture;
 
                         util::AtomicBoolean preloadDone;

@@ -34,7 +34,7 @@ namespace hazelcast {
              *
              * @return <tt>true</tt> if the iterator has more elements.
              */
-            virtual bool hasNext() const = 0;
+            virtual bool hasNext() = 0;
 
             /**
              * Returns the next element in the iteration.
@@ -44,7 +44,7 @@ namespace hazelcast {
              */
             virtual boost::shared_ptr<E> next() {
                 assert(0);
-                return boost::shared_ptr<E>;
+                return boost::shared_ptr<E>();
             }
 
             /**
@@ -63,7 +63,9 @@ namespace hazelcast {
              *		  been called after the last call to the <tt>next</tt>
              *		  method.
              */
-            virtual void remove();
+            virtual void remove() {
+                assert(0);
+            }
         };
     }
 }

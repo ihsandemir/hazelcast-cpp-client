@@ -43,15 +43,15 @@ namespace hazelcast {
                          * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
                          *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
                          */
-                        template<typename A, typename E>
-                        class DefaultEvictionPolicyEvaluator : public EvictionPolicyEvaluator<A, E> {
+                        template<typename MAPKEY, typename MAPVALUE, typename A, typename E>
+                        class DefaultEvictionPolicyEvaluator : public EvictionPolicyEvaluator<MAPKEY, MAPVALUE, A, E> {
                         public:
-                            DefaultEvictionPolicyEvaluator(const boost::shared_ptr<EvictionPolicyComparator> &comparator)
+                            DefaultEvictionPolicyEvaluator(const boost::shared_ptr<EvictionPolicyComparator<MAPKEY, MAPVALUE> > &comparator)
                                     : evictionPolicyComparator(comparator) {
                             }
 
                             //@Override
-                            const boost::shared_ptr<EvictionPolicyComparator> &getEvictionPolicyComparator() {
+                            const boost::shared_ptr<EvictionPolicyComparator<MAPKEY, MAPVALUE> > getEvictionPolicyComparator() const {
                                 return evictionPolicyComparator;
                             }
 
@@ -64,13 +64,13 @@ namespace hazelcast {
                              * @return multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} these are available to be evicted
                              */
                             //@Override
-                            std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > > evaluate(
-                                    const std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > &evictionCandidates) const {
-                                boost::shared_ptr<eviction::EvictionCandidate<A, E> > selectedEvictionCandidate;
+                            std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > > evaluate(
+                                    const std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > &evictionCandidates) const {
+                                boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > selectedEvictionCandidate;
                                 int64_t now = util::currentTimeMillis();
-                                for (std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > >::const_iterator it = evictionCandidates.begin();
+                                for (typename std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > >::const_iterator it = evictionCandidates.begin();
                                      it != evictionCandidates.end(); ++it) {
-                                    const boost::shared_ptr<eviction::EvictionCandidate<A, E> > &currentEvictionCandidate = *it;
+                                    const boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > &currentEvictionCandidate = *it;
                                     if (selectedEvictionCandidate.get() == NULL) {
                                         selectedEvictionCandidate = currentEvictionCandidate;
                                     } else {
@@ -82,8 +82,7 @@ namespace hazelcast {
 
                                         int comparisonResult = evictionPolicyComparator->compare(
                                                 selectedEvictionCandidate.get(), currentEvictionCandidate.get());
-                                        if (comparisonResult ==
-                                            EvictionPolicyComparator::SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED) {
+                                        if (comparisonResult == EvictionPolicyComparator<A, E>::SECOND_ENTRY_HAS_HIGHER_PRIORITY_TO_BE_EVICTED) {
                                             selectedEvictionCandidate = currentEvictionCandidate;
                                         }
                                     }
@@ -92,13 +91,13 @@ namespace hazelcast {
                             }
 
                         private:
-                            std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > > returnEvictionCandidate(
-                                    const boost::shared_ptr<eviction::EvictionCandidate<A, E> > &evictionCandidate) const {
+                            std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > > returnEvictionCandidate(
+                                    const boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > &evictionCandidate) const {
                                 if (evictionCandidate.get() == NULL) {
-                                    return std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > >();
+                                    return std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > >();
                                 } else {
-                                    std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > > > result(
-                                            new std::vector<boost::shared_ptr<eviction::EvictionCandidate<A, E> > >());
+                                    std::auto_ptr<std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > > > result(
+                                            new std::vector<boost::shared_ptr<eviction::EvictionCandidate<MAPKEY, MAPVALUE, A, E> > >());
                                     result->push_back(evictionCandidate);
                                     return result;
                                 }
@@ -109,16 +108,16 @@ namespace hazelcast {
                                 bool expired = false;
                                 if (evictable != NULL) {
                                     // If evictable is also an expirable
-                                    Expirable *expirable = dynamic_cast<Expirable *>(evictable);
+                                    const Expirable *expirable = dynamic_cast<const Expirable *>(evictable);
                                     if (expirable != NULL) {
                                         // If there is an expired candidate, let's evict that one immediately
-                                        expired = expirable->isExpiredAt(now);
+                                        expired = (const_cast<Expirable *>(expirable))->isExpiredAt(now);
                                     }
                                 }
                                 return expired;
                             }
 
-                            const boost::shared_ptr<EvictionPolicyComparator> evictionPolicyComparator;
+                            const boost::shared_ptr<EvictionPolicyComparator<MAPKEY, MAPVALUE> > evictionPolicyComparator;
                         };
                     }
                 }

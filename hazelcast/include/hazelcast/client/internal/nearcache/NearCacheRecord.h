@@ -42,7 +42,7 @@ namespace hazelcast {
                  * @see com.hazelcast.internal.eviction.Evictable
                  */
                 template <typename V>
-                class NearCacheRecord : public eviction::Expirable, eviction::Evictable<V> {
+                class NearCacheRecord : public eviction::Expirable, public eviction::Evictable<V> {
                 public:
                     static const int64_t TIME_NOT_SET = -1;
 

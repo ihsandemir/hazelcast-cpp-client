@@ -38,8 +38,8 @@ namespace hazelcast {
                          * {@link EvictionPolicyEvaluator}.
                          * @param S implements the EvictableStore<A, E>
                          */
-                        template<typename A, typename E, typename S>
-                        class AbstractEvictionStrategy : public EvictionStrategy<A, E, S> {
+                        template<typename MAPKEY, typename MAPVALUE, typename A, typename E, typename S>
+                        class AbstractEvictionStrategy : public EvictionStrategy<MAPKEY, MAPVALUE, A, E, S> {
                         public:
                             /**
                              * Does eviction if eviction is required by given {@link EvictionChecker}.
@@ -55,7 +55,7 @@ namespace hazelcast {
                              * @return evicted entry count
                              */
                             //@Override
-                            int evict(S *evictableStore, EvictionPolicyEvaluator<A, E> *evictionPolicyEvaluator,
+                            int evict(S *evictableStore, EvictionPolicyEvaluator<MAPKEY, MAPVALUE, A, E> *evictionPolicyEvaluator,
                                       EvictionChecker *evictionChecker, EvictionListener<A, E> *evictionListener) {
                                 if (evictionChecker != NULL) {
                                     if (evictionChecker->isEvictionRequired()) {
@@ -80,7 +80,7 @@ namespace hazelcast {
                              */
                         protected:
                             virtual int evictInternal(S *evictableStore,
-                                                      EvictionPolicyEvaluator<A, E> *evictionPolicyEvaluator,
+                                                      EvictionPolicyEvaluator<MAPKEY, MAPVALUE, A, E> *evictionPolicyEvaluator,
                                                       EvictionListener<A, E> *evictionListener) {
                                 assert(0);
                                 return 0;

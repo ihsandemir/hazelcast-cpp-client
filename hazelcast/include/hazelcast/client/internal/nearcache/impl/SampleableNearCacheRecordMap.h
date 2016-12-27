@@ -41,10 +41,10 @@ namespace hazelcast {
                      * @see NearCacheRecordMap
                      * @see com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore
                      */
-                    template<typename K, typename V>
+                    template<typename K, typename V, typename KS, typename VS>
                     class SampleableNearCacheRecordMap
-                            : public NearCacheRecordMap<K, V>,
-                              public eviction::impl::strategy::sampling::SampleableEvictableStore<K, V> {
+                            : public NearCacheRecordMap<K, V, KS, VS>,
+                              public eviction::impl::strategy::sampling::SampleableEvictableStore<K, V, KS, VS> {
                     };
                 }
             }

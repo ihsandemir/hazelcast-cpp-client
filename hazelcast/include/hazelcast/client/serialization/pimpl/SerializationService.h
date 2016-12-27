@@ -223,6 +223,9 @@ namespace hazelcast {
 
                 template<>
                 HAZELCAST_API std::auto_ptr<std::vector<std::string> > SerializationService::toObject(const Data &data);
+
+                template<>
+                HAZELCAST_API std::auto_ptr<Data> SerializationService::toObject(const Data *data);
             }
         }
     }

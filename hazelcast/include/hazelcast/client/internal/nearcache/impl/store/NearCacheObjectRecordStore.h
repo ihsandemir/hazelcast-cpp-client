@@ -29,31 +29,31 @@ namespace hazelcast {
             namespace nearcache {
                 namespace impl {
                     namespace store {
-                        template <typename K, typename V>
-                        class NearCacheObjectRecordStore : public NearCacheRecordStore<K, V> {
+                        template <typename K, typename V, typename KS>
+                        class NearCacheObjectRecordStore : public NearCacheRecordStore<KS, V> {
                             // TODO
                         public:
-                            NearCacheObjectRecordStore(const std::string &name, const config::NearCacheConfig &config,
+                            NearCacheObjectRecordStore(const std::string &name, const config::NearCacheConfig<K, V> &config,
                                                            serialization::pimpl::SerializationService &ss) {
                             }
 
                             void initialize() {
                             }
 
-                            virtual boost::shared_ptr<V> get(const boost::shared_ptr<K> &key) {
+                            virtual boost::shared_ptr<V> get(const boost::shared_ptr<KS> &key) {
                                 return boost::shared_ptr<V>();
                             }
 
-                            virtual void put(const boost::shared_ptr<K> &key, const boost::shared_ptr<V> &value) {
+                            virtual void put(const boost::shared_ptr<KS> &key, const boost::shared_ptr<V> &value) {
 
                             }
 
-                            virtual void put(const boost::shared_ptr<K> &key,
+                            virtual void put(const boost::shared_ptr<KS> &key,
                                              const boost::shared_ptr<serialization::pimpl::Data> &value) {
 
                             }
 
-                            virtual bool remove(const boost::shared_ptr<K> &key) {
+                            virtual bool remove(const boost::shared_ptr<KS> &key) {
                                 return false;
                             }
 
@@ -65,7 +65,7 @@ namespace hazelcast {
 
                             }
 
-                            virtual int size() {
+                            virtual int size() const {
                                 return -1;
                             }
 
@@ -81,9 +81,7 @@ namespace hazelcast {
 
                             virtual void storeKeys() {
                             }
-
                         };
-
                     }
                 }
             }

@@ -37,7 +37,7 @@ namespace hazelcast {
         class SynchronizedMap {
         public:
             SynchronizedMap() {
-            };
+            }
 
             SynchronizedMap(const SynchronizedMap<K, V, Comparator> &rhs) {
                 util::LockGuard lg(mapLock);
@@ -45,7 +45,7 @@ namespace hazelcast {
                 internalMap = rhs.internalMap;
             }
 
-            ~SynchronizedMap() {
+            virtual ~SynchronizedMap() {
                 util::LockGuard lg(mapLock);
                 internalMap.clear();
             };
@@ -170,7 +170,7 @@ namespace hazelcast {
                 return value;
             }
 
-            size_t size() const {
+            virtual size_t size() const {
                 util::LockGuard lg(mapLock);
                 return internalMap.size();
             }
@@ -180,7 +180,10 @@ namespace hazelcast {
                 if (index < 0 || index >= internalMap.size()) {
                     return std::auto_ptr<std::pair<K, boost::shared_ptr<V> > >();
                 }
-                std::map<K, boost::shared_ptr<V>, Comparator>::const_iterator &it = (internalMap.begin() + index);
+                typename std::map<K, boost::shared_ptr<V> >::const_iterator it = internalMap.begin();
+                for (int i = 0; i < index; ++i) {
+                    ++it;
+                }
                 return std::auto_ptr<std::pair<K, boost::shared_ptr<V> > >(
                         new std::pair<K, boost::shared_ptr<V> >(it->first, it->second));
             }
