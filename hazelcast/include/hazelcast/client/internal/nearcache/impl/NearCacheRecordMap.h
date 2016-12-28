@@ -17,10 +17,10 @@
 #define HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_NEARCACHERECORDMAP_H_
 
 #include <assert.h>
-
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/util/SynchronizedMap.h>
-#include <hazelcast/client/internal/eviction/EvictableStore.h>
+
+#include "hazelcast/util/SynchronizedMap.h"
+#include "hazelcast/client/internal/eviction/EvictableStore.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

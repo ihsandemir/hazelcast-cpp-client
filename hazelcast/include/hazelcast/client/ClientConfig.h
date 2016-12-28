@@ -16,6 +16,10 @@
 #ifndef HAZELCAST_CLIENT_CONFIG
 #define HAZELCAST_CLIENT_CONFIG
 
+#include <vector>
+#include <set>
+#include <memory>
+
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/GroupConfig.h"
 #include "hazelcast/client/SerializationConfig.h"
@@ -26,11 +30,7 @@
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/config/ReliableTopicConfig.h"
 #include "hazelcast/client/config/NearCacheConfig.h"
-
-#include <vector>
-#include <set>
-#include <memory>
-#include <hazelcast/util/SynchronizedMap.h>
+#include "hazelcast/util/SynchronizedMap.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -356,8 +356,8 @@ namespace hazelcast {
              * Memory ownership of the config is passed to the client config
              */
             template <typename K, typename V>
-            ClientConfig &addNearCacheConfig(std::auto_ptr<config::NearCacheConfig<K, V> > nearCacheConfig) {
-                nearCacheConfigMap.put(nearCacheConfig->getName(), boost::shared_ptr<config::NearCacheConfigBase>(nearCacheConfig));
+            ClientConfig &addNearCacheConfig(const boost::shared_ptr<config::NearCacheConfig<K, V> > nearCacheConfig) {
+                nearCacheConfigMap.put(nearCacheConfig->getName(), nearCacheConfig);
                 return *this;
             }
 

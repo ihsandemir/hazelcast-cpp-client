@@ -19,18 +19,18 @@
 #include <stdint.h>
 #include <memory>
 
-#include <hazelcast/client/config/NearCacheConfig.h>
-#include <hazelcast/client/internal/eviction/EvictionPolicyEvaluator.h>
-#include <hazelcast/client/internal/eviction/MaxSizeChecker.h>
-#include <hazelcast/client/internal/eviction/EvictionChecker.h>
-#include <hazelcast/client/internal/eviction/EvictionStrategy.h>
-#include <hazelcast/client/internal/eviction/EvictionPolicyType.h>
-#include <hazelcast/client/serialization/pimpl/SerializationService.h>
-#include <hazelcast/client/internal/eviction/EvictionPolicyEvaluatorProvider.h>
-#include <hazelcast/client/internal/eviction/EvictionStrategyProvider.h>
+#include "hazelcast/client/config/NearCacheConfig.h"
+#include "hazelcast/client/internal/eviction/EvictionPolicyEvaluator.h"
+#include "hazelcast/client/internal/eviction/MaxSizeChecker.h"
+#include "hazelcast/client/internal/eviction/EvictionChecker.h"
+#include "hazelcast/client/internal/eviction/EvictionStrategy.h"
+#include "hazelcast/client/internal/eviction/EvictionPolicyType.h"
+#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/internal/eviction/EvictionPolicyEvaluatorProvider.h"
+#include "hazelcast/client/internal/eviction/EvictionStrategyProvider.h"
 #include "hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h"
 #include "hazelcast/client/internal/eviction/EvictionListener.h"
-#include "BaseHeapNearCacheRecordStore.h"
+#include "hazelcast/client/internal/nearcache/impl/store/BaseHeapNearCacheRecordStore.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
