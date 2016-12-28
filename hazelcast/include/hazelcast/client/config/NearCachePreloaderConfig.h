@@ -190,16 +190,12 @@ namespace hazelcast {
                     }
                 }
 */
+                bool isEnabled() const;
 
-                bool isEnabled() const {
-                    return enabled;
-                }
-
+                std::ostream &operator<<(std::ostream &out);
             private:
                 bool enabled;
             };
-
-            std::ostream &operator<<(std::ostream &out, const NearCachePreloaderConfig &config);
         }
     }
 }

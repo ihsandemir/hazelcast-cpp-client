@@ -21,7 +21,11 @@
 namespace hazelcast {
     namespace client {
         namespace config {
-            std::ostream &operator<<(std::ostream &out, const NearCachePreloaderConfig &config){
+            bool NearCachePreloaderConfig::isEnabled() const {
+                return enabled;
+            }
+
+            std::ostream &NearCachePreloaderConfig::operator<<(std::ostream &out) {
                 //TODO
                 return out;
             }
