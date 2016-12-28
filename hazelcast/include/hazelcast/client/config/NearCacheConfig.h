@@ -79,13 +79,13 @@ namespace hazelcast {
                             maxSize(EvictionConfig<K, V>::DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP),
                             evictionPolicy(EvictionConfig<K, V>::DEFAULT_EVICTION_POLICY),
                             inMemoryFormat(DEFAULT_MEMORY_FORMAT),
-                            localUpdatePolicy(INVALIDATE), invalidateOnChange(true) {
+                            localUpdatePolicy(INVALIDATE), invalidateOnChange(true), evictionConfig(new EvictionConfig<K, V>()) {
                 }
 
                 NearCacheConfig(const char *cacheName) : name(cacheName), timeToLiveSeconds(DEFAULT_TTL_SECONDS),
                                                          maxIdleSeconds(DEFAULT_MAX_IDLE_SECONDS),
                                                          inMemoryFormat(DEFAULT_MEMORY_FORMAT),
-                                                         localUpdatePolicy(INVALIDATE), invalidateOnChange(true) {
+                                                         localUpdatePolicy(INVALIDATE), invalidateOnChange(true), evictionConfig(new EvictionConfig<K, V>()) {
                 }
 
 /*
@@ -94,15 +94,15 @@ namespace hazelcast {
 */
 
                 NearCacheConfig(int32_t timeToLiveSeconds, int32_t maxIdleSeconds, bool invalidateOnChange,
-                                InMemoryFormat inMemoryFormat, boost::shared_ptr<EvictionConfig<K, V> > evictionConfig) {
+                                InMemoryFormat inMemoryFormat, boost::shared_ptr<EvictionConfig<K, V> > evictConfig) : evictionConfig(new EvictionConfig<K, V>()) {
                     this->timeToLiveSeconds = timeToLiveSeconds;
                     this->maxSize = calculateMaxSize(maxSize);
                     this->maxIdleSeconds = maxIdleSeconds;
                     this->invalidateOnChange = invalidateOnChange;
                     this->inMemoryFormat = inMemoryFormat;
                     // EvictionConfig is not allowed to be NULL
-                    if (evictionConfig.get() != NULL) {
-                        this->evictionConfig = evictionConfig;
+                    if (evictConfig.get() != NULL) {
+                        this->evictionConfig = evictConfig;
                         this->evictionPolicy = evictionConfig->getEvictionPolicy();
                         this->maxSize = evictionConfig->getSize();
                     }
@@ -119,7 +119,8 @@ namespace hazelcast {
                     // EvictionConfig is not allowed to be NULL
                     if (config.evictionConfig.get() != NULL) {
                         this->evictionConfig = config.evictionConfig;
-                        evictionPolicy = this->evictionConfig->getEvictionPolicy();
+                        evictionPolicy = evictionConfig->getEvictionPolicy();
+                        this->maxSize = evictionConfig->getSize();
                     }
                     // NearCachePreloaderConfig is not allowed to be NULL
                     if (config.preloaderConfig.get() != NULL) {

@@ -55,8 +55,11 @@ namespace hazelcast {
                                     : nearCacheConfig(cacheConfig),
                                       timeToLiveMillis(cacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND),
                                       maxIdleMillis(cacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND),
-                                      serializationService(ss),
-                                      evictionPolicyType(cacheConfig.getEvictionConfig()->getEvictionPolicyType()) {
+                                      serializationService(ss) {
+                                const boost::shared_ptr<config::EvictionConfig<K, V> > &evictionConfig = cacheConfig.getEvictionConfig();
+                                if (NULL != evictionConfig.get()) {
+                                    evictionPolicyType = evictionConfig->getEvictionPolicyType();
+                                }
 /*
                                 this->nearCacheStats = nearCacheStats;
 */

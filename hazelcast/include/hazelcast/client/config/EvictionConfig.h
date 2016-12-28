@@ -41,6 +41,9 @@ namespace hazelcast {
             template<typename K, typename V>
             class EvictionConfig : public internal::eviction::EvictionConfiguration<K, V> {
             public:
+                virtual ~EvictionConfig() {
+                }
+
                 /**
                  * Maximum Size Policy
                  */

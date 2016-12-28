@@ -44,12 +44,13 @@ namespace hazelcast {
                             BaseHeapNearCacheRecordStore(const std::string &name,
                                                          const config::NearCacheConfig<K, V> &nearCacheConfig,
                                                          serialization::pimpl::SerializationService &serializationService
-                            ) : ANCRS(nearCacheConfig,
-                                      serializationService),
-                                nearCachePreloader(nearCacheConfig.getPreloaderConfig()->isEnabled()
-                                                   ? new preloader::NearCachePreloader<K>(name,
-                                                                                          nearCacheConfig.getPreloaderConfig(),
-                                                                                          serializationService)
+                            ) : ANCRS(nearCacheConfig, serializationService),
+                                nearCachePreloader(NULL != nearCacheConfig.getPreloaderConfig().get()
+                                                   ? (nearCacheConfig.getPreloaderConfig()->isEnabled()
+                                                      ? new preloader::NearCachePreloader<K>(name,
+                                                                                             nearCacheConfig.getPreloaderConfig(),
+                                                                                             serializationService)
+                                                      : (preloader::NearCachePreloader<K> *) NULL)
                                                    : (preloader::NearCachePreloader<K> *) NULL) {
                             }
 
