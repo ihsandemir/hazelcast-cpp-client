@@ -43,6 +43,9 @@ namespace hazelcast {
                 template<typename MAPKEY, typename MAPVALUE, typename A, typename E>
                 class EvictionPolicyEvaluator {
                 public:
+                    virtual ~EvictionPolicyEvaluator() {
+                    }
+
                     /**
                      * Gets the underlying {@link EvictionPolicyComparator}.
                      *
