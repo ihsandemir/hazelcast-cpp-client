@@ -149,34 +149,12 @@ namespace hazelcast {
 
                             //@Override
                             void put(const boost::shared_ptr<KS> &key, const boost::shared_ptr<V> &value) {
-                                checkAvailable();
+                               putInternal<V>(key, value);
+                            }
 
-                                // if there is no eviction configured we return if the Near Cache is full and it's a new key
-                                // (we have to check the key, otherwise we might lose updates on existing keys)
-                                if (!isEvictionEnabled() && evictionChecker->isEvictionRequired() &&
-                                    !containsRecordKey(key)) {
-                                    return;
-                                }
-
-                                boost::shared_ptr<R> record;
-                                boost::shared_ptr<R> oldRecord;
-                                try {
-                                    record = valueToRecord(value);
-                                    onRecordCreate(key, record);
-                                    oldRecord = putRecord(key, record);
-/*TODO
-                                    if (oldRecord.get() == NULL) {
-                                        nearCacheStats.incrementOwnedEntryCount();
-                                    } else {
-                                        long oldRecordMemoryCost = getTotalStorageMemoryCost(key, oldRecord);
-                                        nearCacheStats.decrementOwnedEntryMemoryCost(oldRecordMemoryCost);
-                                    }
-*/
-                                    onPut(key, value, record, oldRecord);
-                                } catch (exception::IException &error) {
-                                    onPutError(key, value, record, oldRecord, error);
-                                    throw error;
-                                }
+                            //@Override
+                            void put(const boost::shared_ptr<KS> &key, const boost::shared_ptr<serialization::pimpl::Data> &value) {
+                               putInternal<serialization::pimpl::Data>(key, value);
                             }
 
                             //@Override
@@ -279,6 +257,11 @@ namespace hazelcast {
 */
 
                             virtual std::auto_ptr<R> valueToRecord(const boost::shared_ptr<V> &value) {
+                                assert(0);
+                                return std::auto_ptr<R>();
+                            }
+
+                            virtual std::auto_ptr<R> valueToRecord(const boost::shared_ptr<serialization::pimpl::Data> &value) {
                                 assert(0);
                                 return std::auto_ptr<R>();
                             }
@@ -431,7 +414,16 @@ namespace hazelcast {
                                        const boost::shared_ptr<R> &record, const boost::shared_ptr<R> &oldRecord) {
                             }
 
+                            void onPut(const boost::shared_ptr<KS> &key, const boost::shared_ptr<serialization::pimpl::Data> &value,
+                                       const boost::shared_ptr<R> &record, const boost::shared_ptr<R> &oldRecord) {
+                            }
+
                             void onPutError(const boost::shared_ptr<KS> &key, const boost::shared_ptr<V> &value,
+                                            const boost::shared_ptr<R> &record, const boost::shared_ptr<R> &oldRecord,
+                                            const exception::IException &error) {
+                            }
+
+                            void onPutError(const boost::shared_ptr<KS> &key, const boost::shared_ptr<serialization::pimpl::Data> &value,
                                             const boost::shared_ptr<R> &record, const boost::shared_ptr<R> &oldRecord,
                                             const exception::IException &error) {
                             }
@@ -500,6 +492,38 @@ namespace hazelcast {
                             private:
                                 const eviction::MaxSizeChecker *maxSizeChecker;
                             };
+
+                            template <typename VALUE>
+                            void putInternal(const boost::shared_ptr<KS> &key, const boost::shared_ptr<VALUE> &value) {
+                                checkAvailable();
+
+                                // if there is no eviction configured we return if the Near Cache is full and it's a new key
+                                // (we have to check the key, otherwise we might lose updates on existing keys)
+                                if (!isEvictionEnabled() && evictionChecker->isEvictionRequired() &&
+                                    !containsRecordKey(key)) {
+                                    return;
+                                }
+
+                                boost::shared_ptr<R> record;
+                                boost::shared_ptr<R> oldRecord;
+                                try {
+                                    record = valueToRecord(value);
+                                    onRecordCreate(key, record);
+                                    oldRecord = putRecord(key, record);
+/*TODO
+                                    if (oldRecord.get() == NULL) {
+                                        nearCacheStats.incrementOwnedEntryCount();
+                                    } else {
+                                        long oldRecordMemoryCost = getTotalStorageMemoryCost(key, oldRecord);
+                                        nearCacheStats.decrementOwnedEntryMemoryCost(oldRecordMemoryCost);
+                                    }
+*/
+                                    onPut(key, value, record, oldRecord);
+                                } catch (exception::IException &error) {
+                                    onPutError(key, value, record, oldRecord, error);
+                                    throw error;
+                                }
+                            }
 
                             static const int MILLI_SECONDS_IN_A_SECOND = 1000;
                         };

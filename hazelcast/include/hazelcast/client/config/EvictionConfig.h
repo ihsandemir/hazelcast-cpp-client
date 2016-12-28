@@ -127,7 +127,7 @@ namespace hazelcast {
                 }
 
                 MaxSizePolicy getMaximumSizePolicy() const {
-                    return FREE_NATIVE_MEMORY_PERCENTAGE;
+                    return maxSizePolicy;
                 }
 
                 EvictionConfig &setMaximumSizePolicy(const MaxSizePolicy &maxSizePolicy) {

@@ -101,18 +101,15 @@ namespace hazelcast {
 
                             //@Override
                             std::auto_ptr<record::NearCacheDataRecord> valueToRecord(
+                                    const boost::shared_ptr<serialization::pimpl::Data> &value) {
+                                return valueToRecordInternal(value);
+                            }
+
+                            //@Override
+                            std::auto_ptr<record::NearCacheDataRecord> valueToRecord(
                                     const boost::shared_ptr<V> &value) {
                                 const boost::shared_ptr<serialization::pimpl::Data> data = ANCRS::toData(value);
-                                int64_t creationTime = util::currentTimeMillis();
-                                if (ANCRS::timeToLiveMillis > 0) {
-                                    return std::auto_ptr<record::NearCacheDataRecord>(
-                                            new record::NearCacheDataRecord(data, creationTime,
-                                                                            creationTime + ANCRS::timeToLiveMillis));
-                                } else {
-                                    return std::auto_ptr<record::NearCacheDataRecord>(
-                                            new record::NearCacheDataRecord(data, creationTime,
-                                                                            NearCacheRecord<V>::TIME_NOT_SET));
-                                }
+                                return valueToRecordInternal(data);
                             }
 
                             //@Override
@@ -131,6 +128,20 @@ namespace hazelcast {
                             void putToRecord(boost::shared_ptr<record::NearCacheDataRecord> &record,
                                              const boost::shared_ptr<V> &value) {
                                 record->setValue(ANCRS::toData(value));
+                            }
+                        private:
+                            std::auto_ptr<record::NearCacheDataRecord> valueToRecordInternal(
+                                    const boost::shared_ptr<serialization::pimpl::Data> &data) {
+                                int64_t creationTime = util::currentTimeMillis();
+                                if (ANCRS::timeToLiveMillis > 0) {
+                                    return std::auto_ptr<record::NearCacheDataRecord>(
+                                            new record::NearCacheDataRecord(data, creationTime,
+                                                                            creationTime + ANCRS::timeToLiveMillis));
+                                } else {
+                                    return std::auto_ptr<record::NearCacheDataRecord>(
+                                            new record::NearCacheDataRecord(data, creationTime,
+                                                                            NearCacheRecord<V>::TIME_NOT_SET));
+                                }
                             }
                         };
                     }
