@@ -25,7 +25,7 @@ namespace hazelcast {
                 return enabled;
             }
 
-            std::ostream &NearCachePreloaderConfig::operator<<(std::ostream &out, const NearCachePreloaderConfig &config) {
+            std::ostream &operator<<(std::ostream &out, const NearCachePreloaderConfig &config) {
                 //TODO
                 return out;
             }
