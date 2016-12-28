@@ -199,7 +199,8 @@ namespace hazelcast {
                 bool enabled;
             };
 
-            std::ostream &operator<<(std::ostream &out, const NearCachePreloaderConfig &config);
+            std::ostream &operator<<(std::ostream &out, const NearCachePreloaderConfig &config) {
+            }
         }
     }
 }
