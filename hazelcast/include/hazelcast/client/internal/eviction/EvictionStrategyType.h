@@ -41,7 +41,7 @@ namespace hazelcast {
                     /**
                      * Default value of {@link com.hazelcast.internal.eviction.EvictionStrategyType}
                      */
-                    static const HAZELCAST_API Type DEFAULT_EVICTION_STRATEGY;
+                    static const Type DEFAULT_EVICTION_STRATEGY;
                 };
             }
         }

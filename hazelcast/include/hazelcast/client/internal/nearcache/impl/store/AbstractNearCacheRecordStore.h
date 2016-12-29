@@ -268,7 +268,7 @@ namespace hazelcast {
 
                             virtual boost::shared_ptr<V> recordToValue(const R *record) {
                                 assert(0);
-                                boost::shared_ptr<V>();
+                                return boost::shared_ptr<V>();
                             }
 
                             virtual boost::shared_ptr<R> putRecord(const boost::shared_ptr<KS> &key,

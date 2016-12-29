@@ -251,7 +251,7 @@ namespace hazelcast {
                         currentEntry = internalMap.getEntry((size_t) currentIndex);
                         // Advance to next entry
                         ++currentIndex;
-                        if (currentIndex >= internalMap.size()) {
+                        if ((size_t) currentIndex >= internalMap.size()) {
                             currentIndex = 0;
                         }
                         while (currentEntry.get() != NULL) {
