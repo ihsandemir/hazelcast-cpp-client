@@ -19,8 +19,6 @@
 #ifndef HAZELCAST_UTIL_COMPARATOR_
 #define HAZELCAST_UTIL_COMPARATOR_
 
-#include "hazelcast/util/HazelcastDll.h"
-
 namespace hazelcast {
     namespace util {
         template <typename T>
