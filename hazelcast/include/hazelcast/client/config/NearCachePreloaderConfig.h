@@ -31,7 +31,6 @@ namespace hazelcast {
             /**
              * @Beta
              * @BinaryInterface
-             * Configuration for eviction.
              * You can set a limit for number of entries or total memory cost of entries.
              */
             class HAZELCAST_API NearCachePreloaderConfig {

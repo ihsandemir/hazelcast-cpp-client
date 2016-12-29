@@ -26,6 +26,7 @@
 #include "hazelcast/client/config/InMemoryFormat.h"
 #include "hazelcast/client/config/EvictionConfig.h"
 #include "hazelcast/client/config/NearCacheConfigBase.h"
+#include "hazelcast/client/config/NearCachePreloaderConfig.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -35,8 +36,6 @@
 namespace hazelcast {
     namespace client {
         namespace config {
-            class NearCachePreloaderConfig;
-
             /**
              * Contains the configuration for a Near Cache.
              * @BinaryInterface
