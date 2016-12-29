@@ -29,6 +29,9 @@ namespace hazelcast {
         template <typename T>
         class Iterable {
         public:
+            virtual ~Iterable() {
+            }
+
             /**
              * Returns an iterator over a set of elements of type T.
              *

@@ -27,6 +27,9 @@ namespace hazelcast {
         template <typename E>
         class Iterator {
         public:
+            virtual ~Iterator() {
+            }
+
             /**
              * Returns <tt>true</tt> if the iteration has more elements. (In other
              * words, returns <tt>true</tt> if <tt>next</tt> would return an element
