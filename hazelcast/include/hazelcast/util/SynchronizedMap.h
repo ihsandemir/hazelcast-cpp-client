@@ -181,7 +181,7 @@ namespace hazelcast {
                     return std::auto_ptr<std::pair<K, boost::shared_ptr<V> > >();
                 }
                 typename std::map<K, boost::shared_ptr<V> >::const_iterator it = internalMap.begin();
-                for (int i = 0; i < index; ++i) {
+                for (size_t i = 0; i < index; ++i) {
                     ++it;
                 }
                 return std::auto_ptr<std::pair<K, boost::shared_ptr<V> > >(
