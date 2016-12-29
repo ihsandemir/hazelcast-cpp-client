@@ -205,7 +205,7 @@ namespace hazelcast {
                             int size() const {
                                 checkAvailable();
 
-                                return records->size();
+                                return (int) records->size();
                             }
 
                             //@Override
