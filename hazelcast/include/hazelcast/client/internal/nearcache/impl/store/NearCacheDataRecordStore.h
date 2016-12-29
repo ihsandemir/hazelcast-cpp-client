@@ -34,7 +34,7 @@ namespace hazelcast {
                         class NearCacheDataRecordStore
                                 : public BaseHeapNearCacheRecordStore<K, V, KS, record::NearCacheDataRecord> {
                         public:
-                            typedef AbstractNearCacheRecordStore<K, V, serialization::pimpl::Data, record::NearCacheDataRecord, HeapNearCacheRecordMap<K, V, serialization::pimpl::Data, record::NearCacheDataRecord> > ANCRS;
+                            typedef AbstractNearCacheRecordStore<K, V, KS, record::NearCacheDataRecord, HeapNearCacheRecordMap<K, V, KS, record::NearCacheDataRecord> > ANCRS;
 
                             NearCacheDataRecordStore(const std::string &name,
                                                      const config::NearCacheConfig<K, V> &config,
@@ -76,7 +76,6 @@ namespace hazelcast {
                                 }
                             }
 
-                            // TODO: we don't handle object header (mark, class definition) for heap memory cost
                             @Override
                         int64_t getRecordStorageMemoryCost(NearCacheDataRecord record) {
                                 if (record == null) {
@@ -98,7 +97,6 @@ namespace hazelcast {
                                         + (Integer.SIZE / Byte.SIZE);
                             }
 */
-
                             //@Override
                             std::auto_ptr<record::NearCacheDataRecord> valueToRecord(
                                     const boost::shared_ptr<serialization::pimpl::Data> &value) {

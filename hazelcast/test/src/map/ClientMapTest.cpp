@@ -64,9 +64,9 @@ namespace hazelcast {
             const char *MapClientConfig::employeesMapName = "EmployeesMap";
             const char *MapClientConfig::imapName = "clientMapTest";
 
-            class NearCachedMapClientConfig : public MapClientConfig {
+            class NearCachedDataMapClientConfig : public MapClientConfig {
             public:
-                NearCachedMapClientConfig() {
+                NearCachedDataMapClientConfig() {
                     boost::shared_ptr<config::NearCacheConfig<int, int> > intMapNearCacheConfig(
                             new config::NearCacheConfig<int, int>(intMapName));
                     addNearCacheConfig<int, int>(intMapNearCacheConfig);
@@ -77,6 +77,23 @@ namespace hazelcast {
 
                     boost::shared_ptr<config::NearCacheConfig<std::string, std::string> > imapNearCacheConfig(
                             new config::NearCacheConfig<std::string, std::string>(imapName));
+                    addNearCacheConfig<std::string, std::string>(imapNearCacheConfig);
+                }
+            };
+
+            class NearCachedObjectMapClientConfig : public MapClientConfig {
+            public:
+                NearCachedObjectMapClientConfig() {
+                    boost::shared_ptr<config::NearCacheConfig<int, int> > intMapNearCacheConfig(
+                            new config::NearCacheConfig<int, int>(intMapName, config::OBJECT));
+                    addNearCacheConfig<int, int>(intMapNearCacheConfig);
+
+                    boost::shared_ptr<config::NearCacheConfig<int, Employee> > employeesCacheConfig(
+                            new config::NearCacheConfig<int, Employee>(employeesMapName, config::OBJECT));
+                    addNearCacheConfig<int, Employee>(employeesCacheConfig);
+
+                    boost::shared_ptr<config::NearCacheConfig<std::string, std::string> > imapNearCacheConfig(
+                            new config::NearCacheConfig<std::string, std::string>(imapName, config::OBJECT));
                     addNearCacheConfig<std::string, std::string>(imapNearCacheConfig);
                 }
             };
@@ -407,7 +424,7 @@ namespace hazelcast {
             template<typename CONFIGTYPE>
             IMap<int, Employee> *ClientMapTest<CONFIGTYPE>::employees = NULL;
 
-            typedef ::testing::Types<MapClientConfig, NearCachedMapClientConfig> ConfigTypes;
+            typedef ::testing::Types<MapClientConfig, NearCachedDataMapClientConfig, NearCachedObjectMapClientConfig> ConfigTypes;
             TYPED_TEST_CASE(ClientMapTest, ConfigTypes);
 
             TYPED_TEST(ClientMapTest, testIssue537) {

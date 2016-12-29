@@ -80,14 +80,14 @@ namespace hazelcast {
 
                                 //@Override
                                 boost::shared_ptr<K> getKey() const {
-                                    return boost::shared_ptr<K>(serializationService.toObject<K>(
-                                            util::SampleableConcurrentHashMap<K, V, KS, R>::SamplingEntry::key.get()));
+                                    return boost::shared_ptr<K>(serializationService.toSharedObject<K>(
+                                            util::SampleableConcurrentHashMap<K, V, KS, R>::SamplingEntry::key));
                                 }
 
                                 //@Override
                                 boost::shared_ptr<V> getValue() const {
-                                    return boost::shared_ptr<V>(serializationService.toObject<V>(
-                                            util::SampleableConcurrentHashMap<K, V, KS, R>::SamplingEntry::value->getValue().get()));
+                                    return boost::shared_ptr<V>(serializationService.toSharedObject<V>(
+                                            util::SampleableConcurrentHashMap<K, V, KS, R>::SamplingEntry::value->getValue()));
                                 }
 
                                 //@Override

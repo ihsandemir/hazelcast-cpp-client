@@ -92,6 +92,15 @@ namespace hazelcast {
                                                          evictionConfig(new EvictionConfig<K, V>()) {
                 }
 
+                NearCacheConfig(const char *cacheName, InMemoryFormat memoryFormat) : name(cacheName), timeToLiveSeconds(DEFAULT_TTL_SECONDS),
+                                                         maxIdleSeconds(DEFAULT_MAX_IDLE_SECONDS),
+                                                         maxSize(EvictionConfig<K, V>::DEFAULT_MAX_ENTRY_COUNT),
+                                                         inMemoryFormat(memoryFormat),
+                                                         localUpdatePolicy(INVALIDATE), invalidateOnChange(true),
+                                                         cacheLocalEntries(false),
+                                                         evictionConfig(new EvictionConfig<K, V>()) {
+                }
+
                 NearCacheConfig(int32_t timeToLiveSeconds, int32_t maxIdleSeconds, bool invalidateOnChange,
                                 InMemoryFormat inMemoryFormat, boost::shared_ptr<EvictionConfig<K, V> > evictConfig)
                         : evictionConfig(new EvictionConfig<K, V>()) {
