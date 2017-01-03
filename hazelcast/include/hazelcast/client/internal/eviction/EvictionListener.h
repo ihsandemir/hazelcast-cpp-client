@@ -38,13 +38,6 @@ namespace hazelcast {
                 class EvictionListener {
                 public:
                     /**
-                     * Empty {@link} EvictionListener
-                     */
-/* TODO
-                    static const boost::shared_ptr<EvictionListener<A, E> > NO_LISTENER;
-*/
-
-                    /**
                      * Called when an {@link Evictable} entry is evicted.
                      *
                      * @param evictedEntryAccessor Accessor of the {@link Evictable} entry that is evicted.

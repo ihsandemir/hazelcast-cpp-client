@@ -27,6 +27,8 @@ namespace hazelcast {
     namespace util {
         class HAZELCAST_API UUID {
         public:
+            UUID();
+
             /**
              * Constructs a new <tt>UUID</tt> using the specified data.
              * <tt>mostSigBits</tt> is used for the most significant 64 bits

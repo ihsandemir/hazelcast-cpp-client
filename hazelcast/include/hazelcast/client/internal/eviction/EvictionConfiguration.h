@@ -53,15 +53,6 @@ namespace hazelcast {
                     virtual EvictionPolicyType getEvictionPolicyType() const = 0;
 
                     /**
-                     * Gets the class name of the configured {@link EvictionPolicyComparator} implementation.
-                     *
-                     * @return class name of the configured {@link EvictionPolicyComparator} implementation
-                     */
-/*
-                    virtual String getComparatorClassName();
-*/
-
-                    /**
                      * Gets instance of the configured {@link EvictionPolicyComparator} implementation.
                      *
                      * @return instance of the configured {@link EvictionPolicyComparator} implementation.

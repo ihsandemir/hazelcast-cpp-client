@@ -22,6 +22,7 @@
 #include "hazelcast/client/config/NearCacheConfig.h"
 #include "hazelcast/client/map/impl/nearcache/InvalidationAwareWrapper.h"
 #include "hazelcast/client/internal/nearcache/impl/KeyStateMarkerImpl.h"
+#include <hazelcast/client/internal/nearcache/impl/invalidation/RepairingHandler.h>
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/internal/nearcache/NearCache.h"
 #include "hazelcast/client/internal/adapter/IMapDataStructureAdapter.h"
@@ -420,9 +421,7 @@ namespace hazelcast {
                 impl::nearcache::KeyStateMarker *keyStateMarker;
                 const config::NearCacheConfig<K, V> &nearCacheConfig;
                 boost::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V> > nearCache;
-/*
-                std::auto_ptr<internal::nearcache::impl::invalidation::RepairingHandler> repairingHandler;
-*/
+                std::auto_ptr<internal::nearcache::impl::invalidation::RepairingHandler<K, V> > repairingHandler;
 
                 // since we don't have atomic support in the project yet, using shared_ptr
                 boost::shared_ptr<std::string> invalidationListenerId;

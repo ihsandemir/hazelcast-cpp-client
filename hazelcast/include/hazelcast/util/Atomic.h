@@ -101,6 +101,12 @@ namespace hazelcast {
                 }
                 return false;
             }
+
+            T addAndGet(const T &delta) {
+                LockGuard lockGuard(mutex);
+                v += delta;
+                return v;
+            }
         private:
             mutable Mutex mutex;
             T v;
