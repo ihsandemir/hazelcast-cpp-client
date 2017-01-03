@@ -19,6 +19,7 @@
 #ifndef HAZELCAST_CLIENT_CONTEXT
 #define HAZELCAST_CLIENT_CONTEXT
 
+#include <string>
 #include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
@@ -84,6 +85,8 @@ namespace hazelcast {
 
                 Cluster &getCluster();
 
+                template<typename K, typename V>
+                internal::nearcache::impl::invalidation::RepairTask getRepairingTask(const std::string &serviceName);
             private:
                 HazelcastClient &hazelcastClient;
             };

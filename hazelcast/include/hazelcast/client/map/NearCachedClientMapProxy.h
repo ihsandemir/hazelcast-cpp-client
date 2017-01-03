@@ -23,6 +23,7 @@
 #include "hazelcast/client/map/impl/nearcache/InvalidationAwareWrapper.h"
 #include "hazelcast/client/internal/nearcache/impl/KeyStateMarkerImpl.h"
 #include <hazelcast/client/internal/nearcache/impl/invalidation/RepairingHandler.h>
+#include <hazelcast/client/IMap.h>
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/internal/nearcache/NearCache.h"
 #include "hazelcast/client/internal/adapter/IMapDataStructureAdapter.h"
@@ -76,9 +77,8 @@ namespace hazelcast {
                     invalidateOnChange = nearCache->isInvalidatedOnChange();
                     if (invalidateOnChange) {
 
-/*TODO
-                        repairingHandler = context.getRepairingTask(SERVICE_NAME).registerAndGetHandler(name, nearCache);
-*/
+                        repairingHandler = context->getRepairingTask(IMap<K, V>::SERVICE_NAME).registerAndGetHandler(
+                                DistributedObject::getName(), nearCache);
 
                         std::auto_ptr<client::impl::BaseEventHandler> invalidationHandler(
                                 new ClientMapAddNearCacheEventHandler(nearCache));
