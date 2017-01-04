@@ -27,6 +27,7 @@
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/InitializingObject.h"
 #include "hazelcast/client/config/NearCachePreloaderConfig.h"
+#include "hazelcast/client/internal/nearcache/Removable.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -52,7 +53,7 @@ namespace hazelcast {
                  * This is a no-op interface class. See InvalidationAwareNearCache for the actual implementation
                  */
                 template <typename K, typename V>
-                class NearCache : public spi::InitializingObject {
+                class NearCache : public Removable<K>, public spi::InitializingObject {
                 public:
                     /**
                      * NULL Object
@@ -119,28 +120,11 @@ namespace hazelcast {
                     }
 
                     /**
-                     * Removes the value associated with the given <code>key</code>.
-                     *
-                     * @param key the key of the value will be removed
-                     */
-                    virtual bool remove(const boost::shared_ptr<K> &key) {
-                        assert(0);
-                        return false;
-                    }
-
-                    /**
                      * @return
                      */
                     virtual bool isInvalidatedOnChange() const {
                         assert(0);
                         return false;
-                    }
-
-                    /**
-                     * Removes all stored values.
-                     */
-                    virtual void clear() {
-                        assert(0);
                     }
 
                     /**

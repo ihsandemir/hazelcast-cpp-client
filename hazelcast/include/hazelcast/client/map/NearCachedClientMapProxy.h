@@ -76,7 +76,6 @@ namespace hazelcast {
 
                     invalidateOnChange = nearCache->isInvalidatedOnChange();
                     if (invalidateOnChange) {
-
                         repairingHandler = context->getRepairingTask(IMap<K, V>::SERVICE_NAME).registerAndGetHandler(
                                 DistributedObject::getName(), nearCache);
 

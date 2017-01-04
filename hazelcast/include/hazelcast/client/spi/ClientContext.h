@@ -20,6 +20,9 @@
 #define HAZELCAST_CLIENT_CONTEXT
 
 #include <string>
+#include <hazelcast/client/internal/nearcache/impl/invalidation/RepairingTask.h>
+#include <hazelcast/util/SynchronizedMap.h>
+#include <hazelcast/util/Atomic.h>
 #include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
@@ -60,7 +63,6 @@ namespace hazelcast {
 
             class HAZELCAST_API ClientContext {
             public:
-
                 ClientContext(HazelcastClient &hazelcastClient);
 
                 serialization::pimpl::SerializationService &getSerializationService();
@@ -85,10 +87,12 @@ namespace hazelcast {
 
                 Cluster &getCluster();
 
-                template<typename K, typename V>
-                internal::nearcache::impl::invalidation::RepairTask getRepairingTask(const std::string &serviceName);
+                internal::nearcache::impl::invalidation::RepairingTask &getRepairingTask();
             private:
                 HazelcastClient &hazelcastClient;
+                util::Atomic<boost::shared_ptr<internal::nearcache::impl::invalidation::RepairingTask> > repairingTask;
+
+                internal::nearcache::impl::invalidation::RepairingTask &getOrCreateIfAbsent();
             };
         }
     }

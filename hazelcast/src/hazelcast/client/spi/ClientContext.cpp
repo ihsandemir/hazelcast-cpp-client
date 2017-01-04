@@ -23,7 +23,7 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             ClientContext::ClientContext(HazelcastClient &hazelcastClient)
-            : hazelcastClient(hazelcastClient) {
+                    : hazelcastClient(hazelcastClient) {
             }
 
             serialization::pimpl::SerializationService &ClientContext::getSerializationService() {
@@ -62,7 +62,7 @@ namespace hazelcast {
                 return hazelcastClient.nearCacheManager;
             }
 
-            ClientProperties& ClientContext::getClientProperties() {
+            ClientProperties &ClientContext::getClientProperties() {
                 return hazelcastClient.clientProperties;
             }
 
@@ -70,7 +70,22 @@ namespace hazelcast {
                 return hazelcastClient.cluster;
             }
 
+            internal::nearcache::impl::invalidation::RepairingTask &ClientContext::getRepairingTask() {
+                return getOrCreateIfAbsent();
+            }
 
+            internal::nearcache::impl::invalidation::RepairingTask &ClientContext::getOrCreateIfAbsent() {
+                boost::shared_ptr<internal::nearcache::impl::invalidation::RepairingTask> task =
+                        (boost::shared_ptr<internal::nearcache::impl::invalidation::RepairingTask>) repairingTask;
+                if (NULL == task.get()) {
+                    boost::shared_ptr<internal::nearcache::impl::invalidation::RepairingTask> value(
+                    new internal::nearcache::impl::invalidation::RepairingTask());
+                    repairingTask.compareAndSet(
+                            boost::shared_ptr<internal::nearcache::impl::invalidation::RepairingTask>(), value);
+                    task = value;
+                }
+                return *task;
+            }
         }
 
     }

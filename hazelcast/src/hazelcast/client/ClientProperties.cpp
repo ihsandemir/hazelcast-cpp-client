@@ -37,6 +37,10 @@ namespace hazelcast {
         const std::string ClientProperties::PROP_REQUEST_RETRY_COUNT_DEFAULT = "20";
         const std::string ClientProperties::PROP_REQUEST_RETRY_WAIT_TIME = "hazelcast_client_request_retry_wait_time";
         const std::string ClientProperties::PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT = "1";
+        const std::string ClientProperties::MAX_TOLERATED_MISS_COUNT = "hazelcast.invalidation.max.tolerated.miss.count";
+        const std::string ClientProperties::MAX_TOLERATED_MISS_COUNT_DEFAULT = "10";
+        const std::string ClientProperties::RECONCILIATION_INTERVAL_SECONDS = "hazelcast.invalidation.reconciliation.interval.seconds";
+        const std::string ClientProperties::RECONCILIATION_INTERVAL_SECONDS_DEFAULT = "60";
 
         ClientProperty::ClientProperty(ClientConfig& config, const std::string& name, const std::string& defaultValue)
         : name(name) {
@@ -82,10 +86,11 @@ namespace hazelcast {
         : heartbeatTimeout(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT)
         , heartbeatInterval(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT)
         , retryCount(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT)
-        , retryWaitTime(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT) {
-
+        , retryWaitTime(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT)
+        , maxToleratedNearCacheMissCount(clientConfig, MAX_TOLERATED_MISS_COUNT, MAX_TOLERATED_MISS_COUNT_DEFAULT)
+        , nearCacheReconciliationInterval(clientConfig, RECONCILIATION_INTERVAL_SECONDS,
+                                          RECONCILIATION_INTERVAL_SECONDS_DEFAULT) {
         }
-
 
         const ClientProperty& ClientProperties::getHeartbeatTimeout() const {
             return heartbeatTimeout;
@@ -101,6 +106,14 @@ namespace hazelcast {
 
         const ClientProperty& ClientProperties::getRetryWaitTime() const {
             return retryWaitTime;
+        }
+
+        const ClientProperty &ClientProperties::getMaxToleratedNearCacheMissCount() const {
+            return maxToleratedNearCacheMissCount;
+        }
+
+        const ClientProperty &ClientProperties::getNearCacheReconciliationInterval() const {
+            return nearCacheReconciliationInterval;
         }
     }
 }

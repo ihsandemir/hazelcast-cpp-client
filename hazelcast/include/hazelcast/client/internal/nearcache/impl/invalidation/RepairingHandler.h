@@ -51,10 +51,9 @@ namespace hazelcast {
                          *
                          * @see StaleReadDetectorImpl
                          */
-                        template<typename K, typename V>
-                        class RepairingHandler {
+                        class HAZELCAST_API RepairingHandler {
                         public:
-                            RepairingHandler(const std::string &cacheName, NearCache<K, V> &cache,
+                            RepairingHandler(const std::string &cacheName, Removable<serialization::pimpl::Data> &cache,
                                              MinimalPartitionService &minimalPartitionService,
                                              const std::string &uuid, util::ILogger &log)
                                     : name(cacheName), localUuid(uuid), nearCache(cache), logger(log),
@@ -86,7 +85,7 @@ namespace hazelcast {
                                     if (key.get() == NULL) {
                                         nearCache.clear();
                                     } else {
-                                        nearCache.remove(boost::shared_ptr<K>(key));
+                                        nearCache.remove(boost::shared_ptr<serialization::pimpl::Data>(key));
                                     }
                                 }
 
@@ -247,7 +246,7 @@ namespace hazelcast {
                             const int partitionCount;
                             const std::string name;
                             const std::string localUuid;
-                            NearCache<K, V> &nearCache;
+                            Removable<serialization::pimpl::Data> &nearCache;
                             util::ILogger &logger;
                             MinimalPartitionService &partitionService;
                             std::vector<MetaDataContainer> metaDataContainers;

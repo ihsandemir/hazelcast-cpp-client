@@ -80,6 +80,9 @@ namespace hazelcast {
 
             const ClientProperty& getRetryWaitTime() const;
 
+            const ClientProperty &getMaxToleratedNearCacheMissCount() const;
+
+            const ClientProperty &getNearCacheReconciliationInterval() const;
 
             /**
             * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
@@ -124,11 +127,29 @@ namespace hazelcast {
             */
             static const std::string PROP_REQUEST_RETRY_WAIT_TIME;
             static const std::string PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT;
+
+            // ---- Near cache repairing task configuration options start -----
+            /**
+             * To scan {@link RepairingHandler}s to see if any near-cache needs to be invalidated
+             * according to missed invalidation counts. Controlled via MAX_TOLERATED_MISS_COUNT
+             */
+            static const std::string MAX_TOLERATED_MISS_COUNT;
+            static const std::string MAX_TOLERATED_MISS_COUNT_DEFAULT;
+
+            /**
+             * To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs.
+             * Controlled via MIN_RECONCILIATION_INTERVAL_SECONDS
+             */
+            static const std::string RECONCILIATION_INTERVAL_SECONDS;
+            static const std::string RECONCILIATION_INTERVAL_SECONDS_DEFAULT;
+            // ---- Near cache repairing task configuration options end -----
         private:
             ClientProperty heartbeatTimeout;
             ClientProperty heartbeatInterval;
             ClientProperty retryCount;
             ClientProperty retryWaitTime;
+            ClientProperty maxToleratedNearCacheMissCount;
+            ClientProperty nearCacheReconciliationInterval;
         };
 
     }
