@@ -54,5 +54,3 @@ MAVEN_OPTS="-Xmx4g -Xms4g" mvn exec:java -Dexec.mainClass="com.hazelcast.client.
 echo "All Java tests are finished."
 
 exit 0
-
-
