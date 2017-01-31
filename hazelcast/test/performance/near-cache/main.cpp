@@ -169,7 +169,11 @@ private:
             if (duration.total_microseconds() < 1) {
                 std::cerr << "Negative duration:" << duration.total_microseconds() << std::endl;
             }
-            params.values[index++] = (int64_t) duration.total_microseconds();
+            if (params.operationInterval > 0) {
+                params.values[index++] = (int64_t) duration.total_microseconds();
+            } else {
+                params.values.push_back((int64_t) duration.total_microseconds());
+            }
 
             expectedStartTime += configuredLatency;
         }
