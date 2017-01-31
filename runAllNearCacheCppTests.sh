@@ -26,7 +26,6 @@ ${TestExecutable} --test-duration-in-milliseconds=${DURATION} --num-threads=${NU
 DURATION=600000
 NUM_THREADS=4
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE=""
 OUT_FILE=${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
@@ -36,7 +35,6 @@ ${TestExecutable} --test-duration-in-milliseconds=${DURATION} --num-threads=${NU
 DURATION=600000
 NUM_THREADS=40
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE="--use-near-cache"
 OUT_FILE=${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
@@ -46,7 +44,6 @@ ${TestExecutable} --test-duration-in-milliseconds=${DURATION} --num-threads=${NU
 DURATION=600000
 NUM_THREADS=40
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE=""
 OUT_FILE=${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
