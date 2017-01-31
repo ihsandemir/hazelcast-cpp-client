@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 1 ]
+if [ $# -ne 2 ]
 then
-    echo "Usage: runAllNearCacheTests <server ip address>"
+    echo "Usage: runAllNearCacheJavaTests <server ip address> <interval_in_millis>"
     exit 1
 fi
 
 SERVER_IP=$1
+OPERATION_INTERVAL=$2
 NUMBER_OF_MEMBERS=1
 
-echo "Testing the java near cache tests against server ${SERVER_IP}"
+echo "Testing the java near cache tests against server ${SERVER_IP}  using operation interval ${OPERATION_INTERVAL} milliseconds"
 
 # TEST CASE: no_miss_with_nearcache_1_member_10000keys_10minutes_1msecInterval_4threads
 DURATION=600000
 NUM_THREADS=4
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE="--use-near-cache"
 OUT_FILE=java_${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
@@ -25,7 +25,6 @@ MAVEN_OPTS="-Xmx4g -Xms4g" mvn exec:java -Dexec.mainClass="com.hazelcast.client.
 DURATION=600000
 NUM_THREADS=4
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE=""
 OUT_FILE=java_${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
@@ -35,7 +34,6 @@ MAVEN_OPTS="-Xmx4g -Xms4g" mvn exec:java -Dexec.mainClass="com.hazelcast.client.
 DURATION=600000
 NUM_THREADS=40
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE="--use-near-cache"
 OUT_FILE=java_${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
@@ -45,7 +43,6 @@ MAVEN_OPTS="-Xmx4g -Xms4g" mvn exec:java -Dexec.mainClass="com.hazelcast.client.
 DURATION=600000
 NUM_THREADS=40
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE=""
 OUT_FILE=java_${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 

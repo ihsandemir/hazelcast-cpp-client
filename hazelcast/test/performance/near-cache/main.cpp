@@ -251,6 +251,15 @@ std::string getValueString(const std::string &argumentName, const std::string &a
     return "";
 }
 
+int getIntArgument(const std::string &argumentName, const std::string &argument) {
+    std::string value = getValueString(argumentName, argument);
+    if (value.size() == 0) {
+        return -1;
+    }
+
+    return std::atoi(value.c_str());
+}
+
 /**
  * @return -1 if argument is not found or the value is a negative number, otherwise returns the value of the argument
  */
@@ -340,16 +349,18 @@ int parseArguments(int argc, char **argv, struct ThreadParameters &params) {
             ++numFound;
         }
 
-        val = getPozitifIntArgument(operationIntervalArg, argument, usage);
-        if (val > 0) {
+        val = getIntArgument(operationIntervalArg, argument);
+        if (val >= 0) {
             params.operationInterval = val;
             ++numFound;
         }
     }
 
     // pre-allocate the result array
-    size_t arraySize = (size_t) params.testDuration/params.operationInterval;
-    params.values.resize(arraySize);
+    if (params.operationInterval > 0) {
+        size_t arraySize = (size_t) params.testDuration/params.operationInterval;
+        params.values.resize(arraySize);
+    }
 
     return numFound;
 }

@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 2 ]
+if [ $# -ne 3 ]
 then
-    echo "Usage: runAllNearCacheTests <path of the executable> <server ip address>"
+    echo "Usage: runAllNearCacheCppTests <path of the executable> <server ip address> <interval_in_millis>"
     exit 1
 fi
 
 TestExecutable=$1
 SERVER_IP=$2
+OPERATION_INTERVAL=$3
 NUMBER_OF_MEMBERS=1
 
-echo "Testing the executable ${TestExecutable} against server ${SERVER_IP}"
+echo "Testing the executable ${TestExecutable} against server ${SERVER_IP} using operation interval ${OPERATION_INTERVAL} milliseconds"
 
 # TEST CASE: no_miss_with_nearcache_1_member_10000keys_10minutes_1msecInterval_4threads
 DURATION=600000
 NUM_THREADS=4
 KEY_SET_SIZE=10000
-OPERATION_INTERVAL=1
 USE_NEAR_CACHE="--use-near-cache"
 OUT_FILE=${NUMBER_OF_MEMBERS}member${USE_NEAR_CACHE}${KEY_SET_SIZE}keys_${DURATION}millisecondsDuration_${OPERATION_INTERVAL}msecInterval_${NUM_THREADS}threads.txt
 
