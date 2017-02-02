@@ -39,7 +39,8 @@ struct ThreadParameters {
                          serverIp("127.0.0.1"),
                          useNearCache(false),
                          outFileName("NearCacheResult.txt"),
-                         mapName("NearCachePerformanceMap") {
+                         mapName("NearCachePerformanceMap"),
+                        totalOperationsCount(0) {
     }
 
     IMap<int, int> *map;
@@ -52,6 +53,7 @@ struct ThreadParameters {
     std::string outFileName;
     std::string mapName;
     std::vector<int64_t> values;
+    int64_t totalOperationsCount;
 };
 
 std::ostream &operator<<(std::ostream &out, const ThreadParameters &params) {
@@ -118,7 +120,14 @@ public:
             map.getLocalMapStats().getNearCacheStats()->toString() << std::endl;
         }
 
-        return generateHistogram(allThreads);
+        bool isLatencyTest = params.operationInterval > 0;
+
+        if (isLatencyTest) {
+            return generateHistogram(allThreads);
+        }
+
+        printThroughput(allThreads);
+        return 0;
     }
 
 private:
@@ -153,29 +162,36 @@ private:
 
         boost::posix_time::time_duration configuredLatency = boost::posix_time::milliseconds(params.operationInterval);
 
+        bool isLatencyTest = params.operationInterval > 0;
         boost::posix_time::ptime expectedStartTime = boost::posix_time::microsec_clock::universal_time();
         size_t index = 0;
         while (currentTimeMillis() < testEndTime) {
             int key = rand() % params.keySetSize;
 
-            sleepUntil(expectedStartTime);
+            if (isLatencyTest) {
+                sleepUntil(expectedStartTime);
+            }
 
             // perform the measured operation
             params.map->get(key);
 
-            boost::posix_time::ptime end = boost::posix_time::microsec_clock::universal_time();
+            if (isLatencyTest) {
+                boost::posix_time::ptime end = boost::posix_time::microsec_clock::universal_time();
 
-            boost::posix_time::time_duration duration = end - expectedStartTime;
-            if (duration.total_microseconds() < 1) {
-                std::cerr << "Negative duration:" << duration.total_microseconds() << std::endl;
-            }
-            if (params.operationInterval > 0) {
-                params.values[index++] = (int64_t) duration.total_microseconds();
+                boost::posix_time::time_duration duration = end - expectedStartTime;
+                if (duration.total_microseconds() < 1) {
+                    std::cerr << "Negative duration:" << duration.total_microseconds() << std::endl;
+                }
+                if (params.operationInterval > 0) {
+                    params.values[index++] = (int64_t) duration.total_microseconds();
+                } else {
+                    params.values.push_back((int64_t) duration.total_microseconds());
+                }
+
+                expectedStartTime += configuredLatency;
             } else {
-                params.values.push_back((int64_t) duration.total_microseconds());
+                ++params.totalOperationsCount;
             }
-
-            expectedStartTime += configuredLatency;
         }
     }
 
@@ -208,6 +224,16 @@ private:
             }
         }
         return max;
+    }
+
+    void printThroughput(const std::vector<ThreadInfo> &allThreadsInfo) {
+        std::cout << "Total operations performed for each thread are: " << std::endl;
+        int64_t total = 0;
+        for (int i = 0; i < params.numberOfThreads; ++i) {
+            std::cout << "[" << i <<"]: " << allThreadsInfo[i].params.totalOperationsCount << std::endl;
+            total += allThreadsInfo[i].params.totalOperationsCount;
+        }
+        std::cout << "Total operations for the test is " << total << " in " << params.testDuration << " msecs. That is " << total * 1000 / params.testDuration << " ops/sec" << std::endl;
     }
 
     int generateHistogram(const std::vector<ThreadInfo> &allThreadsInfo) {
