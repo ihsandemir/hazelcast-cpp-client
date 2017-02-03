@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 2 ]
+if [ $# -ne 3 ]
 then
-    echo "Usage: runAllNearCacheJavaTests <server ip address> <interval_in_millis>"
+    echo "Usage: runAllNearCacheJavaTests <server ip address> <interval_in_millis> <map entry count>"
     exit 1
 fi
 
 SERVER_IP=$1
 OPERATION_INTERVAL=$2
-NUMBER_OF_MEMBERS=1
+KEY_SET_SIZE=$3
 
+NUMBER_OF_MEMBERS=1
 DURATION=600000
-KEY_SET_SIZE=10000
 
 echo "Testing the java near cache tests against server ${SERVER_IP}  using operation interval ${OPERATION_INTERVAL} milliseconds"
 

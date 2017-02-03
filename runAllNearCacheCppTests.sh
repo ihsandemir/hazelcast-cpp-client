@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
-    echo "Usage: runAllNearCacheCppTests <path of the executable> <server ip address> <interval_in_millis>"
+    echo "Usage: runAllNearCacheCppTests <path of the executable> <server ip address> <interval_in_millis> <map entry count>"
     exit 1
 fi
 
 TestExecutable=$1
 SERVER_IP=$2
 OPERATION_INTERVAL=$3
-NUMBER_OF_MEMBERS=1
+KEY_SET_SIZE=$4
 
+NUMBER_OF_MEMBERS=1
 DURATION=600000
-KEY_SET_SIZE=10000
 
 echo "Testing the executable ${TestExecutable} against server ${SERVER_IP} using operation interval ${OPERATION_INTERVAL} milliseconds"
 

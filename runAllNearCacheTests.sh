@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 1 ]
+if [ $# -ne 2 ]
 then
-    echo "Usage: runAllNearCacheTests <interval_in_millis>"
+    echo "Usage: runAllNearCacheTests <interval_in_millis> <map_entry_count>"
     exit 1
 fi
 
 INTERVAL_IN_MILLIS=$1
+ENTRY_COUNT=$2
 
 START_DIR=`pwd`
 
@@ -19,11 +20,11 @@ JAVA_CLIENT_HOME=/home/ihsan/work/src/hazelcast/hazelcast-client
 
 cd ${CPP_CLIENT_HOME}
 
-${CPP_CLIENT_HOME}/runAllNearCacheCppTests.sh ${CPP_EXE_PATH} 10.212.1.111 ${INTERVAL_IN_MILLIS} 2>&1 | tee cppNearCachePerfTestRunLog${START_TIME}.txt
+${CPP_CLIENT_HOME}/runAllNearCacheCppTests.sh ${CPP_EXE_PATH} 10.212.1.111 ${INTERVAL_IN_MILLIS} ${ENTRY_COUNT} 2>&1 | tee cppNearCachePerfTestRunLog${START_TIME}.txt
 
 cd ${JAVA_CLIENT_HOME}
 
-${CPP_CLIENT_HOME}/runAllNearCacheJavaTests.sh 10.212.1.111 ${INTERVAL_IN_MILLIS} 2>&1 | tee javaNearCachePerfTestRunLog${START_TIME}.txt
+${CPP_CLIENT_HOME}/runAllNearCacheJavaTests.sh 10.212.1.111 ${INTERVAL_IN_MILLIS} ${ENTRY_COUNT} 2>&1 | tee javaNearCachePerfTestRunLog${START_TIME}.txt
 
 cd ${START_DIR}
 
