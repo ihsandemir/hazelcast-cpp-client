@@ -128,4 +128,9 @@ then
     gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" ${BUILD_DIR}/hazelcast/test/src/${EXECUTABLE_NAME} core.${testPid}
 fi
 
+if [ "${HZ_COVERAGE_STRING}x" != "x" ]
+then
+    scripts/prepareCoverageReport.sh
+fi
+
 exit ${result}
