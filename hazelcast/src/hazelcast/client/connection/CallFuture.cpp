@@ -24,6 +24,8 @@
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
+#include "hazelcast/util/Util.h"
+
 #include <climits>
 #include <ctime>
 #include <algorithm>
@@ -66,20 +68,23 @@ namespace hazelcast {
             std::auto_ptr<protocol::ClientMessage> CallFuture::get(int64_t timeoutInMilliseconds) {
 				while (timeoutInMilliseconds > 0) {
                     int64_t beg = util::currentTimeMillis();
-                    try {
-						using namespace std;
-                        int64_t waitMillis = (int64_t) min(timeoutInMilliseconds, (int64_t) heartBeatTimeout * 1000);
-                        return promise->getFuture().get(waitMillis);
-                    } catch (exception::FutureWaitTimeout &exception) {
-                        // do nothing
+                    using namespace std;
+                    int64_t waitMillis = (int64_t) min(timeoutInMilliseconds, (int64_t) heartBeatTimeout * 1000);
+                    boost::future<protocol::ClientMessage *> f = promise->getFuture();
+                    boost::future_status status = f.wait_for(boost::chrono::milliseconds(waitMillis));
+                    if (status == boost::future_status::ready) {
+                        return std::auto_ptr<protocol::ClientMessage>(f.get());
                     }
+
                     int64_t elapsed = util::currentTimeMillis() - beg;
                     timeoutInMilliseconds -= elapsed;
                 }
                 // This check is needed for cases where a negative timeoutInMilliseconds is provided
-                if (promise->getFuture().isDone()) {
+/*
+                if (promise->getFuture().is_ready()) {
                     promise->getFuture().get();
                 }
+*/
                 throw exception::TimeoutException("CallFuture::get(int timeoutInSeconds)", "Wait is timed out");
             }
 

@@ -76,6 +76,10 @@ if (NOT("${HAZELCAST_INSTALL_DIR}x" STREQUAL "x"))
 
     message(STATUS "${CMAKE_SYSTEM}")
 
+#[[
+	link_directories(/Users/ihsan/Desktop/work/src/boost_1_63_0/stage/lib)
+	link_libraries(boost_system boost_thread boost_timer boost_chrono)
+]]
     IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         message(STATUS "APPLE ENVIRONMENT DETECTED")
 

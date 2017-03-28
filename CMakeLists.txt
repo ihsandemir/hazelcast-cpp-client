@@ -66,8 +66,39 @@ endif ()
 message(STATUS "HAZELCAST_GIT_COMMIT_ID = ${HAZELCAST_GIT_COMMIT_ID}" )
 add_definitions(-DHAZELCAST_GIT_COMMIT_ID=${HAZELCAST_GIT_COMMIT_ID})
 
+# boost
+#[[
+include(FindBoost)
+
+set(Boost_NO_SYSTEM_PATHS true)
+set (Boost_USE_STATIC_LIBS OFF CACHE BOOL "use static libraries from Boost")
+set (Boost_USE_MULTITHREADED ON)
+find_package(Boost REQUIRED
+		COMPONENTS
+		system program_options thread smart_ptr
+		date_time chrono timer regex
+		)
+
+FIND_PACKAGE(Boost)
+IF (Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIRS})
+	link_libraries(${Boost_LIBRARIES})
+else()
+	message(STATUS "Boost could NOT be found!!!")
+ENDIF()
+]]
+
+set(Boost_NO_SYSTEM_PATHS true)
+#[[
+set (Boost_USE_STATIC_LIBS OFF CACHE BOOL "use static libraries from Boost")
+]]
+set (Boost_USE_STATIC_LIBS ON)
+set (Boost_USE_MULTITHREADED ON)
+
 # Disable any boost lib linking
+#[[
 add_definitions("-DBOOST_ALL_NO_LIB")
+]]
 
 message(STATUS "Preparing hazelcast client ..... ")
 
@@ -130,6 +161,11 @@ if (${HZ_COMPILE_WITH_SSL} MATCHES "ON")
 ELSE ()
 	message(STATUS "Building the library without SSL.")
 ENDIF()
+
+link_directories(/Users/ihsan/Desktop/work/src/boost_1_63_0/stage/lib)
+link_libraries(boost_system boost_thread boost_timer boost_chrono)
+
+add_definitions(-DBOOST_THREAD_PROVIDES_FUTURE)
 
 message(STATUS "${CMAKE_SYSTEM}")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

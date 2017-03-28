@@ -20,10 +20,10 @@
 #define HAZELCAST_ClientCallPromise
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/AtomicInt.h"
 
 #include <memory>
+#include <boost/thread/future.hpp>
 
 namespace hazelcast {
     namespace client {
@@ -40,15 +40,17 @@ namespace hazelcast {
 
                 void setResponse(std::auto_ptr<protocol::ClientMessage> message);
 
-                void setException(std::auto_ptr<exception::IException> exception);
+                void setException(const exception::IException &exception);
 
+/*
                 void resetException(std::auto_ptr<exception::IException> exception);
+*/
 
                 void setRequest(std::auto_ptr<protocol::ClientMessage> request);
 
                 protocol::ClientMessage *getRequest() const;
 
-                util::Future<std::auto_ptr<protocol::ClientMessage> > &getFuture();
+                boost::future<protocol::ClientMessage *> getFuture();
 
                 void setEventHandler(std::auto_ptr<impl::BaseEventHandler> eventHandler);
 
@@ -58,14 +60,13 @@ namespace hazelcast {
 
                 void resetFuture();
             private:
-                util::Future<std::auto_ptr<protocol::ClientMessage> > future;
+                boost::promise<protocol::ClientMessage *> promise;
                 std::auto_ptr<protocol::ClientMessage> request;
                 std::auto_ptr<impl::BaseEventHandler> eventHandler;
                 util::AtomicInt resendCount;
             };
         }
     }
-
 }
 
 #endif //HAZELCAST_ClientCallPromise

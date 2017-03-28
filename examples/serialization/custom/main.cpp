@@ -47,7 +47,7 @@ namespace test1 {
             return 666;
         }
     }
-}
+}r
 
 class CustomSerializer : public hazelcast::client::serialization::Serializer<test1::test2::Person> {
 public:

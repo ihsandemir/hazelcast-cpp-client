@@ -48,6 +48,8 @@ int main() {
     employees.put("Mark", Employee(1000));
     employees.put("Spencer", Employee(1000));
 
+    std::cout << "Populated the employees map with " << employees.size() << " entries." << std::endl;
+
     EmployeeRaiseEntryProcessor processor;
     std::map<std::string, boost::shared_ptr<int> > result =
             employees.executeOnEntries<int, EmployeeRaiseEntryProcessor>(processor);
@@ -66,6 +68,15 @@ int main() {
     std::cout << "The result after employees.executeOnKeys call is:" << std::endl;
     for (std::map<std::string, boost::shared_ptr<int> >::const_iterator it = result.begin(); it != result.end(); ++it) {
         std::cout << it->first << " salary: " << *it->second << std::endl;
+    }
+    
+    // Do async call to a key
+    boost::shared_ptr<hazelcast::client::Future<int> > future = employees.submitToKey<int, EmployeeRaiseEntryProcessor>("Spencer", processor);
+    boost::shared_ptr<int> submitResult = future->get(2000);
+    if (submitResult.get()) {
+        std::cout << "The result of submitToKey call is:" << *submitResult <<  std::endl;
+    } else {
+        std::cout << "The result of submitToKey returned null" <<  std::endl;
     }
 
     std::cout << "Finished" << std::endl;

@@ -122,6 +122,10 @@ namespace hazelcast {
                 ASSERT_EQ(2, list->lastIndexOf("item1"));
             }
 
+            TEST_F(ClientListTest, testihsan) {
+                list->size();
+            }
+
             TEST_F(ClientListTest, testToArray) {
                 ASSERT_TRUE(list->add("item1"));
                 ASSERT_TRUE(list->add("item2"));

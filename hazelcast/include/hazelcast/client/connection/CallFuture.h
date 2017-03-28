@@ -62,7 +62,6 @@ namespace hazelcast {
                 spi::InvocationService* invocationService;
                 int heartBeatTimeout;
             };
-
         }
     }
 }

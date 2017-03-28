@@ -19,6 +19,7 @@
 #include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/Address.h"
+#include "hazelcast/client/exception/IException.h"
 #include "hazelcast/client/connection/CallPromise.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 
@@ -30,17 +31,19 @@ namespace hazelcast {
             }
 
             void CallPromise::setResponse(std::auto_ptr<protocol::ClientMessage> message) {
-                this->future.set_value(message);
+                promise.set_value(message.release());
             }
 
-            void CallPromise::setException(std::auto_ptr<exception::IException> exception) {
-                future.set_exception(exception);
+            void CallPromise::setException(const exception::IException &exception) {
+                promise.set_exception(exception);
             }
 
+/*
             void CallPromise::resetException(std::auto_ptr<exception::IException> exception) {
-                future.reset_exception(exception);
+                promise.set_exception(exception);
             }
 
+*/
             void CallPromise::setRequest(std::auto_ptr<protocol::ClientMessage> request) {
                 this->request = request;
             }
@@ -49,8 +52,8 @@ namespace hazelcast {
                 return request.get();
             }
 
-            util::Future<std::auto_ptr<protocol::ClientMessage> >  &CallPromise::getFuture() {
-                return future;
+            boost::future<protocol::ClientMessage *> CallPromise::getFuture() {
+                return promise.get_future();
             }
 
             void CallPromise::setEventHandler(std::auto_ptr<impl::BaseEventHandler> eventHandler) {
@@ -66,7 +69,7 @@ namespace hazelcast {
             }
 
             void CallPromise::resetFuture() {
-                future.reset();
+                promise = boost::promise<protocol::ClientMessage *>();
             }
         }
     }

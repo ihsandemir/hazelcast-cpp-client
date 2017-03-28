@@ -196,13 +196,11 @@ namespace hazelcast {
                 promise->resetFuture();
 
                 if (promise->getRequest()->isBindToSingleConnection()) {
-                    std::auto_ptr<exception::IException> exception(new exception::HazelcastInstanceNotActiveException(lastTriedAddress));
-                    promise->setException(exception);
+                    promise->setException(exception::HazelcastInstanceNotActiveException(lastTriedAddress));
                     return boost::shared_ptr<connection::Connection>();
                 }
                 if (promise->incrementAndGetResendCount() > getRetryCount()) {
-                    std::auto_ptr<exception::IException> exception(new exception::HazelcastInstanceNotActiveException(lastTriedAddress));
-                    promise->setException(exception);
+                    promise->setException(exception::HazelcastInstanceNotActiveException(lastTriedAddress));
                     return boost::shared_ptr<connection::Connection>();
                 }
 
@@ -211,8 +209,7 @@ namespace hazelcast {
                     connection::ConnectionManager &cm = clientContext.getConnectionManager();
                     connection = cm.getRandomConnection(getRetryCount(), lastTriedAddress, getRetryWaitTime());
                 } catch (exception::IException &) {
-                    std::auto_ptr<exception::IException> exception(new exception::HazelcastInstanceNotActiveException(lastTriedAddress));
-                    promise->setException(exception);
+                    promise->setException(exception::HazelcastInstanceNotActiveException(lastTriedAddress));
                     return boost::shared_ptr<connection::Connection>();
                 }
 
@@ -242,8 +239,8 @@ namespace hazelcast {
                                    promise->getRequest()->getCorrelationId());
                     hazelcast::util::ILogger::getLogger().info(msg);
 
-                    std::auto_ptr<exception::IException> exception(new exception::IllegalStateException(
-                            "InvocationService::registerAndEnqueue", "Invocation service is not open. Can not process the request."));
+                    exception::IllegalStateException exception("InvocationService::registerAndEnqueue",
+                    "Invocation service is not open. Can not process the request.");
                     promise->setException(exception);
 
                     return boost::shared_ptr<connection::Connection>();
@@ -366,7 +363,7 @@ namespace hazelcast {
                 }
                 // At this point the exception may have been already set at the promise, hence we need to reset it
                 // and set the exception
-                promise->resetException(exception);
+                //promise->resetException(exception);
             }
 
             boost::shared_ptr<connection::CallPromise> InvocationService::getEventHandlerPromise(
@@ -393,8 +390,8 @@ namespace hazelcast {
                 for (std::vector<std::pair<int64_t, boost::shared_ptr<connection::CallPromise> > >::iterator it = promises.begin();
                      it != promises.end(); ++it) {
                     if (!isOpen) {
-                        std::auto_ptr<exception::IException> exception(new exception::IllegalStateException(
-                                "InvocationService::cleanResources", "Invocation service is not open."));
+                        exception::IllegalStateException exception("InvocationService::cleanResources",
+                                                                   "Invocation service is not open.");
                         it->second->setException(exception);
                     } else {
                         std::auto_ptr<exception::IException> exception(new exception::IOException(
