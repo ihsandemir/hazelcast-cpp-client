@@ -20,7 +20,6 @@
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/AtomicInt.h"
-#include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
@@ -139,7 +138,6 @@ namespace hazelcast {
                 int heartbeatTimeout;
                 int retryWaitTime;
                 int retryCount;
-                util::AtomicBoolean isShutdown;
                 spi::ClientContext& clientContext;
                 // Is not using the Connection* for the key due to a possible ABA problem.
                 util::SynchronizedMap<int , util::SynchronizedMap<int64_t, connection::CallPromise > > callPromises;

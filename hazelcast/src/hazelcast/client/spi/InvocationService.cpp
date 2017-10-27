@@ -71,14 +71,14 @@ namespace hazelcast {
             }
 
             void InvocationService::shutdown() {
-                isShutdown = true;
                 typedef std::vector<std::pair<int, boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > > > ALL_PROMISES;
                 BOOST_FOREACH(const ALL_PROMISES::value_type entry, callPromises.clear()) {
                                 typedef std::vector<std::pair<int64_t, boost::shared_ptr<connection::CallPromise> > > PROMISE_ENTRY;
-                                BOOST_FOREACH(const PROMISE_ENTRY::value_type promise , entry.second->clear()) {
+                                BOOST_FOREACH(const PROMISE_ENTRY::value_type promise, entry.second->clear()) {
                                                 promise.second->setException(std::auto_ptr<exception::IException>(
-                                                        new exception::HazelcastClientNotActiveException("InvocationService::shutdown()",
-                                                                                                         "Client is shutting down")));
+                                                        new exception::HazelcastClientNotActiveException(
+                                                                "InvocationService::shutdown()",
+                                                                "Client is shutting down")));
                                             }
                             }
             }
@@ -166,11 +166,6 @@ namespace hazelcast {
                                                               std::auto_ptr<client::impl::BaseEventHandler> eventHandler,
                                                               boost::shared_ptr<connection::Connection> connection,
                                                               int partitionId) {
-                if (isShutdown) {
-                    throw exception::HazelcastClientNotActiveException("InvocationService::doSend",
-                                                                       "Client is shut down");
-                }
-
                 request->setPartitionId(partitionId);
                 boost::shared_ptr<connection::CallPromise> promise(new connection::CallPromise());
                 promise->setRequest(request);
@@ -258,7 +253,7 @@ namespace hazelcast {
                     util::snprintf(msg, 200, "Client is not running. Did not register the promise for message "
                             "correlation id:%lld", promise->getRequest()->getCorrelationId());
 
-                    std::auto_ptr<exception::IException> exception(new exception::IllegalStateException(
+                    std::auto_ptr<exception::IException> exception(new exception::HazelcastClientNotActiveException(
                             "InvocationService::registerAndEnqueue", msg));
                     promise->setException(exception);
 
