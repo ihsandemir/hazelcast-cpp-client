@@ -465,7 +465,7 @@ namespace hazelcast {
                 void SerializationService::registerConstantSerializers() {
                     registerSerializer(boost::shared_ptr<SerializerBase>(new NullSerializer));
                     registerSerializer(boost::shared_ptr<SerializerBase>(new DataSerializer(serializationConfig)));
-                    registerSerializer(boost::shared_ptr<SerializerBase>(new PortableSerializer(portableContext, serializationConfig)));
+                    registerSerializer(boost::shared_ptr<SerializerBase>(new PortableSerializer(portableContext)));
                     //primitives and String
                     registerSerializer(boost::shared_ptr<SerializerBase>(new pimpl::ByteSerializer));
                     registerSerializer(boost::shared_ptr<SerializerBase>(new pimpl::BooleanSerializer));

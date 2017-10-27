@@ -70,6 +70,20 @@ namespace hazelcast {
             }
 
             void InvocationService::shutdown() {
+                isShutdown = true;
+                std::vector<boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > > allPromises = callPromises.values();
+                for (std::vector<boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > >::iterator it = allPromises.begin();
+                     it != allPromises.end(); ++it) {
+                    std::vector<boost::shared_ptr<connection::CallPromise> > connectionPromises = (*it)->values();
+                    for (std::vector<boost::shared_ptr<connection::CallPromise> >::const_iterator conPromiseIt = connectionPromises.begin();
+                         conPromiseIt != connectionPromises.end(); ++conPromiseIt) {
+                        (*conPromiseIt)->setException(std::auto_ptr<exception::IException>(
+                                new exception::HazelcastClientNotActiveException("InvocationService::shutdown()",
+                                                                                 "Client is shutting down")));
+                    }
+                }
+                // TODO: better to remove by an iterator before setting the exception as done in Java client
+                callPromises.clear();
             }
 
             connection::CallFuture  InvocationService::invokeOnRandomTarget(
@@ -151,10 +165,15 @@ namespace hazelcast {
             }
 
 
-            connection::CallFuture  InvocationService::doSend(std::auto_ptr<protocol::ClientMessage> request,
+            connection::CallFuture InvocationService::doSend(std::auto_ptr<protocol::ClientMessage> request,
                                                               std::auto_ptr<client::impl::BaseEventHandler> eventHandler,
                                                               boost::shared_ptr<connection::Connection> connection,
                                                               int partitionId) {
+                if (isShutdown) {
+                    throw exception::HazelcastClientNotActiveException("InvocationService::doSend",
+                                                                       "Client is shut down");
+                }
+
                 request->setPartitionId(partitionId);
                 boost::shared_ptr<connection::CallPromise> promise(new connection::CallPromise());
                 promise->setRequest(request);

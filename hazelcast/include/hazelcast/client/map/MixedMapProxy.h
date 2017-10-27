@@ -59,8 +59,6 @@ namespace hazelcast {
             */
             class HAZELCAST_API MixedMapProxy : public proxy::IMapImpl {
             public:
-                static const std::string SERVICE_NAME;
-
                 MixedMapProxy(const std::string &instanceName, spi::ClientContext *context);
 
                 /**

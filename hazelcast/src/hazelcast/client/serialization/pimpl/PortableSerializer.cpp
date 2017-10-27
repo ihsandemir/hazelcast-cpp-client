@@ -34,8 +34,8 @@ namespace hazelcast {
     namespace client {
         namespace serialization {
             namespace pimpl {
-                PortableSerializer::PortableSerializer(PortableContext& portableContext, const SerializationConfig &serializationConfig)
-                : context(portableContext), serializationConfig(serializationConfig) {
+                PortableSerializer::PortableSerializer(PortableContext& portableContext)
+                : context(portableContext) {
                 }
 
                 void PortableSerializer::write(ObjectDataOutput& out, const Portable& p) {
@@ -104,11 +104,8 @@ namespace hazelcast {
 
                 std::auto_ptr<Portable>
                 PortableSerializer::createNewPortableInstance(int32_t factoryId, int32_t classId) {
-/*
                     const std::map<int32_t, boost::shared_ptr<PortableFactory> > &portableFactories =
                             context.getSerializationConfig().getPortableFactories();
-*/
-                    const std::map<int32_t, boost::shared_ptr<PortableFactory> > &portableFactories = serializationConfig.getPortableFactories();
                     std::map<int, boost::shared_ptr<hazelcast::client::serialization::PortableFactory> >::const_iterator factoryIt =
                             portableFactories.find(factoryId);
                     

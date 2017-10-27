@@ -22,8 +22,6 @@
 namespace hazelcast {
     namespace client {
         namespace map {
-            const std::string MixedMapProxy::SERVICE_NAME = "hz:impl:mapService";
-
             MixedMapProxy::MixedMapProxy(const std::string &instanceName, spi::ClientContext *context)
                     : proxy::IMapImpl(instanceName, context) {
             }

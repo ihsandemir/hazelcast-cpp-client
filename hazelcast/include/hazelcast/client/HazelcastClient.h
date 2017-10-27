@@ -507,7 +507,7 @@ namespace hazelcast {
             map::MixedMapProxy getMixedMap(const std::string &name) {
                 map::impl::MixedMapProxyFactory factory(&clientContext);
                 boost::shared_ptr<spi::ClientProxy> proxy =
-                        getDistributedObjectForService(map::MixedMapProxy::SERVICE_NAME, name, factory);
+                        getDistributedObjectForService("hz:impl:mapService", name, factory);
                 return *boost::static_pointer_cast<map::MixedMapProxy>(proxy);
             }
 
