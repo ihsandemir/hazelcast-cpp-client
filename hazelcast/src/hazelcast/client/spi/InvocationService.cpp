@@ -38,6 +38,7 @@
 
 #include <assert.h>
 #include <string>
+#include <boost/foreach.hpp>
 
 namespace hazelcast {
     namespace client {
@@ -71,19 +72,15 @@ namespace hazelcast {
 
             void InvocationService::shutdown() {
                 isShutdown = true;
-                std::vector<boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > > allPromises = callPromises.values();
-                for (std::vector<boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > >::iterator it = allPromises.begin();
-                     it != allPromises.end(); ++it) {
-                    std::vector<boost::shared_ptr<connection::CallPromise> > connectionPromises = (*it)->values();
-                    for (std::vector<boost::shared_ptr<connection::CallPromise> >::const_iterator conPromiseIt = connectionPromises.begin();
-                         conPromiseIt != connectionPromises.end(); ++conPromiseIt) {
-                        (*conPromiseIt)->setException(std::auto_ptr<exception::IException>(
-                                new exception::HazelcastClientNotActiveException("InvocationService::shutdown()",
-                                                                                 "Client is shutting down")));
-                    }
-                }
-                // TODO: better to remove by an iterator before setting the exception as done in Java client
-                callPromises.clear();
+                typedef std::vector<std::pair<int, boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > > > ALL_PROMISES;
+                BOOST_FOREACH(const ALL_PROMISES::value_type entry, callPromises.clear()) {
+                                typedef std::vector<std::pair<int64_t, boost::shared_ptr<connection::CallPromise> > > PROMISE_ENTRY;
+                                BOOST_FOREACH(const PROMISE_ENTRY::value_type promise , entry.second->clear()) {
+                                                promise.second->setException(std::auto_ptr<exception::IException>(
+                                                        new exception::HazelcastClientNotActiveException("InvocationService::shutdown()",
+                                                                                                         "Client is shutting down")));
+                                            }
+                            }
             }
 
             connection::CallFuture  InvocationService::invokeOnRandomTarget(
