@@ -220,6 +220,7 @@ if (${HZ_COMPILE_WITH_SSL} MATCHES "ON")
     add_subdirectory(tls)
     add_subdirectory(aws)
 endif()
+add_subdirectory(performance-test)
 
 
 
