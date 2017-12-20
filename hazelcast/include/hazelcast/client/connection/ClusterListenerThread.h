@@ -55,12 +55,12 @@ namespace hazelcast {
             class HAZELCAST_API ClusterListenerThread : public protocol::codec::ClientAddMembershipListenerCodec::AbstractEventHandler {
                 friend class spi::ClusterService;
             public:
-                ClusterListenerThread(spi::ClientContext &clientContext, int memberPort);
+                ClusterListenerThread(spi::ClientContext &clientContext);
 
                 /**
                  * @return true if started and initialized successfully, false otherwise
                  */
-                bool start();
+                bool start(int port);
 
                 void stop();
 
@@ -80,7 +80,7 @@ namespace hazelcast {
                 boost::shared_ptr<Connection> conn;
                 util::AtomicBoolean deletingConnection;
                 std::vector<Member> members;
-                std::auto_ptr<util::Thread> workerThread;
+                util::Thread workerThread;
                 bool isInitialMembersLoaded;
                 int memberPort;
                 bool isRegistrationIdReceived;

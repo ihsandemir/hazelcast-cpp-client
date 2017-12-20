@@ -36,7 +36,7 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             ClusterService::ClusterService(ClientContext &clientContext)
-                    : clientContext(clientContext) {
+                    : clientContext(clientContext), clusterListenerThread(clientContext) {
             }
 
             bool ClusterService::start() {
@@ -64,8 +64,7 @@ namespace hazelcast {
                 std::set<InitialMembershipListener *> const &initialMembershipListeners = config.getInitialMembershipListeners();
                 initialListeners.insert(initialMembershipListeners.begin(), initialMembershipListeners.end());
 
-                clusterListenerThread.reset(new connection::ClusterListenerThread(clientContext, port));
-                if (!clusterListenerThread->start()) {
+                if (!clusterListenerThread.start(port)) {
                     return false;
                 }
                 initMembershipListeners();
@@ -83,10 +82,7 @@ namespace hazelcast {
             }
 
             void ClusterService::shutdown() {
-                if (!clusterListenerThread.get()) {
-                    return;
-                }
-                clusterListenerThread->stop();
+                clusterListenerThread.stop();
             }
 
             std::auto_ptr<Address> ClusterService::getMasterAddress() {
@@ -165,7 +161,7 @@ namespace hazelcast {
             }
 
             std::vector<Address> ClusterService::findServerAddressesToConnect(const Address *previousConnectionAddr) const {
-                std::set<Address, addressComparator> socketAddresses = this->clusterListenerThread->getSocketAddresses();
+                std::set<Address, addressComparator> socketAddresses = clusterListenerThread.getSocketAddresses();
                 std::vector<Address> addresses;
                 for (std::set<Address, addressComparator>::const_iterator it = socketAddresses.begin();
                      it != socketAddresses.end(); it++) {

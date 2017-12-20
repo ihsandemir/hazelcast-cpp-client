@@ -37,8 +37,8 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            ClusterListenerThread::ClusterListenerThread(spi::ClientContext &clientContext, int memberPort)
-                    : startLatch(1), clientContext(clientContext), deletingConnection(false), memberPort(memberPort) {
+            ClusterListenerThread::ClusterListenerThread(spi::ClientContext &clientContext)
+                    : startLatch(1), clientContext(clientContext), deletingConnection(false) {
             }
 
             void ClusterListenerThread::staticRun(util::ThreadArgs &args) {
@@ -101,15 +101,19 @@ namespace hazelcast {
                 }
             }
 
-            bool ClusterListenerThread::start() {
-                workerThread.reset(new util::Thread("hz.clusterListenerThread", staticRun, this));
+            bool ClusterListenerThread::start(int port) {
+                memberPort = port;
+                if (!workerThread.start("hz.clusterListenerThread", staticRun, this)) {
+                    return false;
+                }
                 startLatch.await();
                 return !clientContext.getClusterService().getMemberList().empty();
             }
 
             void ClusterListenerThread::stop() {
                 startLatch.countDown();
-                workerThread->cancel();
+
+                workerThread.cancel();
 
                 /**
                  * Close the connection before waiting for the thread to finish (before the join call), this will let
@@ -124,7 +128,7 @@ namespace hazelcast {
                     deletingConnection = false;
                 }
 
-                workerThread->join();
+                workerThread.join();
             }
 
             std::set<Address, addressComparator> ClusterListenerThread::getSocketAddresses() const {

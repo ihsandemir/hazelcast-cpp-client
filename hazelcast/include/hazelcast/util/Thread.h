@@ -59,6 +59,12 @@ namespace hazelcast {
                     void *arg2 = NULL,
                     void *arg3 = NULL);
 
+§            bool start(const std::string &name, void (func)(ThreadArgs &),
+                       void *arg0 = NULL,
+                       void *arg1 = NULL,
+                       void *arg2 = NULL,
+                       void *arg3 = NULL);
+
             static long getThreadID();
 
             std::string getThreadName() const;
@@ -76,10 +82,11 @@ namespace hazelcast {
         private:
             static DWORD WINAPI controlledThread(LPVOID args);
 
-            void init(void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3 );
+            bool init(void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3 );
 
             std::string threadName;
             util::AtomicBoolean isJoined;
+            util::AtomicBoolean started;
 			util::AtomicBoolean isInterrupted;
             HANDLE thread;
 			DWORD id;
@@ -98,6 +105,8 @@ namespace hazelcast {
 
         class Thread {
         public:
+            Thread();
+
             Thread(const std::string &name, void (func)(ThreadArgs &),
                     void *arg0 = NULL,
                     void *arg1 = NULL,
@@ -109,6 +118,12 @@ namespace hazelcast {
                     void *arg1 = NULL,
                     void *arg2 = NULL,
                     void *arg3 = NULL);
+
+            bool start(const std::string &name, void (func)(ThreadArgs &),
+                       void *arg0 = NULL,
+                       void *arg1 = NULL,
+                       void *arg2 = NULL,
+                       void *arg3 = NULL);
 
             static long getThreadID();
 
@@ -126,10 +141,12 @@ namespace hazelcast {
         private:
             static void *controlledThread(void *args);
 
-            void init(void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3 );
+            bool
+            init(const std::string &name, void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3);
 
             std::string threadName;
             util::AtomicBoolean isJoined;
+            util::AtomicBoolean started;
             pthread_t thread;
             pthread_attr_t attr;
             ConditionVariable wakeupCondition;

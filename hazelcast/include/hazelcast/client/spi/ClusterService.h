@@ -84,7 +84,7 @@ namespace hazelcast {
             private:
                 ClientContext &clientContext;
 
-                std::auto_ptr<connection::ClusterListenerThread> clusterListenerThread;
+                connection::ClusterListenerThread clusterListenerThread;
 
                 std::auto_ptr<std::map<Address, Member, addressComparator> > members;
                 std::set<MembershipListener *> listeners;

@@ -19,13 +19,13 @@
 
 #include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
-#include "hazelcast/client/exception/IException.h"
+#include "hazelcast/client/exception/IllegalStateException.h"
+#include "hazelcast/util/LockGuard.h"
+
+#include <sstream>
 #include <memory>
-#include "hazelcast/util/Util.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
-
-#include "hazelcast/util/LockGuard.h"
 
 namespace hazelcast {
     namespace util {
@@ -34,23 +34,32 @@ namespace hazelcast {
                 void *arg0,
                 void *arg1,
                 void *arg2,
-                void *arg3)
-        : threadName(name)
-        , isJoined(false)
-		, isInterrupted(false){
-            init(func, arg0, arg1, arg2, arg3);
+                void *arg3) {
+            if (!init(name, func, arg0, arg1, arg2, arg3)) {
+                std::ostringstream out;
+                out << "Could not start thread " << threadName;
+                throw client::exception::IllegalStateException("Thread::Thread", out.str());
+            }
         }
 
         Thread::Thread(void (func)(ThreadArgs &),
                 void *arg0,
                 void *arg1,
                 void *arg2,
-                void *arg3)
-        : threadName("hz.unnamed")
-        , isJoined(false)
-		, isInterrupted(false){
-            init(func, arg0, arg1, arg2, arg3);
+                void *arg3) {
+            if (!init("hz.unnamed", func, arg0, arg1, arg2, arg3)) {
+                std::ostringstream out;
+                out << "Could not start thread " << threadName;
+                throw client::exception::IllegalStateException("Thread::Thread", out.str());
+            }
+        }
 
+        bool Thread::start(const std::string &name, void (func)(ThreadArgs &),
+                   void *arg0,
+                   void *arg1,
+                   void *arg2,
+                   void *arg3) {
+            return init(name, func, arg0, arg1, arg2, arg3);
         }
 
         long Thread::getThreadID() {
@@ -58,9 +67,11 @@ namespace hazelcast {
         }
 
         Thread::~Thread() {
-            if (!isJoined) {
+            if (started && !isJoined) {
                 cancel();
                 join();
+            }
+            if (thread) {
                 CloseHandle(thread);
             }
         }
@@ -84,12 +95,20 @@ namespace hazelcast {
         }
 
         void Thread::cancel() {
+            if (!started) {
+                return;
+            }
+
 			LockGuard lock(mutex);
         	isInterrupted = true;
 			condition.notify_all();
         }
 
         bool Thread::join() {
+            if (!started) {
+                return false;
+            }
+
             if (!isJoined.compareAndSet(false, true)) {
                 return true;
             }
@@ -123,7 +142,12 @@ namespace hazelcast {
             return 1L;
         }
 
-        void Thread::init(void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3 ) {
+        bool Thread::init(const std::string &name, void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2,
+                          void *arg3) {
+            if (!started.compareAndSet(false, true)) {
+                return false;
+            }
+
             ThreadArgs *threadArgs = new ThreadArgs;
             threadArgs->arg0 = arg0;
             threadArgs->arg1 = arg1;
@@ -132,6 +156,11 @@ namespace hazelcast {
             threadArgs->currentThread = this;
             threadArgs->func = func;
             thread = CreateThread(NULL, 0, controlledThread, threadArgs, 0 , &id);
+            bool result = thread != NULL;
+            if (result) {
+                threadName = name;
+            }
+            return result;
         }
     }
 }
@@ -139,29 +168,48 @@ namespace hazelcast {
 #else
 
 #include <sys/errno.h>
-#include "hazelcast/util/LockGuard.h"
 
 namespace hazelcast {
     namespace util {
+        Thread::Thread() {
+            pthread_attr_init(&attr);
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+        }
 
         Thread::Thread(const std::string &name, void (func)(ThreadArgs &),
                 void *arg0,
                 void *arg1,
                 void *arg2,
-                void *arg3)
-        : threadName(name)
-        , isJoined(false) {
-            init(func, arg0, arg1, arg2, arg3);
+                void *arg3) {
+            pthread_attr_init(&attr);
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+            if (!init(name, func, arg0, arg1, arg2, arg3)) {
+                std::ostringstream out;
+                out << "Could not start thread " << threadName;
+                throw client::exception::IllegalStateException("Thread::Thread", out.str());
+            }
         }
 
         Thread::Thread(void (func)(ThreadArgs &),
                 void *arg0,
                 void *arg1,
                 void *arg2,
-                void *arg3)
-        : threadName("hz.unnamed")
-        , isJoined(false) {
-            init(func, arg0, arg1, arg2, arg3);
+                void *arg3) {
+            pthread_attr_init(&attr);
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+            if (!init("hz.unnamed", func, arg0, arg1, arg2, arg3)) {
+                std::ostringstream out;
+                out << "Could not start thread " << threadName;
+                throw client::exception::IllegalStateException("Thread::Thread", out.str());
+            }
+        }
+
+        bool Thread::start(const std::string &name, void (func)(ThreadArgs &),
+                   void *arg0,
+                   void *arg1,
+                   void *arg2,
+                   void *arg3) {
+            return init(name, func, arg0, arg1, arg2, arg3);
         }
 
         long Thread::getThreadID() {
@@ -169,7 +217,7 @@ namespace hazelcast {
         }
 
         Thread::~Thread() {
-            if (!isJoined) {
+            if (started && !isJoined) {
                 cancel();
                 join();
             }
@@ -191,6 +239,10 @@ namespace hazelcast {
         }
 
         void Thread::cancel() {
+            if (!started) {
+                return;
+            }
+
             if (pthread_equal(thread, pthread_self())) {
                 /**
                  * do not allow cancelling itself
@@ -208,6 +260,10 @@ namespace hazelcast {
         }
 
         bool Thread::join() {
+            if (!started) {
+                return false;
+            }
+
             if (pthread_equal(thread, pthread_self())) {
                 // called from inside the thread, deadlock possibility
                 return false;
@@ -240,9 +296,12 @@ namespace hazelcast {
             return NULL;
         }
 
-        void Thread::init(void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2, void *arg3) {
-            pthread_attr_init(&attr);
-            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+        bool Thread::init(const std::string &name, void (func)(ThreadArgs &), void *arg0, void *arg1, void *arg2,
+                          void *arg3) {
+            if (!started.compareAndSet(false, true)) {
+                return false;
+            }
+
             ThreadArgs *threadArgs = new ThreadArgs;
             threadArgs->arg0 = arg0;
             threadArgs->arg1 = arg1;
@@ -250,9 +309,12 @@ namespace hazelcast {
             threadArgs->arg3 = arg3;
             threadArgs->currentThread = this;
             threadArgs->func = func;
-            pthread_create(&thread, &attr, controlledThread, threadArgs);
+            bool result = pthread_create(&thread, &attr, controlledThread, threadArgs) == 0;
+            if (result) {
+                threadName = name;
+            }
+            return result;
         }
-
     }
 }
 
