@@ -31,6 +31,7 @@
 #include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/internal/socket/TcpSocket.h"
+#include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/util/Util.h"
 
 
@@ -147,6 +148,10 @@ namespace hazelcast {
                 int32_t numWritten = 0;
                 int32_t frameLen = message.getFrameLength();
                 while (numWritten < frameLen) {
+                    if (!clientContext.getLifecycleService().isRunning()) {
+                        throw exception::IllegalStateException("Connection::writeBlocking",
+                                                               "Client is shutting down.");
+                    }
                     numWritten += message.writeTo(*socket, numWritten, frameLen);
                 }
             }
@@ -159,6 +164,10 @@ namespace hazelcast {
                 do {
                     int32_t numRead = 0;
                     do {
+                        if (!clientContext.getLifecycleService().isRunning()) {
+                            throw exception::IllegalStateException("Connection::readBlocking",
+                                                                   "Client is shutting down.");
+                        }
                         numRead += receiveByteBuffer.readFrom(*socket,
                                 protocol::ClientMessage::VERSION_FIELD_OFFSET - numRead, MSG_WAITALL);
                     } while (numRead < protocol::ClientMessage::VERSION_FIELD_OFFSET); // make sure that we can read the length

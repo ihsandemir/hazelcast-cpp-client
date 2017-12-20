@@ -83,6 +83,12 @@ namespace hazelcast {
 
                 class MixedMapAPITest : public ClientTestSupport, public ::testing::WithParamInterface<MapClientConfig *> {
                 public:
+                    virtual void TearDown() {
+                        if (imap.get()) {
+                            imap->destroy();
+                        }
+                    }
+
                     MixedMapAPITest() : clientConfig(GetParam()) {
                         #ifdef HZ_BUILD_WITH_SSL
                         config::SSLConfig sslConfig;
@@ -92,7 +98,7 @@ namespace hazelcast {
 
                         client.reset(new HazelcastClient(*clientConfig));
 
-                        imap = new mixedtype::IMap(client->toMixedType().getMap("MixedMapTestMap"));
+                        imap.reset(new mixedtype::IMap(client->toMixedType().getMap("MixedMapTestMap")));
                     }
 
                     static void SetUpTestCase() {
@@ -114,8 +120,70 @@ namespace hazelcast {
                     }
 
                 protected:
-                    virtual void TearDown() {
-                        imap->destroy();
+                    static void tryPutThread(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        bool result = imap->tryPut<std::string, std::string>("key1", "value3", 1 * 1000);
+                        if (!result) {
+                            latch->countDown();
+                        }
+                    }
+
+                    static void tryRemoveThread(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        bool result = imap->tryRemove<std::string>("key2", 1 * 1000);
+                        if (!result) {
+                            latch->countDown();
+                        }
+                    }
+
+                    static void testLockThread(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        imap->tryPut<std::string, std::string>("key1", "value2", 1);
+                        latch->countDown();
+                    }
+
+                    static void testLockTTLThread(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        imap->tryPut<std::string, std::string>("key1", "value2", 5 * 1000);
+                        latch->countDown();
+                    }
+
+                    static void testLockTTL2Thread(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        if (!imap->tryLock<std::string>("key1")) {
+                            latch->countDown();
+                        }
+                        if (imap->tryLock<std::string>("key1", 5 * 1000)) {
+                            latch->countDown();
+                        }
+                    }
+
+                    static void testMapTryLockThread1(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        if (!imap->tryLock<std::string>("key1", 2)) {
+                            latch->countDown();
+                        }
+                    }
+
+                    static void testMapTryLockThread2(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        if (imap->tryLock<std::string>("key1", 20 * 1000)) {
+                            latch->countDown();
+                        }
+                    }
+
+                    static void testMapForceUnlockThread(util::ThreadArgs &args) {
+                        util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
+                        mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
+                        imap->forceUnlock<std::string>("key1");
+                        latch->countDown();
                     }
 
                     class MapGetInterceptor : public serialization::IdentifiedDataSerializable {
@@ -178,7 +246,7 @@ namespace hazelcast {
                     static HazelcastServer *instance2;
                     MapClientConfig *clientConfig;
                     std::auto_ptr<HazelcastClient> client;
-                    mixedtype::IMap *imap;
+                    std::auto_ptr<mixedtype::IMap> imap;
                 };
 
                 INSTANTIATE_TEST_CASE_P(MixedMapAPITestInstance,
@@ -187,72 +255,6 @@ namespace hazelcast {
 
                 HazelcastServer *MixedMapAPITest::instance = NULL;
                 HazelcastServer *MixedMapAPITest::instance2 = NULL;
-
-                void tryPutThread(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    bool result = imap->tryPut<std::string, std::string>("key1", "value3", 1 * 1000);
-                    if (!result) {
-                        latch->countDown();
-                    }
-                }
-
-                void tryRemoveThread(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    bool result = imap->tryRemove<std::string>("key2", 1 * 1000);
-                    if (!result) {
-                        latch->countDown();
-                    }
-                }
-
-                void testLockThread(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    imap->tryPut<std::string, std::string>("key1", "value2", 1);
-                    latch->countDown();
-                }
-
-                void testLockTTLThread(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    imap->tryPut<std::string, std::string>("key1", "value2", 5 * 1000);
-                    latch->countDown();
-                }
-
-                void testLockTTL2Thread(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    if (!imap->tryLock<std::string>("key1")) {
-                        latch->countDown();
-                    }
-                    if (imap->tryLock<std::string>("key1", 5 * 1000)) {
-                        latch->countDown();
-                    }
-                }
-
-                void testMapTryLockThread1(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    if (!imap->tryLock<std::string>("key1", 2)) {
-                        latch->countDown();
-                    }
-                }
-
-                void testMapTryLockThread2(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    if (imap->tryLock<std::string>("key1", 20 * 1000)) {
-                        latch->countDown();
-                    }
-                }
-
-                void testMapForceUnlockThread(util::ThreadArgs &args) {
-                    util::CountDownLatch *latch = (util::CountDownLatch *) args.arg0;
-                    mixedtype::IMap *imap = (mixedtype::IMap *) args.arg1;
-                    imap->forceUnlock<std::string>("key1");
-                    latch->countDown();
-                }
 
                 class CountdownListener : public MixedEntryListener {
                 public:
@@ -682,8 +684,8 @@ namespace hazelcast {
 
                     util::CountDownLatch latch(2);
 
-                    util::Thread t1(tryPutThread, &latch, imap);
-                    util::Thread t2(tryRemoveThread, &latch, imap);
+                    util::Thread t1(tryPutThread, &latch, imap.get());
+                    util::Thread t2(tryRemoveThread, &latch, imap.get());
 
                     ASSERT_TRUE(latch.await(20));
                     ASSERT_EQ("value1", *(imap->get<std::string>("key1").get<std::string>()));
@@ -826,7 +828,7 @@ namespace hazelcast {
                     ASSERT_EQ("value1", *(imap->get<std::string>("key1").get<std::string>()));
                     imap->lock<std::string>("key1");
                     util::CountDownLatch latch(1);
-                    util::Thread t1(testLockThread, &latch, imap);
+                    util::Thread t1(testLockThread, &latch, imap.get());
                     ASSERT_TRUE(latch.await(5));
                     ASSERT_EQ("value1", *(imap->get<std::string>("key1").get<std::string>()));
                     imap->forceUnlock<std::string>("key1");
@@ -838,7 +840,7 @@ namespace hazelcast {
                     ASSERT_EQ("value1", *(imap->get<std::string>("key1").get<std::string>()));
                     imap->lock<std::string>("key1", 2 * 1000);
                     util::CountDownLatch latch(1);
-                    util::Thread t1(testLockTTLThread, &latch, imap);
+                    util::Thread t1(testLockTTLThread, &latch, imap.get());
                     ASSERT_TRUE(latch.await(10));
                     ASSERT_FALSE(imap->isLocked<std::string>("key1"));
                     ASSERT_EQ("value2", *(imap->get<std::string>("key1").get<std::string>()));
@@ -849,7 +851,7 @@ namespace hazelcast {
                 TEST_P(MixedMapAPITest, testLockTtl2) {
                     imap->lock<std::string>("key1", 3 * 1000);
                     util::CountDownLatch latch(2);
-                    util::Thread t1(testLockTTL2Thread, &latch, imap);
+                    util::Thread t1(testLockTTL2Thread, &latch, imap.get());
                     ASSERT_TRUE(latch.await(10));
                     imap->forceUnlock<std::string>("key1");
 
@@ -859,14 +861,14 @@ namespace hazelcast {
 
                     ASSERT_TRUE(imap->tryLock<std::string>("key1", 2 * 1000));
                     util::CountDownLatch latch(1);
-                    util::Thread t1(testMapTryLockThread1, &latch, imap);
+                    util::Thread t1(testMapTryLockThread1, &latch, imap.get());
 
                     ASSERT_TRUE(latch.await(100));
 
                     ASSERT_TRUE(imap->isLocked<std::string>("key1"));
 
                     util::CountDownLatch latch2(1);
-                    util::Thread t2(testMapTryLockThread2, &latch2, imap);
+                    util::Thread t2(testMapTryLockThread2, &latch2, imap.get());
 
                     util::sleep(1);
                     imap->unlock<std::string>("key1");
@@ -879,7 +881,7 @@ namespace hazelcast {
                 TEST_P(MixedMapAPITest, testForceUnlock) {
                     imap->lock<std::string>("key1");
                     util::CountDownLatch latch(1);
-                    util::Thread t2(testMapForceUnlockThread, &latch, imap);
+                    util::Thread t2(testMapForceUnlockThread, &latch, imap.get());
                     ASSERT_TRUE(latch.await(100));
                     t2.join();
                     ASSERT_FALSE(imap->isLocked<std::string>("key1"));

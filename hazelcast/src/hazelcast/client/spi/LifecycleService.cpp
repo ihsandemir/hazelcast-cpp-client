@@ -33,9 +33,9 @@ namespace hazelcast {
 
             LifecycleService::LifecycleService(ClientContext &clientContext,
                                                const std::set<LifecycleListener *> &lifecycleListeners,
-                                               util::CountDownLatch &shutdownLatch, LoadBalancer *const loadBalancer,
+                                               LoadBalancer *const loadBalancer,
                                                Cluster &cluster) : clientContext(clientContext), active(true),
-                                                                   shutdownLatch(shutdownLatch),
+                                                                   shutdownLatch(1),
                                                                    loadBalancer(loadBalancer),
                                                                    cluster(cluster) {
                 listeners.insert(lifecycleListeners.begin(), lifecycleListeners.end());
@@ -68,6 +68,7 @@ namespace hazelcast {
 
             void LifecycleService::shutdown() {
                 if (!active.compareAndSet(true, false)) {
+                    shutdownLatch.await();
                     return;
                 }
                 fireLifecycleEvent(LifecycleEvent::SHUTTING_DOWN);
@@ -136,7 +137,6 @@ namespace hazelcast {
 
             LifecycleService::~LifecycleService() {
                 shutdown();
-                shutdownLatch.await();
             }
         }
     }

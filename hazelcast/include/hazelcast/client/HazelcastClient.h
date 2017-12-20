@@ -720,7 +720,6 @@ namespace hazelcast {
 
             ClientConfig clientConfig;
             ClientProperties clientProperties;
-            util::CountDownLatch shutdownLatch;
             spi::ClientContext clientContext;
             serialization::pimpl::SerializationService serializationService;
             std::auto_ptr<connection::ConnectionManager> connectionManager;

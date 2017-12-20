@@ -55,7 +55,12 @@ namespace hazelcast {
             class HAZELCAST_API ClusterListenerThread : public protocol::codec::ClientAddMembershipListenerCodec::AbstractEventHandler {
                 friend class spi::ClusterService;
             public:
-                ClusterListenerThread(spi::ClientContext &clientContext);
+                ClusterListenerThread(spi::ClientContext &clientContext, int memberPort);
+
+                /**
+                 * @return true if started and initialized successfully, false otherwise
+                 */
+                bool start();
 
                 void stop();
 
@@ -69,26 +74,16 @@ namespace hazelcast {
 
                 std::set<Address, addressComparator> getSocketAddresses() const;
 
-
-                /**
-                 * @return true if started and initialized successfully, false otherwise
-                 */
-                bool awaitStart();
-
             private:
                 util::CountDownLatch startLatch;
                 spi::ClientContext &clientContext;
                 boost::shared_ptr<Connection> conn;
                 util::AtomicBoolean deletingConnection;
-
                 std::vector<Member> members;
-
-                util::Atomic<util::Thread *> workerThread;
+                std::auto_ptr<util::Thread> workerThread;
                 bool isInitialMembersLoaded;
-
+                int memberPort;
                 bool isRegistrationIdReceived;
-
-                int awsMemberPort;
 
                 void loadInitialMemberList();
 
@@ -114,7 +109,7 @@ namespace hazelcast {
 
                 static void staticRun(util::ThreadArgs &args);
 
-                void run(util::Thread *currentThread, int memberPort);
+                void run(util::Thread *currentThread);
             };
         }
     }

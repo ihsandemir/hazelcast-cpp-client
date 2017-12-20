@@ -35,7 +35,6 @@ namespace hazelcast {
         HazelcastClient::HazelcastClient(ClientConfig &config)
         : clientConfig(config)
         , clientProperties(clientConfig)
-        , shutdownLatch(1)
         , clientContext(*this)
         , serializationService(clientConfig.getSerializationConfig())
         , connectionManager(new connection::ConnectionManager(clientContext, clientConfig.isSmart()))
@@ -45,7 +44,7 @@ namespace hazelcast {
         , invocationService(clientContext)
         , serverListenerService(clientContext)
         , cluster(clusterService)
-        , lifecycleService(clientContext, clientConfig.getLifecycleListeners(), shutdownLatch,
+        , lifecycleService(clientContext, clientConfig.getLifecycleListeners(),
                            clientConfig.getLoadBalancer(), cluster)
         , proxyManager(clientContext)
         , TOPIC_RB_PREFIX("_hz_rb_") {
@@ -66,12 +65,6 @@ namespace hazelcast {
 
         HazelcastClient::~HazelcastClient() {
             lifecycleService.shutdown();
-            /**
-             * We can not depend on the destruction order of the variables. lifecycleService may be destructed later
-             * than the clientContext which is accessed by different service threads, hence we need to explicitly wait
-             * for shutdown completion.
-             */
-            shutdownLatch.await();
         }
 
 

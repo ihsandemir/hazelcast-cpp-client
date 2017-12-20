@@ -36,8 +36,7 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             ClusterService::ClusterService(ClientContext &clientContext)
-                    : clientContext(clientContext), clusterThread(clientContext) {
-
+                    : clientContext(clientContext) {
             }
 
             bool ClusterService::start() {
@@ -65,14 +64,8 @@ namespace hazelcast {
                 std::set<InitialMembershipListener *> const &initialMembershipListeners = config.getInitialMembershipListeners();
                 initialListeners.insert(initialMembershipListeners.begin(), initialMembershipListeners.end());
 
-                /**
-                 * This thread lifecycle is managed by ClusterListenerThread::stop method
-                 * which is guaranteed to be called during shutdown
-                 */
-                new util::Thread("hz.clusterListenerThread", connection::ClusterListenerThread::staticRun,
-                                 &clusterThread, &port);
-
-                if (!clusterThread.awaitStart()) {
+                clusterListenerThread.reset(new connection::ClusterListenerThread(clientContext, port));
+                if (!clusterListenerThread->start()) {
                     return false;
                 }
                 initMembershipListeners();
@@ -90,7 +83,10 @@ namespace hazelcast {
             }
 
             void ClusterService::shutdown() {
-                clusterThread.stop();
+                if (!clusterListenerThread.get()) {
+                    return;
+                }
+                clusterListenerThread->stop();
             }
 
             std::auto_ptr<Address> ClusterService::getMasterAddress() {
@@ -169,7 +165,7 @@ namespace hazelcast {
             }
 
             std::vector<Address> ClusterService::findServerAddressesToConnect(const Address *previousConnectionAddr) const {
-                std::set<Address, addressComparator> socketAddresses = this->clusterThread.getSocketAddresses();
+                std::set<Address, addressComparator> socketAddresses = this->clusterListenerThread->getSocketAddresses();
                 std::vector<Address> addresses;
                 for (std::set<Address, addressComparator>::const_iterator it = socketAddresses.begin();
                      it != socketAddresses.end(); it++) {

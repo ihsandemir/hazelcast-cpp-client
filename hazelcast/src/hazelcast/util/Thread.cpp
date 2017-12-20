@@ -61,8 +61,8 @@ namespace hazelcast {
             if (!isJoined) {
                 cancel();
                 join();
+                CloseHandle(thread);
             }
-            CloseHandle(thread);
         }
 
         void Thread::interruptibleSleep(int seconds){
