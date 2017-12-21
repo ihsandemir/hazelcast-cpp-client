@@ -133,6 +133,8 @@ namespace hazelcast {
                 out2 << "Thread::join for " << threadName << " Will do WaitForSingleObject(thread, INFINITE) with threadHandle:" << threadHandle;
                 logger.info(out2.str());
 
+            util::sleep(5);
+/*
             DWORD err = WaitForSingleObject(threadHandle, INFINITE);
             if (err != WAIT_OBJECT_0) {
                 std::ostringstream out2;
@@ -141,6 +143,7 @@ namespace hazelcast {
 
                 return false;
             }
+*/
             isJoined = true;
                 std::ostringstream out3;
                 out3 << "Thread::join for " << threadName << " EXIT!!!";
