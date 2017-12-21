@@ -22,6 +22,7 @@
 #include <cassert>
 #include <algorithm>
 #include <string.h>
+#include <hazelcast/util/ILogger.h>
 
 namespace hazelcast {
     namespace util {
@@ -77,7 +78,17 @@ namespace hazelcast {
 
         size_t ByteBuffer::readFrom(client::Socket const &socket, int numBytesToRead, int flag) {
             size_t calculatedNumber = std::min<size_t>(remaining(), numBytesToRead);
+            {
+                std::ostringstream out;
+                out << "ByteBuffer::readFrom Calling socket.receive for calculatedNumber: " << calculatedNumber;
+                util::ILogger::getLogger().info(out.str());
+            }
             size_t bytesReceived = (size_t)socket.receive(ix(), (int)calculatedNumber, flag);
+            {
+                std::ostringstream out;
+                out << "ByteBuffer::readFrom socket.receive returned " << bytesReceived;
+                util::ILogger::getLogger().info(out.str());
+            }
             safeIncrementPosition(bytesReceived);
             return bytesReceived;
         }
@@ -129,6 +140,11 @@ namespace hazelcast {
         }
 
         void ByteBuffer::safeIncrementPosition(size_t t) {
+            if (pos + t > capacity) {
+                std::ostringstream out;
+                out << "ByteBuffer::safeIncrementPosition Assert failure!!! pos + t:" << pos+t << " and capacity:" << capacity;
+                util::ILogger::getLogger().warning(out.str());
+            }
             assert(pos + t <= capacity);
             pos += t;
         }
