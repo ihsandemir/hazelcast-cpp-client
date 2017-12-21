@@ -197,13 +197,17 @@ namespace hazelcast {
             }
 
             void ClusterListenerThread::listenMembershipEvents() {
+                util::ILogger &logger = util::ILogger::getLogger();
                 while (clientContext.getLifecycleService().isRunning()) {
+                    logger.info("ClusterListenerThread::listenMembershipEvents inside the loop");
                     std::auto_ptr<protocol::ClientMessage> clientMessage = conn->readBlocking();
                     if (!clientContext.getLifecycleService().isRunning()) {
                         break;
                     }
 
+                    logger.info("ClusterListenerThread::listenMembershipEvents Before handle(clientMessage)");
                     handle(clientMessage);
+                    logger.info("ClusterListenerThread::listenMembershipEvents After handle(clientMessage)");
                 }
             }
 
