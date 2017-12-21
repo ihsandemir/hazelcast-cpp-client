@@ -202,6 +202,7 @@ namespace hazelcast {
                     logger.info("ClusterListenerThread::listenMembershipEvents inside the loop");
                     std::auto_ptr<protocol::ClientMessage> clientMessage = conn->readBlocking();
                     if (!clientContext.getLifecycleService().isRunning()) {
+                        logger.info("ClusterListenerThread::listenMembershipEvents Breaking the loop");
                         break;
                     }
 
