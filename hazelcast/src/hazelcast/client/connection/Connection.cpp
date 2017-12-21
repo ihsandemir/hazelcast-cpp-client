@@ -65,8 +65,18 @@ namespace hazelcast {
             }
 
             Connection::~Connection() {
+                {
+                    std::ostringstream out;
+                    out << "Connection::~Connection ENTRY for connection " << *this;
+                    util::ILogger::getLogger().info(out.str());
+                }
                 live = false;
                 delete[] receiveBuffer;
+                {
+                    std::ostringstream out;
+                    out << "Connection::~Connection EXIT for connection " << *this;
+                    util::ILogger::getLogger().info(out.str());
+                }
             }
 
             void Connection::connect(int timeoutInMillis) {
