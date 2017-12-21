@@ -63,7 +63,7 @@ namespace hazelcast {
                 while (lifecycleService.isRunning()) {
                     logger.info("ClusterListenerThread::run Entered While loop");
                     try {
-                        if (conn.get() == NULL) {
+                        if (conn.get() == NULL || !conn->live) {
                             logger.info("ClusterListenerThread::run Null connection. Will do connectToOne");
                             try {
                                 conn = clientContext.getClusterService().connectToOne(previousConnectionAddrPtr);
@@ -116,7 +116,7 @@ namespace hazelcast {
                                 logger.info("ClusterListenerThread::run  Calling closeResource");
                                 util::IOUtil::closeResource(conn.get(), "Error while listening cluster events");
                                 logger.info("ClusterListenerThread::run  Calling conn.reset");
-                                conn.reset();
+                                //conn.reset();
                                 lifecycleService.fireLifecycleEvent(LifecycleEvent::CLIENT_DISCONNECTED);
                             }
                             deletingConnection = false;
@@ -137,7 +137,7 @@ namespace hazelcast {
                 if (deletingConnection.compareAndSet(false, true)) {
                     if (conn.get()) {
                         util::IOUtil::closeResource(conn.get(), "Cluster listener thread is stopping");
-                        conn.reset();
+                        //conn.reset();
                         clientContext.getLifecycleService().fireLifecycleEvent(LifecycleEvent::CLIENT_DISCONNECTED);
                     }
                     deletingConnection = false;
