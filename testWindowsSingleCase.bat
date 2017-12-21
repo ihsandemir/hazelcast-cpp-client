@@ -16,9 +16,6 @@
 @REM Let the submodule code be downloaded
 git submodule update --init
 
-RD /S /Q %BUILD_DIR%
-mkdir %BUILD_DIR%
-
 cd %BUILD_DIR%
 
 if %HZ_BIT_VERSION% == 32 (
@@ -39,8 +36,6 @@ if %COMPILE_WITHOUT_SSL% == "COMPILE_WITHOUT_SSL" (
     set HZ_COMPILE_WITH_SSL=ON
 )
 
-echo "Generating the solution files for compilation"
-cmake .. -G %SOLUTIONTYPE% -DHZ_LIB_TYPE=%HZ_LIB_TYPE% -DHZ_BIT=%HZ_BIT_VERSION% -DCMAKE_BUILD_TYPE=%HZ_BUILD_TYPE% -DHZ_BUILD_TESTS=ON -DHZ_OPENSSL_INCLUDE_DIR=%HZ_OPENSSL_INCLUDE_DIR% -DHZ_OPENSSL_LIB_DIR=%HZ_OPENSSL_LIB_DIR% -DHZ_COMPILE_WITH_SSL=%HZ_COMPILE_WITH_SSL%
 
 echo "Building for platform %BUILDFORPLATFORM%"
 
@@ -48,9 +43,6 @@ MSBuild.exe HazelcastClient.sln /m /p:Flavor=%HZ_BUILD_TYPE%;Configuration=%HZ_B
 
 cd ..
 cd java
-
-echo "Compiling the java test server"
-call mvn -U clean install
 
 call taskkill /F /FI "WINDOWTITLE eq cpp-java"
 

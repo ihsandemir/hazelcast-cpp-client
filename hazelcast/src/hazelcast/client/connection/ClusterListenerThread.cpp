@@ -127,6 +127,7 @@ namespace hazelcast {
                 } else {
                     logger.info("ClusterListenerThread::stop worker is NULL!!!");
                 }
+                logger.info("ClusterListenerThread::stop EXIT");
             }
 
             std::set<Address, addressComparator> ClusterListenerThread::getSocketAddresses() const {
