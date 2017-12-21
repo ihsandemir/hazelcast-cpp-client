@@ -50,6 +50,10 @@ namespace hazelcast {
 
             void ClusterListenerThread::run(util::Thread *currentThread, int memberPort) {
                 workerThread = currentThread;
+                util::Thread *t = workerThread;
+                std::ostringstream out;
+                out << "ClusterListenerThread::run currentThread:" << currentThread << " and workerThread:" << t;
+                util::ILogger::getLogger().info(out.str());
                 awsMemberPort = memberPort;
 
                 Address previousConnectionAddr;

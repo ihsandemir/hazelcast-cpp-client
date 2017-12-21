@@ -21,6 +21,7 @@
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/exception/IException.h"
 #include <memory>
+#include <sstream>
 #include "hazelcast/util/Util.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -58,10 +59,26 @@ namespace hazelcast {
         }
 
         Thread::~Thread() {
+            ILogger &logger = util::ILogger::getLogger();
+            std::ostringstream out;
+            out << "Thread::~Thread ENTRY for " << threadName;
+            logger.info(out.str());
             if (!isJoined) {
+                out.clear();
+                out << "Thread::~Thread " << threadName << " will cancel now";
+                logger.info(out.str());
                 cancel();
+                out.clear();
+                out << "Thread::~Thread " << threadName << " will join now";
+                logger.info(out.str());
                 join();
+                out.clear();
+                out << "Thread::~Thread " << threadName << " joined now";
+                logger.info(out.str());
             }
+            out.clear();
+            out << "Thread::~Thread " << threadName << " will close handle " << thread;
+            logger.info(out.str());
             CloseHandle(thread);
         }
 
