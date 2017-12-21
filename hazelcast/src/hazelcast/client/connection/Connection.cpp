@@ -156,12 +156,20 @@ namespace hazelcast {
                 receiveByteBuffer.clear();
                 messageBuilder.reset();
 
+                util::ILogger &logger = util::ILogger::getLogger();
                 do {
                     int32_t numRead = 0;
                     do {
+                        std::ostringstream out;
+                        out << "Connection::readBlocking Calling receiveByteBuffer.readFrom. numRead:" << numRead;
+                        logger.info(out.str());
                         numRead += receiveByteBuffer.readFrom(*socket,
                                 protocol::ClientMessage::VERSION_FIELD_OFFSET - numRead, MSG_WAITALL);
                     } while (numRead < protocol::ClientMessage::VERSION_FIELD_OFFSET); // make sure that we can read the length
+
+                    std::ostringstream out;
+                    out << "Connection::readBlocking Finished reading the message numRead:" << numRead;
+                    logger.info(out.str());
 
                     wrapperMessage.wrapForDecode(receiveBuffer, (int32_t)16 << 10, false);
                     int32_t size = wrapperMessage.getFrameLength();
@@ -175,6 +183,7 @@ namespace hazelcast {
                     receiveByteBuffer.compact();
                 } while (NULL == responseMessage.get());
 
+                logger.info("Connection::readBlocking EXIT");
                 return responseMessage;
             }
 
