@@ -107,19 +107,45 @@ namespace hazelcast {
         }
 
         bool Thread::join() {
+            ILogger &logger = util::ILogger::getLogger();
+            std::ostringstream out;
+            out << "Thread::join ENTRY for " << threadName;
+            logger.info(out.str());
+
             if (!isJoined.compareAndSet(false, true)) {
+                std::ostringstream out;
+                out << "Thread::join for " << threadName << " alread joined!!!";
+                logger.info(out.str());
+
                 return true;
             }
+
             if (id == getThreadID()) {
+                std::ostringstream out;
+                out << "Thread::join for " << threadName << " from the same thread!!!";
+                logger.info(out.str());
+
                 // called from inside the thread, deadlock possibility
                 return false;
             }
 
+                std::ostringstream out2;
+                out2 << "Thread::join for " << threadName << " Will do WaitForSingleObject(thread, INFINITE) with thread:" << thread;
+                logger.info(out2.str());
+
             DWORD err = WaitForSingleObject(thread, INFINITE);
             if (err != WAIT_OBJECT_0) {
+                std::ostringstream out2;
+                out2 << "Thread::join for " << threadName << " After WaitForSingleObject(thread, INFINITE). err:" << err;
+                logger.info(out2.str());
+
                 return false;
             }
             isJoined = true;
+                std::ostringstream out3;
+                out3 << "Thread::join for " << threadName << " EXIT!!!";
+                logger.info(out3.str());
+
             return true;
         }
 
