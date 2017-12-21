@@ -81,7 +81,7 @@ namespace hazelcast {
             std::string threadName;
             util::AtomicBoolean isJoined;
 			util::AtomicBoolean isInterrupted;
-            HANDLE thread;
+            HANDLE threadHandle;
 			DWORD id;
 			ConditionVariable condition;
 			Mutex mutex;

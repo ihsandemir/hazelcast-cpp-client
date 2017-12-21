@@ -79,7 +79,7 @@ namespace hazelcast {
             out.clear();
             out << "Thread::~Thread " << threadName << " will close handle " << thread;
             logger.info(out.str());
-            CloseHandle(thread);
+            CloseHandle(threadHandle);
         }
 
         void Thread::interruptibleSleep(int seconds){
@@ -130,13 +130,13 @@ namespace hazelcast {
             }
 
                 std::ostringstream out2;
-                out2 << "Thread::join for " << threadName << " Will do WaitForSingleObject(thread, INFINITE) with thread:" << thread;
+                out2 << "Thread::join for " << threadName << " Will do WaitForSingleObject(thread, INFINITE) with threadHandle:" << threadHandle;
                 logger.info(out2.str());
 
-            DWORD err = WaitForSingleObject(thread, INFINITE);
+            DWORD err = WaitForSingleObject(threadHandle, INFINITE);
             if (err != WAIT_OBJECT_0) {
                 std::ostringstream out2;
-                out2 << "Thread::join for " << threadName << " After WaitForSingleObject(thread, INFINITE). err:" << err;
+                out2 << "Thread::join for " << threadName << " After WaitForSingleObject(threadHandle, INFINITE). err:" << err;
                 logger.info(out2.str());
 
                 return false;
@@ -174,7 +174,7 @@ namespace hazelcast {
             threadArgs->arg3 = arg3;
             threadArgs->currentThread = this;
             threadArgs->func = func;
-            thread = CreateThread(NULL, 0, controlledThread, threadArgs, 0 , &id);
+            threadHandle = CreateThread(NULL, 0, controlledThread, threadArgs, 0 , &id);
         }
     }
 }
