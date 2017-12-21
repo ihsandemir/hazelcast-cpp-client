@@ -53,25 +53,32 @@ namespace hazelcast {
                 util::Thread *t = workerThread;
                 std::ostringstream out;
                 out << "ClusterListenerThread::run currentThread:" << currentThread << " and workerThread:" << t;
-                util::ILogger::getLogger().info(out.str());
+                util::ILogger &logger = util::ILogger::getLogger();
+                logger.info(out.str());
                 awsMemberPort = memberPort;
 
                 Address previousConnectionAddr;
                 Address *previousConnectionAddrPtr = NULL;
                 spi::LifecycleService &lifecycleService = clientContext.getLifecycleService();
                 while (lifecycleService.isRunning()) {
+                    logger.info("ClusterListenerThread::run Entered While loop");
                     try {
                         if (conn.get() == NULL) {
+                            logger.info("ClusterListenerThread::run Null connection. Will do connectToOne");
                             try {
                                 conn = clientContext.getClusterService().connectToOne(previousConnectionAddrPtr);
                                 previousConnectionAddr = conn->getRemoteEndpoint();
                                 previousConnectionAddrPtr = &previousConnectionAddr;
                             } catch (std::exception &e) {
+                                std::ostringstream out;
+                                out << "ClusterListenerThread::run " << " connect exception " << e.what();
+                                logger.info(out.str());
                                 if (lifecycleService.isRunning()) {
-                                    util::ILogger::getLogger().severe(
+                                    logger.severe(
                                             std::string("Error while connecting to cluster! =>") + e.what());
                                     lifecycleService.shutdown();
                                 }
+                                logger.info("ClusterListenerThread::run Exiting the thread because no connection could be established");
                                 /**
                                  * Do nothing except returning here. Since client and cluster service may have been
                                  * already been destructed, any access to startLatch or any other client variable
@@ -83,29 +90,42 @@ namespace hazelcast {
 
                         isInitialMembersLoaded = false;
                         isRegistrationIdReceived = false;
+                        logger.info("ClusterListenerThread::run Calling loadInitialMemberList");
                         loadInitialMemberList();
+                        logger.info("ClusterListenerThread::run Calling triggerFailedListeners");
                         clientContext.getServerListenerService().triggerFailedListeners();
                         startLatch.countDown();
+                        logger.info("ClusterListenerThread::run Calling listenMembershipEvents");
                         listenMembershipEvents();
+                        logger.info("ClusterListenerThread::run Calling currentThread->interruptibleSleep(1)");
                         currentThread->interruptibleSleep(1);
                     } catch (std::exception &e) {
+                        std::ostringstream out;
+                        out << "ClusterListenerThread::run " << " exception at outer try catch: " << e.what();
+                        logger.info(out.str());
                         if (lifecycleService.isRunning()) {
-                            util::ILogger::getLogger().warning(
+                            logger.warning(
                                     std::string("Error while listening cluster events! -> ") + e.what());
                         }
 
+                        logger.info("ClusterListenerThread::run Calling onCloseOwnerConnection");
                         clientContext.getConnectionManager().onCloseOwnerConnection();
                         if (deletingConnection.compareAndSet(false, true)) {
+                            logger.info("ClusterListenerThread::run deletingConnection entry");
                             if (conn.get()) {
+                                logger.info("ClusterListenerThread::run  Calling closeResource");
                                 util::IOUtil::closeResource(conn.get(), "Error while listening cluster events");
+                                logger.info("ClusterListenerThread::run  Calling conn.reset");
                                 conn.reset();
                                 lifecycleService.fireLifecycleEvent(LifecycleEvent::CLIENT_DISCONNECTED);
                             }
                             deletingConnection = false;
                         }
                         if (clientContext.getLifecycleService().isRunning()) {
+                            logger.info("ClusterListenerThread::run  outer catch sleep 1");
                             currentThread->interruptibleSleep(1);
                         }
+                        logger.info("ClusterListenerThread::run outer catch exit");
                     }
                 }
             }
