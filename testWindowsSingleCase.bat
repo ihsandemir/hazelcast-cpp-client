@@ -40,7 +40,7 @@ if %COMPILE_WITHOUT_SSL% == "COMPILE_WITHOUT_SSL" (
 )
 
 echo "Generating the solution files for compilation"
-cmake .. -G %SOLUTIONTYPE% -DHZ_LIB_TYPE=%HZ_LIB_TYPE% -DHZ_BIT=%HZ_BIT_VERSION% -DCMAKE_BUILD_TYPE=%HZ_BUILD_TYPE% -DHZ_BUILD_TESTS=ON -DHZ_BUILD_EXAMPLES=ON -DHZ_OPENSSL_INCLUDE_DIR=%HZ_OPENSSL_INCLUDE_DIR% -DHZ_OPENSSL_LIB_DIR=%HZ_OPENSSL_LIB_DIR% -DHZ_COMPILE_WITH_SSL=%HZ_COMPILE_WITH_SSL%
+cmake .. -G %SOLUTIONTYPE% -DHZ_LIB_TYPE=%HZ_LIB_TYPE% -DHZ_BIT=%HZ_BIT_VERSION% -DCMAKE_BUILD_TYPE=%HZ_BUILD_TYPE% -DHZ_BUILD_TESTS=ON -DHZ_OPENSSL_INCLUDE_DIR=%HZ_OPENSSL_INCLUDE_DIR% -DHZ_OPENSSL_LIB_DIR=%HZ_OPENSSL_LIB_DIR% -DHZ_COMPILE_WITH_SSL=%HZ_COMPILE_WITH_SSL%
 
 echo "Building for platform %BUILDFORPLATFORM%"
 
@@ -95,6 +95,6 @@ echo "Starting the client test now."
 
 SET PATH=%BUILD_DIR%\%HZ_BUILD_TYPE%;%PATH%
 
-%BUILD_DIR%\hazelcast\test\src\%HZ_BUILD_TYPE%\%EXECUTABLE_NAME% --gtest_output="xml:CPP_Client_Test_Report.xml" || exit /b 1
+%BUILD_DIR%\hazelcast\test\src\%HZ_BUILD_TYPE%\%EXECUTABLE_NAME% --gtest_filter=MixedMapAPITest.*:MixedMapAPITest/*.*:*/MixedMapAPITest.*/*:*/MixedMapAPITest/*.* --gtest_output="xml:CPP_Client_Test_Report.xml" || exit /b 1
 
 call taskkill /F /FI "WINDOWTITLE eq cpp-java"
