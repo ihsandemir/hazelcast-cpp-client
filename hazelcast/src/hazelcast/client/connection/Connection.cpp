@@ -174,7 +174,17 @@ namespace hazelcast {
                     wrapperMessage.wrapForDecode(receiveBuffer, (int32_t)16 << 10, false);
                     int32_t size = wrapperMessage.getFrameLength();
 
+                    {
+                        std::ostringstream out2;
+                        out2 << "Connection::readBlocking readFrom(MSG_WAITALL) for :" << size - numRead << " bytes";
+                        logger.info(out2.str());
+                    }
                     receiveByteBuffer.readFrom(*socket, size - numRead, MSG_WAITALL);
+                    {
+                        std::ostringstream out2;
+                        out2 << "Connection::readBlocking readFrom(MSG_WAITALL) FINISHED for :" << size - numRead << " bytes";
+                        logger.info(out2.str());
+                    }
 
                     receiveByteBuffer.flip();
 
@@ -182,6 +192,12 @@ namespace hazelcast {
 
                     receiveByteBuffer.compact();
                 } while (NULL == responseMessage.get());
+
+                {
+                    std::ostringstream out2;
+                    out2 << "Connection::readBlocking EXIT responseMessage->getDataSize()" << responseMessage->getDataSize();
+                    logger.info(out2.str());
+                }
 
                 logger.info("Connection::readBlocking EXIT");
                 return responseMessage;
