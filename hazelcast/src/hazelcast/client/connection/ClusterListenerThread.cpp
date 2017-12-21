@@ -128,6 +128,8 @@ namespace hazelcast {
                         logger.info("ClusterListenerThread::run outer catch exit");
                     }
                 }
+
+                logger.info("ClusterListenerThread::run EXIT");
             }
 
             void ClusterListenerThread::stop() {
