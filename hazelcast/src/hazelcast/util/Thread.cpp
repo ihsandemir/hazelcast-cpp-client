@@ -77,7 +77,7 @@ namespace hazelcast {
                 logger.info(out.str());
             }
             out.clear();
-            out << "Thread::~Thread " << threadName << " will close handle " << thread;
+            out << "Thread::~Thread " << threadName << " will close handle " << threadHandle;
             logger.info(out.str());
             CloseHandle(threadHandle);
         }
