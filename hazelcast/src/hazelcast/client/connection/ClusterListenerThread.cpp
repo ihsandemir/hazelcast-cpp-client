@@ -116,10 +116,16 @@ namespace hazelcast {
                     }
                     deletingConnection = false;
                 }
+                util::ILogger &logger = util::ILogger::getLogger();
                 util::Thread *worker = workerThread;
+                std::ostringstream out;
+                out << "ClusterListenerThread::stop worker is:" << worker;
+                logger.info(out.str());
                 if (worker) {
                     workerThread = (util::Thread *) NULL;
                     delete worker;
+                } else {
+                    logger.info("ClusterListenerThread::stop worker is NULL!!!");
                 }
             }
 
