@@ -706,6 +706,7 @@ public class CppClientListener {
         final Map<Integer, HazelcastInstance> map = new HashMap<Integer, HazelcastInstance>();
         final Config config = prepareConfig();
         System.setProperty("hazelcast.enterprise.license.key", System.getenv("HAZELCAST_ENTERPRISE_KEY"));
+        getInstance(config);
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         final ServerSocket welcomeSocket = new ServerSocket(6543);
         System.out.println(welcomeSocket.getLocalSocketAddress());

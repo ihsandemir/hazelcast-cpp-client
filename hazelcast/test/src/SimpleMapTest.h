@@ -172,6 +172,8 @@ public:
 
         std::vector< hazelcast::util::Thread * > threads(THREAD_COUNT);
 
+        hazelcastClient.getMap<int, std::vector<char > >("cppDefault");
+
         for (int i = 0; i < THREAD_COUNT; i++) {
             threads[i] = new hazelcast::util::Thread(&SimpleMapTest::staticOp, this, &hazelcastClient);
         }

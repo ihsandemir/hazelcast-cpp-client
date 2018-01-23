@@ -67,8 +67,8 @@ int main(int argc, char** argv) {
 
     ::testing::AddGlobalTestEnvironment(new ServerFactoryEnvironment(address));
 
-    return RUN_ALL_TESTS();
+    //return RUN_ALL_TESTS();
 
-    //SimpleMapTest(address, 5701).run();
+    SimpleMapTest(address, 5701).run();
 }
 

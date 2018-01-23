@@ -44,7 +44,7 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             InvocationService::InvocationService(spi::ClientContext &clientContext)
-                    : clientContext(clientContext) {
+                    : clientContext(clientContext), responseQueue(100000) {
                 redoOperation = clientContext.getClientConfig().isRedoOperation();
                 ClientProperties &properties = clientContext.getClientProperties();
                 retryWaitTime = properties.getRetryWaitTime().getInteger();
@@ -63,14 +63,17 @@ namespace hazelcast {
             }
 
             InvocationService::~InvocationService() {
-
             }
 
             bool InvocationService::start() {
+                responseThread.reset(new util::Thread(responseRunner, &clientContext, &responseQueue));
                 return true;
             }
 
             void InvocationService::shutdown() {
+                responseThread->cancel();
+                responseThread->join();
+
                 typedef std::vector<std::pair<int, boost::shared_ptr<util::SynchronizedMap<int64_t, connection::CallPromise> > > > ALL_PROMISES;
                 BOOST_FOREACH(const ALL_PROMISES::value_type entry, callPromises.clear()) {
                                 typedef std::vector<std::pair<int64_t, boost::shared_ptr<connection::CallPromise> > > PROMISE_ENTRY;
@@ -81,6 +84,7 @@ namespace hazelcast {
                                                                 "Client is shutting down")));
                                             }
                             }
+
             }
 
             connection::CallFuture  InvocationService::invokeOnRandomTarget(
@@ -308,6 +312,11 @@ namespace hazelcast {
 
             void InvocationService::handleMessage(connection::Connection &connection,
                                                   std::auto_ptr<protocol::ClientMessage> message) {
+                responseQueue.push(ConnectionMessage(connection, message));
+            }
+
+            void InvocationService::processMessage(connection::Connection &connection,
+                                                  std::auto_ptr<protocol::ClientMessage> message) {
                 int64_t correlationId = message->getCorrelationId();
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
                     boost::shared_ptr<connection::CallPromise> promise = getEventHandlerPromise(connection,
@@ -456,6 +465,34 @@ namespace hazelcast {
                     connection::Connection &connection) {
                 return eventHandlerPromises.getOrPutIfAbsent(connection.getConnectionId());
             }
+
+            void InvocationService::responseRunner(util::ThreadArgs &args) {
+                ClientContext *context = (ClientContext *) args.arg0;
+                boost::lockfree::spsc_queue<ConnectionMessage> *responseQueue =
+                        (boost::lockfree::spsc_queue<ConnectionMessage> *) args.arg1;
+
+                MessageProcessor processor(context->getInvocationService());
+                while (context->getLifecycleService().isRunning()) {
+                    responseQueue->consume_all(processor);
+
+                    //usleep(1);
+                }
+            }
+
+            void InvocationService::MessageProcessor::operator()(ConnectionMessage &message) {
+                invocationService.processMessage(*message.connection, std::auto_ptr<protocol::ClientMessage>(message.message));
+            }
+
+            InvocationService::MessageProcessor::MessageProcessor(InvocationService &invocationService)
+                    : invocationService(invocationService) {}
+
+            InvocationService::ConnectionMessage::ConnectionMessage(
+                    connection::Connection &connection,
+                    std::auto_ptr<protocol::ClientMessage> &message) : connection(&connection),
+                                                                                 message(message.release()) {}
+
+            InvocationService::ConnectionMessage::ConnectionMessage() : connection(NULL), message(NULL) {}
+
         }
     }
 }

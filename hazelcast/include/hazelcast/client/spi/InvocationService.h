@@ -20,11 +20,13 @@
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/AtomicInt.h"
+#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <stdint.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -104,6 +106,8 @@ namespace hazelcast {
 
                 void handleMessage(connection::Connection &connection, std::auto_ptr<protocol::ClientMessage> message);
 
+                void processMessage(connection::Connection &connection, std::auto_ptr<protocol::ClientMessage> message);
+
                 /**
                 * Removes event handler corresponding to callId from responsible ClientConnection
                 *
@@ -133,6 +137,26 @@ namespace hazelcast {
                 */
                 boost::shared_ptr<connection::Connection> resend(boost::shared_ptr<connection::CallPromise> promise,
                                                                  const std::string& lastAddress);
+
+                struct ConnectionMessage {
+                    ConnectionMessage(connection::Connection &connection,
+                                      std::auto_ptr<protocol::ClientMessage> &message);
+
+                    ConnectionMessage();
+
+                    connection::Connection *connection;
+                    protocol::ClientMessage *message;
+                };
+
+                class MessageProcessor {
+                public:
+                    MessageProcessor(InvocationService &invocationService);
+
+                    void operator()(ConnectionMessage &message);
+
+                private:
+                    InvocationService &invocationService;
+                };
             private:
                 bool redoOperation;
                 int heartbeatTimeout;
@@ -143,6 +167,10 @@ namespace hazelcast {
                 util::SynchronizedMap<int , util::SynchronizedMap<int64_t, connection::CallPromise > > callPromises;
                 util::SynchronizedMap<int, util::SynchronizedMap<int64_t, connection::CallPromise > > eventHandlerPromises;
                 protocol::ClientExceptionFactory exceptionFactory;
+                boost::shared_ptr<util::Thread> responseThread;
+                boost::lockfree::spsc_queue<ConnectionMessage> responseQueue;
+
+                static void responseRunner(util::ThreadArgs &args);
 
                 bool isAllowedToSentRequest(connection::Connection& connection, protocol::ClientMessage const&);
 
