@@ -43,39 +43,33 @@ namespace hazelcast {
             void HazelcastServerFactory::init(const std::string &server) {
                 PyObject *pName = PyString_FromString("hzrc.client");
                 PyObject *pModule = PyImport_Import(pName);
-                Py_DECREF(pName);
 
-                if (pModule != NULL) {
-                    PyObject *rcAttribute = PyObject_GetAttrString(pModule, "HzRemoteController");
-                    /* rcAttribute is a new reference */
-
-                    serverAddress = server;
-                    long portNum = 9701;
-                    if (rcAttribute && PyCallable_Check(rcAttribute)) {
-                        PyObject *pArgs = PyTuple_New(2);
-                        PyObject *ip = PyString_FromString(serverAddress.c_str());
-                        PyTuple_SetItem(pArgs, 0, ip);
-                        PyObject *port = PyInt_FromLong(portNum);
-                        PyTuple_SetItem(pArgs, 1, port);
-                        rcObject = PyObject_CallObject(rcAttribute, pArgs);
-                        Py_DECREF(ip);
-                        Py_DECREF(port);
-                        if (rcObject == NULL) {
-                            std::ostringstream out;
-                            out << "Failed to connect to remote controller at " << serverAddress << ":" << portNum;
-                            throw exception::IllegalStateException("HazelcastServerFactory::init", out.str());
-                        }
-                    } else {
-                        if (PyErr_Occurred())
-                            PyErr_Print();
-                        fprintf(stderr, "Cannot find function \"HzRemoteController\"\n");
-                    }
-                    Py_XDECREF(rcAttribute);
-                    Py_DECREF(pModule);
+                if (pModule == NULL) {
+                    throw exception::IllegalStateException("HazelcastServerFactory::init",
+                                                           "Failed to load hzrc.client module.");
                 }
-                else {
-                    PyErr_Print();
-                    fprintf(stderr, "Failed to load \"hzrc.client\"\n");
+
+                PyObject *rcAttribute = PyObject_GetAttrString(pModule, "HzRemoteController");
+                if (rcAttribute == NULL) {
+                    throw exception::IllegalStateException("HazelcastServerFactory::init",
+                                                           "Cannot find Python function HzRemoteController");
+                }
+
+                if (!PyCallable_Check(rcAttribute)) {
+                    throw exception::IllegalStateException("HazelcastServerFactory::init",
+                                                           "HzRemoteController is not callable python class");
+                }
+
+                serverAddress = server;
+                long portNum = 9701;
+                PyObject *pArgs = PyTuple_New(2);
+                PyTuple_SetItem(pArgs, 0, PyString_FromString(serverAddress.c_str()));
+                PyTuple_SetItem(pArgs, 1, PyInt_FromLong(portNum));
+                rcObject = PyObject_CallObject(rcAttribute, pArgs);
+                if (rcObject == NULL) {
+                    std::ostringstream out;
+                    out << "Failed to connect to remote controller at " << serverAddress << ":" << portNum;
+                    throw exception::IllegalStateException("HazelcastServerFactory::init", out.str());
                 }
             }
 
@@ -84,7 +78,7 @@ namespace hazelcast {
                 std::string xmlConfig = readFromXmlFile(serverXmlConfigFilePath);
 
                 PyObject *clusterObject = PyObject_CallMethod(rcObject, const_cast<char *>("createCluster"),
-                                                              const_cast<char *>("(ss)"), "3.9",
+                                                              const_cast<char *>("ss"), "3.9",
                                                               xmlConfig.c_str());
                 if (clusterObject == NULL) {
                     std::ostringstream out;
@@ -94,52 +88,37 @@ namespace hazelcast {
 
                 PyObject *clusterUUID = PyObject_GetAttrString(clusterObject, "id");
                 if (clusterUUID == NULL) {
-                    Py_DECREF(clusterObject);
                     throw exception::IllegalStateException("HazelcastServerFactory::init",
                                                            "Could not retrieve cluster id as string");
                 }
 
                 clusterId = PyString_AsString(clusterUUID);
-                Py_DECREF(clusterUUID);
             }
 
             HazelcastServerFactory::~HazelcastServerFactory() {
                 PyObject *resultObj = PyObject_CallMethod(rcObject, const_cast<char *>("shutdownCluster"),
-                                                              const_cast<char *>("(s)"), clusterId.c_str());
+                                                              const_cast<char *>("s"), clusterId.c_str());
 
                 if (resultObj == NULL || resultObj == Py_False) {
                     std::ostringstream out;
                     out << "Failed to shutdown the cluster with id " << clusterId;
                     logger.severe(out.str());
                 }
-
-                Py_DECREF(resultObj);
-                //Py_DECREF(rcObject);
             }
 
             HazelcastServerFactory::MemberInfo HazelcastServerFactory::startServer() {
                 PyObject *memberObject = PyObject_CallMethod(rcObject, const_cast<char *>("startMember"),
-                                                             const_cast<char *>("(s)"), clusterId.c_str());
+                                                             const_cast<char *>("s"), clusterId.c_str());
                 if (memberObject == NULL) {
                     std::ostringstream out;
                     out << "Failed to start member at cluster " << clusterId;
                     throw exception::IllegalStateException("HazelcastServerFactory::init", out.str());
                 }
 
-                PyObject *uuidObj = PyObject_GetAttrString(memberObject, "uuid");
-                PyObject *hostObj = PyObject_GetAttrString(memberObject, "host");
-                PyObject *portStringObj = PyString_FromString("port");
-                PyObject *portObj = PyObject_GenericGetAttr(memberObject, portStringObj);
-
-                HazelcastServerFactory::MemberInfo memberInfo(PyString_AsString(uuidObj), PyString_AsString(hostObj),
-                                                              PyInt_AsLong(portObj));
-
-
-                Py_DECREF(memberObject);
-                Py_DECREF(uuidObj);
-                Py_DECREF(hostObj);
-                Py_DECREF(portStringObj);
-                Py_DECREF(portObj);
+                HazelcastServerFactory::MemberInfo memberInfo(
+                        PyString_AsString(PyObject_GetAttrString(memberObject, "uuid")),
+                        PyString_AsString(PyObject_GetAttrString(memberObject, "host")),
+                        PyInt_AsLong(PyObject_GenericGetAttr(memberObject, PyString_FromString("port"))));
 
                 return memberInfo;
             }
@@ -162,8 +141,7 @@ namespace hazelcast {
                                                           const_cast<char *>("(ssi)"), clusterId.c_str(),
                                                           script.str().c_str(), 1);
 
-                PyObject *successObjAttrName = PyString_FromString("success");
-                PyObject *isSuccessObj = PyObject_GenericGetAttr(responseObj, successObjAttrName);
+                PyObject *isSuccessObj = PyObject_GenericGetAttr(responseObj, PyString_FromString("success"));
 
                 bool result = true;
                 if (isSuccessObj == NULL || isSuccessObj == Py_False) {
@@ -174,28 +152,29 @@ namespace hazelcast {
                     logger.severe(out.str());
                 }
 
-                Py_DECREF(responseObj);
-                Py_DECREF(successObjAttrName);
-                Py_DECREF(isSuccessObj);
                 return result;
             }
 
             bool HazelcastServerFactory::shutdownServer(const MemberInfo &member) {
                 PyObject *resultObj = PyObject_CallMethod(rcObject, const_cast<char *>("shutdownMember"),
-                                                             const_cast<char *>("(ss)"), clusterId.c_str(),
+                                                             const_cast<char *>("ss"), clusterId.c_str(),
                                                           member.getUuid().c_str());
 
+/*
+                PyObject *resultObj = PyObject_CallMethodObjArgs(rcObject, PyString_FromString("shutdownMember"),
+                                           PyString_FromString(clusterId.c_str()),
+                                           PyString_FromString(member.getUuid().c_str()), NULL);
+
+*/
+                logger.info("After PyObject_CallMethodObjArgs");
                 if (resultObj == NULL || resultObj == Py_False) {
                     std::ostringstream out;
                     out << "Failed to shutdown the member " << member;
                     logger.severe(out.str());
-                    Py_DECREF(resultObj);
                     return false;
                 }
 
-                Py_DECREF(resultObj);
                 return true;
-
             }
 
             const std::string &HazelcastServerFactory::getServerAddress() {
