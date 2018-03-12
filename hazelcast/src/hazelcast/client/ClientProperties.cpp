@@ -41,8 +41,29 @@ namespace hazelcast {
         const std::string ClientProperties::PROP_AWS_MEMBER_PORT = "hz-port";
         const std::string ClientProperties::PROP_AWS_MEMBER_PORT_DEFAULT = "5701";
 
+        const std::string ClientProperties::CLEAN_RESOURCES_PERIOD_MILLIS = "hazelcast.client.internal.clean.resources.millis";
+        const std::string ClientProperties::CLEAN_RESOURCES_PERIOD_MILLIS_DEFAULT = "100";
+
+        const std::string ClientProperties::INVOCATION_RETRY_PAUSE_MILLIS = "hazelcast.client.invocation.retry.pause.millis";
+        const std::string ClientProperties::INVOCATION_RETRY_PAUSE_MILLIS_DEFAULT = "1000";
+
+        const std::string ClientProperties::INVOCATION_TIMEOUT_SECONDS = "hazelcast.client.invocation.timeout.seconds";
+        const std::string ClientProperties::INVOCATION_TIMEOUT_SECONDS_DEFAULT = "120";
+
+        const std::string ClientProperties::EVENT_THREAD_COUNT = "hazelcast.client.event.thread.count";
+        const std::string ClientProperties::EVENT_THREAD_COUNT_DEFAULT = "5";
+
+        const std::string ClientProperties::EVENT_QUEUE_CAPACITY = "hazelcast.client.event.queue.capacity";
+        const std::string ClientProperties::EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
+
+        const std::string ClientProperties::INTERNAL_EXECUTOR_POOL_SIZE = "hazelcast.client.internal.executor.pool.size";
+        const std::string ClientProperties::INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT = "3";
+
+        const std::string ClientProperties::SHUFFLE_MEMBER_LIST = "hazelcast.client.shuffle.member.list";
+        const std::string ClientProperties::SHUFFLE_MEMBER_LIST_DEFAULT = "true";
+
         ClientProperty::ClientProperty(ClientConfig& config, const std::string& name, const std::string& defaultValue)
-        : name(name) {
+        : name(name), defaultValue(defaultValue) {
             if (config.getProperties().count(name) > 0) {
                 value = config.getProperties()[name];
             } else if (::getenv(name.c_str()) != NULL) {
@@ -80,14 +101,24 @@ namespace hazelcast {
             return util::IOUtil::to_value<long>(value);
         }
 
+        const std::string &ClientProperty::getDefaultValue() const {
+            return defaultValue;
+        }
 
         ClientProperties::ClientProperties(ClientConfig& clientConfig)
         : heartbeatTimeout(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT)
         , heartbeatInterval(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT)
         , retryCount(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT)
-        , retryWaitTime(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT)
-        , awsMemberPort(clientConfig, PROP_AWS_MEMBER_PORT, PROP_AWS_MEMBER_PORT_DEFAULT) {
-
+        , retryWaitTime(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT),
+          awsMemberPort(clientConfig, PROP_AWS_MEMBER_PORT, PROP_AWS_MEMBER_PORT_DEFAULT),
+          cleanResourcesPeriod(clientConfig, CLEAN_RESOURCES_PERIOD_MILLIS, CLEAN_RESOURCES_PERIOD_MILLIS_DEFAULT),
+          invocationRetryPauseMillis(clientConfig, INVOCATION_RETRY_PAUSE_MILLIS,
+                                     INVOCATION_RETRY_PAUSE_MILLIS_DEFAULT),
+          invocationTimeoutSeconds(clientConfig, INVOCATION_TIMEOUT_SECONDS, INVOCATION_TIMEOUT_SECONDS_DEFAULT),
+          eventThreadCount(clientConfig, EVENT_THREAD_COUNT, EVENT_THREAD_COUNT_DEFAULT),
+          eventQueueCapacity(clientConfig, EVENT_QUEUE_CAPACITY, EVENT_QUEUE_CAPACITY_DEFAULT),
+          internalExecutorPoolSize(clientConfig, INTERNAL_EXECUTOR_POOL_SIZE, INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT),
+          shuffleMemberList(clientConfig, SHUFFLE_MEMBER_LIST, SHUFFLE_MEMBER_LIST_DEFAULT) {
         }
 
         const ClientProperty& ClientProperties::getHeartbeatTimeout() const {
@@ -108,6 +139,34 @@ namespace hazelcast {
 
         const ClientProperty& ClientProperties::getAwsMemberPort() const {
             return awsMemberPort;
+        }
+
+        const ClientProperty &ClientProperties::getCleanResourcesPeriodMillis() const {
+            return cleanResourcesPeriod;
+        }
+
+        const ClientProperty &ClientProperties::getInvocationRetryPauseMillis() const {
+            return invocationRetryPauseMillis;
+        }
+
+        const ClientProperty &ClientProperties::getInvocationTimeoutSeconds() const {
+            return invocationTimeoutSeconds;
+        }
+
+        const ClientProperty &ClientProperties::getEventThreadCount() const {
+            return eventThreadCount;
+        }
+
+        const ClientProperty &ClientProperties::getEventQueueCapacity() const {
+            return eventQueueCapacity;
+        }
+
+        const ClientProperty &ClientProperties::getInternalExecutorPoolSize() const {
+            return internalExecutorPoolSize;
+        }
+
+        const ClientProperty &ClientProperties::getShuffleMemberList() const {
+            return shuffleMemberList;
         }
     }
 }

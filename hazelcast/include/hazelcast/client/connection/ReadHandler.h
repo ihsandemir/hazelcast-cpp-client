@@ -20,6 +20,9 @@
 #ifndef HAZELCAST_ReadHandler
 #define HAZELCAST_ReadHandler
 
+#include<stdint.h>
+#include <hazelcast/util/Atomic.h>
+
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/client/connection/IOHandler.h"
@@ -48,11 +51,13 @@ namespace hazelcast {
 
                 void run();
 
+                int64_t getLastReadTimeMillis();
             private:
                 char* buffer;
                 util::ByteBuffer byteBuffer;
 
                 protocol::ClientMessageBuilder builder;
+                util::Atomic<int64_t> lastReadTimeMillis;
             };
         }
     }

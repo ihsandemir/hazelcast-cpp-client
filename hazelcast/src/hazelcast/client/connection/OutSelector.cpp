@@ -21,7 +21,7 @@
 #include <errno.h>
 
 #include "hazelcast/client/connection/OutSelector.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/Connection.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -33,7 +33,7 @@ namespace hazelcast {
     namespace client {
         namespace connection {
 
-            OutSelector::OutSelector(ConnectionManager &connectionManager)
+            OutSelector::OutSelector(ClientConnectionManagerImpl &connectionManager)
             :IOSelector(connectionManager) {
 
             }

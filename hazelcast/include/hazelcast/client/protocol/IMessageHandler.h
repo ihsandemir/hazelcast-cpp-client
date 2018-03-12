@@ -42,7 +42,8 @@ namespace hazelcast {
             public:
                 virtual ~IMessageHandler() { }
 
-                virtual void handleMessage(connection::Connection &connection, std::auto_ptr<ClientMessage> message) = 0;
+                virtual void handleClientMessage(connection::Connection &connection,
+                                                 const std::auto_ptr<ClientMessage> &message) = 0;
             };
         }
     }

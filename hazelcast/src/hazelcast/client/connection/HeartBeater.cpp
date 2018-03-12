@@ -19,15 +19,15 @@
 
 #include "hazelcast/client/connection/HeartBeater.h"
 #include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/util/ThreadArgs.h"
 #include "hazelcast/client/spi/InvocationService.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/util/IOUtil.h"
 #include "hazelcast/util/StartedThread.h"
 #include "hazelcast/client/protocol/codec/ClientPingCodec.h"
-#include "hazelcast/client/spi/LifecycleService.h"
 
 #include <ctime>
 
@@ -35,8 +35,9 @@ namespace hazelcast {
     namespace client {
         namespace connection {
 
-            HeartBeater::HeartBeater(spi::ClientContext &clientContext, util::Thread &currentThread)
-                    : clientContext(clientContext), currentThread(currentThread) {
+            HeartBeater::HeartBeater(spi::ClientContext& clientContext)
+            : live(true)
+            , clientContext(clientContext) {
                 ClientProperties& properties = clientContext.getClientProperties();
                 heartBeatTimeoutSeconds = properties.getHeartbeatTimeout().getInteger();
                 heartBeatIntervalSeconds = properties.getHeartbeatInterval().getInteger();
@@ -48,12 +49,17 @@ namespace hazelcast {
                 }
             }
 
-            void HeartBeater::run() {
-                currentThread.interruptibleSleep(heartBeatIntervalSeconds);
+            void HeartBeater::staticStart(util::ThreadArgs& args) {
+                HeartBeater *heartBeater = (HeartBeater *)args.arg0;
+                heartBeater->run(args.currentThread);
+            }
 
-                connection::ConnectionManager& connectionManager = clientContext.getConnectionManager();
-                while (clientContext.getLifecycleService().isRunning()) {
-                    std::vector<boost::shared_ptr<Connection> > connections = connectionManager.getConnections();
+            void HeartBeater::run(util::Thread *currentThread) {
+                currentThread->interruptibleSleep(heartBeatIntervalSeconds);
+
+                connection::ClientConnectionManagerImpl& connectionManager = clientContext.getConnectionManager();
+                while (live) {
+                    std::vector<boost::shared_ptr<Connection> > connections = connectionManager.getActiveConnections();
                     std::vector<boost::shared_ptr<Connection> >::iterator it;
 
                     time_t now = time(NULL);
@@ -75,14 +81,13 @@ namespace hazelcast {
                         }
                     }
 
-                    currentThread.interruptibleSleep(heartBeatIntervalSeconds);
+                    currentThread->interruptibleSleep(heartBeatIntervalSeconds);
                 }
             }
 
-            const std::string HeartBeater::getName() const {
-                return "HeartBeater";
+            void HeartBeater::shutdown() {
+                live = false;
             }
-
         }
     }
 }

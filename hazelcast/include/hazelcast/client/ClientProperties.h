@@ -57,9 +57,12 @@ namespace hazelcast {
 
             long getLong() const;
 
+            const std::string &getDefaultValue() const;
+
         private:
             std::string name;
             std::string value;
+            std::string defaultValue;
         };
 
 
@@ -81,6 +84,20 @@ namespace hazelcast {
             const ClientProperty& getRetryWaitTime() const;
 
             const ClientProperty& getAwsMemberPort() const;
+
+            const ClientProperty &getCleanResourcesPeriodMillis() const;
+
+            const ClientProperty &getInvocationRetryPauseMillis() const;
+
+            const ClientProperty &getInvocationTimeoutSeconds() const;
+
+            const ClientProperty &getEventThreadCount() const;
+
+            const ClientProperty &getEventQueueCapacity() const;
+
+            const ClientProperty &getInternalExecutorPoolSize() const;
+
+            const ClientProperty &getShuffleMemberList() const;
 
             /**
             * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
@@ -133,12 +150,68 @@ namespace hazelcast {
              */
             static const std::string PROP_AWS_MEMBER_PORT;
             static const std::string PROP_AWS_MEMBER_PORT_DEFAULT;
+
+            /**
+             * The period in milliseconds at which the resource cleaning is run (e.g. invocations).
+             */
+            static const std::string CLEAN_RESOURCES_PERIOD_MILLIS;
+            static const std::string CLEAN_RESOURCES_PERIOD_MILLIS_DEFAULT;
+
+            /**
+             * Pause time between each retry cycle of an invocation in milliseconds.
+             */
+            static const std::string INVOCATION_RETRY_PAUSE_MILLIS;
+            static const std::string INVOCATION_RETRY_PAUSE_MILLIS_DEFAULT;
+
+            /**
+             * When an invocation gets an exception because :
+             * - Member throws an exception.
+             * - Connection between the client and member is closed.
+             * - Client's heartbeat requests are timed out.
+             * Time passed since invocation started is compared with this property.
+             * If the time is already passed, then the exception is delegated to the user. If not, the invocation is retried.
+             * Note that, if invocation gets no exception and it is a long running one, then it will not get any exception,
+             * no matter how small this timeout is set.
+             */
+            static const std::string INVOCATION_TIMEOUT_SECONDS;
+            static const std::string INVOCATION_TIMEOUT_SECONDS_DEFAULT;
+
+            /**
+             * Number of the threads to handle the incoming event packets.
+             */
+            static const std::string EVENT_THREAD_COUNT;
+            static const std::string EVENT_THREAD_COUNT_DEFAULT;
+
+            /**
+             * Capacity of the executor that handles the incoming event packets.
+             */
+            static const std::string EVENT_QUEUE_CAPACITY;
+            static const std::string EVENT_QUEUE_CAPACITY_DEFAULT;
+
+            static const std::string INTERNAL_EXECUTOR_POOL_SIZE;
+            static const std::string INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT;
+
+            /**
+             * Client shuffles the given member list to prevent all clients to connect to the same node when
+             * this property is set to true. When it is set to false, the client tries to connect to the nodes
+             * in the given order.
+             */
+            static const std::string SHUFFLE_MEMBER_LIST;
+            static const std::string SHUFFLE_MEMBER_LIST_DEFAULT;
+
         private:
             ClientProperty heartbeatTimeout;
             ClientProperty heartbeatInterval;
             ClientProperty retryCount;
             ClientProperty retryWaitTime;
             ClientProperty awsMemberPort;
+            ClientProperty cleanResourcesPeriod;
+            ClientProperty invocationRetryPauseMillis;
+            ClientProperty invocationTimeoutSeconds;
+            ClientProperty eventThreadCount;
+            ClientProperty eventQueueCapacity;
+            ClientProperty internalExecutorPoolSize;
+            ClientProperty shuffleMemberList;
         };
 
     }

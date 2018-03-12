@@ -219,8 +219,17 @@ namespace hazelcast {
                 }
 
                 client::Address SSLSocket::getAddress() const {
-                    asio::ip::basic_endpoint<asio::ip::tcp> local_endpoint = socket->lowest_layer().local_endpoint();
-                    return client::Address(local_endpoint.address().to_string(), local_endpoint.port());
+                    asio::ip::basic_endpoint<asio::ip::tcp> remoteEndpoint = socket->lowest_layer().remote_endpoint();
+                    return client::Address(remoteEndpoint.address().to_string(), remoteEndpoint.port());
+                }
+
+                std::auto_ptr<Address> SSLSocket::localSocketAddress() const {
+                    asio::error_code ec;
+                    asio::ip::basic_endpoint<asio::ip::tcp> localEndpoint = socket->lowest_layer().local_endpoint(ec);
+                    if (ec) {
+                        return std::auto_ptr<Address>();
+                    }
+                    return std::auto_ptr<Address>(new Address(localEndpoint.address().to_string(), localEndpoint.port()));
                 }
 
                 void SSLSocket::close() {

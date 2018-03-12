@@ -26,7 +26,6 @@
 #include "hazelcast/util/HazelcastDll.h"
 
 #include "hazelcast/client/spi/ClientContext.h"
-#include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/connection/CallFuture.h"
 #include <boost/shared_ptr.hpp>

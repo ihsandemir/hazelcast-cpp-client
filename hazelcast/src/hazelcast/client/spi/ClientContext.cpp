@@ -30,12 +30,12 @@ namespace hazelcast {
                 return hazelcastClient.serializationService;
             }
 
-            ClusterService &ClientContext::getClusterService() {
+            impl::ClientClusterServiceImpl &ClientContext::getClientClusterService() {
                 return hazelcastClient.clusterService;
             }
 
-            InvocationService &ClientContext::getInvocationService() {
-                return hazelcastClient.invocationService;
+            ClientInvocationService &ClientContext::getInvocationService() {
+                return *hazelcastClient.invocationService;
             }
 
             ClientConfig &ClientContext::getClientConfig() {
@@ -50,11 +50,11 @@ namespace hazelcast {
                 return hazelcastClient.lifecycleService;
             }
 
-            ServerListenerService &ClientContext::getServerListenerService() {
-                return hazelcastClient.serverListenerService;
+            ClientListenerService &ClientContext::getClientListenerService() {
+                return *hazelcastClient.listenerService;
             }
 
-            connection::ConnectionManager &ClientContext::getConnectionManager() {
+            connection::ClientConnectionManagerImpl &ClientContext::getConnectionManager() {
                 return *hazelcastClient.connectionManager;
             }
 
@@ -70,7 +70,25 @@ namespace hazelcast {
                 return hazelcastClient.cluster;
             }
 
+            impl::sequence::CallIdSequence &ClientContext::getCallIdSequence() const {
+                return hazelcastClient.callIdSequence;
+            }
 
+            const protocol::ClientExceptionFactory &ClientContext::getClientExceptionFactory() const {
+                return hazelcastClient.getExceptionFactory();
+            }
+
+            const std::string &ClientContext::getName() const {
+                return hazelcastClient.getName();
+            }
+
+            spi::impl::ClientExecutionServiceImpl &ClientContext::getClientExecutionService() const {
+                return *hazelcastClient.executionService;
+            }
+
+            void ClientContext::onClusterConnect(const boost::shared_ptr<connection::Connection> &ownerConnection) {
+                hazelcastClient.onClusterConnect(ownerConnection);
+            }
         }
 
     }

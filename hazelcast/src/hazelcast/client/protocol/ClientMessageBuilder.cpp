@@ -56,7 +56,7 @@ namespace hazelcast {
                     if (offset == frameLen) {
                         if (message->isFlagSet(ClientMessage::BEGIN_AND_END_FLAGS)) {
                             //MESSAGE IS COMPLETE HERE
-                            messageHandler.handleMessage(connection, message);
+                            messageHandler.handleClientMessage(connection, message);
                             isCompleted = true;
                         } else {
                             if (message->isFlagSet(ClientMessage::BEGIN_FLAG)) {
@@ -91,7 +91,7 @@ namespace hazelcast {
 
                         partialMessages.erase(foundItemIter, foundItemIter);
 
-                        messageHandler.handleMessage(connection, foundMessage);
+                        messageHandler.handleClientMessage(connection, foundMessage);
 
                         result = true;
                     }

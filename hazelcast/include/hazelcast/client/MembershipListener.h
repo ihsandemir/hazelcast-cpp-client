@@ -73,6 +73,9 @@ namespace hazelcast {
              */
             virtual void memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent) = 0;
 
+            virtual bool shouldRequestInitialMembers() const {
+                return false;
+            }
         };
     }
 }

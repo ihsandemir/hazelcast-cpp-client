@@ -16,7 +16,7 @@
 //
 // Created by sancar koyunlu on 8/5/13.
 #include "hazelcast/client/TransactionContext.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/Connection.h"
 
 namespace hazelcast {

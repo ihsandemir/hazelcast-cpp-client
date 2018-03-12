@@ -23,7 +23,7 @@
 #include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/connection/CallPromise.h"
 #include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/spi/InvocationService.h"
+#include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include <climits>
 #include <ctime>
@@ -33,29 +33,23 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            CallFuture::CallFuture()
-            : invocationService(NULL)
-            , heartBeatTimeout(0) {
-
+            CallFuture::CallFuture() : heartBeatTimeout(0) {
             }
 
-            CallFuture::CallFuture(boost::shared_ptr<CallPromise> promise, boost::shared_ptr<Connection> connection, int heartBeatTimeout, spi::InvocationService *invocationService)
+            CallFuture::CallFuture(boost::shared_ptr<CallPromise> promise, boost::shared_ptr<Connection> connection, int heartBeatTimeout)
             : promise(promise)
             , connection(connection)
-            , invocationService(invocationService)
             , heartBeatTimeout(heartBeatTimeout) {
 
             }
 
             CallFuture::CallFuture(const CallFuture &rhs) : promise(rhs.promise), connection(rhs.connection),
-                                                            invocationService(rhs.invocationService),
                                                             heartBeatTimeout(rhs.heartBeatTimeout) {
             }
 
             CallFuture &CallFuture::operator=(const CallFuture &rhs) {
                 promise = rhs.promise;
                 connection = rhs.connection;
-                invocationService = rhs.invocationService;
                 heartBeatTimeout = rhs.heartBeatTimeout;
                 return *this;
             }

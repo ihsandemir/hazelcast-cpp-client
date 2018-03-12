@@ -126,6 +126,7 @@ namespace hazelcast {
 
                     void setBlocking(bool blocking);
 
+                    std::auto_ptr<Address> localSocketAddress() const;
                 private:
                     TcpSocket(const Socket &rhs);
 

@@ -20,7 +20,7 @@
 #include "hazelcast/client/proxy/ITopicImpl.h"
 
 #include "hazelcast/client/topic/impl/TopicEventHandlerImpl.h"
-#include "hazelcast/client/spi/ServerListenerService.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
 
 // Includes for parameters classes
 #include "hazelcast/client/protocol/codec/TopicPublishCodec.h"
@@ -39,7 +39,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::TopicPublishCodec::RequestParameters::encode(getName(), data);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
 
@@ -52,9 +52,7 @@ namespace hazelcast {
             }
 
             bool ITopicImpl::removeMessageListener(const std::string &registrationId) {
-                protocol::codec::TopicRemoveMessageListenerCodec removeCodec(getName(), registrationId);
-
-                return context->getServerListenerService().deRegisterListener(removeCodec);
+                return context->getClientListenerService().deregisterListener(registrationId);
             }
         }
     }

@@ -19,7 +19,7 @@
 #include "hazelcast/client/spi/PartitionService.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/LifecycleService.h"
-#include "hazelcast/client/spi/InvocationService.h"
+#include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
@@ -161,7 +161,7 @@ namespace hazelcast {
 
             bool PartitionService::getInitialPartitions() {
                 bool result = false;
-                std::vector<Member> memberList = clientContext.getClusterService().getMemberList();
+                std::vector<Member> memberList = clientContext.getClientClusterService().getMemberList();
                 for (std::vector<Member>::iterator it = memberList.begin(); it < memberList.end(); ++it) {
                     const Address &target = (*it).getAddress();
                     std::auto_ptr<protocol::ClientMessage> response = getPartitionsFrom(target);
@@ -191,7 +191,7 @@ namespace hazelcast {
                 if (updating.compareAndSet(false, true)) {
                     try {
                         std::auto_ptr<protocol::ClientMessage> partitionResponse;
-                        std::auto_ptr<Address> ptr = clientContext.getClusterService().getMasterAddress();
+                        std::auto_ptr<Address> ptr = clientContext.getClientClusterService().getMasterAddress();
                         if (ptr.get() == NULL) {
                             partitionResponse = getPartitionsFrom();
                         } else {

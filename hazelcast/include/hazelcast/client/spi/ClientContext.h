@@ -19,7 +19,10 @@
 #ifndef HAZELCAST_CLIENT_CONTEXT
 #define HAZELCAST_CLIENT_CONTEXT
 
+#include <string>
 #include "hazelcast/util/HazelcastDll.h"
+#include "ClientInvocationService.h"
+#include "ClientClusterService.h"
 
 namespace hazelcast {
     namespace client {
@@ -38,7 +41,7 @@ namespace hazelcast {
         class ClientProperties;
 
         namespace connection {
-            class ConnectionManager;
+            class ClientConnectionManagerImpl;
         }
 
         namespace internal {
@@ -46,16 +49,27 @@ namespace hazelcast {
                 class NearCacheManager;
             }
         }
+
+        namespace protocol {
+            class ClientExceptionFactory;
+        }
         namespace spi {
             class InvocationService;
 
-            class ClusterService;
-
             class PartitionService;
 
-            class ServerListenerService;
+            class ClientListenerService;
 
             class LifecycleService;
+
+            namespace impl {
+                class ClientExecutionServiceImpl;
+                class ClientClusterServiceImpl;
+
+                namespace sequence {
+                    class CallIdSequence;
+                }
+            }
 
             class HAZELCAST_API ClientContext {
             public:
@@ -64,9 +78,9 @@ namespace hazelcast {
 
                 serialization::pimpl::SerializationService &getSerializationService();
 
-                ClusterService &getClusterService();
+                impl::ClientClusterServiceImpl &getClientClusterService();
 
-                InvocationService &getInvocationService();
+                hazelcast::client::spi::ClientInvocationService & getInvocationService();
 
                 ClientConfig &getClientConfig();
 
@@ -74,9 +88,9 @@ namespace hazelcast {
 
                 LifecycleService &getLifecycleService();
 
-                ServerListenerService &getServerListenerService();
+                ClientListenerService &getClientListenerService();
 
-                connection::ConnectionManager &getConnectionManager();
+                connection::ClientConnectionManagerImpl &getConnectionManager();
 
                 internal::nearcache::NearCacheManager &getNearCacheManager() const;
 
@@ -84,6 +98,15 @@ namespace hazelcast {
 
                 Cluster &getCluster();
 
+                impl::sequence::CallIdSequence &getCallIdSequence() const;
+
+                const protocol::ClientExceptionFactory &getClientExceptionFactory() const;
+
+                const std::string &getName() const;
+
+                spi::impl::ClientExecutionServiceImpl &getClientExecutionService() const;
+
+                void onClusterConnect(const boost::shared_ptr<connection::Connection> &ownerConnection);
             private:
                 HazelcastClient &hazelcastClient;
             };

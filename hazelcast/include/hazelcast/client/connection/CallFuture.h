@@ -35,10 +35,6 @@ namespace hazelcast {
             class ClientMessage;
         }
 
-        namespace spi{
-            class InvocationService;
-        }
-
         namespace connection {
             class CallPromise;
 
@@ -48,7 +44,7 @@ namespace hazelcast {
             public:
                 CallFuture();
 
-                CallFuture(boost::shared_ptr<CallPromise> promise, boost::shared_ptr<Connection> connection, int heartBeatTimeout, spi::InvocationService* invocationService);
+                CallFuture(boost::shared_ptr<CallPromise> promise, boost::shared_ptr<Connection> connection, int heartBeatTimeout);
 
                 CallFuture(const CallFuture &rhs);
 
@@ -71,7 +67,6 @@ namespace hazelcast {
             private:
                 boost::shared_ptr<CallPromise> promise;
                 boost::shared_ptr<Connection> connection;
-                spi::InvocationService* invocationService;
                 int heartBeatTimeout;
             };
         }

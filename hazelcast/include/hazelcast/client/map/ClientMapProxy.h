@@ -492,7 +492,7 @@ namespace hazelcast {
                 std::string addEntryListener(EntryListener <K, V> &listener, bool includeValue) {
                     client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
                             new client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
-                                    getName(), context->getClusterService(), context->getSerializationService(),
+                                    getName(), context->getClientClusterService(), context->getSerializationService(),
                                     listener,
                                     includeValue);
                     return proxy::IMapImpl::addEntryListener(entryEventHandler, includeValue);
@@ -517,7 +517,7 @@ namespace hazelcast {
                 addEntryListener(EntryListener <K, V> &listener, const query::Predicate &predicate, bool includeValue) {
                     client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler> *entryEventHandler =
                             new client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
-                                    getName(), context->getClusterService(), context->getSerializationService(),
+                                    getName(), context->getClientClusterService(), context->getSerializationService(),
                                     listener,
                                     includeValue);
                     return proxy::IMapImpl::addEntryListener(entryEventHandler, predicate, includeValue);
@@ -553,7 +553,7 @@ namespace hazelcast {
                     serialization::pimpl::Data keyData = toData(key);
                     client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
                             new client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
-                                    getName(), context->getClusterService(), context->getSerializationService(),
+                                    getName(), context->getClientClusterService(), context->getSerializationService(),
                                     listener,
                                     includeValue);
                     return proxy::IMapImpl::addEntryListener(entryEventHandler, keyData, includeValue);

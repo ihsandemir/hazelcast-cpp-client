@@ -37,7 +37,7 @@ namespace hazelcast {
     namespace client {
         namespace connection {
 
-            IOSelector::IOSelector(ConnectionManager &connectionManager)
+            IOSelector::IOSelector(ClientConnectionManagerImpl &connectionManager)
             :connectionManager(connectionManager) {
                 t.tv_sec = 5;
                 t.tv_usec = 0;

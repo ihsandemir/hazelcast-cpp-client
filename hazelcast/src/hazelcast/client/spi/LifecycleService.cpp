@@ -17,13 +17,15 @@
 // Created by sancar koyunlu on 6/17/13.
 
 #include "hazelcast/util/Util.h"
+#include <hazelcast/client/spi/impl/AbstractClientInvocationService.h>
+#include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/spi/PartitionService.h"
 #include "hazelcast/client/spi/ClientContext.h"
-#include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/spi/ClusterService.h"
+#include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/ClientConfig.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/LifecycleListener.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 
@@ -44,7 +46,7 @@ namespace hazelcast {
             bool LifecycleService::start() {
                 fireLifecycleEvent(LifecycleEvent::STARTING);
 
-                if (!clientContext.getInvocationService().start()) {
+                if (!((impl::AbstractClientInvocationService &) clientContext.getInvocationService()).start()) {
                     return false;
                 }
 
@@ -52,9 +54,7 @@ namespace hazelcast {
                     return false;
                 }
 
-                if (!clientContext.getClusterService().start()) {
-                    return false;
-                }
+                clientContext.getClientClusterService().start();
 
                 loadBalancer->init(cluster);
 
@@ -71,10 +71,12 @@ namespace hazelcast {
                     return;
                 }
                 fireLifecycleEvent(LifecycleEvent::SHUTTING_DOWN);
-                clientContext.getInvocationService().shutdown();
                 clientContext.getConnectionManager().shutdown();
+                clientContext.getClientClusterService().shutdown();
                 clientContext.getPartitionService().shutdown();
-                clientContext.getClusterService().shutdown();
+                clientContext.getInvocationService().shutdown();
+                clientContext.getClientExecutionService().shutdown();
+                clientContext.getClientListenerService().shutdown();
                 clientContext.getNearCacheManager().destroyAllNearCaches();
                 fireLifecycleEvent(LifecycleEvent::SHUTDOWN);
                 shutdownLatch.countDown();

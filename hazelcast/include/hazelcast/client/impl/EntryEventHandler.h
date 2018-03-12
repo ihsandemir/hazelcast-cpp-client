@@ -23,7 +23,7 @@
 #include "hazelcast/client/MapEvent.h"
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
-#include "hazelcast/client/spi/ClusterService.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/protocol/codec/MapAddEntryListenerCodec.h"
 
@@ -39,7 +39,7 @@ namespace hazelcast {
             template<typename K, typename V, typename BaseType>
             class EntryEventHandler : public BaseType {
             public:
-                EntryEventHandler(const std::string &instanceName, spi::ClusterService &clusterService,
+                EntryEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
                                   serialization::pimpl::SerializationService &serializationService,
                                   EntryListener<K, V> &listener, bool includeValue)
                 : instanceName(instanceName)
@@ -125,7 +125,7 @@ namespace hazelcast {
 
             private:
                 const std::string& instanceName;
-                spi::ClusterService& clusterService;
+                spi::ClientClusterService &clusterService;
                 serialization::pimpl::SerializationService& serializationService;
                 EntryListener<K, V>& listener;
                 bool includeValue;
@@ -137,7 +137,7 @@ namespace hazelcast {
                 template<typename BaseType>
                 class MixedEntryEventHandler : public BaseType {
                 public:
-                    MixedEntryEventHandler(const std::string &instanceName, spi::ClusterService &clusterService,
+                    MixedEntryEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
                                            serialization::pimpl::SerializationService &serializationService,
                                            MixedEntryListener &listener, bool includeValue)
                             : instanceName(instanceName)
@@ -208,7 +208,7 @@ namespace hazelcast {
 
                 private:
                     const std::string& instanceName;
-                    spi::ClusterService& clusterService;
+                    spi::ClientClusterService& clusterService;
                     serialization::pimpl::SerializationService& serializationService;
                     MixedEntryListener& listener;
                     bool includeValue;

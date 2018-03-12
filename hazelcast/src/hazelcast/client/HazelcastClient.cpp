@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <hazelcast/client/spi/impl/SmartClientInvocationService.h>
+#include <hazelcast/client/spi/impl/NonSmartClientInvocationService.h>
+#include <hazelcast/client/spi/impl/listener/NonSmartClientListenerService.h>
+#include <hazelcast/client/spi/impl/listener/SmartClientListenerService.h>
+#include <hazelcast/client/spi/impl/ClientExecutionServiceImpl.h>
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/IdGenerator.h"
 #include "hazelcast/client/ICountDownLatch.h"
 #include "hazelcast/client/ISemaphore.h"
 #include "hazelcast/client/ILock.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/mixedtype/impl/HazelcastClientImpl.h"
 
 #ifndef HAZELCAST_VERSION
@@ -32,26 +37,38 @@
 
 namespace hazelcast {
     namespace client {
+        util::Atomic<int32_t> HazelcastClient::CLIENT_ID(0);
+
         HazelcastClient::HazelcastClient(ClientConfig &config)
         : clientConfig(config)
         , clientProperties(clientConfig)
         , shutdownLatch(1)
         , clientContext(*this)
         , serializationService(clientConfig.getSerializationConfig())
-        , connectionManager(new connection::ConnectionManager(clientContext, clientConfig.isSmart()))
+        , connectionManager(new connection::ClientConnectionManagerImpl(clientContext, clientConfig.isSmart()))
         , nearCacheManager(serializationService)
         , clusterService(clientContext)
         , partitionService(clientContext)
-        , invocationService(clientContext)
-        , serverListenerService(clientContext)
         , cluster(clusterService)
         , lifecycleService(clientContext, clientConfig.getLifecycleListeners(), shutdownLatch,
                            clientConfig.getLoadBalancer(), cluster)
         , proxyManager(clientContext)
-        , TOPIC_RB_PREFIX("_hz_rb_") {
+        , TOPIC_RB_PREFIX("_hz_rb_")
+        , id(++CLIENT_ID) {
+            const boost::shared_ptr<std::string> &name = config.getInstanceName();
+            if (name.get() != NULL) {
+                instanceName = *name;
+            } else {
+                instanceName = "hz.client_" + id;
+            }
+
             std::stringstream prefix;
-            (prefix << "[HazelcastCppClient" << HAZELCAST_VERSION << "] [" << clientConfig.getGroupConfig().getName() << "]" );
+            prefix << instanceName << "[" << clientConfig.getGroupConfig().getName() << "] [" << HAZELCAST_VERSION << "]";
             util::ILogger::getLogger().setPrefix(prefix.str());
+
+            executionService = initExecutionService();
+            invocationService = initInvocationService();
+            listenerService = initListenerService();
 
             try {
                 if (!lifecycleService.start()) {
@@ -143,6 +160,54 @@ namespace hazelcast {
 
         mixedtype::HazelcastClient &HazelcastClient::toMixedType() const {
             return *mixedTypeSupportAdaptor;
+        }
+
+        const spi::impl::sequence::CallIdSequence &HazelcastClient::getCallIdSequence() const {
+            return callIdSequence;
+        }
+
+        const protocol::ClientExceptionFactory &HazelcastClient::getExceptionFactory() const {
+            return exceptionFactory;
+        }
+
+        std::auto_ptr<spi::ClientListenerService> HazelcastClient::initListenerService() {
+            int eventQueueCapacity = clientProperties.getEventQueueCapacity().getInteger();
+            int eventThreadCount = clientProperties.getEventThreadCount().getInteger();
+            config::ClientNetworkConfig &networkConfig = clientConfig.getNetworkConfig();
+            if (networkConfig.isSmartRouting()) {
+                return std::auto_ptr<spi::ClientListenerService>(
+                        new spi::impl::listener::SmartClientListenerService(clientContext, eventThreadCount,
+                                                                            eventQueueCapacity));
+            } else {
+                return std::auto_ptr<spi::ClientListenerService>(
+                        new spi::impl::listener::NonSmartClientListenerService(clientContext, eventThreadCount,
+                                                                               eventQueueCapacity));
+            }
+        }
+
+        std::auto_ptr<spi::ClientInvocationService> HazelcastClient::initInvocationService() {
+            if (clientConfig.getNetworkConfig().isSmartRouting()) {
+                return std::auto_ptr<spi::ClientInvocationService>(
+                        new spi::impl::SmartClientInvocationService(clientContext));
+            } else {
+                return std::auto_ptr<spi::ClientInvocationService>(
+                        new spi::impl::NonSmartClientInvocationService(clientContext));
+            }
+        }
+
+        std::auto_ptr<spi::impl::ClientExecutionServiceImpl> HazelcastClient::initExecutionService() {
+            return std::auto_ptr<spi::impl::ClientExecutionServiceImpl>(
+                    new spi::impl::ClientExecutionServiceImpl(instanceName, clientProperties,
+                                                              clientConfig.getExecutorPoolSize()));
+        }
+
+        spi::ClientExecutionService &HazelcastClient::getClientExecutionService() const {
+            return *executionService;
+        }
+
+        void HazelcastClient::onClusterConnect(const boost::shared_ptr<connection::Connection> &ownerConnection) {
+            partitionService.listenPartitionTable(ownerConnection);
+            clusterService.listenMembershipEvents(ownerConnection);
         }
     }
 }

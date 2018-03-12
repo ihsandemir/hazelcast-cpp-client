@@ -20,7 +20,7 @@
 #include "hazelcast/client/proxy/ISetImpl.h"
 
 #include "hazelcast/client/impl/ItemEventHandler.h"
-#include "hazelcast/client/spi/ServerListenerService.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
 
 // Includes for parameters classes
 #include "hazelcast/client/protocol/codec/SetSizeCodec.h"
@@ -54,9 +54,7 @@ namespace hazelcast {
             }
 
             bool ISetImpl::removeItemListener(const std::string& registrationId) {
-                protocol::codec::SetRemoveListenerCodec removeCodec(getName(), registrationId);
-
-                return context->getServerListenerService().deRegisterListener(removeCodec);
+                return context->getClientListenerService().deregisterListener(registrationId);
             }
 
             int ISetImpl::size() {
@@ -131,7 +129,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetClearCodec::RequestParameters::encode(getName());
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
         }
     }

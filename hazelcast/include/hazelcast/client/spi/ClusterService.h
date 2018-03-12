@@ -19,7 +19,6 @@
 #ifndef HAZELCAST_CLUSTER_SERVICE
 #define HAZELCAST_CLUSTER_SERVICE
 
-#include "hazelcast/client/connection/ClusterListenerThread.h"
 #include "hazelcast/util/Mutex.h"
 #include "hazelcast/util/LockGuard.h"
 #include <set>
@@ -75,7 +74,7 @@ namespace hazelcast {
 
                 std::auto_ptr<Member> getMember(const std::string &uuid);
 
-                const Member &getMember(Address &address);
+                std::auto_ptr<Member> getMember(const Address &address);
 
                 // TODO: Using shared_ptr for Member would eliminate this deep copying
                 std::vector<Member> getMemberList();

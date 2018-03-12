@@ -20,7 +20,7 @@
 #include "hazelcast/client/proxy/IListImpl.h"
 
 
-#include "hazelcast/client/spi/ServerListenerService.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 
@@ -69,9 +69,7 @@ namespace hazelcast {
             }
 
             bool IListImpl::removeItemListener(const std::string &registrationId) {
-                protocol::codec::ListRemoveListenerCodec removeCodec(getName(), registrationId);
-
-                return context->getServerListenerService().deRegisterListener(removeCodec);
+                return context->getClientListenerService().deregisterListener(registrationId);
             }
 
             int IListImpl::size() {
@@ -159,7 +157,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListClearCodec::RequestParameters::encode(getName());
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IListImpl::getData(int index) {
@@ -183,7 +181,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddWithIndexCodec::RequestParameters::encode(getName(), index, element);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IListImpl::removeData(int index) {

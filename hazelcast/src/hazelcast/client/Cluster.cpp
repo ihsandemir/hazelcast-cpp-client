@@ -19,13 +19,13 @@
 
 
 #include "hazelcast/client/Cluster.h"
-#include "hazelcast/client/spi/ClusterService.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipListener.h"
 
 namespace hazelcast {
     namespace client {
-        Cluster::Cluster(spi::ClusterService &clusterService)
+        Cluster::Cluster(spi::ClientClusterService &clusterService)
         :clusterService(clusterService) {
 
         }

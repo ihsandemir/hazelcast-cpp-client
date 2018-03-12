@@ -39,7 +39,7 @@ namespace hazelcast {
         }
 
         namespace connection {
-            class ConnectionManager;
+            class ClientConnectionManagerImpl;
 			class Connection;
         }
 

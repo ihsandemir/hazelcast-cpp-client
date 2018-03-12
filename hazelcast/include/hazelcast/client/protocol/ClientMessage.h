@@ -62,6 +62,7 @@
 #include <vector>
 #include <assert.h>
 #include <map>
+#include <ostream>
 
 #include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/util/HazelcastDll.h"
@@ -162,7 +163,9 @@ namespace hazelcast {
 
                 void setVersion(uint8_t value);
 
-                void setFlags(uint8_t value);
+                uint8_t getFlags();
+
+                void addFlag(uint8_t flags);
 
                 void setCorrelationId(int64_t id);
 
@@ -453,6 +456,16 @@ namespace hazelcast {
                  * Returns the number of bytes sent on the socket
                  **/
                 int32_t writeTo(Socket &socket, int32_t offset, int32_t frameLen);
+
+                /**
+                 * Checks the frame size and total data size to validate the message size.
+                 *
+                 * @return true if the message is constructed.
+                 */
+                bool isComplete() const;
+
+                friend std::ostream &operator<<(std::ostream &os, const ClientMessage &message);
+
             private:
                 ClientMessage(int32_t size);
 

@@ -39,7 +39,7 @@ namespace hazelcast {
             }
 
             void IOHandler::registerHandler() {
-                if (!connection.live)
+                if (!connection.isAlive())
                     return;
                 Socket const& socket = connection.getSocket();
                 ioSelector.addSocket(socket);

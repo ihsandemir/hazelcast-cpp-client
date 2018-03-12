@@ -18,8 +18,7 @@
 //
 
 #include "hazelcast/client/proxy/IMapImpl.h"
-#include "hazelcast/client/spi/InvocationService.h"
-#include "hazelcast/client/spi/ServerListenerService.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
 #include "hazelcast/client/EntryView.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/util/Util.h"
@@ -86,14 +85,12 @@ namespace hazelcast {
             }
 
             bool IMapImpl::containsKey(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapContainsKeyCodec::RequestParameters::encode(getName(), key,
                                                                                         util::getThreadId());
 
                 return invokeAndGetResult<bool, protocol::codec::MapContainsKeyCodec::ResponseParameters>(request,
-                                                                                                          partitionId);
+                                                                                                          key);
             }
 
             bool IMapImpl::containsValue(const serialization::pimpl::Data &value) {
@@ -104,33 +101,28 @@ namespace hazelcast {
             }
 
             std::auto_ptr<serialization::pimpl::Data> IMapImpl::getData(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapGetCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
                 return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::MapGetCodec::ResponseParameters>(
-                        request, partitionId);
+                        request, key);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IMapImpl::removeData(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapRemoveCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
                 return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::MapRemoveCodec::ResponseParameters>(
-                        request, partitionId);
+                        request, key);
             }
 
             bool IMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapRemoveIfSameCodec::RequestParameters::encode(getName(), key, value,
                                                                                          util::getThreadId());
 
                 return invokeAndGetResult<bool, protocol::codec::MapRemoveIfSameCodec::ResponseParameters>(request,
-                                                                                                           partitionId);
+                                                                                                           key);
             }
 
             void IMapImpl::removeAll(const serialization::pimpl::Data& predicateData) {
@@ -146,7 +138,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapDeleteCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             void IMapImpl::flush() {
@@ -157,42 +149,34 @@ namespace hazelcast {
             }
 
             bool IMapImpl::tryRemove(const serialization::pimpl::Data &key, long timeoutInMillis) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapTryRemoveCodec::RequestParameters::encode(getName(), key,
                                                                                       util::getThreadId(),
                                                                                       timeoutInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::MapTryRemoveCodec::ResponseParameters>(request,
-                                                                                                        partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MapTryRemoveCodec::ResponseParameters>(request, key);
             }
 
             bool IMapImpl::tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                   long timeoutInMillis) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapTryPutCodec::RequestParameters::encode(getName(), key, value,
                                                                                    util::getThreadId(),
                                                                                    timeoutInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::MapTryPutCodec::ResponseParameters>(request,
-                                                                                                     partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MapTryPutCodec::ResponseParameters>(request, key);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IMapImpl::putData(const serialization::pimpl::Data &key,
                                                                     const serialization::pimpl::Data &value,
                                                                     long ttlInMillis) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapPutCodec::RequestParameters::encode(getName(), key, value,
                                                                                 util::getThreadId(),
                                                                                 ttlInMillis);
 
                 return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::MapPutCodec::ResponseParameters>(
-                        request, partitionId);
+                        request, key);
             }
 
             void IMapImpl::putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
@@ -204,46 +188,40 @@ namespace hazelcast {
                                                                                          util::getThreadId(),
                                                                                          ttlInMillis);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
                                                                             const serialization::pimpl::Data &value,
                                                                             long ttlInMillis) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapPutIfAbsentCodec::RequestParameters::encode(getName(), key, value,
                                                                                         util::getThreadId(),
                                                                                         ttlInMillis);
 
                 return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::MapPutIfAbsentCodec::ResponseParameters>(
-                        request, partitionId);
+                        request, key);
             }
 
             bool IMapImpl::replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
                                    const serialization::pimpl::Data &newValue) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapReplaceIfSameCodec::RequestParameters::encode(getName(), key, oldValue,
                                                                                           newValue,
                                                                                           util::getThreadId());
 
                 return invokeAndGetResult<bool, protocol::codec::MapReplaceIfSameCodec::ResponseParameters>(request,
-                                                                                                            partitionId);
+                                                                                                            key);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IMapImpl::replaceData(const serialization::pimpl::Data &key,
                                                                         const serialization::pimpl::Data &value) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapReplaceCodec::RequestParameters::encode(getName(), key, value,
                                                                                     util::getThreadId());
 
                 return invokeAndGetResult<std::auto_ptr<serialization::pimpl::Data>, protocol::codec::MapReplaceCodec::ResponseParameters>(
-                        request, partitionId);
+                        request, key);
             }
 
             void IMapImpl::set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
@@ -254,7 +232,7 @@ namespace hazelcast {
                         protocol::codec::MapSetCodec::RequestParameters::encode(getName(), key, value,
                                                                                 util::getThreadId(), ttl);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             void IMapImpl::lock(const serialization::pimpl::Data &key) {
@@ -264,7 +242,7 @@ namespace hazelcast {
                         protocol::codec::MapLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(),
                                                                                  -1);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             void IMapImpl::lock(const serialization::pimpl::Data &key, long leaseTime) {
@@ -274,28 +252,22 @@ namespace hazelcast {
                         protocol::codec::MapLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(),
                                                                                  leaseTime);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             bool IMapImpl::isLocked(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapIsLockedCodec::RequestParameters::encode(getName(), key);
 
-                return invokeAndGetResult<bool, protocol::codec::MapIsLockedCodec::ResponseParameters>(request,
-                                                                                                       partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MapIsLockedCodec::ResponseParameters>(request, key);
             }
 
             bool IMapImpl::tryLock(const serialization::pimpl::Data &key, long timeInMillis) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapTryLockCodec::RequestParameters::encode(getName(), key, util::getThreadId(),
                                                                                     -1, timeInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::MapTryLockCodec::ResponseParameters>(request,
-                                                                                                      partitionId);
+                return invokeAndGetResult<bool, protocol::codec::MapTryLockCodec::ResponseParameters>(request, key);
             }
 
             void IMapImpl::unlock(const serialization::pimpl::Data &key) {
@@ -304,7 +276,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapUnlockCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             void IMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
@@ -313,7 +285,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapForceUnlockCodec::RequestParameters::encode(getName(), key);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             std::string IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
@@ -336,9 +308,7 @@ namespace hazelcast {
             }
 
             bool IMapImpl::removeEntryListener(const std::string &registrationId) {
-                protocol::codec::MapRemoveEntryListenerCodec codec(getName(), registrationId);
-
-                return context->getServerListenerService().deRegisterListener(codec);
+                return context->getClientListenerService().deregisterListener(registrationId);
             }
 
             std::string IMapImpl::addEntryListener(impl::BaseEventHandler *handler,
@@ -355,24 +325,20 @@ namespace hazelcast {
             }
 
             std::auto_ptr<map::DataEntryView> IMapImpl::getEntryViewData(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapGetEntryViewCodec::RequestParameters::encode(getName(), key,
                                                                                          util::getThreadId());
 
                 return invokeAndGetResult<std::auto_ptr<map::DataEntryView>, protocol::codec::MapGetEntryViewCodec::ResponseParameters>(
-                        request, partitionId);
+                        request, key);
             }
 
             bool IMapImpl::evict(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapEvictCodec::RequestParameters::encode(getName(), key, util::getThreadId());
 
                 return invokeAndGetResult<bool, protocol::codec::MapEvictCodec::ResponseParameters>(request,
-                                                                                                    partitionId);
+                                                                                                    key);
             }
 
             void IMapImpl::evictAll() {

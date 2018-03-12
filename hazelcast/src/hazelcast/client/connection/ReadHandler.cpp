@@ -19,7 +19,6 @@
 
 #include "hazelcast/client/connection/ReadHandler.h"
 #include "hazelcast/client/spi/ClientContext.h"
-#include "hazelcast/client/spi/InvocationService.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/connection/InSelector.h"
 #include "hazelcast/client/exception/IOException.h"
@@ -37,7 +36,7 @@ namespace hazelcast {
             , buffer(new char[bufferSize])
             , byteBuffer(buffer, bufferSize)
             , builder(clientContext.getInvocationService(), connection) {
-		        connection.lastRead = time(NULL);
+		        lastReadTimeMillis = util::currentTimeMillis();
             }
 
             ReadHandler::~ReadHandler() {
@@ -49,7 +48,7 @@ namespace hazelcast {
             }
 
             void ReadHandler::handle() {
-                connection.lastRead = time(NULL);
+                lastReadTimeMillis = util::currentTimeMillis();
                 try {
                     byteBuffer.readFrom(connection.getSocket());
                 } catch (exception::IOException &e) {
@@ -71,6 +70,10 @@ namespace hazelcast {
                 } else {
                     byteBuffer.clear();
                 }
+            }
+
+            int64_t ReadHandler::getLastReadTimeMillis() {
+                return lastReadTimeMillis;
             }
         }
     }

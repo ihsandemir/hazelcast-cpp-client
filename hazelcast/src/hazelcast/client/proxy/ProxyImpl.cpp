@@ -18,17 +18,18 @@
 //
 
 #include <boost/foreach.hpp>
+#include <hazelcast/client/spi/impl/ClientInvocation.h>
 
 #include "hazelcast/client/TypedData.h"
 #include "hazelcast/client/protocol/codec/IAddListenerCodec.h"
 #include "hazelcast/client/protocol/codec/IRemoveListenerCodec.h"
 #include "hazelcast/client/protocol/codec/ClientDestroyProxyCodec.h"
 #include "hazelcast/client/proxy/ProxyImpl.h"
-#include "hazelcast/client/spi/ServerListenerService.h"
-#include "hazelcast/client/spi/ClusterService.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/spi/PartitionService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
-#include "hazelcast/client/spi/InvocationService.h"
+#include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/connection/CallFuture.h"
 
 
@@ -48,7 +49,7 @@ namespace hazelcast {
 
             std::string ProxyImpl::registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
                                                     int partitionId, impl::BaseEventHandler *handler) {
-                return context->getServerListenerService().registerListener(addListenerCodec, partitionId, handler);
+                return context->getClientListenerService().registerListener(addListenerCodec, partitionId, handler);
             }
 
             std::string ProxyImpl::registerListener(std::auto_ptr<protocol::codec::IAddListenerCodec> addListenerCodec,
@@ -60,14 +61,17 @@ namespace hazelcast {
                 return context->getPartitionService().getPartitionId(key);
             }
 
-            std::auto_ptr<protocol::ClientMessage> ProxyImpl::invoke(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
-                spi::InvocationService& invocationService = context->getInvocationService();
+            std::auto_ptr<protocol::ClientMessage> ProxyImpl::invokeOnPartition(
+                    std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
+                spi::impl::ClientInvocation(*context, request, getName(), partitionId).invoke();
+
+                spi::ClientInvocationService& invocationService = context->getInvocationService();
                 connection::CallFuture future = invocationService.invokeOnPartitionOwner(request, partitionId);
                 return future.get();
             }
 
             connection::CallFuture ProxyImpl::invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
-                spi::InvocationService& invocationService = context->getInvocationService();
+                spi::ClientInvocationService& invocationService = context->getInvocationService();
                 return invocationService.invokeOnPartitionOwner(request, partitionId);
             }
 

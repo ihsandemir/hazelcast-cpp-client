@@ -280,6 +280,20 @@ namespace hazelcast {
                     util::strerror_s(error, errorMsg, 200, prefix);
                     throw client::exception::IOException(std::string("TcpSocket::") + methodName, errorMsg);
                 }
+
+                std::auto_ptr<Address> TcpSocket::localSocketAddress() const {
+                    struct sockaddr_in sin;
+                    socklen_t addrlen = sizeof(sin);
+                    if (getsockname(socketId, (struct sockaddr *) &sin, &addrlen) == 0 &&
+                        sin.sin_family == AF_INET &&
+                        addrlen == sizeof(sin)) {
+                        int localPort = ntohs(sin.sin_port);
+                        char *localIp = inet_ntoa(sin.sin_addr);
+                        return std::auto_ptr<Address>(new Address(localIp ? localIp : "", localPort));
+                    } else {
+                        return std::auto_ptr<Address>();
+                    }
+                }
             }
         }
     }

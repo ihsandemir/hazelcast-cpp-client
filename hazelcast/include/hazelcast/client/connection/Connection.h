@@ -19,6 +19,8 @@
 #define HAZELCAST_CONNECTION
 
 #include <memory>
+#include <ostream>
+#include <stdint.h>
 
 #include "hazelcast/client/Socket.h"
 #include "hazelcast/client/connection/ReadHandler.h"
@@ -38,10 +40,13 @@
 
 namespace hazelcast {
     namespace client {
+        namespace exception {
+            class IException;
+        }
         namespace spi {
             class ClientContext;
 
-            class InvocationService;
+            class ClientInvocationService;
         }
 
         namespace internal {
@@ -64,13 +69,13 @@ namespace hazelcast {
 
                 ~Connection();
 
-                void init(const std::vector<byte>& PROTOCOL);
-
                 void connect(int timeoutInMillis);
 
-                void close(const char *closeReason = NULL);
+                void close(const char *reason = NULL);
 
-                void write(protocol::ClientMessage *message);
+                void close(const char *reason, const boost::shared_ptr<exception::IException> &cause);
+
+                bool write(const boost::shared_ptr<protocol::ClientMessage> &message);
 
                 const Address& getRemoteEndpoint() const;
 
@@ -78,41 +83,69 @@ namespace hazelcast {
 
                 Socket& getSocket();
 
-                std::auto_ptr<protocol::ClientMessage> sendAndReceive(protocol::ClientMessage &clientMessage);
-
                 ReadHandler& getReadHandler();
 
                 WriteHandler& getWriteHandler();
 
-                void setAsOwnerConnection(bool isOwnerConnection);
-
-                void writeBlocking(protocol::ClientMessage &packet);
-
-                std::auto_ptr<protocol::ClientMessage> readBlocking();
-
                 bool isHeartBeating();
+
+                void onHeartbeatFailed();
+
+                void onHeartbeatResumed();
+
+                void onHeartbeatReceived();
+
+                void onHeartbeatRequested();
 
                 void heartBeatingFailed();
 
                 void heartBeatingSucceed();
 
-                bool isOwnerConnection() const;
+                bool isAuthenticatedAsOwner() const;
 
-                virtual void handleMessage(connection::Connection &connection, std::auto_ptr<protocol::ClientMessage> message);
+                void setIsAuthenticatedAsOwner();
+
+                virtual void handleClientMessage(boost::shared_ptr<Connection> &connection,
+                                                 std::auto_ptr<protocol::ClientMessage> message);
 
                 int getConnectionId() const;
 
                 void setConnectionId(int connectionId);
 
-                util::Atomic<time_t> lastRead;
-                util::AtomicBoolean live;
+                bool isAlive() const;
+
+                int64_t lastReadTimeMillis();
+
+                const std::string &getCloseReason() const;
+
+                void incrementPendingPacketCount();
+
+                void decrementPendingPacketCount();
+
+                int32_t getPendingPacketCount();
+
+                friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
+
+                bool operator==(const Connection &rhs) const;
+
+                bool operator!=(const Connection &rhs) const;
+
+                const string &getConnectedServerVersionString() const;
+
+                void setConnectedServerVersion(const string &connectedServerVersionString);
+
+                std::auto_ptr<Address> getLocalSocketAddress() const;
             private:
+                util::Atomic<int64_t> closedTimeMillis;
+                util::Atomic<int64_t> lastHeartbeatRequestedMillis;
+                // the time in millis the last heartbeat was received. 0 indicates that no heartbeat has ever been received.
+                util::Atomic<int64_t> lastHeartbeatReceivedMillis;
                 spi::ClientContext& clientContext;
-                spi::InvocationService& invocationService;
+                spi::ClientInvocationService &invocationService;
                 std::auto_ptr<Socket> socket;
                 ReadHandler readHandler;
                 WriteHandler writeHandler;
-                bool _isOwnerConnection;
+                bool authenticatedAsOwner;
                 util::AtomicBoolean heartBeating;
                 byte* receiveBuffer;
                 util::ByteBuffer receiveByteBuffer;
@@ -122,9 +155,16 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> responseMessage;
 
                 int connectionId;
-            };
+                std::string closeReason;
+                boost::shared_ptr<exception::IException> closeCause;
 
-            std::ostream HAZELCAST_API &operator << (std::ostream &out, const Connection &connection);
+                util::Atomic<int32_t> pendingPacketCount;
+                std::string connectedServerVersionString;
+
+                void logClose();
+
+                void innerClose();
+            };
         }
     }
 }

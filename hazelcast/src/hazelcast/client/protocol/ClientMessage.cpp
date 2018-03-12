@@ -73,7 +73,7 @@ namespace hazelcast {
 
                 setFrameLength(size);
                 setVersion(PROTOCOL_VERSION);
-                setFlags(BEGIN_AND_END_FLAGS);
+                addFlag(BEGIN_AND_END_FLAGS);
                 setCorrelationId(0);
                 setPartitionId(-1);
                 setDataOffset(HEADER_SIZE);
@@ -104,8 +104,12 @@ namespace hazelcast {
                 buffer[VERSION_FIELD_OFFSET] = value;
             }
 
-            void ClientMessage::setFlags(uint8_t value) {
-                buffer[FLAGS_FIELD_OFFSET] = value;
+            uint8_t ClientMessage::getFlags() {
+                return buffer[FLAGS_FIELD_OFFSET];
+            }
+
+            void ClientMessage::addFlag(uint8_t flags) {
+                buffer[FLAGS_FIELD_OFFSET] = getFlags() | flags;
             }
 
             void ClientMessage::setCorrelationId(int64_t id) {
@@ -486,6 +490,26 @@ namespace hazelcast {
                 }
 
                 return numBytesSent;
+            }
+
+            bool ClientMessage::isComplete() const {
+                return (index >= HEADER_SIZE) && (index == getFrameLength());
+            }
+
+            std::ostream &protocol::operator<<(std::ostream &os, const ClientMessage &message) {
+                int32_t len = message.getIndex();
+                os << "ClientMessage{length=" << len;
+                if (len >= message.HEADER_SIZE) {
+                    os << ", correlationId=" << message.getCorrelationId()
+                    << ", messageType=0x" << std::hex << message.getMessageType() << std::dec
+                    << ", partitionId=" << message.getPartitionId()
+                    << ", isComplete=" << message.isComplete()
+                    << ", isRetryable=" << message.isRetryable()
+                    << ", isEvent=" << message.isFlagSet(message.LISTENER_EVENT_FLAG);
+                }
+                os << "}";
+
+                return os;
             }
         }
     }

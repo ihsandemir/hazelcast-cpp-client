@@ -548,7 +548,7 @@ namespace hazelcast {
                     serialization::pimpl::Data keyData = toData(key);
                     impl::MixedEntryEventHandler<protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
                             new impl::MixedEntryEventHandler<protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
-                                    getName(), context->getClusterService(), context->getSerializationService(),
+                                    getName(), context->getClientClusterService(), context->getSerializationService(),
                                     listener,
                                     includeValue);
                     return proxy::IMapImpl::addEntryListener(entryEventHandler, keyData, includeValue);

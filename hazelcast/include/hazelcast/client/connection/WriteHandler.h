@@ -23,6 +23,9 @@
 
 #include <stdint.h>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/lockfree/queue.hpp>
+
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/util/ConcurrentQueue.h"
 #include "hazelcast/client/connection/IOHandler.h"
@@ -56,15 +59,15 @@ namespace hazelcast {
 
                 void handle();
 
-                void enqueueData(protocol::ClientMessage *message);
+                void enqueueData(const boost::shared_ptr<protocol::ClientMessage> &message);
 
                 void run();
 
             private:
-                util::ConcurrentQueue<protocol::ClientMessage> writeQueue;
+                boost::lockfree::queue<boost::shared_ptr<protocol::ClientMessage> > writeQueue;
                 bool ready;
                 util::AtomicBoolean informSelector;
-                protocol::ClientMessage *lastMessage;
+                boost::shared_ptr<protocol::ClientMessage> lastMessage;
                 int32_t numBytesWrittenToSocketForMessage;
                 int32_t lastMessageFrameLen;
             };

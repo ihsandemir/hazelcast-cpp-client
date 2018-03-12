@@ -17,6 +17,7 @@
 // Created by sancar koyunlu on 22/01/14.
 //
 
+#include <boost/foreach.hpp>
 #include "hazelcast/client/InitialMembershipEvent.h"
 #include "hazelcast/client/Cluster.h"
 
@@ -24,10 +25,12 @@
 namespace hazelcast {
     namespace client {
 
-        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster, const std::vector<Member> &members)
-        : members(members)
-        , cluster(cluster) {
-
+        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster,
+                                                       const std::vector<boost::shared_ptr<Member> > &members)
+                : cluster(cluster) {
+            BOOST_FOREACH(const boost::shared_ptr<Member> &member, members) {
+                            this->members.push_back(Member(*member));
+                        }
         }
 
         const std::vector<Member> &InitialMembershipEvent::getMembers() const {
@@ -36,6 +39,14 @@ namespace hazelcast {
 
         Cluster &InitialMembershipEvent::getCluster() {
             return cluster;
+        }
+
+        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster, const std::set<Member> &members) : cluster(
+                cluster) {
+            BOOST_FOREACH(const Member &member, members) {
+                            this->members.push_back(Member(member));
+                        }
+
         }
     }
 }

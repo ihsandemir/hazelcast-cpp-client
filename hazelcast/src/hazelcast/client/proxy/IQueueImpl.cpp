@@ -40,7 +40,7 @@
 #include "hazelcast/client/protocol/codec/QueueRemainingCapacityCodec.h"
 #include "hazelcast/client/protocol/codec/QueueIsEmptyCodec.h"
 
-#include "hazelcast/client/spi/ServerListenerService.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
 
 namespace hazelcast {
     namespace client {
@@ -59,9 +59,7 @@ namespace hazelcast {
             }
 
             bool IQueueImpl::removeItemListener(const std::string &registrationId) {
-                protocol::codec::QueueRemoveListenerCodec removeCodec(getName(), registrationId);
-
-                return context->getServerListenerService().deRegisterListener(removeCodec);
+                return context->getClientListenerService().deregisterListener(registrationId);
             }
 
             bool IQueueImpl::offer(const serialization::pimpl::Data &element, long timeoutInMillis) {
@@ -77,7 +75,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueuePutCodec::RequestParameters::encode(getName(), element);
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
             std::auto_ptr<serialization::pimpl::Data> IQueueImpl::pollData(long timeoutInMillis) {
@@ -180,7 +178,7 @@ namespace hazelcast {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueClearCodec::RequestParameters::encode(getName());
 
-                invoke(request, partitionId);
+                invokeOnPartition(request, partitionId);
             }
 
         }

@@ -82,8 +82,8 @@ namespace hazelcast {
                 * @param partitionId that given request will be send to.
                 * @param request Client request message to be sent.
                 */
-                std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request,
-                                                              int partitionId);
+                std::auto_ptr<protocol::ClientMessage> invokeOnPartition(std::auto_ptr<protocol::ClientMessage> request,
+                                                                         int partitionId);
 
                 connection::CallFuture invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request,
                                                               int partitionId);
@@ -213,7 +213,7 @@ namespace hazelcast {
 
                 template<typename T, typename CODEC>
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
-                    std::auto_ptr<protocol::ClientMessage> response = invoke(request, partitionId);
+                    std::auto_ptr<protocol::ClientMessage> response = invokeOnPartition(request, partitionId);
 
                     return (T)CODEC::decode(*response).response;
                 }
@@ -222,6 +222,17 @@ namespace hazelcast {
                 T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request,
                                      int partitionId, boost::shared_ptr<connection::Connection> conn) {
                     std::auto_ptr<protocol::ClientMessage> response = invoke(request, conn);
+
+                    return (T)CODEC::decode(*response).response;
+                }
+
+
+                template<typename T, typename CODEC>
+                T invokeAndGetResult(std::auto_ptr<protocol::ClientMessage> request,
+                                     const serialization::pimpl::Data &key) {
+                    int partitionId = getPartitionId(key);
+                    
+                    std::auto_ptr<protocol::ClientMessage> response = invokeOnPartition(request, partitionId);
 
                     return (T)CODEC::decode(*response).response;
                 }

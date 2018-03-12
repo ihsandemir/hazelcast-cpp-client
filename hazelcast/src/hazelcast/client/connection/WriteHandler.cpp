@@ -19,7 +19,7 @@
 
 #include "hazelcast/client/connection/WriteHandler.h"
 #include "hazelcast/client/connection/OutSelector.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/exception/IOException.h"
 
@@ -38,7 +38,7 @@ namespace hazelcast {
             }
 
             void WriteHandler::run() {
-                if (this->connection.live) {
+                if (this->connection.isAlive()) {
                     informSelector = true;
                     if (ready) {
                         handle();
@@ -50,8 +50,8 @@ namespace hazelcast {
             }
 
             // TODO: Add a fragmentation layer here before putting the message into the write queue
-            void WriteHandler::enqueueData(protocol::ClientMessage *message) {
-                writeQueue.offer(message);
+            void WriteHandler::enqueueData(const boost::shared_ptr<protocol::ClientMessage> &message) {
+                writeQueue.push(message);
                 if (informSelector.compareAndSet(true, false)) {
                     ioSelector.addTask(this);
                     ioSelector.wakeUp();
@@ -60,13 +60,12 @@ namespace hazelcast {
 
             void WriteHandler::handle() {
                 if (lastMessage == NULL) {
-                    lastMessage = writeQueue.poll();
-                    if (lastMessage == NULL) {
+                    if (!writeQueue.pop(lastMessage)) {
                         ready = true;
                         return;
                     }
 
-                    if (NULL != lastMessage) {
+                    if (NULL != lastMessage.get()) {
                         numBytesWrittenToSocketForMessage = 0;
                         lastMessageFrameLen = lastMessage->getFrameLength();
                     }
@@ -79,8 +78,7 @@ namespace hazelcast {
 
                         if (numBytesWrittenToSocketForMessage >= lastMessageFrameLen) {
                             // Not deleting message since its memory management is at the future object
-                            lastMessage = writeQueue.poll();
-                            if (NULL != lastMessage) {
+                            if (writeQueue.pop(lastMessage)) {
                                 numBytesWrittenToSocketForMessage = 0;
                                 lastMessageFrameLen = lastMessage->getFrameLength();
                             }

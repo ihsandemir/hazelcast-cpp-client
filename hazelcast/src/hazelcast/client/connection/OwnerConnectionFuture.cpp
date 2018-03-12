@@ -24,7 +24,7 @@
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/connection/OwnerConnectionFuture.h"
 #include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/connection/ConnectionManager.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 
 namespace hazelcast {
@@ -73,7 +73,7 @@ namespace hazelcast {
             void OwnerConnectionFuture::closeIfAddressMatches(const Address& address) {
                 boost::shared_ptr<Connection> currentOwnerConnection = ownerConnectionPtr;
 
-                if (currentOwnerConnection.get() == NULL || !currentOwnerConnection->live) {
+                if (currentOwnerConnection.get() == NULL || !currentOwnerConnection->isAlive()) {
                     return;
                 }
 
