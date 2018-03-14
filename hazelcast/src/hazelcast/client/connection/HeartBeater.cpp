@@ -25,7 +25,7 @@
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/util/IOUtil.h"
-#include "hazelcast/util/Thread.h"
+#include "hazelcast/util/StartedThread.h"
 #include "hazelcast/client/protocol/codec/ClientPingCodec.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 

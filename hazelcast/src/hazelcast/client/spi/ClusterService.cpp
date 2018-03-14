@@ -65,8 +65,14 @@ namespace hazelcast {
                 std::set<InitialMembershipListener *> const &initialMembershipListeners = config.getInitialMembershipListeners();
                 initialListeners.insert(initialMembershipListeners.begin(), initialMembershipListeners.end());
 
-                clusterThread.setAwsMemberPort(port);
-                if (!clusterThread.start()) {
+                /**
+                 * This thread lifecycle is managed by ClusterListenerThread::stop method
+                 * which is guaranteed to be called during shutdown
+                 */
+                new util::StartedThread("hz.clusterListenerThread", connection::ClusterListenerThread::staticRun,
+                                 &clusterThread, &port);
+
+                if (!clusterThread.awaitStart()) {
                     return false;
                 }
                 initMembershipListeners();
