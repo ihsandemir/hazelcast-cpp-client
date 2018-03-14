@@ -176,7 +176,7 @@ namespace hazelcast {
 
             /**
              *
-             * @return true if result or exception is ready. false otherwise when timeout expires.
+             * @return true if result or exception is ready. git pufalse otherwise when timeout expires.
              *
              * Does not throw
              */
