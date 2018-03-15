@@ -93,7 +93,7 @@ namespace hazelcast {
             *
             * @return vector of addresses
             */
-            std::set<Address> &getAddresses();
+            std::set<Address> getAddresses();
 
             /**
             * The Group Configuration properties like:
@@ -473,10 +473,6 @@ namespace hazelcast {
             std::map<std::string, std::string> properties;
 
             bool redoOperation;
-
-            int connectionAttemptLimit;
-
-            int attemptPeriod;
 
             SocketInterceptor *socketInterceptor;
 

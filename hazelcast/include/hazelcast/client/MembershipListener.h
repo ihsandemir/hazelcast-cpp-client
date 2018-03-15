@@ -24,6 +24,8 @@
 #ifndef HAZELCAST_MEMBERSHIP_LISTENER
 #define HAZELCAST_MEMBERSHIP_LISTENER
 
+#include <string>
+
 #include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
@@ -49,6 +51,7 @@ namespace hazelcast {
          */
 
         class HAZELCAST_API MembershipListener {
+            friend class Cluster;
         public:
             virtual ~MembershipListener();
 
@@ -76,6 +79,13 @@ namespace hazelcast {
             virtual bool shouldRequestInitialMembers() const {
                 return false;
             }
+
+        private:
+            const std::string &getRegistrationId() const;
+
+            void setRegistrationId(const std::string &registrationId);
+
+            std::string registrationId;
         };
     }
 }

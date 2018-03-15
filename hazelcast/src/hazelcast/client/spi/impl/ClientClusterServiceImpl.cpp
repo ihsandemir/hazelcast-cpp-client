@@ -158,6 +158,21 @@ namespace hazelcast {
                         const boost::shared_ptr<connection::Connection> &ownerConnection) {
                     ClientMembershipListener::listenMembershipEvents(clientMembershipListener, ownerConnection);
                 }
+
+                std::string
+                ClientClusterServiceImpl::addMembershipListener(const boost::shared_ptr<MembershipListener> &listener) {
+                    std::string registrationId = addMembershipListener(listener.get());
+
+                    managedListeners.put(registrationId, listener);
+
+                    return registrationId;
+                }
+
+                bool ClientClusterServiceImpl::removeMembershipListener(const std::string &registrationId) {
+                    bool result = listeners.remove(registrationId) != static_cast<MembershipListener *>(NULL);
+                    managedListeners.remove(registrationId);
+                    return result;
+                }
             }
         }
     }

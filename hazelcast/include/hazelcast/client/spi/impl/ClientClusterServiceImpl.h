@@ -18,10 +18,11 @@
 #define HAZELCAST_CLIENT_SPI_IMPL_CLIENTCLUSTERSERVICEIMPL_H
 
 #include <set>
-#include <hazelcast/client/spi/ClientClusterService.h>
-#include <hazelcast/util/Atomic.h>
-#include <hazelcast/util/SynchronizedMap.h>
-#include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/Address.h"
+#include "hazelcast/client/Member.h"
+#include "hazelcast/util/Atomic.h"
+#include "hazelcast/util/SynchronizedMap.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -62,6 +63,10 @@ namespace hazelcast {
 
                     virtual std::string addMembershipListener(MembershipListener *listener);
 
+                    virtual std::string addMembershipListener(const boost::shared_ptr<MembershipListener> &listener);
+
+                    virtual bool removeMembershipListener(const std::string &registrationId);
+
                     void handleMembershipEvent(const MembershipEvent &event);
 
                     void handleInitialMembershipEvent(const InitialMembershipEvent &event);
@@ -73,6 +78,7 @@ namespace hazelcast {
                     boost::shared_ptr<ClientMembershipListener> clientMembershipListener;
                     util::Atomic<std::map<Address, boost::shared_ptr<Member> > > members;
                     util::SynchronizedValueMap<std::string, MembershipListener *> listeners;
+                    util::SynchronizedValueMap<std::string, const boost::shared_ptr<MembershipListener> > managedListeners;
                     util::Mutex initialMembershipListenerMutex;
 
                     std::string addMembershipListenerWithoutInit(MembershipListener *listener);

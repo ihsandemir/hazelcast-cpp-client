@@ -43,6 +43,8 @@ namespace hazelcast {
             Cluster(spi::ClientClusterService &clusterService);
 
             /**
+             * @deprecated Please use {@link addMembershipListener(const boost::shared_ptr<MembershipListener> &)}
+             *
              * Adds InitialMembershipListener to listen for membership updates.
              *
              * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.
@@ -56,15 +58,26 @@ namespace hazelcast {
             void addMembershipListener(MembershipListener *listener);
 
             /**
-             * Removes the specified membership listener.
+             * Adds MembershipListener to listen for membership updates.
+             * <p>
+             * The addMembershipListener method returns a register ID. This ID is needed to remove the MembershipListener using the
+             * {@link #removeMembershipListener(String)} method.
+             * <p>
+             * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
+             * the {@link InitialMembershipEvent}.
+             * <p>
+             * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
              *
-             * @param listener InitialMembershipListener * to be removed
-             *
-             * @return true if registration is removed, false otherwise
+             * @param listener membership listener
+             * @return the registration ID
+             * @throws NullPointerException if listener is null
+             * @see #removeMembershipListener(const std::string &)
              */
-            bool removeMembershipListener(InitialMembershipListener *listener);
+            std::string addMembershipListener(const boost::shared_ptr<MembershipListener> &listener);
 
             /**
+             * @deprecated Please use {@link removeMembershipListener(const std::string &)}
+             *
              * Removes the specified membership listener.
              *
              * @param listener MembershipListener * to be removed
@@ -72,6 +85,19 @@ namespace hazelcast {
              * @return true if registration is removed, false otherwise
              */
             bool removeMembershipListener(MembershipListener *listener);
+
+            /**
+             * Removes the specified MembershipListener.
+             * <p>
+             * If the same MembershipListener is registered multiple times, it needs to be removed multiple times.
+             *
+             * This method can safely be called multiple times for the same registration ID; subsequent calls are ignored.
+             *
+             * @param registrationId the registrationId of MembershipListener to remove
+             * @return true if the registration is removed, false otherwise
+             * @see #addMembershipListener(const boost::shared_ptr<MembershipListener> &)
+             */
+            bool removeMembershipListener(const std::string &registrationId);
 
             /**
              * Set of current members of the cluster.

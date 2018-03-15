@@ -46,7 +46,7 @@ namespace hazelcast {
         }
 
 
-        std::set<Address>& ClientConfig::getAddresses() {
+        std::set<Address> ClientConfig::getAddresses() {
             std::set<Address> result;
             BOOST_FOREACH(const Address &address , networkConfig.getAddresses()) {
                 result.insert(address);
@@ -246,6 +246,7 @@ namespace hazelcast {
         ClientConfig &ClientConfig::setConnectionStrategyConfig(
                 const config::ClientConnectionStrategyConfig &connectionStrategyConfig) {
             ClientConfig::connectionStrategyConfig = connectionStrategyConfig;
+            return *this;
         }
     }
 }

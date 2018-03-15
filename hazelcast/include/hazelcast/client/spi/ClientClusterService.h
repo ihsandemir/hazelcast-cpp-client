@@ -75,16 +75,24 @@ namespace hazelcast {
                 virtual size_t getSize() = 0;
 
                 /**
+                 * @deprecated Please use {@link addMembershipListener(const boost::shared_ptr<MembershipListener> &)}
+                 *
                  * @param listener The listener to be registered.
                  * @return The registration ID
                  */
                 virtual std::string addMembershipListener(MembershipListener *listener) = 0;
 
                 /**
+                 * @param listener The listener to be registered.
+                 * @return The registration ID
+                 */
+                virtual std::string addMembershipListener(const boost::shared_ptr<MembershipListener> &listener) = 0;
+
+                /**
                  * @param registrationId The registrationId of the listener to be removed.
                  * @return true if successfully removed, false otherwise.
                  */
-                bool removeMembershipListener(const std::string &registrationId) = 0;
+                virtual bool removeMembershipListener(const std::string &registrationId) = 0;
             };
         }
     }

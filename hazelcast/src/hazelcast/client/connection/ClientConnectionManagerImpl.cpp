@@ -22,6 +22,7 @@
 #include <hazelcast/client/connection/DefaultClientConnectionStrategy.h>
 #include <hazelcast/client/connection/AddressProvider.h>
 #include <hazelcast/client/connection/HeartBeater.h>
+#include <hazelcast/util/impl/SimpleExecutorService.h>
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/protocol/AuthenticationStatus.h"
 #include "hazelcast/client/exception/AuthenticationException.h"
