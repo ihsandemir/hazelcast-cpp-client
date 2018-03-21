@@ -63,12 +63,12 @@ namespace hazelcast {
                     return boost::shared_ptr<Member>();
                 }
 
-                std::vector<boost::shared_ptr<Member> > ClientClusterServiceImpl::getMemberList() {
-                    typedef std::map<Address, boost::shared_ptr<Member> > MemberMap;
+                std::vector<Member> ClientClusterServiceImpl::getMemberList() {
+                    typedef std::vector<Member> MemberMap;
                     MemberMap memberMap = members.get();
                     std::vector<boost::shared_ptr<Member> > memberList;
                     BOOST_FOREACH(const MemberMap::value_type &entry, memberMap) {
-                                    memberList.push_back(entry.second);
+                                    memberList.push_back(*entry.second);
                                 }
                 }
 

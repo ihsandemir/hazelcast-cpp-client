@@ -34,7 +34,7 @@ namespace hazelcast {
         }
 
         bool Cluster::removeMembershipListener(MembershipListener *listener) {
-            return clusterService.removeMembershipListener(listener);
+            return clusterService.removeMembershipListener(listener->getRegistrationId());
         }
 
         std::vector<Member>  Cluster::getMembers() {

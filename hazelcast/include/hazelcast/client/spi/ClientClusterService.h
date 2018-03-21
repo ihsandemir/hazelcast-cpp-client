@@ -56,9 +56,9 @@ namespace hazelcast {
                 /**
                  * Gets the collection of members.
                  *
-                 * @return The collection of members. Null will never be returned.
+                 * @return The collection of members.
                  */
-                virtual std::vector<boost::shared_ptr<Member> > getMemberList() = 0;
+                virtual std::vector<Member> getMemberList() = 0;
 
                 /**
                  * Returns the address of the master member.

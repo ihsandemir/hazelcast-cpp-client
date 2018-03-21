@@ -19,8 +19,10 @@
 #ifndef HAZElCAST_CLUSTER
 #define HAZElCAST_CLUSTER
 
-#include "hazelcast/client/Member.h"
 #include <vector>
+#include <boost/shared_ptr.hpp>
+
+#include "hazelcast/client/Member.h"
 
 namespace hazelcast {
     namespace client {

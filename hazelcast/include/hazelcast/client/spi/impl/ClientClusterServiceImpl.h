@@ -55,7 +55,7 @@ namespace hazelcast {
 
                     virtual boost::shared_ptr<Member> getMember(const std::string &uuid);
 
-                    virtual std::vector<boost::shared_ptr<Member> > getMemberList();
+                    virtual std::vector<Member> getMemberList();
 
                     virtual boost::shared_ptr<Address> getMasterAddress();
 
