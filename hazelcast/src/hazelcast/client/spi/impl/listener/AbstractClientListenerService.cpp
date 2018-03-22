@@ -18,6 +18,7 @@
 #include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/connection/Connection.h"
+#include "hazelcast/client/spi/EventHandler.h"
 
 namespace hazelcast {
     namespace client {
@@ -25,7 +26,7 @@ namespace hazelcast {
             namespace impl {
                 namespace listener {
                     void AbstractClientListenerService::addEventHandler(int64_t callId,
-                                                                        const boost::shared_ptr<EventHandler> &handler) {
+                                                                        const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) {
                         eventHandlerMap.put(callId, handler);
                     }
 
@@ -66,7 +67,8 @@ namespace hazelcast {
                     void AbstractClientListenerService::ClientEventProcessor::run() {
                         try {
                             long correlationId = clientMessage->getCorrelationId();
-                            const boost::shared_ptr<EventHandler> &eventHandler = eventHandlerMap.get(correlationId);
+                            const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &eventHandler = eventHandlerMap.get(
+                                    correlationId);
                             if (eventHandler.get() == NULL) {
                                 logger.warning() << "No eventHandler for callId: " << correlationId << ", event: "
                                                  << clientMessage << ", connection: " << connection;
@@ -79,7 +81,7 @@ namespace hazelcast {
                         }
                     }
 
-                    const std::string &AbstractClientListenerService::ClientEventProcessor::getName() const {
+                    const std::string AbstractClientListenerService::ClientEventProcessor::getName() const {
                         return "AbstractClientListenerService::ClientEventProcessor";
                     }
 
@@ -90,7 +92,8 @@ namespace hazelcast {
                     AbstractClientListenerService::ClientEventProcessor::ClientEventProcessor(
                             const boost::shared_ptr<protocol::ClientMessage> &clientMessage,
                             const boost::shared_ptr<connection::Connection> &connection,
-                            util::SynchronizedMap<int64_t, EventHandler> &eventHandlerMap, util::ILogger &logger)
+                            util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > &eventHandlerMap,
+                            util::ILogger &logger)
                             : clientMessage(clientMessage), connection(connection), eventHandlerMap(eventHandlerMap),
                               logger(logger) {
                     }

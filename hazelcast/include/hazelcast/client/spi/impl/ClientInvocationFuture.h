@@ -71,7 +71,7 @@ namespace hazelcast {
                             this->callIdSequence.forceNext();
                         }
 
-                        virtual void onResponse(boost::shared_ptr<protocol::ClientMessage> &message) {
+                        virtual void onResponse(const boost::shared_ptr<protocol::ClientMessage> &message) {
                             try {
                                 callback->onResponse(message);
                                 callIdSequence.complete();
@@ -80,7 +80,7 @@ namespace hazelcast {
                             }
                         }
 
-                        virtual void onFailure(const exception::IException &e) {
+                        virtual void onFailure(const boost::shared_ptr<exception::IException> &e) {
                             try {
                                 callback->onFailure(e);
                                 callIdSequence.complete();
@@ -93,7 +93,6 @@ namespace hazelcast {
                         boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > callback;
                         sequence::CallIdSequence &callIdSequence;
                     };
-
 
                     util::ILogger &logger;
                     ClientInvocation &invocation;

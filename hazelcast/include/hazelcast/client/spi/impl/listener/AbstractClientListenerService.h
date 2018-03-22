@@ -25,9 +25,7 @@
 #include <stdint.h>
 #include <hazelcast/util/SynchronizedMap.h>
 #include <hazelcast/util/ILogger.h>
-#include <hazelcast/util/Executor.h>
-
-#include "hazelcast/util/HazelcastDll.h"
+#include <hazelcast/util/impl/SimpleExecutorService.h>
 #include "hazelcast/client/spi/ClientListenerService.h"
 
 namespace hazelcast {
@@ -57,7 +55,8 @@ namespace hazelcast {
 
                         void shutdown();
 
-                        void addEventHandler(int64_t callId, const boost::shared_ptr<EventHandler> &handler);
+                        void addEventHandler(int64_t callId,
+                                             const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
 
                         void handleClientMessage(const boost::shared_ptr<protocol::ClientMessage> &clientMessage,
                                                  const boost::shared_ptr<connection::Connection> connection);
@@ -68,30 +67,30 @@ namespace hazelcast {
                         public:
                             virtual void run();
 
-                            virtual const std::string &getName() const;
+                            virtual const std::string getName() const;
 
                             virtual int32_t getKey();
 
                         private:
                             ClientEventProcessor(const boost::shared_ptr<protocol::ClientMessage> &clientMessage,
                                                  const boost::shared_ptr<connection::Connection> &connection,
-                                                 util::SynchronizedMap<int64_t, EventHandler> &eventHandlerMap,
+                                                 util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > &eventHandlerMap,
                                                  util::ILogger &logger);
 
                             const boost::shared_ptr<protocol::ClientMessage> clientMessage;
                             const boost::shared_ptr<connection::Connection> connection;
-                            util::SynchronizedMap<int64_t, EventHandler> &eventHandlerMap;
+                            util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > &eventHandlerMap;
                             util::ILogger &logger;
                         };
 
                         void removeEventHandler(int64_t callId);
 
-                        util::SynchronizedMap<int64_t, EventHandler> eventHandlerMap;
+                        util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > eventHandlerMap;
                         ClientContext &clientContext;
                         serialization::pimpl::SerializationService &serializationService;
                         util::ILogger &logger;
-                        util::StripedExecutor eventExecutor;
-                        util::SimpleExecutor registrationExecutor;
+                        util::impl::SimpleExecutorService eventExecutor;
+                        util::impl::SimpleExecutorService registrationExecutor;
                     };
                 }
             }

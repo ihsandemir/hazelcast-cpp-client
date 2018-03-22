@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <boost/foreach.hpp>
+
 #include <hazelcast/client/config/ClientConnectionStrategyConfig.h>
 #include <hazelcast/client/ClientConfig.h>
-#include <boost/foreach.hpp>
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/config/NearCacheConfig.h"
 #include "hazelcast/client/LifecycleListener.h"
@@ -28,8 +29,6 @@ namespace hazelcast {
         ClientConfig::ClientConfig()
         : loadBalancer(NULL)
         , redoOperation(false)
-        , connectionAttemptLimit(2)
-        , attemptPeriod(3000)
         , socketInterceptor(NULL)
         , credentials(NULL)
         , executorPoolSize(-1) {

@@ -23,6 +23,7 @@
 #include <hazelcast/util/Atomic.h>
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/impl/ClientInvocationFuture.h"
+#include "hazelcast/client/spi/EventHandler.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -50,7 +51,6 @@ namespace hazelcast {
             class ClusterService;
             class ClientInvocationService;
             class ClientContext;
-            class EventHandler;
 
             namespace impl {
                 /**
@@ -98,9 +98,9 @@ namespace hazelcast {
 
                     void setBypassHeartbeatCheck(bool bypassHeartbeatCheck);
 
-                    const boost::shared_ptr<EventHandler> &getEventHandler() const;
+                    const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &getEventHandler() const;
 
-                    void setEventHandler(const boost::shared_ptr<EventHandler> &eventHandler);
+                    void setEventHandler(const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &eventHandler);
 
                     friend std::ostream &operator<<(std::ostream &os, const ClientInvocation &invocation);
 
@@ -144,7 +144,7 @@ namespace hazelcast {
                     std::string objectName;
                     util::Atomic<boost::shared_ptr<connection::Connection> > sendConnection;
                     bool bypassHeartbeatCheck;
-                    boost::shared_ptr<EventHandler> eventHandler;
+                    boost::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     util::Atomic<int64_t> invokeCount;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);

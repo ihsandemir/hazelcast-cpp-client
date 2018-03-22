@@ -18,6 +18,7 @@
 #include <hazelcast/client/exception/IOException.h>
 #include <hazelcast/client/spi/impl/ListenerMessageCodec.h>
 #include <hazelcast/client/spi/impl/ClientInvocation.h>
+#include <hazelcast/util/Callable.h>
 #include "hazelcast/client/spi/impl/listener/NonSmartClientListenerService.h"
 
 namespace hazelcast {
@@ -35,7 +36,7 @@ namespace hazelcast {
 
                     std::string NonSmartClientListenerService::registerListener(
                             const boost::shared_ptr<impl::ListenerMessageCodec> &listenerMessageCodec,
-                            const boost::shared_ptr<EventHandler<protocol::ClientMessage>> &handler) {
+                            const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) {
                         //This method should not be called from registrationExecutor
 /*                      TODO
                         assert (!Thread.currentThread().getName().contains("eventRegistration"));
@@ -59,7 +60,7 @@ namespace hazelcast {
                         assert (Thread.currentThread().getName().contains("eventRegistration"));
 */
 
-                        boost::shared_ptr<EventHandler> &handler = registrationKey.getHandler();
+                        const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler = registrationKey.getHandler();
                         handler->beforeListenerRegister();
                         std::auto_ptr<protocol::ClientMessage> request = registrationKey.getCodec()->encodeAddRequest(
                                 false);

@@ -25,11 +25,14 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/client/spi/EventHandler.h"
 
 namespace hazelcast {
     namespace client {
+        namespace protocol {
+            class ClientMessage;
+        }
         namespace spi {
-            class EventHandler;
 
             namespace impl {
                 class ListenerMessageCodec;
@@ -38,14 +41,14 @@ namespace hazelcast {
                     class HAZELCAST_API ClientRegistrationKey {
                     public:
                         ClientRegistrationKey(const std::string &userRegistrationId,
-                                              const boost::shared_ptr<EventHandler> &handler,
+                                              const boost::shared_ptr<EventHandler<protocol::ClientMessage>> &handler,
                                               const boost::shared_ptr<ListenerMessageCodec> &codec);
 
                         ClientRegistrationKey(const std::string &userRegistrationId);
 
                         const std::string &getUserRegistrationId() const;
 
-                        boost::shared_ptr<EventHandler> &getHandler() const;
+                        const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &getHandler() const;
 
                         const boost::shared_ptr<ListenerMessageCodec> &getCodec() const;
 
@@ -57,7 +60,7 @@ namespace hazelcast {
 
                     private:
                         std::string userRegistrationId;
-                        boost::shared_ptr<EventHandler> handler;
+                        boost::shared_ptr<EventHandler<protocol::ClientMessage> > handler;
                         const boost::shared_ptr<ListenerMessageCodec> codec;
                     };
                 }

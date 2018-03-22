@@ -80,11 +80,11 @@ namespace hazelcast {
                 return false;
             }
 
-        private:
             const std::string &getRegistrationId() const;
 
             void setRegistrationId(const std::string &registrationId);
 
+        private:
             std::string registrationId;
         };
     }

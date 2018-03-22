@@ -115,6 +115,10 @@ namespace hazelcast {
                     return EXCEPTIONCLASS(source, msg.str());
                 }
 
+                boost::shared_ptr<EXCEPTIONCLASS> buildShared() {
+                    return boost::shared_ptr<EXCEPTIONCLASS>(new EXCEPTIONCLASS(source, msg.str()));
+                }
+
             private:
                 std::string source;
                 std::ostringstream msg;

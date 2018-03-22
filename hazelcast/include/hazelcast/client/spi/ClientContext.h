@@ -20,9 +20,9 @@
 #define HAZELCAST_CLIENT_CONTEXT
 
 #include <string>
+#include <boost/shared_ptr.hpp>
+
 #include "hazelcast/util/HazelcastDll.h"
-#include "ClientInvocationService.h"
-#include "ClientClusterService.h"
 
 namespace hazelcast {
     namespace client {
@@ -42,6 +42,7 @@ namespace hazelcast {
 
         namespace connection {
             class ClientConnectionManagerImpl;
+            class Connection;
         }
 
         namespace internal {
@@ -61,6 +62,10 @@ namespace hazelcast {
             class ClientListenerService;
 
             class LifecycleService;
+
+            class ClientInvocationService;
+
+            class ClientClusterService;
 
             namespace impl {
                 class ClientExecutionServiceImpl;

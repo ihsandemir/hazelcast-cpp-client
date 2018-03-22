@@ -18,6 +18,7 @@
 
 #include <hazelcast/client/spi/impl/AbstractClientInvocationService.h>
 #include <hazelcast/util/UuidUtil.h>
+#include <hazelcast/client/Member.h>
 #include "hazelcast/client/spi/impl/listener/SmartClientListenerService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/ClusterService.h"
@@ -63,30 +64,21 @@ namespace hazelcast {
                         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 */
 
-                        registrationExecutor.submit(new Callable<bool>() {
-                            @Override
-                            public Boolean call() throws Exception {
-                                    return deregisterListenerInternal(userRegistrationId);
-                            }
-                        });
+                        boost::shared_ptr<util::Future<bool> > future = registrationExecutor.submit(
+                                boost::shared_ptr<util::Callable>(new DeRegisterListenerTask(*this, registrationId)));
 
-                        try {
-                            return future.get();
-                        } catch (Exception e) {
-                            throw ExceptionUtil.rethrow(e);
-                        }
-
+                        return future->get();
                     }
 
                     void SmartClientListenerService::trySyncConnectToAllMembers() {
-                        ClusterService &clientClusterService = clientContext.getClientClusterService();
+                        ClientExecutionServiceImpl &clientClusterService = clientContext.getClientClusterService();
                         int64_t startMillis = util::currentTimeMillis();
 
                         do {
                             Member lastFailedMember;
                             boost::shared_ptr<exception::IException> lastException;
 
-                            BOOST_FOREACH (Member member, clientClusterService.getMemberList()) {
+                            BOOST_FOREACH (Member &member, clientClusterService.getMemberList()) {
                                             try {
                                                 clientConnectionManager.getOrConnect(member.getAddress());
                                             } catch (exception::IException &e) {
@@ -159,7 +151,7 @@ namespace hazelcast {
 
                         const boost::shared_ptr<ListenerMessageCodec> &codec = registrationKey->getCodec();
                         std::auto_ptr<protocol::ClientMessage> request = codec->encodeAddRequest(true);
-                        boost::shared_ptr<EventHandler> &handler = registrationKey->getHandler();
+                        boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler = registrationKey->getHandler();
                         handler->beforeListenerRegister();
 
                         boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
@@ -194,14 +186,18 @@ namespace hazelcast {
                         }
                         bool successful = true;
 
-                        for (ConnectionRegistrationsMap::iterator it = registrationMap->begin();it != registrationMap->end; ++it) {
+                        for (ConnectionRegistrationsMap::iterator it = registrationMap->begin();
+                             it != registrationMap->end; ++it) {
                             const boost::shared_ptr<ClientEventRegistration> &registration = (*it).second;
                             boost::shared_ptr<connection::Connection> subscriber = registration->getSubscriber();
                             try {
                                 const boost::shared_ptr<ListenerMessageCodec> &listenerMessageCodec = registration->getCodec();
                                 const std::string &serverRegistrationId = registration->getServerRegistrationId();
-                                std::auto_ptr<protocol::ClientMessage> request = listenerMessageCodec->encodeRemoveRequest(serverRegistrationId);
-                                boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext, request, "", subscriber);
+                                std::auto_ptr<protocol::ClientMessage> request = listenerMessageCodec->encodeRemoveRequest(
+                                        serverRegistrationId);
+                                boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
+                                                                                                          request, "",
+                                                                                                          subscriber);
                                 ClientInvocation::invoke(invocation).get();
                                 removeEventHandler(registration->getCallId());
                                 registrationMap->erase(it);
@@ -210,7 +206,7 @@ namespace hazelcast {
                                     successful = false;
                                     logger.warning("SmartClientListenerService::deregisterListenerInternal")
                                             << "Deregistration of listener with ID " + userRegistrationId
-                                                   << " has failed to address " << subscriber->getRemoteEndpoint() << e;
+                                            << " has failed to address " << subscriber->getRemoteEndpoint() << e;
                                 }
                             }
                         }
@@ -253,6 +249,17 @@ namespace hazelcast {
                         return userRegistrationId;
                     }
 
+                    const std::string SmartClientListenerService::DeRegisterListenerTask::getName() const {
+                        return "SmartClientListenerService::DeRegisterListenerTask";
+                    }
+
+                    SmartClientListenerService::DeRegisterListenerTask::DeRegisterListenerTask(
+                            SmartClientListenerService &listenerService, const std::string &registrationId)
+                            : listenerService(listenerService), registrationId(registrationId) {}
+
+                    bool SmartClientListenerService::DeRegisterListenerTask::call() {
+                        return listenerService.deregisterListener(registrationId);;
+                    }
                 }
             }
         }

@@ -18,6 +18,9 @@
 
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/HazelcastClient.h"
+#include "hazelcast/client/spi/ClientInvocationService.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
+
 
 namespace hazelcast {
     namespace client {

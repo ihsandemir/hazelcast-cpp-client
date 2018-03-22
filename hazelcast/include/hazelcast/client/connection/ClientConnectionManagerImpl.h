@@ -38,7 +38,7 @@
 #include "hazelcast/client/aws/impl/AwsAddressTranslator.h"
 #include "hazelcast/util/Atomic.h"
 #include "hazelcast/util/Thread.h"
-#include "hazelcast/util/Executor.h"
+#include "hazelcast/util/impl/SimpleExecutorService.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -176,7 +176,7 @@ namespace hazelcast {
 
                 void disconnectFromCluster(const boost::shared_ptr<Connection> &connection);
 
-                boost::shared_ptr<util::SimpleExecutor> createSingleThreadExecutorService(spi::ClientContext &client);
+                boost::shared_ptr<util::impl::SimpleExecutorService> createSingleThreadExecutorService(spi::ClientContext &client);
 
                 void fireConnectionEvent(const hazelcast::client::LifecycleEvent::LifeCycleState &state);
 
@@ -201,7 +201,7 @@ namespace hazelcast {
 
                     void run();
 
-                    const std::string &getName() const;
+                    const std::string getName() const;
 
                 private:
                     boost::shared_ptr<Connection> getConnection(const Address &target);
@@ -212,14 +212,14 @@ namespace hazelcast {
                     ClientConnectionManagerImpl &connectionManager;
                 };
 
-                class AuthCallback : public impl::ExecutionCallback<std::auto_ptr<protocol::ClientMessage> > {
+                class AuthCallback : public impl::ExecutionCallback<protocol::ClientMessage> {
                 public:
                     AuthCallback(const boost::shared_ptr<Connection> &connection, bool asOwner, const Address &target,
                                  boost::shared_ptr<AuthenticationFuture> &future, ClientConnectionManagerImpl &connectionManager);
 
-                    virtual void onResponse(std::auto_ptr<protocol::ClientMessage> &response);
+                    virtual void onResponse(const boost::shared_ptr<protocol::ClientMessage> &response);
 
-                    virtual void onFailure(const exception::IException &e);
+                    virtual void onFailure(const boost::shared_ptr<exception::IException> &e);
 
                 private:
                     const boost::shared_ptr<Connection> connection;
@@ -229,7 +229,7 @@ namespace hazelcast {
                     ClientConnectionManagerImpl &connectionManager;
 
                     void onAuthenticationFailed(const Address &target, const boost::shared_ptr<Connection> &connection,
-                                const exception::IException &cause);
+                                                const boost::shared_ptr<exception::IException> &cause);
                 };
 
                 class DisconnecFromClusterTask : public util::Runnable {
@@ -239,7 +239,7 @@ namespace hazelcast {
 
                     virtual void run();
 
-                    virtual const std::string &getName() const;
+                    virtual const std::string getName() const;
 
                 private:
                     const boost::shared_ptr<Connection> &connection;
@@ -262,7 +262,7 @@ namespace hazelcast {
 
                     virtual void run();
 
-                    virtual const std::string &getName() const;
+                    virtual const std::string getName() const;
 
                 private:
                     spi::ClientContext &clientContext;
@@ -279,8 +279,8 @@ namespace hazelcast {
                 util::SynchronizedMap<int, Connection> socketConnections;
                 InSelector inSelector;
                 OutSelector outSelector;
-                std::auto_ptr<util::Thread> inSelectorThread;
-                std::auto_ptr<util::Thread> outSelectorThread;
+                util::Thread inSelectorThread;
+                util::Thread outSelectorThread;
 
                 spi::impl::ClientExecutionServiceImpl &executionService;
 
@@ -296,7 +296,7 @@ namespace hazelcast {
 
                 util::Atomic<boost::shared_ptr<protocol::Principal> > principal;
                 std::auto_ptr<ClientConnectionStrategy> connectionStrategy;
-                boost::shared_ptr<util::SimpleExecutor> clusterConnectionExecutor;
+                boost::shared_ptr<util::impl::SimpleExecutorService> clusterConnectionExecutor;
                 boost::shared_ptr<util::ExecutorService> shutdownExecutor;
                 int32_t connectionAttemptPeriod;
                 int32_t connectionAttemptLimit;

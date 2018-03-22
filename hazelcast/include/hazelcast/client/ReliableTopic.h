@@ -161,7 +161,7 @@ namespace hazelcast {
                 }
 
                 // This method is called from the provided executor.
-                void onResponse(DataArray<topic::impl::reliable::ReliableTopicMessage> *allMessages) {
+                void onResponse(boost::shared_ptr<DataArray<topic::impl::reliable::ReliableTopicMessage> > allMessages) {
                     if (cancelled) {
                         return;
                     }

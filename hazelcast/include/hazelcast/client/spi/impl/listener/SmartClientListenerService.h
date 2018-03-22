@@ -22,6 +22,7 @@
 #pragma warning(disable: 4251) //for dll export
 #endif
 
+#include <hazelcast/util/Callable.h>
 #include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
 #include "hazelcast/client/spi/impl/listener/ClientRegistrationKey.h"
 #include "ClientEventRegistration.h"
@@ -68,6 +69,20 @@ namespace hazelcast {
                             const boost::shared_ptr<EventHandler<protocol::ClientMessage> > handler;
                             connection::ClientConnectionManagerImpl &clientConnectionManager;
                             SmartClientListenerService &listenerService;
+                        };
+
+                        class DeRegisterListenerTask : public util::Callable<bool> {
+                        public:
+                            DeRegisterListenerTask(SmartClientListenerService &listenerService,
+                                                   const std::string &registrationId);
+
+                            virtual bool call();
+
+                            virtual const std::string getName() const;
+
+                        private:
+                            SmartClientListenerService &listenerService;
+                            std::string registrationId;
                         };
 
                         int64_t invocationTimeoutMillis;

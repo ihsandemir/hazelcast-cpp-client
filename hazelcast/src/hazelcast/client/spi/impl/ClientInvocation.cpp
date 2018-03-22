@@ -333,11 +333,11 @@ namespace hazelcast {
                     ClientInvocation::bypassHeartbeatCheck = bypassHeartbeatCheck;
                 }
 
-                const boost::shared_ptr<EventHandler> &ClientInvocation::getEventHandler() const {
+                const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &ClientInvocation::getEventHandler() const {
                     return eventHandler;
                 }
 
-                void ClientInvocation::setEventHandler(const boost::shared_ptr<EventHandler> &eventHandler) {
+                void ClientInvocation::setEventHandler(const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &eventHandler) {
                     ClientInvocation::eventHandler = eventHandler;
                 }
 

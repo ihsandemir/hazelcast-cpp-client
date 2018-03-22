@@ -148,7 +148,7 @@ namespace hazelcast {
                     const boost::shared_ptr<protocol::ClientMessage> &clientMessage = clientInvocation->getClientMessage();
                     int64_t correlationId = clientMessage->getCorrelationId();
                     invocations.put(correlationId, clientInvocation);
-                    const boost::shared_ptr<EventHandler> handler = clientInvocation->getEventHandler();
+                    const boost::shared_ptr<EventHandler<protocol::ClientMessage> > handler = clientInvocation->getEventHandler();
                     if (handler.get() != NULL) {
                         clientListenerService.addEventHandler(correlationId, handler);
                     }
