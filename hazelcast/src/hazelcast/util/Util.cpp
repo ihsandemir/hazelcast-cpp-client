@@ -105,11 +105,21 @@ namespace hazelcast {
             }
         }
 
-        int64_t currentTimeMillis() {
-            boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
-            boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
+        boost::posix_time::time_duration getDurationSinceEpoch() {
+            boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
+            boost::posix_time::ptime now = boost::date_time::microsec_clock::universal_time();
             boost::posix_time::time_duration diff = now - epoch;
+            return diff;
+        }
+
+        int64_t currentTimeMillis() {
+            boost::posix_time::time_duration diff = getDurationSinceEpoch();
             return diff.total_milliseconds();
+        }
+
+        int64_t currentTimeNanos() {
+            boost::posix_time::time_duration diff = getDurationSinceEpoch();
+            return diff.total_nanoseconds();
         }
 
         int strerror_s(int errnum, char *strerrbuf, size_t buflen, const char *msgPrefix) {

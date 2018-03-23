@@ -89,6 +89,10 @@ namespace hazelcast {
                 return GetCurrentThreadId();
             }
 
+            static void yield() {
+                SwitchToThread();
+            }
+
         protected:
             static DWORD WINAPI runnableThread(LPVOID args) {
                 Runnable *runnable = static_cast<Runnable *>(args);

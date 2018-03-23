@@ -63,7 +63,7 @@ namespace hazelcast {
 
                     protected:
                         class ClientEventProcessor : public util::StripedRunnable {
-                            friend AbstractClientListenerService;
+                            friend class AbstractClientListenerService;
                         public:
                             virtual void run();
 

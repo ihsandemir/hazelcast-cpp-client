@@ -41,7 +41,7 @@ namespace hazelcast {
                     class HAZELCAST_API ClientRegistrationKey {
                     public:
                         ClientRegistrationKey(const std::string &userRegistrationId,
-                                              const boost::shared_ptr<EventHandler<protocol::ClientMessage>> &handler,
+                                              const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler,
                                               const boost::shared_ptr<ListenerMessageCodec> &codec);
 
                         ClientRegistrationKey(const std::string &userRegistrationId);

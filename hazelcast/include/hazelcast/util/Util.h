@@ -24,6 +24,7 @@
 #include <string>
 #include <assert.h>
 #include <stdint.h>
+#include <boost/date_time/posix_time/ptime.hpp>
 
 #define HAZELCAST_STRINGIZE(STR) STRINGIZE(STR)
 #define STRINGIZE(STR) #STR
@@ -59,7 +60,17 @@ namespace hazelcast {
         /**
          * @return the difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC.
          */
+        boost::posix_time::time_duration getDurationSinceEpoch();
+
+        /**
+         * @return the difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC.
+         */
         HAZELCAST_API int64_t currentTimeMillis();
+
+        /**
+         * @return the difference, measured in nanoseconds, between the current time and midnight, January 1, 1970 UTC.
+         */
+        HAZELCAST_API int64_t currentTimeNanos();
 
         /**
          * @return 0 if error string could be obtained, non-zero otherwise

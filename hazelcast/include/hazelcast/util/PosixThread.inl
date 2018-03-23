@@ -100,6 +100,10 @@ namespace hazelcast {
                 return (long) pthread_self();
             }
 
+            static void yield() {
+                pthread_yield_np();
+            }
+
         protected:
             void initAttributes() {
                 pthread_attr_init(&attr);
