@@ -86,6 +86,8 @@ namespace hazelcast {
             ConditionVariable(const ConditionVariable &rhs);
 
             void operator = (const ConditionVariable &rhs);
+
+            timespec calculateTimeFromMilliseconds(int64_t timeInMilliseconds) const;
         };
     }
 }

@@ -114,7 +114,7 @@ namespace hazelcast {
             /**
              * Length of the data blocks used by the CPU cache sub-system in bytes.
              */
-            static int CACHE_LINE_LENGTH = 64;
+            static const int CACHE_LINE_LENGTH = 64;
 
             /**
             * Fills the target with 2 bytes in native bytes order

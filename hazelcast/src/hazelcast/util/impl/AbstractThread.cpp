@@ -45,6 +45,11 @@ namespace hazelcast {
 
                 startInternal(target.get());
             }
+
+            void AbstractThread::parkNanos(int64_t) {
+                util::Mutex lock;
+                util::ConditionVariable condition;
+            }
         }
     }
 }
