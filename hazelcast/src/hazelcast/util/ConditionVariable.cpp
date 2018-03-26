@@ -88,9 +88,7 @@ namespace hazelcast {
         }
 
         bool ConditionVariable::waitNanos(Mutex& mutex, int64_t nanos) {
-            struct timespec ts;
-            ts.tv_sec = 0;
-            ts.tv_nsec = nanos;
+            struct timespec ts = calculateTimeFromNanos(nanos);
 
             int error = pthread_cond_timedwait(&condition, &(mutex.mutex), &ts);
             (void)error;
@@ -105,7 +103,7 @@ namespace hazelcast {
         }
 
         bool ConditionVariable::waitFor(Mutex& mutex, int64_t timeInMilliseconds) {
-            timespec ts = calculateTimeFromMilliseconds(timeInMilliseconds);
+            struct timespec ts = calculateTimeFromMilliseconds(timeInMilliseconds);
 
             int error = pthread_cond_timedwait(&condition, &(mutex.mutex), &ts);
             (void)error;
@@ -119,7 +117,7 @@ namespace hazelcast {
             return true;
         }
 
-        timespec ConditionVariable::calculateTimeFromMilliseconds(int64_t timeInMilliseconds) const {
+        struct timespec ConditionVariable::calculateTimeFromMilliseconds(int64_t timeInMilliseconds) const {
             struct timeval tv;
             gettimeofday(&tv, NULL);
 
@@ -141,7 +139,7 @@ namespace hazelcast {
             return ts;
         }
 
-        timespec ConditionVariable::calculateTimeFromNanos(int64_t nanos) const {
+        struct timespec ConditionVariable::calculateTimeFromNanos(int64_t nanos) const {
             struct timeval tv;
             gettimeofday(&tv, NULL);
 
@@ -152,8 +150,8 @@ namespace hazelcast {
             if (seconds > ::std::__1::numeric_limits<long>::max()) {
                 ts.tv_sec = ::std::__1::numeric_limits<long>::max();
             } else {
-                ts.tv_sec += (time_t) (nanos / NANOS_IN_A_USECOND);
-                long nsec = tv.tv_usec * NANOS_IN_A_USECOND + (nanos % 1000) * NANOS_IN_A_MILLISECOND;
+                ts.tv_sec += (time_t) (nanos / NANOS_IN_A_SECOND);
+                long nsec = tv.tv_usec * NANOS_IN_A_USECOND + (nanos % 1000);
                 if (nsec >= NANOS_IN_A_SECOND) {
                     nsec -= NANOS_IN_A_SECOND;
                     ++ts.tv_sec;

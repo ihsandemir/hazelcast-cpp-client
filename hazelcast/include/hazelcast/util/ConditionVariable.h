@@ -76,6 +76,8 @@ namespace hazelcast {
 
             bool waitFor(Mutex &mutex, int64_t timeInMilliseconds);
 
+            bool waitNanos(Mutex& mutex, int64_t nanos);
+
             void notify();
 
             void notify_all();
@@ -87,7 +89,9 @@ namespace hazelcast {
 
             void operator = (const ConditionVariable &rhs);
 
-            timespec calculateTimeFromMilliseconds(int64_t timeInMilliseconds) const;
+            struct timespec calculateTimeFromMilliseconds(int64_t timeInMilliseconds) const;
+
+            struct timespec ConditionVariable::calculateTimeFromNanos(int64_t nanos) const;
         };
     }
 }
