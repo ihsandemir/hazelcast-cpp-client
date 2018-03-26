@@ -79,7 +79,7 @@ namespace hazelcast {
                 friend class AuthCallback;
             public:
                 ClientConnectionManagerImpl(spi::ClientContext &client,
-                                  const boost::shared_ptr<connection::AddressTranslator> addressTranslator,
+                                  const boost::shared_ptr<connection::AddressTranslator> &addressTranslator,
                                   const std::vector<boost::shared_ptr<connection::AddressProvider> > &addressProviders);
                 /**
                 * Start clientConnectionManager

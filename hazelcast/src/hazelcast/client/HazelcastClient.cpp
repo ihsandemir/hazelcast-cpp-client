@@ -40,21 +40,14 @@ namespace hazelcast {
         util::Atomic<int32_t> HazelcastClient::CLIENT_ID(0);
 
         HazelcastClient::HazelcastClient(ClientConfig &config)
-        : clientConfig(config)
-        , clientProperties(clientConfig)
-        , shutdownLatch(1)
-        , clientContext(*this)
-        , serializationService(clientConfig.getSerializationConfig())
-        , connectionManager(new connection::ClientConnectionManagerImpl(clientContext, clientConfig.isSmart()))
-        , nearCacheManager(serializationService)
-        , clusterService(clientContext)
-        , partitionService(clientContext)
-        , cluster(clusterService)
-        , lifecycleService(clientContext, clientConfig.getLifecycleListeners(), shutdownLatch,
-                           clientConfig.getLoadBalancer(), cluster)
-        , proxyManager(clientContext)
-        , TOPIC_RB_PREFIX("_hz_rb_")
-        , id(++CLIENT_ID) {
+                : clientConfig(config), clientProperties(clientConfig), shutdownLatch(1), clientContext(*this),
+                  serializationService(clientConfig.getSerializationConfig()),
+                  connectionManager(new connection::ClientConnectionManagerImpl(clientContext, clientConfig.isSmart())),
+                  nearCacheManager(serializationService), clusterService(clientContext),
+                  partitionService(clientContext), cluster(clusterService),
+                  lifecycleService(clientContext, clientConfig.getLifecycleListeners(), shutdownLatch,
+                                   clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
+                  TOPIC_RB_PREFIX("_hz_rb_"), id(++CLIENT_ID) {
             const boost::shared_ptr<std::string> &name = config.getInstanceName();
             if (name.get() != NULL) {
                 instanceName = *name;
@@ -63,8 +56,15 @@ namespace hazelcast {
             }
 
             std::stringstream prefix;
-            prefix << instanceName << "[" << clientConfig.getGroupConfig().getName() << "] [" << HAZELCAST_VERSION << "]";
+            prefix << instanceName << "[" << clientConfig.getGroupConfig().getName() << "] [" << HAZELCAST_VERSION
+                   << "]";
             util::ILogger::getLogger().setPrefix(prefix.str());
+
+            int32_t maxAllowedConcurrentInvocations = clientProperties.getMaxConcurrentInvocations().get<int32_t>();
+            int64_t backofftimeoutMs = clientProperties.getBackpressureBackoffTimeoutMillis().get<int64_t>();
+            bool isBackPressureEnabled = maxAllowedConcurrentInvocations != INT32_MAX;
+            callIdSequence = CallIdFactory::newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations,
+                                                              backofftimeoutMs);
 
             executionService = initExecutionService();
             invocationService = initInvocationService();
@@ -72,7 +72,7 @@ namespace hazelcast {
 
             try {
                 if (!lifecycleService.start()) {
-                    throw exception::IllegalStateException("HazelcastClient","HazelcastClient could not be started!");
+                    throw exception::IllegalStateException("HazelcastClient", "HazelcastClient could not be started!");
                 }
             } catch (exception::IException &) {
                 lifecycleService.shutdown();
@@ -115,23 +115,23 @@ namespace hazelcast {
         }
 
         IdGenerator HazelcastClient::getIdGenerator(const std::string &instanceName) {
-            return getDistributedObject< IdGenerator >(instanceName);
+            return getDistributedObject<IdGenerator>(instanceName);
         }
 
         IAtomicLong HazelcastClient::getIAtomicLong(const std::string &instanceName) {
-            return getDistributedObject< IAtomicLong >(instanceName);
+            return getDistributedObject<IAtomicLong>(instanceName);
         }
 
         ICountDownLatch HazelcastClient::getICountDownLatch(const std::string &instanceName) {
-            return getDistributedObject< ICountDownLatch >(instanceName);
+            return getDistributedObject<ICountDownLatch>(instanceName);
         }
 
         ISemaphore HazelcastClient::getISemaphore(const std::string &instanceName) {
-            return getDistributedObject< ISemaphore >(instanceName);
+            return getDistributedObject<ISemaphore>(instanceName);
         }
 
         ILock HazelcastClient::getILock(const std::string &instanceName) {
-            return getDistributedObject< ILock >(instanceName);
+            return getDistributedObject<ILock>(instanceName);
         }
 
         TransactionContext HazelcastClient::newTransactionContext() {

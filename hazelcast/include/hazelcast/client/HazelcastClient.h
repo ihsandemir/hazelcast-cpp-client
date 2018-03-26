@@ -755,7 +755,7 @@ namespace hazelcast {
             spi::LifecycleService lifecycleService;
             spi::ProxyManager proxyManager;
             std::auto_ptr<mixedtype::HazelcastClient> mixedTypeSupportAdaptor;
-            spi::impl::sequence::CallIdSequence callIdSequence;
+            std::auto_ptr<spi::impl::sequence::CallIdSequence> callIdSequence;
             protocol::ClientExceptionFactory exceptionFactory;
             std::string instanceName;
             static util::Atomic<int32_t> CLIENT_ID;

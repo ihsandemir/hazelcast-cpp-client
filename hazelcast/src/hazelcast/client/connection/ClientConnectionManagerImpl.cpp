@@ -64,7 +64,7 @@ namespace hazelcast {
             int ClientConnectionManagerImpl::DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC = 20;
 
             ClientConnectionManagerImpl::ClientConnectionManagerImpl(spi::ClientContext &client,
-                                                                     const boost::shared_ptr<AddressTranslator> addressTranslator,
+                                                                     const boost::shared_ptr<AddressTranslator> &addressTranslator,
                                                                      const std::vector<boost::shared_ptr<AddressProvider> > &addressProviders)
                     : logger(util::ILogger::getLogger()), client(client),
                       socketInterceptor(client.getClientConfig().getSocketInterceptor()), inSelector(*this),

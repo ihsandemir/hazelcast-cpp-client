@@ -17,13 +17,13 @@
 // Created by sancar koyunlu on 21/08/14.
 //
 
-
 #ifndef HAZELCAST_ClientProperties
 #define HAZELCAST_ClientProperties
 
-#include "hazelcast/util/HazelcastDll.h"
 #include <string>
-#include <map>
+
+#include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/util/IOUtil.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -46,6 +46,11 @@ namespace hazelcast {
             std::string getName() const;
 
             std::string getValue() const;
+
+            template <typename T>
+            T get() const {
+                return util::IOUtil::to_value<T>(value);
+            }
 
             int getInteger() const;
 
@@ -98,6 +103,10 @@ namespace hazelcast {
             const ClientProperty &getInternalExecutorPoolSize() const;
 
             const ClientProperty &getShuffleMemberList() const;
+
+            const ClientProperty &getMaxConcurrentInvocations() const;
+
+            const ClientProperty &getBackpressureBackoffTimeoutMillis() const;
 
             /**
             * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
@@ -199,6 +208,32 @@ namespace hazelcast {
             static const std::string SHUFFLE_MEMBER_LIST;
             static const std::string SHUFFLE_MEMBER_LIST_DEFAULT;
 
+            /**
+             * The maximum number of concurrent invocations allowed.
+             * <p/>
+             * To prevent the system from overloading, user can apply a constraint on the number of concurrent invocations.
+             * If the maximum number of concurrent invocations has been exceeded and a new invocation comes in,
+             * then hazelcast will throw HazelcastOverloadException
+             * <p/>
+             * By default it is configured as Integer.MaxValue.
+             */
+            static const std::string MAX_CONCURRENT_INVOCATIONS;
+            static const std::string MAX_CONCURRENT_INVOCATIONS_DEFAULT;
+
+            /**
+             * Control the maximum timeout in millis to wait for an invocation space to be available.
+             * <p/>
+             * If an invocation can't be made because there are too many pending invocations, then an exponential backoff is done
+             * to give the system time to deal with the backlog of invocations. This property controls how long an invocation is
+             * allowed to wait before getting a {@link com.hazelcast.core.HazelcastOverloadException}.
+             * <p/>
+             * <p>
+             * When set to -1 then <code>HazelcastOverloadException</code> is thrown immediately without any waiting.
+             * </p>
+             */
+            static const std::string BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+            static const std::string BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS_DEFAULT;
+
         private:
             ClientProperty heartbeatTimeout;
             ClientProperty heartbeatInterval;
@@ -212,6 +247,8 @@ namespace hazelcast {
             ClientProperty eventQueueCapacity;
             ClientProperty internalExecutorPoolSize;
             ClientProperty shuffleMemberList;
+            ClientProperty maxConcurrentInvocations;
+            ClientProperty backpressureBackoffTimeoutMillis;
         };
 
     }

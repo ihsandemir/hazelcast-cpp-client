@@ -17,7 +17,6 @@
 // Created by sancar koyunlu on 21/08/14.
 //
 
-#include "hazelcast/util/IOUtil.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/ClientProperties.h"
 
@@ -62,8 +61,15 @@ namespace hazelcast {
         const std::string ClientProperties::SHUFFLE_MEMBER_LIST = "hazelcast.client.shuffle.member.list";
         const std::string ClientProperties::SHUFFLE_MEMBER_LIST_DEFAULT = "true";
 
-        ClientProperty::ClientProperty(ClientConfig& config, const std::string& name, const std::string& defaultValue)
-        : name(name), defaultValue(defaultValue) {
+        const std::string ClientProperties::MAX_CONCURRENT_INVOCATIONS = "hazelcast.client.max.concurrent.invocations";
+        const std::string ClientProperties::MAX_CONCURRENT_INVOCATIONS_DEFAULT = util::IOUtil::to_string<int32_t>(
+                INT32_MAX);
+
+        const std::string ClientProperties::BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS = "hazelcast.client.invocation.backoff.timeout.millis";
+        const std::string ClientProperties::BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS_DEFAULT = "-1";
+
+        ClientProperty::ClientProperty(ClientConfig &config, const std::string &name, const std::string &defaultValue)
+                : name(name), defaultValue(defaultValue) {
             if (config.getProperties().count(name) > 0) {
                 value = config.getProperties()[name];
             } else if (::getenv(name.c_str()) != NULL) {
@@ -82,15 +88,15 @@ namespace hazelcast {
         }
 
         int ClientProperty::getInteger() const {
-            return util::IOUtil::to_value<int>(value);
+            return get<int>();
         }
 
         byte ClientProperty::getByte() const {
-            return util::IOUtil::to_value<byte>(value);
+            return get<byte>();
         }
 
         bool ClientProperty::getBoolean() const {
-            return util::IOUtil::to_value<bool>(value);
+            return get<bool>();
         }
 
         std::string ClientProperty::getString() const {
@@ -105,39 +111,46 @@ namespace hazelcast {
             return defaultValue;
         }
 
-        ClientProperties::ClientProperties(ClientConfig& clientConfig)
-        : heartbeatTimeout(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT)
-        , heartbeatInterval(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT)
-        , retryCount(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT)
-        , retryWaitTime(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT),
-          awsMemberPort(clientConfig, PROP_AWS_MEMBER_PORT, PROP_AWS_MEMBER_PORT_DEFAULT),
-          cleanResourcesPeriod(clientConfig, CLEAN_RESOURCES_PERIOD_MILLIS, CLEAN_RESOURCES_PERIOD_MILLIS_DEFAULT),
-          invocationRetryPauseMillis(clientConfig, INVOCATION_RETRY_PAUSE_MILLIS,
-                                     INVOCATION_RETRY_PAUSE_MILLIS_DEFAULT),
-          invocationTimeoutSeconds(clientConfig, INVOCATION_TIMEOUT_SECONDS, INVOCATION_TIMEOUT_SECONDS_DEFAULT),
-          eventThreadCount(clientConfig, EVENT_THREAD_COUNT, EVENT_THREAD_COUNT_DEFAULT),
-          eventQueueCapacity(clientConfig, EVENT_QUEUE_CAPACITY, EVENT_QUEUE_CAPACITY_DEFAULT),
-          internalExecutorPoolSize(clientConfig, INTERNAL_EXECUTOR_POOL_SIZE, INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT),
-          shuffleMemberList(clientConfig, SHUFFLE_MEMBER_LIST, SHUFFLE_MEMBER_LIST_DEFAULT) {
+        ClientProperties::ClientProperties(ClientConfig &clientConfig)
+                : heartbeatTimeout(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT),
+                  heartbeatInterval(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT),
+                  retryCount(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT),
+                  retryWaitTime(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT),
+                  awsMemberPort(clientConfig, PROP_AWS_MEMBER_PORT, PROP_AWS_MEMBER_PORT_DEFAULT),
+                  cleanResourcesPeriod(clientConfig, CLEAN_RESOURCES_PERIOD_MILLIS,
+                                       CLEAN_RESOURCES_PERIOD_MILLIS_DEFAULT),
+                  invocationRetryPauseMillis(clientConfig, INVOCATION_RETRY_PAUSE_MILLIS,
+                                             INVOCATION_RETRY_PAUSE_MILLIS_DEFAULT),
+                  invocationTimeoutSeconds(clientConfig, INVOCATION_TIMEOUT_SECONDS,
+                                           INVOCATION_TIMEOUT_SECONDS_DEFAULT),
+                  eventThreadCount(clientConfig, EVENT_THREAD_COUNT, EVENT_THREAD_COUNT_DEFAULT),
+                  eventQueueCapacity(clientConfig, EVENT_QUEUE_CAPACITY, EVENT_QUEUE_CAPACITY_DEFAULT),
+                  internalExecutorPoolSize(clientConfig, INTERNAL_EXECUTOR_POOL_SIZE,
+                                           INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT),
+                  shuffleMemberList(clientConfig, SHUFFLE_MEMBER_LIST, SHUFFLE_MEMBER_LIST_DEFAULT),
+                  maxConcurrentInvocations(clientConfig, MAX_CONCURRENT_INVOCATIONS,
+                                           MAX_CONCURRENT_INVOCATIONS_DEFAULT),
+                  backpressureBackoffTimeoutMillis(clientConfig, BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS,
+                                                   BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS_DEFAULT) {
         }
 
-        const ClientProperty& ClientProperties::getHeartbeatTimeout() const {
+        const ClientProperty &ClientProperties::getHeartbeatTimeout() const {
             return heartbeatTimeout;
         }
 
-        const ClientProperty& ClientProperties::getHeartbeatInterval() const {
+        const ClientProperty &ClientProperties::getHeartbeatInterval() const {
             return heartbeatInterval;
         }
 
-        const ClientProperty& ClientProperties::getRetryCount() const {
+        const ClientProperty &ClientProperties::getRetryCount() const {
             return retryCount;
         }
 
-        const ClientProperty& ClientProperties::getRetryWaitTime() const {
+        const ClientProperty &ClientProperties::getRetryWaitTime() const {
             return retryWaitTime;
         }
 
-        const ClientProperty& ClientProperties::getAwsMemberPort() const {
+        const ClientProperty &ClientProperties::getAwsMemberPort() const {
             return awsMemberPort;
         }
 
@@ -167,6 +180,14 @@ namespace hazelcast {
 
         const ClientProperty &ClientProperties::getShuffleMemberList() const {
             return shuffleMemberList;
+        }
+
+        const ClientProperty &ClientProperties::getMaxConcurrentInvocations() const {
+            return maxConcurrentInvocations;
+        }
+
+        const ClientProperty &ClientProperties::getBackpressureBackoffTimeoutMillis() const {
+            return backpressureBackoffTimeoutMillis;
         }
     }
 }

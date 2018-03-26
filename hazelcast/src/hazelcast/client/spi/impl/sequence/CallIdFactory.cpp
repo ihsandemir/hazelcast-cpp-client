@@ -16,6 +16,8 @@
 
 #include "hazelcast/client/spi/impl/sequence/CallIdFactory.h"
 #include "hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h"
+#include "hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h"
+#include "hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h"
 
 namespace hazelcast {
     namespace client {
