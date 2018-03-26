@@ -38,7 +38,7 @@ namespace hazelcast {
 
         HAZELCAST_API void sleepmillis(uint64_t milliseconds);
 
-        HAZELCAST_API char *strtok(char *str, const char *sep, char ** context);
+        HAZELCAST_API char *strtok(char *str, const char *sep, char **context);
 
         /**
          * Fills the result with localtime if succesful
@@ -80,6 +80,11 @@ namespace hazelcast {
 
         int32_t HAZELCAST_API getAvailableCoreCount();
 
+        template <typename T>
+        const T &min(const T&value1, const T&value2) {
+            return value1 < value2 ? value1 : value2;
+        }
+
         class HAZELCAST_API StringUtil {
         public:
             /**
@@ -101,6 +106,31 @@ namespace hazelcast {
              */
             static std::string timeToStringFriendly(int64_t timeInMillis);
 
+        };
+
+        class HAZELCAST_API Int64Util {
+        public:
+            /**
+             * Returns the number of zero bits preceding the highest-order
+             * ("leftmost") one-bit in the two's complement binary representation
+             * of the specified {@code long} value.  Returns 64 if the
+             * specified value has no one-bits in its two's complement representation,
+             * in other words if it is equal to zero.
+             *
+             * <p>Note that this method is closely related to the logarithm base 2.
+             * For all positive {@code long} values x:
+             * <ul>
+             * <li>floor(log<sub>2</sub>(x)) = {@code 63 - numberOfLeadingZeros(x)}
+             * <li>ceil(log<sub>2</sub>(x)) = {@code 64 - numberOfLeadingZeros(x - 1)}
+             * </ul>
+             *
+             * @param i the value whose number of leading zeros is to be computed
+             * @return the number of zero bits preceding the highest-order
+             *     ("leftmost") one-bit in the two's complement binary representation
+             *     of the specified {@code long} value, or 64 if the value
+             *     is equal to zero.
+             */
+            static int numberOfLeadingZeros(int64_t i);
         };
     }
 }

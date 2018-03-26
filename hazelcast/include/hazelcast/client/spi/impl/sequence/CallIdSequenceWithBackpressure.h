@@ -18,6 +18,7 @@
 #define HAZELCAST_CLIENT_SPI_IMPL_SEQUENCE_CALLIDSEQUENCEWITHBACKPRESSURE_H_
 
 #include "hazelcast/client/spi/impl/sequence/AbstractCallIdSequence.h"
+#include "hazelcast/util/concurrent/IdleStrategy.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -51,6 +52,8 @@ namespace hazelcast {
 
                     private:
                         int64_t backoffTimeoutNanos;
+                        static const int MAX_DELAY_MS = 500;
+                        static const std::auto_ptr<util::concurrent::IdleStrategy> IDLER;
                     };
                 }
             }

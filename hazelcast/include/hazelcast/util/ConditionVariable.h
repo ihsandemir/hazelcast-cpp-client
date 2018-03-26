@@ -91,7 +91,7 @@ namespace hazelcast {
 
             struct timespec calculateTimeFromMilliseconds(int64_t timeInMilliseconds) const;
 
-            struct timespec ConditionVariable::calculateTimeFromNanos(int64_t nanos) const;
+            struct timespec calculateTimeFromNanos(int64_t nanos) const;
         };
     }
 }

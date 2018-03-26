@@ -15,15 +15,20 @@
  */
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
 
+#include "hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h"
 #include <hazelcast/util/Preconditions.h>
 #include <hazelcast/util/Util.h>
-#include "hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h"
+#include <hazelcast/util/concurrent/BackoffIdleStrategy.h>
 
 namespace hazelcast {
     namespace client {
         namespace spi {
             namespace impl {
                 namespace sequence {
+                    const std::auto_ptr<util::concurrent::IdleStrategy> CallIdSequenceWithBackpressure::IDLER(
+                            new util::concurrent::BackoffIdleStrategy(
+                                    0, 0, boost::posix_time::microseconds(1000).total_nanoseconds(),
+                                    boost::posix_time::microseconds(MAX_DELAY_MS * 1000).total_nanoseconds()));
 
                     CallIdSequenceWithBackpressure::CallIdSequenceWithBackpressure(int32_t maxConcurrentInvocations,
                                                                                    int64_t backoffTimeoutMs)
@@ -48,7 +53,7 @@ namespace hazelcast {
                                         << boost::posix_time::microseconds(elapsedNanos / 1000).total_milliseconds()
                                         << " msecs";
                             }
-                            IDLER.idle(idleCount);
+                            IDLER->idle(idleCount);
                             if (hasSpace()) {
                                 return;
                             }
