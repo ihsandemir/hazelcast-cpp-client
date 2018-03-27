@@ -22,6 +22,7 @@
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/date_time/microsec_time_clock.hpp>
 #include <boost/date_time.hpp>
+#include <boost/regex.hpp>
 
 #include <string.h>
 #include <algorithm>
@@ -179,6 +180,18 @@ namespace hazelcast {
 
         std::string StringUtil::timeToStringFriendly(int64_t timeInMillis) {
             return timeInMillis == 0 ? "never" : timeToString(timeInMillis);
+        }
+
+        std::vector<std::string> StringUtil::tokenizeVersionString(const ::std::string &version) {
+            boost::regex expr("^([\\d]+)\\.([\\d]+)(\\.([\\d]+))?(-[\\w]+)?(-SNAPSHOT)?$");
+            boost::regex_token_iterator<std::string::iterator> it(version.begin(), version.end(),
+                                                                  expr);
+            boost::regex_token_iterator<std::string::iterator> end;
+            std::vector<std::string> tokens;
+            while (it != end) {
+                tokens.push_back(*it++);
+            }
+            return tokens;
         }
 
         int Int64Util::numberOfLeadingZeros(int64_t i) {

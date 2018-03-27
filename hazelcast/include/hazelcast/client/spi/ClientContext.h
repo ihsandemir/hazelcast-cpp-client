@@ -57,7 +57,7 @@ namespace hazelcast {
         namespace spi {
             class InvocationService;
 
-            class PartitionService;
+            class ClientPartitionService;
 
             class ClientListenerService;
 
@@ -89,7 +89,7 @@ namespace hazelcast {
 
                 ClientConfig &getClientConfig();
 
-                PartitionService &getPartitionService();
+                ClientPartitionService &getPartitionService();
 
                 LifecycleService &getLifecycleService();
 

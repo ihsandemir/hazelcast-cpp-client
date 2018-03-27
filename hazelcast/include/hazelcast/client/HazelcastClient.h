@@ -19,7 +19,8 @@
 #include <memory>
 #include <stdint.h>
 
-#include <hazelcast/client/spi/impl/sequence/CallIdSequence.h>
+#include "hazelcast/client/spi/impl/sequence/CallIdSequence.h"
+#include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/map/impl/ClientMapProxyFactory.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/proxy/RingbufferImpl.h"
@@ -34,7 +35,6 @@
 #include "hazelcast/client/Cluster.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/ClientProperties.h"
-#include "hazelcast/client/spi/PartitionService.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/spi/ProxyManager.h"
 #include "hazelcast/client/Ringbuffer.h"
@@ -748,7 +748,7 @@ namespace hazelcast {
             std::auto_ptr<connection::ClientConnectionManagerImpl> connectionManager;
             internal::nearcache::NearCacheManager nearCacheManager;
             spi::impl::ClientClusterServiceImpl clusterService;
-            spi::PartitionService partitionService;
+            spi::impl::ClientPartitionServiceImpl partitionService;
             std::auto_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
             std::auto_ptr<spi::ClientInvocationService> invocationService;
             std::auto_ptr<spi::ClientListenerService> listenerService;

@@ -20,7 +20,7 @@
 #include <hazelcast/client/spi/impl/AbstractClientInvocationService.h>
 #include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
 #include "hazelcast/client/spi/LifecycleService.h"
-#include "hazelcast/client/spi/PartitionService.h"
+#include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/ClusterService.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"

@@ -26,7 +26,7 @@
 #include "hazelcast/client/internal/nearcache/NearCache.h"
 #include "hazelcast/client/internal/adapter/IMapDataStructureAdapter.h"
 #include "hazelcast/client/protocol/codec/MapAddNearCacheEntryListenerCodec.h"
-#include "hazelcast/client/spi/PartitionService.h"
+#include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/EntryEvent.h"

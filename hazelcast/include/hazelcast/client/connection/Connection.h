@@ -133,6 +133,9 @@ namespace hazelcast {
                 void setConnectedServerVersion(const std::string &connectedServerVersionString);
 
                 std::auto_ptr<Address> getLocalSocketAddress() const;
+
+                int getConnectedServerVersion() const;
+
             private:
                 util::Atomic<int64_t> closedTimeMillis;
                 util::Atomic<int64_t> lastHeartbeatRequestedMillis;
@@ -158,6 +161,7 @@ namespace hazelcast {
 
                 util::Atomic<int32_t> pendingPacketCount;
                 std::string connectedServerVersionString;
+                int connectedServerVersion;
 
                 void logClose();
 

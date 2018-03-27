@@ -45,7 +45,7 @@ namespace hazelcast {
                 return hazelcastClient.clientConfig;
             }
 
-            PartitionService &ClientContext::getPartitionService() {
+            ClientPartitionService &ClientContext::getPartitionService() {
                 return hazelcastClient.partitionService;
             }
 
@@ -74,7 +74,7 @@ namespace hazelcast {
             }
 
             impl::sequence::CallIdSequence &ClientContext::getCallIdSequence() const {
-                return hazelcastClient.callIdSequence;
+                return *hazelcastClient.callIdSequence;
             }
 
             const protocol::ClientExceptionFactory &ClientContext::getClientExceptionFactory() const {

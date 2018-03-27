@@ -19,7 +19,7 @@
 #include <hazelcast/client/InitialMembershipEvent.h>
 #include <hazelcast/util/ILogger.h>
 #include <hazelcast/client/spi/ClientContext.h>
-#include <hazelcast/client/spi/PartitionService.h>
+#include <hazelcast/client/spi/ClientPartitionService.h>
 #include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
 #include <hazelcast/client/connection/Connection.h>

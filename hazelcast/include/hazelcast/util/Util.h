@@ -106,6 +106,18 @@ namespace hazelcast {
              */
             static std::string timeToStringFriendly(int64_t timeInMillis);
 
+            /**
+             * Tokenizes a version string and returns the tokens with the following grouping:
+             * (1) major version, eg "3"
+             * (2) minor version, eg "8"
+             * (3) patch version prefixed with ".", if exists, otherwise {@code null} (eg ".0")
+             * (4) patch version, eg "0"
+             * (5) 1st -qualifier, if exists
+             * (6) -SNAPSHOT qualifier, if exists
+             * @param version
+             * @return
+             */
+            static std::vector<std::string> tokenizeVersionString(const::std::string &version);
         };
 
         class HAZELCAST_API Int64Util {

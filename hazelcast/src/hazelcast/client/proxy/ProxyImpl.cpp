@@ -27,7 +27,7 @@
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include "hazelcast/client/spi/ClientListenerService.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
-#include "hazelcast/client/spi/PartitionService.h"
+#include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/connection/CallFuture.h"

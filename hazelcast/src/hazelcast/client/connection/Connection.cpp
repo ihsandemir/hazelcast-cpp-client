@@ -39,6 +39,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <hazelcast/client/impl/BuildInfo.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -64,7 +65,7 @@ namespace hazelcast {
             , connectionId(-1)
             , pendingPacketCount(0)
             , lastHeartbeatReceivedMillis(0)
-            , lastHeartbeatRequestedMillis(0) {
+            , lastHeartbeatRequestedMillis(0), connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION) {
                 socket = socketFactory.create(address);
                 wrapperMessage.wrapForDecode(receiveBuffer, (int32_t)16 << 10, false);
                 assert(receiveByteBuffer.remaining() >= protocol::ClientMessage::HEADER_SIZE); // Note: Always make sure that the size >= ClientMessage header size.
@@ -257,6 +258,11 @@ namespace hazelcast {
 
             void Connection::setConnectedServerVersion(const std::string &connectedServerVersionString) {
                 Connection::connectedServerVersionString = connectedServerVersionString;
+                connectedServerVersion = impl::BuildInfo::calculateVersion(connectedServerVersionString);
+            }
+
+            int Connection::getConnectedServerVersion() const {
+                return connectedServerVersion;
             }
 
             std::auto_ptr<Address> Connection::getLocalSocketAddress() const {
