@@ -31,6 +31,7 @@
 #include <list>
 #include <stdint.h>
 #include <memory>
+#include <boost/shared_ptr.hpp>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -52,7 +53,7 @@ namespace hazelcast {
             class HAZELCAST_API ClientMessageBuilder {
 
             public:
-                ClientMessageBuilder(IMessageHandler &service, connection::Connection &connection);
+                ClientMessageBuilder(IMessageHandler &service, boost::shared_ptr<connection::Connection> connection);
 
                 virtual ~ClientMessageBuilder();
 
@@ -83,7 +84,7 @@ namespace hazelcast {
                 std::auto_ptr<ClientMessage> message;
 
                 IMessageHandler &messageHandler;
-                connection::Connection &connection;
+                boost::shared_ptr<connection::Connection> connection;
 
                 int32_t frameLen;
                 int32_t offset;

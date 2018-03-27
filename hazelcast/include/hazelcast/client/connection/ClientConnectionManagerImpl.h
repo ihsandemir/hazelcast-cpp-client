@@ -91,14 +91,6 @@ namespace hazelcast {
                 */
                 void shutdown();
 
-
-                /**
-                * Gets a shared ptr to connection if available to the provided socket descriptor
-                *
-                * @param The socket descriptor for the connection.
-                */
-                boost::shared_ptr<Connection> getConnectionIfAvailable(int socketDescriptor);
-
                 /**
                  * @param address to be connected
                  * @return associated connection if available, creates new connection otherwise
@@ -132,6 +124,8 @@ namespace hazelcast {
 
                 boost::shared_ptr<Connection> getActiveConnection(const Address &target);
 
+                boost::shared_ptr<Connection> getOwnerConnection();
+
                 const boost::shared_ptr<protocol::Principal> getPrincipal();
 
                 void setPrincipal(const boost::shared_ptr<protocol::Principal> &principal);
@@ -144,11 +138,14 @@ namespace hazelcast {
 
                 void onClose(Connection &connection);
 
+                virtual void heartbeatResumed(const boost::shared_ptr<connection::Connection> &connection);
+
+                virtual void heartbeatStopped(const boost::shared_ptr<connection::Connection> &connection);
+
             private:
                 static int DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
                 static int DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC;
 
-                boost::shared_ptr<Connection> getOwnerConnection();
 
                 boost::shared_ptr<Connection> getConnection(const Address &target, bool asOwner);
 
@@ -212,7 +209,7 @@ namespace hazelcast {
                     ClientConnectionManagerImpl &connectionManager;
                 };
 
-                class AuthCallback : public impl::ExecutionCallback<protocol::ClientMessage> {
+                class AuthCallback : public impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > {
                 public:
                     AuthCallback(const boost::shared_ptr<Connection> &connection, bool asOwner, const Address &target,
                                  boost::shared_ptr<AuthenticationFuture> &future, ClientConnectionManagerImpl &connectionManager);

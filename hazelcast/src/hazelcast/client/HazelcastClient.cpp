@@ -18,6 +18,9 @@
 #include <hazelcast/client/spi/impl/listener/NonSmartClientListenerService.h>
 #include <hazelcast/client/spi/impl/listener/SmartClientListenerService.h>
 #include <hazelcast/client/spi/impl/ClientExecutionServiceImpl.h>
+#include <hazelcast/client/spi/impl/sequence/CallIdFactory.h>
+#include <hazelcast/client/spi/impl/AwsAddressProvider.h>
+#include <hazelcast/client/spi/impl/DefaultAddressProvider.h>
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/IdGenerator.h"
 #include "hazelcast/client/ICountDownLatch.h"
@@ -25,6 +28,7 @@
 #include "hazelcast/client/ILock.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/mixedtype/impl/HazelcastClientImpl.h"
+#include "hazelcast/client/spi/impl/DefaultAddressTranslator.h"
 
 #ifndef HAZELCAST_VERSION
 #define HAZELCAST_VERSION "NOT_FOUND"
@@ -42,17 +46,19 @@ namespace hazelcast {
         HazelcastClient::HazelcastClient(ClientConfig &config)
                 : clientConfig(config), clientProperties(clientConfig), shutdownLatch(1), clientContext(*this),
                   serializationService(clientConfig.getSerializationConfig()),
-                  connectionManager(new connection::ClientConnectionManagerImpl(clientContext, clientConfig.isSmart())),
                   nearCacheManager(serializationService), clusterService(clientContext),
-                  partitionService(clientContext), cluster(clusterService),
+                  partitionService(clientContext), transactionManager(clientContext, *clientConfig.getLoadBalancer()),
+                  cluster(clusterService),
                   lifecycleService(clientContext, clientConfig.getLifecycleListeners(), shutdownLatch,
                                    clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
-                  TOPIC_RB_PREFIX("_hz_rb_"), id(++CLIENT_ID) {
+                  id(++CLIENT_ID), TOPIC_RB_PREFIX("_hz_rb_") {
             const boost::shared_ptr<std::string> &name = config.getInstanceName();
             if (name.get() != NULL) {
                 instanceName = *name;
             } else {
-                instanceName = "hz.client_" + id;
+                std::ostringstream out;
+                out << "hz.client_" << id;
+                instanceName = out.str();
             }
 
             std::stringstream prefix;
@@ -60,13 +66,20 @@ namespace hazelcast {
                    << "]";
             util::ILogger::getLogger().setPrefix(prefix.str());
 
+            executionService = initExecutionService();
+            
             int32_t maxAllowedConcurrentInvocations = clientProperties.getMaxConcurrentInvocations().get<int32_t>();
             int64_t backofftimeoutMs = clientProperties.getBackpressureBackoffTimeoutMillis().get<int64_t>();
             bool isBackPressureEnabled = maxAllowedConcurrentInvocations != INT32_MAX;
-            callIdSequence = CallIdFactory::newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations,
-                                                              backofftimeoutMs);
+            callIdSequence = spi::impl::sequence::CallIdFactory::newCallIdSequence(isBackPressureEnabled,
+                                                                                   maxAllowedConcurrentInvocations,
+                                                                                   backofftimeoutMs);
 
-            executionService = initExecutionService();
+
+            std::vector<boost::shared_ptr<connection::AddressProvider> > addressProviders = createAddressProviders();
+
+            connectionManager = initConnectionManagerService(addressProviders);
+
             invocationService = initInvocationService();
             listenerService = initListenerService();
 
@@ -140,7 +153,7 @@ namespace hazelcast {
         }
 
         TransactionContext HazelcastClient::newTransactionContext(const TransactionOptions &options) {
-            return TransactionContext(clientContext, options);
+            return TransactionContext(transactionManager, options);
         }
 
         internal::nearcache::NearCacheManager &HazelcastClient::getNearCacheManager() {
@@ -163,7 +176,7 @@ namespace hazelcast {
         }
 
         const spi::impl::sequence::CallIdSequence &HazelcastClient::getCallIdSequence() const {
-            return callIdSequence;
+            return *callIdSequence;
         }
 
         const protocol::ClientExceptionFactory &HazelcastClient::getExceptionFactory() const {
@@ -201,6 +214,25 @@ namespace hazelcast {
                                                               clientConfig.getExecutorPoolSize()));
         }
 
+        std::auto_ptr<connection::ClientConnectionManagerImpl> HazelcastClient::initConnectionManagerService(
+                const std::vector<boost::shared_ptr<connection::AddressProvider> > &addressProviders) {
+            config::ClientAwsConfig &awsConfig = clientConfig.getNetworkConfig().getAwsConfig();
+            boost::shared_ptr<connection::AddressTranslator> addressTranslator;
+            if (awsConfig.isEnabled()) {
+                try {
+                    addressTranslator.reset(new aws::impl::AwsAddressTranslator(awsConfig));
+                } catch (exception::InvalidConfigurationException &e) {
+                    util::ILogger::getLogger().warning(std::string("Invalid aws configuration! ") + e.what());
+                    throw;
+                }
+            } else {
+                addressTranslator.reset(new spi::impl::DefaultAddressTranslator());
+            }
+            return std::auto_ptr<connection::ClientConnectionManagerImpl>(new connection::ClientConnectionManagerImpl(
+                    clientContext, addressTranslator, addressProviders));
+
+        }
+
         spi::ClientExecutionService &HazelcastClient::getClientExecutionService() const {
             return *executionService;
         }
@@ -208,6 +240,22 @@ namespace hazelcast {
         void HazelcastClient::onClusterConnect(const boost::shared_ptr<connection::Connection> &ownerConnection) {
             partitionService.listenPartitionTable(ownerConnection);
             clusterService.listenMembershipEvents(ownerConnection);
+        }
+
+        std::vector<boost::shared_ptr<connection::AddressProvider> > HazelcastClient::createAddressProviders() {
+            config::ClientNetworkConfig &networkConfig = getClientConfig().getNetworkConfig();
+            config::ClientAwsConfig &awsConfig = networkConfig.getAwsConfig();
+            std::vector<boost::shared_ptr<connection::AddressProvider> > addressProviders;
+
+            if (awsConfig.isEnabled()) {
+                addressProviders.push_back(boost::shared_ptr<connection::AddressProvider>(
+                        new spi::impl::AwsAddressProvider(awsConfig, util::ILogger::getLogger())));
+            }
+
+            addressProviders.push_back(boost::shared_ptr<connection::AddressProvider>(
+                    new spi::impl::DefaultAddressProvider(networkConfig, addressProviders.empty())));
+
+            return addressProviders;
         }
     }
 }

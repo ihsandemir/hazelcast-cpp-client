@@ -147,7 +147,7 @@ namespace hazelcast {
                 }
             }
 
-            const std::string &HeartbeatManager::HeartbeatTask::getName() const {
+            std::string HeartbeatManager::HeartbeatTask::getName() const {
                 return "HeartbeatTask";
             }
 

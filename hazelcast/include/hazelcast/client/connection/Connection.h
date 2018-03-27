@@ -21,6 +21,7 @@
 #include <memory>
 #include <ostream>
 #include <stdint.h>
+#include <boost/enable_shared_from_this.hpp>
 
 #include "hazelcast/client/Socket.h"
 #include "hazelcast/client/connection/ReadHandler.h"
@@ -62,7 +63,8 @@ namespace hazelcast {
 
             class InSelector;
 
-            class HAZELCAST_API Connection : public util::Closeable, public protocol::IMessageHandler {
+            class HAZELCAST_API Connection : public util::Closeable, public protocol::IMessageHandler,
+                                             public boost::enable_shared_from_this<Connection> {
             public:
                 Connection(const Address& address, spi::ClientContext& clientContext, InSelector& iListener,
                            OutSelector& listener, internal::socket::SocketFactory &socketFactory, bool isOwner);
@@ -97,16 +99,12 @@ namespace hazelcast {
 
                 void onHeartbeatRequested();
 
-                void heartBeatingFailed();
-
-                void heartBeatingSucceed();
-
                 bool isAuthenticatedAsOwner() const;
 
                 void setIsAuthenticatedAsOwner();
 
                 virtual void handleClientMessage(boost::shared_ptr<Connection> &connection,
-                                                 std::auto_ptr<protocol::ClientMessage> message);
+                                                 std::auto_ptr<protocol::ClientMessage> &message);
 
                 int getConnectionId() const;
 
@@ -130,9 +128,9 @@ namespace hazelcast {
 
                 bool operator!=(const Connection &rhs) const;
 
-                const string &getConnectedServerVersionString() const;
+                const std::string &getConnectedServerVersionString() const;
 
-                void setConnectedServerVersion(const string &connectedServerVersionString);
+                void setConnectedServerVersion(const std::string &connectedServerVersionString);
 
                 std::auto_ptr<Address> getLocalSocketAddress() const;
             private:

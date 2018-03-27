@@ -91,7 +91,8 @@ namespace hazelcast {
             void DefaultClientConnectionStrategy::onDisconnect(boost::shared_ptr<Connection> &connection) {
             }
 
-            void DefaultClientConnectionStrategy::onHeartbeatStopped(boost::shared_ptr<Connection> &connection) {
+            void DefaultClientConnectionStrategy::onHeartbeatStopped(const boost::shared_ptr<Connection> &connection) {
+
                 if (connection->isAuthenticatedAsOwner()) {
                     boost::shared_ptr<exception::IException> exception(new exception::TargetDisconnectedException("DefaultClientConnectionStrategy::onHeartbeatStopped"));
                     *exception << "Heartbeat timed out to owner connection " << *connection;
@@ -99,7 +100,7 @@ namespace hazelcast {
                 }
             }
 
-            void DefaultClientConnectionStrategy::onHeartbeatResumed(boost::shared_ptr<Connection> &connection) {
+            void DefaultClientConnectionStrategy::onHeartbeatResumed(const boost::shared_ptr<Connection> &connection) {
             }
 
             void DefaultClientConnectionStrategy::shutdown() {

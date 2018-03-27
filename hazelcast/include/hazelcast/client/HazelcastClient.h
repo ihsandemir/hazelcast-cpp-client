@@ -42,6 +42,7 @@
 #include "hazelcast/client/mixedtype/HazelcastClient.h"
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 #include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
+#include "hazelcast/client/spi/impl/ClientTransactionManagerServiceImpl.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -751,6 +752,7 @@ namespace hazelcast {
             std::auto_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
             std::auto_ptr<spi::ClientInvocationService> invocationService;
             std::auto_ptr<spi::ClientListenerService> listenerService;
+            spi::impl::ClientTransactionManagerServiceImpl transactionManager;
             Cluster cluster;
             spi::LifecycleService lifecycleService;
             spi::ProxyManager proxyManager;
@@ -772,6 +774,11 @@ namespace hazelcast {
             std::auto_ptr<spi::ClientInvocationService> initInvocationService();
 
             std::auto_ptr<spi::impl::ClientExecutionServiceImpl> initExecutionService();
+
+            std::auto_ptr<connection::ClientConnectionManagerImpl> initConnectionManagerService(
+                    const std::vector<boost::shared_ptr<connection::AddressProvider> > &addressProviders);
+
+            std::vector<boost::shared_ptr<connection::AddressProvider> > createAddressProviders();
         };
 
     }

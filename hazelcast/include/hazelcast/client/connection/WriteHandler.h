@@ -31,6 +31,7 @@
 #include "hazelcast/client/connection/IOHandler.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/client/protocol/ClientMessage.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -42,10 +43,6 @@ namespace hazelcast {
         namespace serialization {
         }
 
-        namespace protocol {
-            class ClientMessage;
-        }
-
         namespace connection {
             class Connection;
 
@@ -53,7 +50,7 @@ namespace hazelcast {
 
             class HAZELCAST_API WriteHandler : public IOHandler {
             public:
-                WriteHandler(Connection &connection, OutSelector &oListener, size_t bufferSize);
+                WriteHandler(boost::shared_ptr<Connection> connection, OutSelector &oListener, size_t bufferSize);
 
                 ~WriteHandler();
 

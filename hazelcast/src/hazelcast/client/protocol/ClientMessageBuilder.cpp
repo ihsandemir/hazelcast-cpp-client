@@ -28,8 +28,9 @@
 namespace hazelcast {
     namespace client {
         namespace protocol {
-            ClientMessageBuilder::ClientMessageBuilder(IMessageHandler &service, connection::Connection &connection)
-            : messageHandler(service), connection(connection) {
+            ClientMessageBuilder::ClientMessageBuilder(IMessageHandler &service,
+                                                       boost::shared_ptr<connection::Connection> connection)
+                    : messageHandler(service), connection(connection) {
             }
 
             ClientMessageBuilder::~ClientMessageBuilder() {

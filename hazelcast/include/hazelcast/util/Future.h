@@ -33,6 +33,7 @@
 #include "hazelcast/util/Mutex.h"
 #include "hazelcast/util/Executor.h"
 #include "hazelcast/client/impl/ExecutionCallback.h"
+#include "hazelcast/client/exception/IException.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -54,7 +55,7 @@ namespace hazelcast {
                 }
 
                 virtual void run() {
-                    callback->onResponse(&sharedObj);
+                    callback->onResponse(sharedObj);
                 }
 
                 virtual const std::string getName() const {
@@ -76,7 +77,7 @@ namespace hazelcast {
                 }
 
                 virtual void run() {
-                    callback->onFailure(exception.get());
+                    callback->onFailure(boost::shared_ptr<client::exception::IException>(exception->clone()));
                 }
 
                 virtual const std::string getName() const {
@@ -88,10 +89,9 @@ namespace hazelcast {
                 const boost::shared_ptr<client::impl::ExecutionCallback<T> > callback;
             };
 
-            Future()
-            : resultReady(false)
-            , exceptionReady(false) {
+            Future(ILogger &logger) : logger(logger) {}
 
+            Future() : resultReady(false), exceptionReady(false), logger(util::ILogger::getLogger()) {
             }
 
             virtual ~Future() {
@@ -100,7 +100,7 @@ namespace hazelcast {
             void set_value(T& value) {
                 LockGuard guard(mutex);
                 if (exceptionReady || resultReady) {
-                    util::ILogger::getLogger().warning(std::string("Future.set_value should not be called twice"));
+                    logger.warning(std::string("Future.set_value should not be called twice"));
                 }
                 sharedObject = value;
                 resultReady = true;
@@ -117,8 +117,7 @@ namespace hazelcast {
                 LockGuard guard(mutex);
 
                 if (exceptionReady || resultReady) {
-                    util::ILogger::getLogger().warning(
-                            std::string("Future.set_exception should not be called twice : details ") +
+                    logger.warning(std::string("Future.set_exception should not be called twice : details ") +
                             exception->what());
                 }
 
@@ -240,6 +239,7 @@ namespace hazelcast {
             T sharedObject;
             boost::shared_ptr<client::exception::IException> exception;
             std::vector<CallbackInfo> callbacks;
+            util::ILogger &logger;
 
             Future(const Future& rhs);
 

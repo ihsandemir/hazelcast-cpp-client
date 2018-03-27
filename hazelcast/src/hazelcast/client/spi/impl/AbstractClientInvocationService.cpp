@@ -90,8 +90,8 @@ namespace hazelcast {
                     return client.getClientConfig().isRedoOperation();
                 }
 
-                void AbstractClientInvocationService::handleClientMessage(connection::Connection &connection,
-                                                                          const std::auto_ptr<protocol::ClientMessage> &clientMessage) {
+                void AbstractClientInvocationService::handleClientMessage(boost::shared_ptr<connection::Connection> &connection,
+                                                                          std::auto_ptr<protocol::ClientMessage> &clientMessage) {
                     long correlationId = clientMessage->getCorrelationId();
 
                     boost::shared_ptr<ClientInvocation> future = deRegisterCallId(correlationId);

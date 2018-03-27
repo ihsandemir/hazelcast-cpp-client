@@ -81,6 +81,8 @@ namespace hazelcast {
 
                 virtual const std::string getName() const;
 
+                void listenPartitionTable(const boost::shared_ptr<connection::Connection> &ownerConnection);
+
             private:
 
                 spi::ClientContext &clientContext;

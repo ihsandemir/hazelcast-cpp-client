@@ -39,13 +39,13 @@ namespace hazelcast {
                 class ClientInvocation;
 
                 class HAZELCAST_API ClientInvocationFuture
-                        : public util::Future<const boost::shared_ptr<protocol::ClientMessage> > {
+                        : public util::Future<boost::shared_ptr<protocol::ClientMessage> > {
                 public:
                     ClientInvocationFuture(util::ILogger &logger, ClientInvocation &invocation,
                                            sequence::CallIdSequence &callIdSequence, util::Executor &defaultExecutor)
-                            : logger(logger),
-                              invocation(invocation),
-                              callIdSequence(callIdSequence), defaultExecutor(defaultExecutor) {}
+                            : util::Future<boost::shared_ptr<protocol::ClientMessage> >(logger), logger(logger),
+                              invocation(invocation), callIdSequence(callIdSequence),
+                              defaultExecutor(defaultExecutor) {}
 
                     virtual void onComplete() {
                         callIdSequence.complete();

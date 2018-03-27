@@ -50,6 +50,7 @@ namespace hazelcast {
             enum MembershipEventType {
                 MEMBER_ADDED = 1,
                 MEMBER_REMOVED = 2,
+                MEMBER_ATTRIBUTE_CHANGED = 5
             };
 
             /**

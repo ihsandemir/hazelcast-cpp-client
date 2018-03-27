@@ -227,6 +227,11 @@ namespace hazelcast {
 
                 return partitionCount;
             }
+
+            void
+            PartitionService::listenPartitionTable(const boost::shared_ptr<connection::Connection> &ownerConnection) {
+
+            }
         }
     }
 }

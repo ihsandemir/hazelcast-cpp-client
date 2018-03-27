@@ -54,13 +54,13 @@ namespace hazelcast {
             : closedTimeMillis(0)
             , clientContext(clientContext)
             , invocationService(clientContext.getInvocationService())
-            , readHandler(*this, iListener, 16 << 10, clientContext)
-            , writeHandler(*this, oListener, 16 << 10)
+            , readHandler(shared_from_this(), iListener, 16 << 10, clientContext)
+            , writeHandler(shared_from_this(), oListener, 16 << 10)
             , authenticatedAsOwner(isOwner)
             , heartBeating(true)
             , receiveBuffer(new byte[16 << 10])
             , receiveByteBuffer((char *)receiveBuffer, 16 << 10)
-            , messageBuilder(*this, *this)
+            , messageBuilder(*this, shared_from_this())
             , connectionId(-1)
             , pendingPacketCount(0)
             , lastHeartbeatReceivedMillis(0)
@@ -156,7 +156,7 @@ namespace hazelcast {
             }
 
             void Connection::handleClientMessage(boost::shared_ptr<Connection> &connection,
-                                                 std::auto_ptr<protocol::ClientMessage> message) {
+                                                 const std::auto_ptr<protocol::ClientMessage> &message) {
                 incrementPendingPacketCount();
                 boost::shared_ptr<protocol::ClientMessage> msg(message);
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {

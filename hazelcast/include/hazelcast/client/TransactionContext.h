@@ -36,6 +36,10 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             class ClientContext;
+
+            namespace impl {
+                class ClientTransactionManagerServiceImpl;
+            }
         }
 
         namespace connection {
@@ -55,7 +59,7 @@ namespace hazelcast {
              *  Constructor to be used internally. Not public API.
              *
              */
-            TransactionContext(spi::ClientContext &clientContext, const TransactionOptions &);
+            TransactionContext(spi::impl::ClientTransactionManagerServiceImpl &transactionManager, const TransactionOptions &);
             /**
              *  @return txn id.
              */
@@ -167,9 +171,7 @@ namespace hazelcast {
             TransactionOptions options;
             boost::shared_ptr<connection::Connection> txnConnection;
             txn::TransactionProxy transaction;
-
-            boost::shared_ptr<connection::Connection> connect();
-
+            spi::impl::ClientTransactionManagerServiceImpl &transactionManager;
         };
 
     }

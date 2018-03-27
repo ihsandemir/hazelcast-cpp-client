@@ -21,11 +21,11 @@
 #include <hazelcast/client/LifecycleEvent.h>
 #include <hazelcast/client/connection/DefaultClientConnectionStrategy.h>
 #include <hazelcast/client/connection/AddressProvider.h>
-#include <hazelcast/client/connection/HeartBeater.h>
 #include <hazelcast/util/impl/SimpleExecutorService.h>
 #include <hazelcast/client/spi/impl/ClientInvocation.h>
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/protocol/AuthenticationStatus.h"
+#include "hazelcast/client/exception/AuthenticationException.h"
 #include "hazelcast/client/exception/AuthenticationException.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/ConnectionListener.h"
@@ -587,6 +587,16 @@ namespace hazelcast {
                     return;
                 }
                 removeFromActiveConnections(activeConnection);
+            }
+
+            void
+            ClientConnectionManagerImpl::heartbeatResumed(const boost::shared_ptr<connection::Connection> &connection) {
+                connectionStrategy->onHeartbeatResumed(connection);
+            }
+
+            void
+            ClientConnectionManagerImpl::heartbeatStopped(const boost::shared_ptr<connection::Connection> &connection) {
+                connectionStrategy->onHeartbeatStopped(connection);
             }
 
             ClientConnectionManagerImpl::InitConnectionTask::InitConnectionTask(const Address &target,

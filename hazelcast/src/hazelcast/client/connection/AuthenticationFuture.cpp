@@ -43,7 +43,7 @@ namespace hazelcast {
                     return connection;
                 }
                 assert(throwable.get() != NULL);
-                throw boost::shared_ptr<Connection>(new exception::ExecutionException(throwable));
+                throw exception::ExecutionException("AuthenticationFuture::get", "ExecutionException", throwable);
             }
 
         }

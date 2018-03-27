@@ -82,7 +82,7 @@ namespace hazelcast {
                 ClientMembershipListener::handleMemberAttributeChange(const std::string &uuid, const std::string &key,
                                                                       const int32_t &operationType,
                                                                       std::auto_ptr<std::string> value) {
-
+                    std::vector<Member> members = clusterService.getMemberList();
                 }
 
                 void ClientMembershipListener::memberAdded(const Member &member) {

@@ -73,7 +73,7 @@ namespace hazelcast {
             std::vector<T> toArray() {
                 util::LockGuard lg(m);
                 std::vector<T> result;
-                BOOST_FOREACH(const std::set<T>::value_type &value , internalSet) {
+                BOOST_FOREACH(const typename std::set<T>::value_type &value , internalSet) {
                                 result.push_back(value);
                             }
                 return result;

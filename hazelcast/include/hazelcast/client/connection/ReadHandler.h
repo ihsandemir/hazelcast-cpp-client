@@ -21,9 +21,9 @@
 #define HAZELCAST_ReadHandler
 
 #include<stdint.h>
-#include <hazelcast/util/Atomic.h>
+#include <boost/shared_ptr.hpp>
 
-#include "hazelcast/util/HazelcastDll.h"
+#include <hazelcast/util/Atomic.h>
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/client/connection/IOHandler.h"
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"
@@ -43,7 +43,8 @@ namespace hazelcast {
 
             class HAZELCAST_API ReadHandler : public IOHandler {
             public:
-                ReadHandler(Connection &connection, InSelector &iListener, size_t bufferSize, spi::ClientContext& clientContext);
+                ReadHandler(boost::shared_ptr<Connection> connection, InSelector &iListener, size_t bufferSize,
+                            spi::ClientContext &clientContext);
 
                 ~ReadHandler();
 
@@ -52,8 +53,9 @@ namespace hazelcast {
                 void run();
 
                 int64_t getLastReadTimeMillis();
+
             private:
-                char* buffer;
+                char *buffer;
                 util::ByteBuffer byteBuffer;
 
                 protocol::ClientMessageBuilder builder;

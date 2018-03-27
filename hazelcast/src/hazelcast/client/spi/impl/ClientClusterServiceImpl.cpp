@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <boost/foreach.hpp>
+
 #include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
 #include <hazelcast/client/spi/ClientContext.h>
 #include <hazelcast/client/ClientConfig.h>

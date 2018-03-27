@@ -28,7 +28,7 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            WriteHandler::WriteHandler(Connection &connection, OutSelector &oListener, size_t bufferSize)
+            WriteHandler::WriteHandler(boost::shared_ptr<Connection> connection, OutSelector &oListener, size_t bufferSize)
                     : IOHandler(connection, oListener), ready(false), informSelector(true), lastMessage(NULL) {
             }
 
@@ -38,7 +38,7 @@ namespace hazelcast {
             }
 
             void WriteHandler::run() {
-                if (this->connection.isAlive()) {
+                if (this->connection->isAlive()) {
                     informSelector = true;
                     if (ready) {
                         handle();
@@ -73,7 +73,7 @@ namespace hazelcast {
 
                 while (NULL != lastMessage) {
                     try {
-                        numBytesWrittenToSocketForMessage += lastMessage->writeTo(connection.getSocket(),
+                        numBytesWrittenToSocketForMessage += lastMessage->writeTo(connection->getSocket(),
                                                                numBytesWrittenToSocketForMessage, lastMessageFrameLen);
 
                         if (numBytesWrittenToSocketForMessage >= lastMessageFrameLen) {
