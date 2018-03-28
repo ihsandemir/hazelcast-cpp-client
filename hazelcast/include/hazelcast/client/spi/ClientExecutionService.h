@@ -17,8 +17,7 @@
 #ifndef HAZELCAST_CLIENT_SPI_CLIENTEXECUTIONSERVICE_H_
 #define HAZELCAST_CLIENT_SPI_CLIENTEXECUTIONSERVICE_H_
 
-#include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/util/Executor.h"
+#include "hazelcast/client/spi/TaskScheduler.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -36,7 +35,7 @@ namespace hazelcast {
              * Any schedule submit or execute operation runs on internal executors.
              * When user code needs to run getUserExecutor() should be utilized
              */
-            class HAZELCAST_API ClientExecutionService : public util::Executor {
+            class HAZELCAST_API ClientExecutionService : public spi::TaskScheduler {
             public:
                 /**
                  * @return executorService that alien (user code) runs on

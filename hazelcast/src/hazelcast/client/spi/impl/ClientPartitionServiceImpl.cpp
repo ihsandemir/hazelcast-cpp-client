@@ -72,7 +72,8 @@ namespace hazelcast {
                                             Address &address = entry.first;
                                             BOOST_FOREACH(const std::vector<int32_t>::value_type &partition,
                                                           entry.second) {
-                                                            this->partitions.put(partition, address);
+                                                            this->partitions.put(partition, boost::shared_ptr<Address>(
+                                                                    new Address(address)));
                                                         }
                                         }
                             partitionCount = this->partitions.size();
@@ -91,8 +92,7 @@ namespace hazelcast {
                 void ClientPartitionServiceImpl::start() {
                     //scheduling left in place to support server versions before 3.9.
                     clientExecutionService.scheduleWithRepetition(
-                            boost::shared_ptr<util::Runnable>(new RefreshTask(client, *this)),
-                            INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+                            boost::shared_ptr<util::Runnable>(new RefreshTask(client, *this)), INITIAL_DELAY, PERIOD);
                 }
 
                 void ClientPartitionServiceImpl::listenPartitionTable(

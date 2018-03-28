@@ -17,7 +17,13 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_CLIENTEXECUTIONSERVICEIMPL_H_
 #define HAZELCAST_CLIENT_SPI_IMPL_CLIENTEXECUTIONSERVICEIMPL_H_
 
-#include "hazelcast/util/HazelcastDll.h"
+#include <vector>
+#include <boost/lockfree/queue.hpp>
+
+#include <hazelcast/util/AtomicBoolean.h>
+#include <hazelcast/util/SynchronizedMap.h>
+#include <hazelcast/util/Atomic.h>
+
 #include "hazelcast/client/spi/ClientExecutionService.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -28,6 +34,8 @@
 namespace hazelcast {
     namespace util {
         class Runnable;
+
+        class Thread;
     }
 
     namespace client {
@@ -49,11 +57,46 @@ namespace hazelcast {
                     static void
                     shutdownExecutor(const std::string &name, util::ExecutorService &executor, util::ILogger &logger);
 
+                    virtual void
+                    scheduleWithRepetition(const boost::shared_ptr<util::Runnable> &command,
+                                           int64_t initialDelayInMillis,
+                                           int64_t periodInMillis);
+
                 private:
+                    class RepeatingRunner : public util::Runnable {
+                    public:
+                        RepeatingRunner(const boost::shared_ptr<Runnable> &command, int64_t initialDelayInMillis,
+                                        int64_t periodInMillis);
+
+                        virtual void run();
+
+                        virtual const std::string getName() const;
+
+                        void shutdown();
+
+                        void setRunnerThread(const boost::shared_ptr<util::Thread> &thread);
+
+                        const boost::shared_ptr<util::Thread> &getRunnerThread() const;
+                    private:
+                        const boost::shared_ptr<util::Runnable> command;
+                        int64_t initialDelayInMillis;
+                        int64_t periodInMillis;
+                        util::AtomicBoolean live;
+                        int64_t startTimeMillis;
+                        boost::shared_ptr<util::Thread> runnerThread;
+                    };
+
+                    class RepeatingRunnerCloser {
+                    public:
+                        void operator()(const boost::shared_ptr<RepeatingRunner> &runner);
+                    };
+
                     util::ILogger &logger;
                     boost::shared_ptr<util::ExecutorService> userExecutor;
                     // TODO: Change with ScheduledExecutorService
                     boost::shared_ptr<util::ExecutorService> internalExecutor;
+
+                    boost::lockfree::queue<boost::shared_ptr<RepeatingRunner> > repeatingRunners;
                 };
             }
         }

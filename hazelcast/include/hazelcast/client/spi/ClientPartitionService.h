@@ -53,7 +53,7 @@ namespace hazelcast {
 
                 virtual int getPartitionCount() = 0;
 
-                virtual boost::shared_ptr<impl::Partition> getPartition(int partitionId) = 0;
+                virtual boost::shared_ptr<client::impl::Partition> getPartition(int partitionId) = 0;
             };
         }
     }

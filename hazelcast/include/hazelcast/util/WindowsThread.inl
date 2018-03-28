@@ -45,15 +45,19 @@ namespace hazelcast {
             }
 
             void interruptibleSleep(int seconds) {
+                interruptibleSleepMillis(seconds * 1000);
+            }
+
+            void interruptibleSleepMillis(int timeInMillis) {
                 LockGuard lock(wakeupMutex);
                 if(isInterrupted){
                     isInterrupted = false;
-                    throw hazelcast::client::exception::InterruptedException("interruptibleSleep");
+                    throw hazelcast::client::exception::InterruptedException("interruptibleSleepMillis");
                 }
-                bool wokenUpbyInterruption = wakeupCondition.waitFor(wakeupMutex, seconds * 1000);
+                bool wokenUpbyInterruption = wakeupCondition.waitFor(wakeupMutex, timeInMillis);
                 if(wokenUpbyInterruption && isInterrupted){
                     isInterrupted = false;
-                    throw hazelcast::client::exception::InterruptedException("interruptibleSleep");
+                    throw hazelcast::client::exception::InterruptedException("interruptibleSleepMillis");
                 }
             }
 

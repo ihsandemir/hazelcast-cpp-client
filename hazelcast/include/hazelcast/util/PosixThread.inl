@@ -42,8 +42,12 @@ namespace hazelcast {
             }
 
             void interruptibleSleep(int seconds) {
+                interruptibleSleepMillis(seconds * 1000);
+            }
+
+            void interruptibleSleepMillis(int timeInMillis) {
                 LockGuard guard(wakeupMutex);
-                wakeupCondition.waitFor(wakeupMutex, seconds * 1000);
+                wakeupCondition.waitFor(wakeupMutex, timeInMillis);
             }
 
             void wakeup() {
