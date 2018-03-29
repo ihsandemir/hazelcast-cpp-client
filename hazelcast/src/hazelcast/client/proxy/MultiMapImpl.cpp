@@ -164,18 +164,15 @@ namespace hazelcast {
             }
 
             std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
-                        new protocol::codec::MultiMapAddEntryListenerCodec(getName(), includeValue, false));
-
-                return registerListener(addCodec, entryEventHandler);
+                return registerListener(createMultiMapEntryListenerCodec(includeValue), entryEventHandler);
             }
 
             std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
-                                                       const serialization::pimpl::Data &key, bool includeValue) {
+                                                       serialization::pimpl::Data &key, bool includeValue) {
                 std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
                         new protocol::codec::MultiMapAddEntryListenerToKeyCodec(getName(), key, includeValue, false));
 
-                return registerListener(addCodec, entryEventHandler);
+                return registerListener(createMultiMapEntryListenerCodec(includeValue, key), entryEventHandler);
             }
 
             bool MultiMapImpl::removeEntryListener(const std::string &registrationId) {

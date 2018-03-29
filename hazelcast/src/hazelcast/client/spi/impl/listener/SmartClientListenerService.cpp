@@ -21,7 +21,7 @@
 #include <hazelcast/client/Member.h>
 #include "hazelcast/client/spi/impl/listener/SmartClientListenerService.h"
 #include "hazelcast/client/spi/ClientContext.h"
-#include "hazelcast/client/spi/ClusterService.h"
+#include <hazelcast/client/spi/ClientClusterService.h>
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -52,7 +52,7 @@ namespace hazelcast {
 */
                         trySyncConnectToAllMembers();
 
-                        boost::shared_ptr<util::Callable> task(
+                        boost::shared_ptr<util::Callable<std::string> > task(
                                 new RegisterListenerTask(registrations, listenerMessageCodec, handler,
                                                          clientConnectionManager, *this));
                         return registrationExecutor.submit<std::string>(task)->get();
@@ -65,20 +65,21 @@ namespace hazelcast {
 */
 
                         boost::shared_ptr<util::Future<bool> > future = registrationExecutor.submit(
-                                boost::shared_ptr<util::Callable>(new DeRegisterListenerTask(*this, registrationId)));
+                                boost::shared_ptr<util::Callable<bool> >(
+                                        new DeRegisterListenerTask(*this, registrationId)));
 
                         return future->get();
                     }
 
                     void SmartClientListenerService::trySyncConnectToAllMembers() {
-                        ClientExecutionServiceImpl &clientClusterService = clientContext.getClientClusterService();
+                        ClientClusterService &clientClusterService = clientContext.getClientClusterService();
                         int64_t startMillis = util::currentTimeMillis();
 
                         do {
                             Member lastFailedMember;
                             boost::shared_ptr<exception::IException> lastException;
 
-                            BOOST_FOREACH (Member &member, clientClusterService.getMemberList()) {
+                            BOOST_FOREACH (const Member &member, clientClusterService.getMemberList()) {
                                             try {
                                                 clientConnectionManager.getOrConnect(member.getAddress());
                                             } catch (exception::IException &e) {
@@ -119,14 +120,14 @@ namespace hazelcast {
                                                                                int64_t elapsedMillis,
                                                                                const Member &lastFailedMember,
                                                                                boost::shared_ptr<exception::IException> &lastException) {
-                        throw exception::OperationTimeoutException(
+                        throw (exception::ExceptionBuilder<exception::OperationTimeoutException>(
                                 "SmartClientListenerService::throwOperationTimeoutException")
                                 << "Registering listeners is timed out."
                                 << " Last failed member : " << lastFailedMember << ", "
                                 << " Current time: " << util::StringUtil::timeToString(nowInMillis) << ", "
                                 << " Start time : " << util::StringUtil::timeToString(startMillis) << ", "
                                 << " Client invocation timeout : " << invocationTimeoutMillis << " ms, "
-                                << " Elapsed time : " << elapsedMillis << " ms. " << *lastException;
+                                << " Elapsed time : " << elapsedMillis << " ms. " << *lastException).build();
 
                     }
 
@@ -137,21 +138,21 @@ namespace hazelcast {
 
                     void
                     SmartClientListenerService::invoke(const boost::shared_ptr<ClientRegistrationKey> &registrationKey,
-                                                       boost::shared_ptr<connection::Connection> &connection) {
+                                                       const boost::shared_ptr<connection::Connection> &connection) {
                         //This method should only be called from registrationExecutor
 /*                      TODO
                         assert (Thread.currentThread().getName().contains("eventRegistration"));
 */
 
-                        const boost::shared_ptr<ConnectionRegistrationsMap> &registrationMap = registrations.get(
-                                *registrationKey);
+                        boost::shared_ptr<ConnectionRegistrationsMap> registrationMap = registrations.get(
+                                                        *registrationKey);
                         if (registrationMap->find(connection) != registrationMap->end()) {
                             return;
                         }
 
                         const boost::shared_ptr<ListenerMessageCodec> &codec = registrationKey->getCodec();
                         std::auto_ptr<protocol::ClientMessage> request = codec->encodeAddRequest(true);
-                        boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler = registrationKey->getHandler();
+                        boost::shared_ptr<EventHandler<protocol::ClientMessage> > handler = registrationKey->getHandler();
                         handler->beforeListenerRegister();
 
                         boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
@@ -187,7 +188,7 @@ namespace hazelcast {
                         bool successful = true;
 
                         for (ConnectionRegistrationsMap::iterator it = registrationMap->begin();
-                             it != registrationMap->end; ++it) {
+                             it != registrationMap->end(); ++it) {
                             const boost::shared_ptr<ClientEventRegistration> &registration = (*it).second;
                             boost::shared_ptr<connection::Connection> subscriber = registration->getSubscriber();
                             try {
@@ -204,9 +205,10 @@ namespace hazelcast {
                             } catch (exception::IException &e) {
                                 if (subscriber->isAlive()) {
                                     successful = false;
-                                    logger.warning("SmartClientListenerService::deregisterListenerInternal")
-                                            << "Deregistration of listener with ID " + userRegistrationId
-                                            << " has failed to address " << subscriber->getRemoteEndpoint() << e;
+                                    logger.warning() << "SmartClientListenerService::deregisterListenerInternal"
+                                                     << "Deregistration of listener with ID " << userRegistrationId
+                                                     << " has failed to address " << subscriber->getRemoteEndpoint()
+                                                     << e;
                                 }
                             }
                         }
@@ -219,7 +221,7 @@ namespace hazelcast {
                     SmartClientListenerService::RegisterListenerTask::RegisterListenerTask(
                             SmartClientListenerService::RegistrationsMap &registrations,
                             const boost::shared_ptr<ListenerMessageCodec> &listenerMessageCodec,
-                            const boost::shared_ptr<EventHandler<protocol::ClientMessage>> &handler,
+                            const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler,
                             connection::ClientConnectionManagerImpl &clientConnectionManager,
                             SmartClientListenerService &listenerService) : registrations(registrations),
                                                                            listenerMessageCodec(listenerMessageCodec),
@@ -230,8 +232,9 @@ namespace hazelcast {
                     std::string SmartClientListenerService::RegisterListenerTask::call() {
                         std::string userRegistrationId = util::UuidUtil::newUnsecureUuidString();
 
-                        ClientRegistrationKey registrationKey(userRegistrationId, handler, listenerMessageCodec);
-                        registrations.put(registrationKey, boost::shared_ptr<ConnectionRegistrationsMap>(
+                        boost::shared_ptr<ClientRegistrationKey> registrationKey(
+                                new ClientRegistrationKey(userRegistrationId, handler, listenerMessageCodec));
+                        registrations.put(*registrationKey, boost::shared_ptr<ConnectionRegistrationsMap>(
                                 new ConnectionRegistrationsMap()));
                         BOOST_FOREACH (const boost::shared_ptr<connection::Connection> &connection,
                                        clientConnectionManager.getActiveConnections()) {
@@ -240,9 +243,9 @@ namespace hazelcast {
                                         } catch (exception::IException &e) {
                                             if (connection->isAlive()) {
                                                 listenerService.deregisterListenerInternal(userRegistrationId);
-                                                throw exception::HazelcastException(
+                                                throw (exception::ExceptionBuilder<exception::HazelcastException>(
                                                         "SmartClientListenerService::RegisterListenerTask::call")
-                                                        << "Listener can not be added " << e;
+                                                        << "Listener can not be added " << e).build();
                                             }
                                         }
                                     }
@@ -263,6 +266,5 @@ namespace hazelcast {
                 }
             }
         }
-
     }
 }

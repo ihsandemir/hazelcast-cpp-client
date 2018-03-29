@@ -86,7 +86,7 @@ namespace hazelcast {
                         /** Returns the last issued call ID.
                          * <strong>ONLY FOR TESTING. Must not be used for production code.</strong>
                          */
-                        virtual int64_t getLastCallId() const = 0;
+                        virtual int64_t getLastCallId() = 0;
                     };
                 }
             }

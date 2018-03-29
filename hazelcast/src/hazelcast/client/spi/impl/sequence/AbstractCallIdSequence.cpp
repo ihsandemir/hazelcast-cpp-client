@@ -26,9 +26,10 @@ namespace hazelcast {
 
                     AbstractCallIdSequence::AbstractCallIdSequence(int32_t maxConcurrentInvocations) : longs(
                             3 * util::Bits::CACHE_LINE_LENGTH / util::Bits::LONG_SIZE_IN_BYTES) {
-                        util::Preconditions::checkPositive(maxConcurrentInvocations, std::string(
-                                "maxConcurrentInvocations should be a positive number. maxConcurrentInvocations=") +
-                                                                                     maxConcurrentInvocations);
+                        std::ostringstream out;
+                        out << "maxConcurrentInvocations should be a positive number. maxConcurrentInvocations="
+                                << maxConcurrentInvocations;
+                        util::Preconditions::checkPositive(maxConcurrentInvocations, out.str());
 
                         this->maxConcurrentInvocations = maxConcurrentInvocations;
                     }

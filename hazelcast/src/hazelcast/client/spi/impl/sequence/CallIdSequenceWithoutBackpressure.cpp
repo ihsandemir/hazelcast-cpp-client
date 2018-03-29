@@ -37,12 +37,11 @@ namespace hazelcast {
                         // no-op
                     }
 
-                    int64_t CallIdSequenceWithoutBackpressure::getLastCallId() const {
+                    int64_t CallIdSequenceWithoutBackpressure::getLastCallId() {
                         return head;
                     }
                 }
-                }
             }
-
         }
     }
+}

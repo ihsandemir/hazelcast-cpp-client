@@ -27,9 +27,10 @@ namespace hazelcast {
                             : AbstractCallIdSequence(maxConcurrentInvocations) {}
 
                     void FailFastCallIdSequence::handleNoSpaceLeft() {
-                        throw exception::HazelcastOverloadException(
-                                std::string("Maximum invocation count is reached. maxConcurrentInvocations = ") +
-                                getMaxConcurrentInvocations());
+                        throw (exception::ExceptionBuilder<exception::HazelcastOverloadException>(
+                                "FailFastCallIdSequence::handleNoSpaceLeft")
+                                << "Maximum invocation count is reached. maxConcurrentInvocations = "
+                                << getMaxConcurrentInvocations()).build();
 
                     }
                 }

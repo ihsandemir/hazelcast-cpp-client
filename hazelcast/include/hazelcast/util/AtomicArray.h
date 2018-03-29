@@ -20,7 +20,8 @@
 #include <vector>
 
 #include "hazelcast/util/Mutex.h"
-#include "LockGuard.h"
+#include "hazelcast/util/LockGuard.h"
+#include "hazelcast/client/exception/ProtocolExceptions.h"
 
 namespace hazelcast {
     namespace util {
@@ -78,8 +79,8 @@ namespace hazelcast {
 
             void checkIndexBound(size_t i) {
                 if (i >= array.size()) {
-                    throw client::exception::IndexOutOfBoundsException("AtomicArray::checkIndexBound",
-                                                                       std::string("index ") + i);
+                    throw (client::exception::ExceptionBuilder<client::exception::IndexOutOfBoundsException>(
+                            "AtomicArray::checkIndexBound") << "index " << i).build();
                 }
             }
         };

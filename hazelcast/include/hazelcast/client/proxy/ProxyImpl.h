@@ -21,8 +21,6 @@
 
 #include <hazelcast/client/spi/impl/ListenerMessageCodec.h>
 #include "hazelcast/client/protocol/codec/IRemoveListenerCodec.h"
-#include "hazelcast/client/connection/CallFuture.h"
-#include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/protocol/ClientMessage.h"

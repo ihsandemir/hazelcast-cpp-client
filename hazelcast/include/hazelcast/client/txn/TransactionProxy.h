@@ -27,7 +27,6 @@
 
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/connection/CallFuture.h"
 #include <boost/shared_ptr.hpp>
 #include <vector>
 
@@ -53,6 +52,10 @@ namespace hazelcast {
             namespace pimpl {
                 class SerializationService;
             }
+        }
+
+        namespace protocol {
+            class ClientMessage;
         }
 
         namespace txn {
@@ -100,9 +103,11 @@ namespace hazelcast {
 
                 serialization::pimpl::SerializationService& getSerializationService();
 
-                spi::InvocationService& getInvocationService();
+                spi::ClientInvocationService& getInvocationService();
 
                 boost::shared_ptr<connection::Connection> getConnection();
+
+                spi::ClientContext &getClientContext() const;
 
             private:
                 TransactionOptions& options;
@@ -121,7 +126,7 @@ namespace hazelcast {
 
                 void checkTimeout();
 
-                std::auto_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request);
+                boost::shared_ptr<protocol::ClientMessage> invoke(std::auto_ptr<protocol::ClientMessage> request);
             };
         }
     }

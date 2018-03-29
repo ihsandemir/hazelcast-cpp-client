@@ -114,7 +114,7 @@ namespace hazelcast {
             virtual ~Future() {
             }
 
-            void set_value(T &value) {
+            void set_value(const T &value) {
                 LockGuard guard(mutex);
                 if (exceptionReady || resultReady) {
                     logger.warning(std::string("Future.set_value should not be called twice"));
@@ -160,7 +160,7 @@ namespace hazelcast {
                 onComplete();
             }
 
-            void complete(T &value) {
+            void complete(const T &value) {
                 set_value(value);
             }
 

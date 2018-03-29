@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 
-#include "hazelcast/util/concurrent/IdleStrategy.h
+#include "hazelcast/util/concurrent/IdleStrategy.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

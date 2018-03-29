@@ -18,6 +18,7 @@
 #include <boost/foreach.hpp>
 #include "hazelcast/client/spi/impl/AwsAddressProvider.h"
 #include "hazelcast/client/config/ClientNetworkConfig.h"
+#include "hazelcast/util/AddressHelper.h"
 
 namespace hazelcast {
     namespace client {

@@ -55,7 +55,7 @@ namespace hazelcast {
             class ClientExceptionFactory;
         }
         namespace spi {
-            class InvocationService;
+            class ClientInvocationService;
 
             class ClientPartitionService;
 

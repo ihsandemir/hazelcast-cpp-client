@@ -24,15 +24,6 @@
 
 namespace hazelcast {
     namespace client {
-
-        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster,
-                                                       const std::vector<boost::shared_ptr<Member> > &members)
-                : cluster(cluster) {
-            BOOST_FOREACH(const boost::shared_ptr<Member> &member, members) {
-                            this->members.push_back(Member(*member));
-                        }
-        }
-
         const std::vector<Member> &InitialMembershipEvent::getMembers() const {
             return members;
         }
@@ -47,6 +38,10 @@ namespace hazelcast {
                             this->members.push_back(Member(member));
                         }
 
+        }
+
+        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster, const std::vector<Member> &members) : members(
+                members), cluster(cluster) {
         }
     }
 }

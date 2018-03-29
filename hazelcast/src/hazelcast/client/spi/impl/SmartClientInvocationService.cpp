@@ -17,7 +17,7 @@
 #include "hazelcast/client/spi/impl/SmartClientInvocationService.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/ClientPartitionService.h"
-#include "hazelcast/client/spi/ClusterService.h"
+#include <hazelcast/client/spi/ClientClusterService.h>
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 
 namespace hazelcast {
@@ -39,14 +39,14 @@ namespace hazelcast {
                         boost::shared_ptr<impl::ClientInvocation> invocation, int partitionId) {
                     boost::shared_ptr<Address> owner = partitionService.getPartitionOwner(partitionId);
                     if (owner.get() == NULL) {
-                        throw exception::ExceptionBuilder<exception::IOException>(
+                        throw (exception::ExceptionBuilder<exception::IOException>(
                                 "SmartClientInvocationService::invokeOnPartitionOwner")
-                                << "Partition does not have an owner. partitionId: " << partitionId;
+                                << "Partition does not have an owner. partitionId: " << partitionId).build();
                     }
                     if (!isMember(*owner)) {
-                        throw exception::ExceptionBuilder<exception::TargetNotMemberException>(
+                        throw (exception::ExceptionBuilder<exception::TargetNotMemberException>(
                                 "SmartClientInvocationService::invokeOnPartitionOwner") << "Partition owner '" << *owner
-                                                                                        << "' is not a member.";
+                                                                                        << "' is not a member.").build();
                     }
                     invocation->getClientMessage()->setPartitionId(partitionId);
                     boost::shared_ptr<connection::Connection> connection = getOrTriggerConnect(owner);
@@ -57,9 +57,9 @@ namespace hazelcast {
                         boost::shared_ptr<impl::ClientInvocation> invocation) {
                     boost::shared_ptr<Address> randomAddress = getRandomAddress();
                     if (randomAddress.get() == NULL) {
-                        throw exception::ExceptionBuilder<exception::IOException>(
+                        throw (exception::ExceptionBuilder<exception::IOException>(
                                 "SmartClientInvocationService::invokeOnRandomTarget")
-                                << "No address found to invoke";
+                                << "No address found to invoke").build();
                     }
                     boost::shared_ptr<connection::Connection> connection = getOrTriggerConnect(randomAddress);
                     send(invocation, connection);
@@ -68,9 +68,9 @@ namespace hazelcast {
                 void SmartClientInvocationService::invokeOnTarget(boost::shared_ptr<impl::ClientInvocation> invocation,
                                                                   const boost::shared_ptr<Address> &target) {
                     if (!isMember(*target)) {
-                        throw exception::ExceptionBuilder<exception::TargetNotMemberException>(
+                        throw (exception::ExceptionBuilder<exception::TargetNotMemberException>(
                                 "SmartClientInvocationService::invokeOnTarget")
-                                << "Target '" << target << "' is not a member.";
+                                << "Target '" << target << "' is not a member.").build();
                     }
                     boost::shared_ptr<connection::Connection> connection = getOrTriggerConnect(target);
                     invokeOnConnection(invocation, connection);
@@ -78,28 +78,27 @@ namespace hazelcast {
                 }
 
                 bool SmartClientInvocationService::isMember(const Address &target) const {
-                    std::auto_ptr<Member> member = client.getClientClusterService().getMember(target);
+                    boost::shared_ptr<Member> member = client.getClientClusterService().getMember(target);
                     return member.get() != NULL;
                 }
 
                 boost::shared_ptr<connection::Connection>
                 SmartClientInvocationService::getOrTriggerConnect(const boost::shared_ptr<Address> &target) const {
                     boost::shared_ptr<connection::Connection> connection = connectionManager.getOrTriggerConnect(
-                            target);
+                            *target);
                     if (connection.get() == NULL) {
-                        throw exception::ExceptionBuilder<exception::IOException>(
+                        throw (exception::ExceptionBuilder<exception::IOException>(
                                 "SmartClientInvocationService::getOrTriggerConnect")
-                                << "No available connection to address " << target;
+                                << "No available connection to address " << target).build();
                     }
                     return connection;
                 }
 
                 boost::shared_ptr<Address> SmartClientInvocationService::getRandomAddress() {
+                    // TODO: Change loadBalancer to return pointer as in Java so that it is possible to denote the
+                    // case where no address can be provided
                     Member member = loadBalancer.next();
-                    if (member.getUuid() != NULL) {
-                        return boost::shared_ptr<Address>(new Address(member.getAddress()));
-                    }
-                    return boost::shared_ptr<Address>();
+                    return boost::shared_ptr<Address>(new Address(member.getAddress()));
                 }
             }
         }

@@ -26,11 +26,9 @@
 #include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/connection/CallPromise.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/client/connection/OutputSocketStream.h"
 #include "hazelcast/client/connection/InputSocketStream.h"
-#include "hazelcast/client/connection/CallFuture.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/internal/socket/TcpSocket.h"
 #include "hazelcast/util/Util.h"
@@ -169,28 +167,6 @@ namespace hazelcast {
                 return connectionId;
             }
 
-            std::ostream &operator<<(std::ostream &out, const Connection &connection) {
-                Connection &conn = const_cast<Connection &>(connection);
-                int64_t lastRead = conn.lastReadTimeMillis();
-                int64_t closedTime = conn.closedTimeMillis;
-                int64_t lastHeartBeatRequestedTime = conn.lastHeartbeatRequestedMillis;
-                int64_t lastHeartBeatReceivedTime = conn.lastHeartbeatReceivedMillis;
-                out << "ClientConnection{"
-                    << "alive=" << conn.isAlive()
-                    << ", connectionId=" << connection.getConnectionId()
-                    << ", remoteEndpoint=" << connection.getRemoteEndpoint()
-                    << ", lastReadTime=" << util::StringUtil::timeToStringFriendly(lastRead)
-                    << ", closedTime=" << util::StringUtil::timeToStringFriendly(closedTime)
-                    << ", lastHeartbeatRequested=" << util::StringUtil::timeToStringFriendly(lastHeartBeatRequestedTime)
-                    << ", lastHeartbeatReceived=" << util::StringUtil::timeToStringFriendly(lastHeartBeatReceivedTime)
-                    << ", isHeartbeating=" << conn.isHeartBeating()
-                    << ", connected server version=" << conn.connectedServerVersionString
-                    << '}';
-
-                return out;
-
-            }
-
             bool Connection::isAlive() {
                 return closedTimeMillis.get() == 0;
             }
@@ -292,6 +268,26 @@ namespace hazelcast {
                 socket->close();
             }
 
+            std::ostream &operator<<(std::ostream &os, const Connection &connection) {
+                Connection &conn = const_cast<Connection &>(connection);
+                int64_t lastRead = conn.lastReadTimeMillis();
+                int64_t closedTime = conn.closedTimeMillis;
+                int64_t lastHeartBeatRequestedTime = conn.lastHeartbeatRequestedMillis;
+                int64_t lastHeartBeatReceivedTime = conn.lastHeartbeatReceivedMillis;
+                os << "ClientConnection{"
+                   << "alive=" << conn.isAlive()
+                   << ", connectionId=" << connection.getConnectionId()
+                   << ", remoteEndpoint=" << connection.getRemoteEndpoint()
+                   << ", lastReadTime=" << util::StringUtil::timeToStringFriendly(lastRead)
+                   << ", closedTime=" << util::StringUtil::timeToStringFriendly(closedTime)
+                   << ", lastHeartbeatRequested=" << util::StringUtil::timeToStringFriendly(lastHeartBeatRequestedTime)
+                   << ", lastHeartbeatReceived=" << util::StringUtil::timeToStringFriendly(lastHeartBeatReceivedTime)
+                   << ", isHeartbeating=" << conn.isHeartBeating()
+                   << ", connected server version=" << conn.connectedServerVersionString
+                   << '}';
+
+                return os;
+            }
         }
     }
 }

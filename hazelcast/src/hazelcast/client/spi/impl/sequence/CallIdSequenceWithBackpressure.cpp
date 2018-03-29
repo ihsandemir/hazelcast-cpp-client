@@ -33,8 +33,9 @@ namespace hazelcast {
                     CallIdSequenceWithBackpressure::CallIdSequenceWithBackpressure(int32_t maxConcurrentInvocations,
                                                                                    int64_t backoffTimeoutMs)
                             : AbstractCallIdSequence(maxConcurrentInvocations) {
-                        util::Preconditions::checkPositive(backoffTimeoutMs, std::string(
-                                "backoffTimeoutMs should be a positive number. backoffTimeoutMs=") + backoffTimeoutMs);
+                        std::ostringstream out;
+                        out << "backoffTimeoutMs should be a positive number. backoffTimeoutMs=" << backoffTimeoutMs;
+                        util::Preconditions::checkPositive(backoffTimeoutMs, out.str());
 
                         backoffTimeoutNanos = boost::posix_time::milliseconds(backoffTimeoutMs).total_nanoseconds();
                     }
@@ -65,3 +66,4 @@ namespace hazelcast {
 
         }
     }
+}

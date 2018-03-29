@@ -120,8 +120,6 @@ namespace hazelcast {
 
                 int32_t getPendingPacketCount();
 
-                friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
-
                 bool operator==(const Connection &rhs) const;
 
                 bool operator!=(const Connection &rhs) const;
@@ -133,6 +131,8 @@ namespace hazelcast {
                 std::auto_ptr<Address> getLocalSocketAddress() const;
 
                 int getConnectedServerVersion() const;
+
+                friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
 
             private:
                 util::Atomic<int64_t> closedTimeMillis;

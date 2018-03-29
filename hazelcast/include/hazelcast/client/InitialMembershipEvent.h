@@ -46,11 +46,7 @@ namespace hazelcast {
          */
         class HAZELCAST_API InitialMembershipEvent {
         public:
-
-            /**
-             * Constructor
-             */
-            InitialMembershipEvent(Cluster &cluster, const std::vector<boost::shared_ptr<Member> > &members);
+            InitialMembershipEvent(Cluster &cluster, const std::vector<Member> &members);
 
             InitialMembershipEvent(Cluster &cluster, const std::set<Member> &members);
 

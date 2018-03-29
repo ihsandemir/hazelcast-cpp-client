@@ -47,6 +47,18 @@ namespace hazelcast {
             class HAZELCAST_API TaskScheduler : public util::Executor {
             public:
                 /**
+                 * Creates and executes a one-shot action that becomes enabled
+                 * after the given delay.
+                 *
+                 * @param command the task to execute
+                 * @param delay the time from now to delay execution
+                 * @throws RejectedExecutionException if the task cannot be
+                 *         scheduled for execution
+                 * @throws NullPointerException if command is null
+                 */
+                virtual void schedule(const boost::shared_ptr<util::Runnable> &command, int64_t initialDelayInMillis) = 0;
+
+                /**
                  * Creates and executes a periodic action that becomes enabled first
                  * after the given initial delay, and subsequently with the given
                  * period. Executions will commence after

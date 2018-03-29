@@ -76,10 +76,24 @@ namespace hazelcast {
                 protected:
                     ClientContext &client;
                 private:
+                    class MembershipListenerDelegator : public MembershipListener {
+                    public:
+                        MembershipListenerDelegator(MembershipListener *listener);
+
+                    private:
+                        virtual void memberAdded(const MembershipEvent &membershipEvent);
+
+                        virtual void memberRemoved(const MembershipEvent &membershipEvent);
+
+                        virtual void memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent);
+
+                    private:
+                        MembershipListener *listener;
+                    };
+
                     boost::shared_ptr<ClientMembershipListener> clientMembershipListener;
                     util::Atomic<std::map<Address, boost::shared_ptr<Member> > > members;
-                    util::SynchronizedValueMap<std::string, MembershipListener *> listeners;
-                    util::SynchronizedValueMap<std::string, const boost::shared_ptr<MembershipListener> > managedListeners;
+                    util::SynchronizedValueMap<std::string, boost::shared_ptr<MembershipListener> > listeners;
                     util::Mutex initialMembershipListenerMutex;
 
                     std::string addMembershipListenerWithoutInit(MembershipListener *listener);

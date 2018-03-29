@@ -50,7 +50,7 @@ namespace hazelcast {
                         virtual bool deregisterListener(const std::string &registrationId);
 
                     private:
-                        typedef std::map<const boost::shared_ptr<connection::Connection>, const boost::shared_ptr<ClientEventRegistration> > ConnectionRegistrationsMap;
+                        typedef std::map<boost::shared_ptr<connection::Connection>, boost::shared_ptr<ClientEventRegistration> > ConnectionRegistrationsMap;
                         typedef util::SynchronizedMap<ClientRegistrationKey, ConnectionRegistrationsMap> RegistrationsMap;
 
                         class RegisterListenerTask : public util::Callable<std::string> {
@@ -105,7 +105,7 @@ namespace hazelcast {
                         void sleepBeforeNextTry();
 
                         void invoke(const boost::shared_ptr<ClientRegistrationKey> &registrationKey,
-                                    boost::shared_ptr<connection::Connection> &connection);
+                                    const boost::shared_ptr<connection::Connection> &connection);
 
                         bool deregisterListenerInternal(const std::string &userRegistrationId);
                     };

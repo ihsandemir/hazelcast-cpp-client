@@ -21,6 +21,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
+#include "ClientClusterServiceImpl.h"
 #include <hazelcast/client/protocol/codec/ClientAddMembershipListenerCodec.h>
 #include <hazelcast/util/CountDownLatch.h>
 #include <hazelcast/client/MembershipEvent.h>
@@ -31,13 +32,14 @@
 #endif
 
 namespace hazelcast {
-    namespace exception {
-        class IException;
-    }
     namespace util {
         class ILogger;
     }
     namespace client {
+        namespace exception {
+            class IException;
+        }
+
         namespace connection {
             class ClientConnectionManagerImpl;
 
@@ -47,9 +49,8 @@ namespace hazelcast {
         namespace spi {
             class ClientContext;
 
-            class PartitionService;
-
             namespace impl {
+                class ClientPartitionServiceImpl;
                 class ClientClusterServiceImpl;
 
                 class HAZELCAST_API ClientMembershipListener
@@ -65,8 +66,8 @@ namespace hazelcast {
                                                              const int32_t &operationType,
                                                              std::auto_ptr<std::string> value);
 
-                    static void listenMembershipEvents(boost::shared_ptr<ClientMembershipListener> listener,
-                                                       boost::shared_ptr<connection::Connection> &ownerConnection);
+                    static void listenMembershipEvents(const boost::shared_ptr<ClientMembershipListener> &listener,
+                                                       const boost::shared_ptr<connection::Connection> &ownerConnection);
 
                 private:
                     static int INITIAL_MEMBERS_TIMEOUT_SECONDS;
@@ -75,7 +76,7 @@ namespace hazelcast {
                     util::ILogger &logger;
                     std::set<Member> members;
                     ClientClusterServiceImpl &clusterService;
-                    PartitionService &partitionService;
+                    ClientPartitionServiceImpl &partitionService;
                     connection::ClientConnectionManagerImpl &connectionManager;
                     util::Atomic<boost::shared_ptr<util::CountDownLatch> > initialListFetchedLatch;
 
@@ -86,7 +87,7 @@ namespace hazelcast {
                     void memberRemoved(const Member &member);
 
                     boost::shared_ptr<exception::IException> newTargetDisconnectedExceptionCausedByMemberLeftEvent(
-                            const boost::shared_ptr<connection::Connection> connection);
+                            const boost::shared_ptr<connection::Connection> &connection);
 
                     std::vector<MembershipEvent> detectMembershipEvents(std::map<std::string, Member> &prevMembers);
 

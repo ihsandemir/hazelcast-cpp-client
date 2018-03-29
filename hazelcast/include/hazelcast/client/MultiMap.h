@@ -220,7 +220,8 @@ namespace hazelcast {
                         new impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(
                                 getName(), context->getClientClusterService(), context->getSerializationService(), listener,
                                 includeValue);
-                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, toData(key), includeValue);
+                serialization::pimpl::Data keyData = toData(key);
+                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, keyData, includeValue);
             }
 
             /**

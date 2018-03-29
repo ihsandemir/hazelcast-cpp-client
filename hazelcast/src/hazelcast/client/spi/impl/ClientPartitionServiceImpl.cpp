@@ -21,7 +21,7 @@
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
-#include "hazelcast/client/spi/ClientExecutionService.h"
+#include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/protocol/codec/ClientGetPartitionsCodec.h"
 #include "hazelcast/client/impl/BuildInfo.h"
@@ -54,8 +54,7 @@ namespace hazelcast {
 
                 ClientPartitionServiceImpl::ClientPartitionServiceImpl(ClientContext &client) : client(client),
                                                                                                 logger(util::ILogger::getLogger()),
-                                                                                                clientExecutionService(
-                                                                                                        static_cast<ClientExecutionService &>(client.getClientExecutionService())),
+                                                                                                clientExecutionService(client.getClientExecutionService()),
                                                                                                 refreshTaskCallback(
                                                                                                         new RefreshTaskCallback(
                                                                                                                 *this)) {
@@ -69,7 +68,7 @@ namespace hazelcast {
                         if (!partitionStateVersionExist || partitionStateVersion > lastPartitionStateVersion) {
                             typedef std::vector<std::pair<Address, std::vector<int32_t> > > PARTITION_VECTOR;
                             BOOST_FOREACH(const PARTITION_VECTOR::value_type &entry, partitions) {
-                                            Address &address = entry.first;
+                                            const Address &address = entry.first;
                                             BOOST_FOREACH(const std::vector<int32_t>::value_type &partition,
                                                           entry.second) {
                                                             this->partitions.put(partition, boost::shared_ptr<Address>(
@@ -184,13 +183,17 @@ namespace hazelcast {
                 }
 
                 bool ClientPartitionServiceImpl::isClusterFormedByOnlyLiteMembers() {
-                    ClientClusterServiceImpl &clusterService = client.getClientClusterService();
+                    ClientClusterService &clusterService = client.getClientClusterService();
                     BOOST_FOREACH(const std::vector<Member>::value_type &member, clusterService.getMemberList()) {
                                     if (!member.isLiteMember()) {
                                         return false;
                                     }
                                 }
                     return true;
+                }
+
+                void ClientPartitionServiceImpl::stop() {
+                    partitions.clear();
                 }
 
                 void ClientPartitionServiceImpl::RefreshTask::run() {

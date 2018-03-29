@@ -55,7 +55,7 @@ namespace hazelcast {
 
                 std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
 
-                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, const serialization::pimpl::Data& key, bool includeValue);
+                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, serialization::pimpl::Data& key, bool includeValue);
 
                 bool removeEntryListener(const std::string& registrationId);
 
@@ -115,7 +115,7 @@ namespace hazelcast {
                 boost::shared_ptr<spi::impl::ListenerMessageCodec> createMultiMapEntryListenerCodec(bool includeValue);
 
                 boost::shared_ptr<spi::impl::ListenerMessageCodec>
-                createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &predicate);
+                createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &key);
 
             };
         }

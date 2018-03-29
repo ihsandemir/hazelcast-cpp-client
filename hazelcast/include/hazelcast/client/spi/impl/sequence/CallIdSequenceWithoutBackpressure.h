@@ -42,7 +42,7 @@ namespace hazelcast {
 
                         virtual void complete();
 
-                        virtual int64_t getLastCallId() const;
+                        virtual int64_t getLastCallId();
 
                     private:
                         util::Atomic<int64_t> head;

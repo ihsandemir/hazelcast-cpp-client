@@ -61,7 +61,7 @@ namespace hazelcast {
                         public:
                             static const int TYPE;
 
-                            std::vector<std::pair<Address, std::vector<int32_t>>> partitions;
+                            std::vector<std::pair<Address, std::vector<int32_t> > > partitions;
                                                         int32_t partitionStateVersion;
                             
                             static ResponseParameters decode(ClientMessage &clientMessage);

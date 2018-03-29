@@ -64,7 +64,7 @@ namespace hazelcast {
 
             void SimpleExecutorService::execute(const boost::shared_ptr<Runnable> &command) {
                 if (command.get() == NULL) {
-                    throw client::exception::IException("SimpleExecutor::execute", "command can't be null");
+                    throw client::exception::NullPointerException("SimpleExecutor::execute", "command can't be null");
                 }
 
                 if (!live) {

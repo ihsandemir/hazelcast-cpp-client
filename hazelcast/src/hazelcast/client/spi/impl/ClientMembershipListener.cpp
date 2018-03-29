@@ -19,10 +19,12 @@
 #include <hazelcast/client/InitialMembershipEvent.h>
 #include <hazelcast/util/ILogger.h>
 #include <hazelcast/client/spi/ClientContext.h>
-#include <hazelcast/client/spi/ClientPartitionService.h>
-#include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
+#include <hazelcast/client/spi/impl/ClientPartitionServiceImpl.h>
+#include <hazelcast/client/spi/ClientClusterService.h>
+#include <hazelcast/client/spi/impl/ClientInvocation.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
 #include <hazelcast/client/connection/Connection.h>
+#include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
 
 namespace hazelcast {
     namespace client {
@@ -32,8 +34,8 @@ namespace hazelcast {
 
                 ClientMembershipListener::ClientMembershipListener(ClientContext &client)
                         : client(client), logger(util::ILogger::getLogger()),
-                          clusterService(client.getClientClusterService()),
-                          partitionService(client.getPartitionService()),
+                          clusterService(static_cast<ClientClusterServiceImpl &>(client.getClientClusterService())),
+                          partitionService((ClientPartitionServiceImpl &) client.getPartitionService()),
                           connectionManager(client.getConnectionManager()) {}
 
                 void ClientMembershipListener::handleMember(const Member &member, const int32_t &eventType) {
@@ -107,7 +109,7 @@ namespace hazelcast {
                 void ClientMembershipListener::memberRemoved(const Member &member) {
                     members.erase(member);
                     logger.info() << membersString();
-                    const boost::shared_ptr<connection::Connection> &connection = connectionManager.getActiveConnection(
+                    boost::shared_ptr<connection::Connection> connection = connectionManager.getActiveConnection(
                             member.getAddress());
                     if (connection.get() != NULL) {
                         connection->close("", newTargetDisconnectedExceptionCausedByMemberLeftEvent(connection));
@@ -118,14 +120,11 @@ namespace hazelcast {
 
                 boost::shared_ptr<exception::IException>
                 ClientMembershipListener::newTargetDisconnectedExceptionCausedByMemberLeftEvent(
-                        const boost::shared_ptr<connection::Connection> connection) {
-                    std::auto_ptr<exception::TargetDisconnectedException> disconnectedException(
-                            new exception::TargetDisconnectedException(
-                                    "ClientMembershipListener::newTargetDisconnectedExceptionCausedByMemberLeftEvent"));
-                    *disconnectedException
+                        const boost::shared_ptr<connection::Connection> &connection) {
+                    return (exception::ExceptionBuilder<exception::TargetDisconnectedException>(
+                            "ClientMembershipListener::newTargetDisconnectedExceptionCausedByMemberLeftEvent")
                             << "The client has closed the connection to this member, after receiving a member left event from the cluster. "
-                            << *connection;
-                    return boost::shared_ptr<exception::IException>(disconnectedException);
+                            << *connection).buildShared();
                 }
 
                 std::vector<MembershipEvent>
@@ -178,12 +177,15 @@ namespace hazelcast {
                 }
 
                 void
-                ClientMembershipListener::listenMembershipEvents(boost::shared_ptr<ClientMembershipListener> listener,
-                                                                 boost::shared_ptr<connection::Connection> &ownerConnection) {
-                    listener->initialListFetchedLatch = boost::shared_ptr<util::CountDownLatch>(new util::CountDownLatch(1));
+                ClientMembershipListener::listenMembershipEvents(
+                        const boost::shared_ptr<ClientMembershipListener> &listener,
+                        const boost::shared_ptr<connection::Connection> &ownerConnection) {
+                    listener->initialListFetchedLatch = boost::shared_ptr<util::CountDownLatch>(
+                            new util::CountDownLatch(1));
                     std::auto_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientAddMembershipListenerCodec::RequestParameters::encode(
                             false);
-                    boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(listener->client, clientMessage, "",
+                    boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(listener->client,
+                                                                                              clientMessage, "",
                                                                                               ownerConnection);
                     invocation->setEventHandler(listener);
                     ClientInvocation::invokeUrgent(invocation).get();
@@ -191,10 +193,10 @@ namespace hazelcast {
                 }
 
                 void ClientMembershipListener::waitInitialMemberListFetched() {
-                        bool success = initialListFetchedLatch.get()->await(INITIAL_MEMBERS_TIMEOUT_SECONDS);
-                        if (!success) {
-                            logger.warning("Error while getting initial member list from cluster!");
-                        }
+                    bool success = initialListFetchedLatch.get()->await(INITIAL_MEMBERS_TIMEOUT_SECONDS);
+                    if (!success) {
+                        logger.warning("Error while getting initial member list from cluster!");
+                    }
                 }
             }
 

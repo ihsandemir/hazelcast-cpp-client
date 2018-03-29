@@ -42,7 +42,7 @@ namespace hazelcast {
                         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 */
 
-                        boost::shared_ptr<util::Callable> task(
+                        boost::shared_ptr<util::Callable<std::string> > task(
                                 new RegisterListenerTask(activeRegistrations, userRegistrations, listenerMessageCodec,
                                                          handler, *this));
 
@@ -99,9 +99,9 @@ namespace hazelcast {
                             activeRegistrations.put(registrationKey, registration);
                             userRegistrations.insert(registrationKey);
                         } catch (exception::IException &e) {
-                            throw exception::HazelcastException(
+                            throw (exception::ExceptionBuilder<exception::HazelcastException>(
                                     "NonSmartClientListenerService::RegisterListenerTask::call")
-                                    << "Listener can not be added. " << e;
+                                    << "Listener can not be added. " << e).build();
                         }
                         return userRegistrationId;
                     }

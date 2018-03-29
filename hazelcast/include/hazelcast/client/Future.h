@@ -22,7 +22,6 @@
 
 #include "hazelcast/client/spi/impl/ClientInvocationFuture.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/connection/CallPromise.h"
 #include "hazelcast/client/TypedData.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 

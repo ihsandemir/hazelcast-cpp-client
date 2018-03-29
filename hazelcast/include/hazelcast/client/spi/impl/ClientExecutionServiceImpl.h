@@ -57,26 +57,29 @@ namespace hazelcast {
                     shutdownExecutor(const std::string &name, util::ExecutorService &executor, util::ILogger &logger);
 
                     virtual void
+                    schedule(const boost::shared_ptr<util::Runnable> &command, int64_t initialDelayInMillis);
+
+                    virtual void
                     scheduleWithRepetition(const boost::shared_ptr<util::Runnable> &command,
                                            int64_t initialDelayInMillis,
                                            int64_t periodInMillis);
 
                 private:
-                    class RepeatingRunner : public util::Runnable {
+                    class AbstractRunner : public util::Runnable {
                     public:
-                        RepeatingRunner(const boost::shared_ptr<Runnable> &command, int64_t initialDelayInMillis,
-                                        int64_t periodInMillis);
+                        AbstractRunner(const boost::shared_ptr<Runnable> &command, int64_t initialDelayInMillis);
+
+                        AbstractRunner(const boost::shared_ptr<Runnable> &command, int64_t initialDelayInMillis,
+                                       int64_t periodInMillis);
 
                         virtual void run();
-
-                        virtual const std::string getName() const;
 
                         void shutdown();
 
                         void setRunnerThread(const boost::shared_ptr<util::Thread> &thread);
 
                         const boost::shared_ptr<util::Thread> &getRunnerThread() const;
-                    private:
+                    protected:
                         const boost::shared_ptr<util::Runnable> command;
                         int64_t initialDelayInMillis;
                         int64_t periodInMillis;
@@ -85,12 +88,28 @@ namespace hazelcast {
                         boost::shared_ptr<util::Thread> runnerThread;
                     };
 
+                    class RepeatingRunner : public AbstractRunner {
+                    public:
+                        RepeatingRunner(const boost::shared_ptr<util::Runnable> &command, int64_t initialDelayInMillis,
+                                        int64_t periodInMillis);
+
+                        virtual const std::string getName() const;
+                    };
+
+                    class DelayedRunner : public AbstractRunner {
+                    public:
+                        DelayedRunner(const boost::shared_ptr<util::Runnable> &command, int64_t initialDelayInMillis);
+
+                    private:
+                        virtual const std::string getName() const;
+                    };
+
                     util::ILogger &logger;
                     boost::shared_ptr<util::ExecutorService> userExecutor;
                     // TODO: Change with ScheduledExecutorService
                     boost::shared_ptr<util::ExecutorService> internalExecutor;
 
-                    util::SynchronizedQueue<RepeatingRunner> repeatingRunners;
+                    util::SynchronizedQueue<AbstractRunner> delayedRunners;
                 };
             }
         }
