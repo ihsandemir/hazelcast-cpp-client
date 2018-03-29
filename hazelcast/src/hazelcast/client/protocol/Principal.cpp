@@ -47,7 +47,7 @@ namespace hazelcast {
                 return true;
             }
 
-            std::ostream &protocol::operator<<(std::ostream &os, const Principal &principal) {
+            std::ostream &operator<<(std::ostream &os, const Principal &principal) {
                 os << "uuid: " << (principal.uuid.get() ? *principal.uuid : "null") << " ownerUuid: "
                    << (principal.ownerUuid ? *principal.ownerUuid : "null");
                 return os;

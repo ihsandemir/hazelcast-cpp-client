@@ -17,6 +17,8 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_CLIENTPARTITIONSERVICEIMPL_H_
 #define HAZELCAST_CLIENT_SPI_IMPL_CLIENTPARTITIONSERVICEIMPL_H_
 
+#include <boost/enable_shared_from_this.hpp>
+
 #include <hazelcast/util/SynchronizedMap.h>
 #include <hazelcast/util/AtomicInt.h>
 #include "hazelcast/client/spi/ClientPartitionService.h"
@@ -53,7 +55,7 @@ namespace hazelcast {
 
                     void start();
 
-                    void listenPartitionTable(boost::shared_ptr<connection::Connection> &ownerConnection);
+                    void listenPartitionTable(const boost::shared_ptr<connection::Connection> &ownerConnection);
 
                     void refreshPartitions();
 

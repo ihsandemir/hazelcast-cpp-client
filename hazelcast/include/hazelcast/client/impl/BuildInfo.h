@@ -44,8 +44,6 @@ namespace hazelcast {
 
                 std::string version;
                 std::string build;
-                std::string revision;
-                int buildNumber;
             };
         }
     }

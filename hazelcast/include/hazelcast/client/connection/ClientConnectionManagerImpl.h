@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdint.h>
 #include <memory>
+
 #include <hazelcast/client/serialization/pimpl/SerializationService.h>
 #include <hazelcast/util/BlockingConcurrentQueue.h>
 #include <hazelcast/util/ConcurrentSet.h>
@@ -32,13 +33,12 @@
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/client/connection/InSelector.h"
 #include "hazelcast/client/connection/OutSelector.h"
-#include "hazelcast/client/connection/OwnerConnectionFuture.h"
 #include "hazelcast/client/protocol/Principal.h"
 #include "hazelcast/client/internal/socket/SocketFactory.h"
-#include "hazelcast/client/aws/impl/AwsAddressTranslator.h"
 #include "hazelcast/util/Atomic.h"
 #include "hazelcast/util/Thread.h"
 #include "hazelcast/util/impl/SimpleExecutorService.h"
+#include "hazelcast/client/connection/AddressTranslator.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -68,7 +68,6 @@ namespace hazelcast {
             class ConnectionListener;
             class AuthenticationFuture;
             class ClientConnectionStrategy;
-            class AddressTranslator;
             class AddressProvider;
             class HeartbeatManager;
 
@@ -79,8 +78,8 @@ namespace hazelcast {
                 friend class AuthCallback;
             public:
                 ClientConnectionManagerImpl(spi::ClientContext &client,
-                                  const boost::shared_ptr<connection::AddressTranslator> &addressTranslator,
-                                  const std::vector<boost::shared_ptr<connection::AddressProvider> > &addressProviders);
+                                  const boost::shared_ptr<AddressTranslator> &addressTranslator,
+                                  const std::vector<boost::shared_ptr<AddressProvider> > &addressProviders);
                 /**
                 * Start clientConnectionManager
                 */
@@ -118,11 +117,13 @@ namespace hazelcast {
                 */
                 std::vector<boost::shared_ptr<Connection> > getActiveConnections();
 
-                const boost::shared_ptr<Address> &getOwnerConnectionAddress() const;
+                boost::shared_ptr<Address> getOwnerConnectionAddress();
 
                 void setOwnerConnectionAddress(const boost::shared_ptr<Address> &ownerConnectionAddress);
 
                 boost::shared_ptr<Connection> getActiveConnection(const Address &target);
+
+                boost::shared_ptr<Connection> getActiveConnection(int fileDescriptor);
 
                 boost::shared_ptr<Connection> getOwnerConnection();
 
@@ -138,9 +139,9 @@ namespace hazelcast {
 
                 void onClose(Connection &connection);
 
-                virtual void heartbeatResumed(const boost::shared_ptr<connection::Connection> &connection);
+                virtual void heartbeatResumed(const boost::shared_ptr<Connection> &connection);
 
-                virtual void heartbeatStopped(const boost::shared_ptr<connection::Connection> &connection);
+                virtual void heartbeatStopped(const boost::shared_ptr<Connection> &connection);
 
             private:
                 static int DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
@@ -262,7 +263,7 @@ namespace hazelcast {
                     virtual const std::string getName() const;
 
                 private:
-                    spi::ClientContext &clientContext;
+                    spi::ClientContext &client;
                 };
 
 
@@ -281,11 +282,12 @@ namespace hazelcast {
 
                 spi::impl::ClientExecutionServiceImpl &executionService;
 
-                boost::shared_ptr<connection::AddressTranslator> translator;
+                boost::shared_ptr<AddressTranslator> translator;
                 util::SynchronizedMap<Address, Connection> activeConnections;
+                util::SynchronizedMap<int, Connection> activeConnectionsFileDescriptors;
                 util::SynchronizedMap<Address, AuthenticationFuture> connectionsInProgress;
                 // TODO: change with CopyOnWriteArraySet<ConnectionListener> as in Java
-                util::ConcurrentSet<boost::shared_ptr<connection::ConnectionListener> > connectionListeners;
+                util::ConcurrentSet<boost::shared_ptr<ConnectionListener> > connectionListeners;
                 const Credentials *credentials;
 
                 util::Atomic<boost::shared_ptr<Address> > ownerConnectionAddress;

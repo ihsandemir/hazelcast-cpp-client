@@ -496,7 +496,7 @@ namespace hazelcast {
                 return (index >= HEADER_SIZE) && (index == getFrameLength());
             }
 
-            std::ostream &protocol::operator<<(std::ostream &os, const ClientMessage &message) {
+            std::ostream &operator<<(std::ostream &os, const ClientMessage &message) {
                 int32_t len = message.getIndex();
                 os << "ClientMessage{length=" << len;
                 if (len >= message.HEADER_SIZE) {

@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <stdint.h>
+#include <vector>
 
 #include "hazelcast/client/spi/impl/sequence/CallIdSequence.h"
 #include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
@@ -411,6 +412,7 @@ namespace hazelcast {
  */
         namespace connection {
             class ClientConnectionManagerImpl;
+            class AddressProvider;
         }
 
         namespace serialization {

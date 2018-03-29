@@ -33,7 +33,7 @@ namespace hazelcast {
                 return hazelcastClient.serializationService;
             }
 
-            impl::ClientClusterServiceImpl &ClientContext::getClientClusterService() {
+            spi::ClientClusterService &ClientContext::getClientClusterService() {
                 return hazelcastClient.clusterService;
             }
 

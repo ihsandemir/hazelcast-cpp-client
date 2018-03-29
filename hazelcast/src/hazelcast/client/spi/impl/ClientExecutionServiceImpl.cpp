@@ -64,7 +64,13 @@ namespace hazelcast {
                     shutdownExecutor("user", *userExecutor, logger);
                     shutdownExecutor("internal", *internalExecutor, logger);
 
-                    repeatingRunners.consume_all(RepeatingRunnerCloser());
+                    boost::shared_ptr<RepeatingRunner> runner;
+                    while ((runner = repeatingRunners.poll()).get()) {
+                        runner->shutdown();
+                        const boost::shared_ptr<util::Thread> &runnerThread = runner->getRunnerThread();
+                        runnerThread->cancel();
+                        runnerThread->join();
+                    }
                 }
 
                 void
@@ -95,7 +101,7 @@ namespace hazelcast {
                     boost::shared_ptr<util::Thread> thread(command);
                     command->setRunnerThread(thread);
                     thread->start();
-                    repeatingRunners.push(command);
+                    repeatingRunners.offer(command);
                 }
 
                 ClientExecutionServiceImpl::RepeatingRunner::RepeatingRunner(
@@ -139,14 +145,6 @@ namespace hazelcast {
                 const boost::shared_ptr<util::Thread> &
                 ClientExecutionServiceImpl::RepeatingRunner::getRunnerThread() const {
                     return runnerThread;
-                }
-
-                void ClientExecutionServiceImpl::RepeatingRunnerCloser::operator()(
-                        const boost::shared_ptr<ClientExecutionServiceImpl::RepeatingRunner> &runner) {
-                    runner->shutdown();
-                    const boost::shared_ptr<util::Thread> &runnerThread = runner->getRunnerThread();
-                    runnerThread->cancel();
-                    runnerThread->join();
                 }
             }
         }

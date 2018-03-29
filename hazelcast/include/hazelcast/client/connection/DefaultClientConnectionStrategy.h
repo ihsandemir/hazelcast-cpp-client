@@ -62,7 +62,7 @@ namespace hazelcast {
 
                     virtual void run();
 
-                    virtual const std::string &getName() const;
+                    virtual const std::string getName() const;
 
                 private:
                     spi::ClientContext &clientContext;

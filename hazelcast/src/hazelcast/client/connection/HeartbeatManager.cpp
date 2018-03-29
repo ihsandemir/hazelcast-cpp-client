@@ -17,10 +17,11 @@
 #include <hazelcast/client/protocol/codec/ClientPingCodec.h>
 #include "hazelcast/client/connection/HeartbeatManager.h"
 #include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/spi/impl/ConnectionHeartbeatListener.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
+#include "hazelcast/client/spi/impl/ClientInvocationFuture.h"
 
 namespace hazelcast {
     namespace client {
@@ -41,9 +42,10 @@ namespace hazelcast {
 
             void HeartbeatManager::start() {
                 spi::impl::ClientExecutionServiceImpl &clientExecutionService = client.getClientExecutionService();
-                // TODO: change with
-                //clientExecutionService.scheduleWithRepetition(*this, heartbeatInterval, heartbeatInterval);
-                executor->execute(boost::shared_ptr<util::Runnable>(new HeartbeatTask(*this)));
+
+                clientExecutionService.scheduleWithRepetition(
+                        boost::shared_ptr<util::Runnable>(new util::RunnableDelegator(*this)), heartbeatInterval,
+                        heartbeatInterval);
             }
 
             void HeartbeatManager::run() {
@@ -58,7 +60,7 @@ namespace hazelcast {
                             }
             }
 
-            const std::string &HeartbeatManager::getName() const {
+            const std::string HeartbeatManager::getName() const {
                 return "HeartbeatManager";
             }
 
@@ -69,7 +71,7 @@ namespace hazelcast {
 
                 if (now - connection->lastReadTimeMillis() > heartbeatTimeout) {
                     if (connection->isHeartBeating()) {
-                        logger.warning() << "Heartbeat failed over the connection: " << *connection);
+                        logger.warning() << "Heartbeat failed over the connection: " << *connection;
                         connection->onHeartbeatFailed();
                         fireHeartbeatStopped(connection);
                     }
@@ -84,11 +86,11 @@ namespace hazelcast {
                     spi::impl::ClientInvocationFuture &clientInvocationFuture = spi::impl::ClientInvocation::invokeUrgent(
                             clientInvocation);
                     clientInvocationFuture.andThen(boost::shared_ptr<
-                    impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > >(
+                            impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > >(
                             new HearbeatCallback(connection, logger)));
                 } else {
                     if (!connection->isHeartBeating()) {
-                        logger.warning("Heartbeat is back to healthy for the connection: " + connection);
+                        logger.warning() << "Heartbeat is back to healthy for the connection: " << *connection;
                         connection->onHeartbeatResumed();
                         fireHeartbeatResumed(connection);
                     }
@@ -129,15 +131,16 @@ namespace hazelcast {
                                                                  util::ILogger &logger)
                     : connection(connection), logger(logger) {}
 
-            void HeartbeatManager::HearbeatCallback::onResponse(boost::shared_ptr<protocol::ClientMessage> &response) {
+            void
+            HeartbeatManager::HearbeatCallback::onResponse(const boost::shared_ptr<protocol::ClientMessage> &response) {
                 if (connection->isAlive()) {
                     connection->onHeartbeatReceived();
                 }
             }
 
-            void HeartbeatManager::HearbeatCallback::onFailure(const exception::IException &e) {
+            void HeartbeatManager::HearbeatCallback::onFailure(const boost::shared_ptr<exception::IException> &e) {
                 if (connection->isAlive()) {
-                    logger.warning() << "Error receiving ping answer from the connection: " << *connection << e;
+                    logger.warning() << "Error receiving ping answer from the connection: " << *connection << *e;
                 }
             }
 
@@ -147,7 +150,7 @@ namespace hazelcast {
                 }
             }
 
-            std::string HeartbeatManager::HeartbeatTask::getName() const {
+            const std::string HeartbeatManager::HeartbeatTask::getName() const {
                 return "HeartbeatTask";
             }
 

@@ -17,7 +17,8 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_CLIENTCLUSTERSERVICEIMPL_H
 #define HAZELCAST_CLIENT_SPI_IMPL_CLIENTCLUSTERSERVICEIMPL_H
 
-#include <set>
+#include <map>
+
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/Member.h"

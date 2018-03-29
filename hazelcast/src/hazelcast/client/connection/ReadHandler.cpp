@@ -22,6 +22,7 @@
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/connection/InSelector.h"
 #include "hazelcast/client/exception/IOException.h"
+#include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/util/Util.h"
 

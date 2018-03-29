@@ -20,6 +20,8 @@
 #ifndef HAZELCAST_CLIENT_IMPL_EXECUTIONCALLBACK_H_
 #define HAZELCAST_CLIENT_IMPL_EXECUTIONCALLBACK_H_
 
+#include <boost/shared_ptr.hpp>
+
 #include "hazelcast/util/HazelcastDll.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

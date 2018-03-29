@@ -172,12 +172,10 @@ namespace hazelcast {
 
             std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
                                                        const serialization::pimpl::Data &key, bool includeValue) {
-                int partitionId = getPartitionId(key);
-
                 std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
                         new protocol::codec::MultiMapAddEntryListenerToKeyCodec(getName(), key, includeValue, false));
 
-                return registerListener(addCodec, partitionId, entryEventHandler);
+                return registerListener(addCodec, entryEventHandler);
             }
 
             bool MultiMapImpl::removeEntryListener(const std::string &registrationId) {
@@ -251,6 +249,73 @@ namespace hazelcast {
 
                 invokeOnPartition(request, partitionId);
             }
+
+            boost::shared_ptr<spi::impl::ListenerMessageCodec>
+            MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue) {
+                return boost::shared_ptr<spi::impl::ListenerMessageCodec>(
+                        new MultiMapEntryListenerMessageCodec(getName(), includeValue));
+            }
+
+            boost::shared_ptr<spi::impl::ListenerMessageCodec>
+            MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &key) {
+                return boost::shared_ptr<spi::impl::ListenerMessageCodec>(
+                        new MultiMapEntryListenerToKeyCodec(getName(), includeValue, key));
+            }
+
+            MultiMapImpl::MultiMapEntryListenerMessageCodec::MultiMapEntryListenerMessageCodec(const std::string &name,
+                                                                                               bool includeValue)
+                    : name(name),
+                      includeValue(
+                              includeValue) {
+            }
+
+            std::auto_ptr<protocol::ClientMessage>
+            MultiMapImpl::MultiMapEntryListenerMessageCodec::encodeAddRequest(bool localOnly) const {
+                return protocol::codec::MultiMapAddEntryListenerCodec(name, includeValue, localOnly).encodeRequest();
+            }
+
+            std::string MultiMapImpl::MultiMapEntryListenerMessageCodec::decodeAddResponse(
+                    protocol::ClientMessage &responseMessage) const {
+                return protocol::codec::MultiMapAddEntryListenerCodec(name, includeValue, false).decodeResponse(
+                        responseMessage);
+            }
+
+            std::auto_ptr<protocol::ClientMessage>
+            MultiMapImpl::MultiMapEntryListenerMessageCodec::encodeRemoveRequest(
+                    const std::string &realRegistrationId) const {
+                return protocol::codec::MultiMapRemoveEntryListenerCodec(name, realRegistrationId).encodeRequest();
+            }
+
+            bool MultiMapImpl::MultiMapEntryListenerMessageCodec::decodeRemoveResponse(
+                    protocol::ClientMessage &clientMessage) const {
+                return protocol::codec::MultiMapRemoveEntryListenerCodec(name, "").decodeResponse(clientMessage);
+            }
+
+            std::auto_ptr<protocol::ClientMessage>
+            MultiMapImpl::MultiMapEntryListenerToKeyCodec::encodeAddRequest(bool localOnly) const {
+                return protocol::codec::MultiMapAddEntryListenerToKeyCodec(name, key, includeValue,
+                                                                           localOnly).encodeRequest();
+            }
+
+            std::string MultiMapImpl::MultiMapEntryListenerToKeyCodec::decodeAddResponse(
+                    protocol::ClientMessage &responseMessage) const {
+                return protocol::codec::MultiMapAddEntryListenerToKeyCodec(name, serialization::pimpl::Data(),
+                                                                           includeValue, false).decodeResponse(
+                        responseMessage);
+            }
+
+            std::auto_ptr<protocol::ClientMessage>
+            MultiMapImpl::MultiMapEntryListenerToKeyCodec::encodeRemoveRequest(
+                    const std::string &realRegistrationId) const {
+                return protocol::codec::MultiMapRemoveEntryListenerCodec(name, realRegistrationId).encodeRequest();
+            }
+
+            bool MultiMapImpl::MultiMapEntryListenerToKeyCodec::decodeRemoveResponse(
+                    protocol::ClientMessage &clientMessage) const {
+                return protocol::codec::MultiMapRemoveEntryListenerCodec(name, "").decodeResponse(clientMessage);
+            }
+
+
         }
     }
 }

@@ -52,7 +52,7 @@ namespace hazelcast {
 
                 virtual void run();
 
-                virtual const std::string &getName() const;
+                virtual const std::string getName() const;
 
                 void addConnectionHeartbeatListener(
                         const boost::shared_ptr<spi::impl::ConnectionHeartbeatListener> &connectionHeartbeatListener);
@@ -62,9 +62,9 @@ namespace hazelcast {
                 public:
                     HearbeatCallback(const boost::shared_ptr<Connection> &connection, util::ILogger &logger);
 
-                    virtual void onResponse(boost::shared_ptr<protocol::ClientMessage> &response);
+                    virtual void onResponse(const boost::shared_ptr<protocol::ClientMessage> &response);
 
-                    virtual void onFailure(const exception::IException &e);
+                    virtual void onFailure(const boost::shared_ptr<exception::IException> &e);
 
                 private:
                     boost::shared_ptr<connection::Connection> connection;
@@ -77,7 +77,7 @@ namespace hazelcast {
 
                     virtual void run();
 
-                    virtual std::string getName() const;
+                    virtual const std::string getName() const;
 
                 private:
                     HeartbeatManager &heartbeatManager;

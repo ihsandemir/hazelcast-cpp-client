@@ -18,10 +18,9 @@
 #define HAZELCAST_CLIENT_SPI_IMPL_CLIENTEXECUTIONSERVICEIMPL_H_
 
 #include <vector>
-#include <boost/lockfree/queue.hpp>
 
 #include <hazelcast/util/AtomicBoolean.h>
-#include <hazelcast/util/SynchronizedMap.h>
+#include <hazelcast/util/SynchronizedQueue.h>
 #include <hazelcast/util/Atomic.h>
 
 #include "hazelcast/client/spi/ClientExecutionService.h"
@@ -86,17 +85,12 @@ namespace hazelcast {
                         boost::shared_ptr<util::Thread> runnerThread;
                     };
 
-                    class RepeatingRunnerCloser {
-                    public:
-                        void operator()(const boost::shared_ptr<RepeatingRunner> &runner);
-                    };
-
                     util::ILogger &logger;
                     boost::shared_ptr<util::ExecutorService> userExecutor;
                     // TODO: Change with ScheduledExecutorService
                     boost::shared_ptr<util::ExecutorService> internalExecutor;
 
-                    boost::lockfree::queue<boost::shared_ptr<RepeatingRunner> > repeatingRunners;
+                    util::SynchronizedQueue<RepeatingRunner> repeatingRunners;
                 };
             }
         }

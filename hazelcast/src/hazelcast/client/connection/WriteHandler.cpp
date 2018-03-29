@@ -16,7 +16,6 @@
 //
 // Created by sancar koyunlu on 25/12/13.
 //
-
 #include "hazelcast/client/connection/WriteHandler.h"
 #include "hazelcast/client/connection/OutSelector.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
@@ -29,7 +28,7 @@ namespace hazelcast {
     namespace client {
         namespace connection {
             WriteHandler::WriteHandler(boost::shared_ptr<Connection> connection, OutSelector &oListener, size_t bufferSize)
-                    : IOHandler(connection, oListener), ready(false), informSelector(true), lastMessage(NULL) {
+                    : IOHandler(connection, oListener), ready(false), informSelector(true) {
             }
 
 
@@ -51,7 +50,7 @@ namespace hazelcast {
 
             // TODO: Add a fragmentation layer here before putting the message into the write queue
             void WriteHandler::enqueueData(const boost::shared_ptr<protocol::ClientMessage> &message) {
-                writeQueue.push(message);
+                writeQueue.offer(message);
                 if (informSelector.compareAndSet(true, false)) {
                     ioSelector.addTask(this);
                     ioSelector.wakeUp();
@@ -60,7 +59,7 @@ namespace hazelcast {
 
             void WriteHandler::handle() {
                 if (lastMessage == NULL) {
-                    if (!writeQueue.pop(lastMessage)) {
+                    if (!(lastMessage = writeQueue.poll()).get()) {
                         ready = true;
                         return;
                     }
@@ -78,7 +77,7 @@ namespace hazelcast {
 
                         if (numBytesWrittenToSocketForMessage >= lastMessageFrameLen) {
                             // Not deleting message since its memory management is at the future object
-                            if (writeQueue.pop(lastMessage)) {
+                            if ((lastMessage = writeQueue.poll()).get()) {
                                 numBytesWrittenToSocketForMessage = 0;
                                 lastMessageFrameLen = lastMessage->getFrameLength();
                             }

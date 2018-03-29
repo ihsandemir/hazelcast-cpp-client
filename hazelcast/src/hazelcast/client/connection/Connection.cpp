@@ -50,25 +50,21 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            Connection::Connection(const Address& address, spi::ClientContext& clientContext, InSelector& iListener,
-                                   OutSelector& oListener, internal::socket::SocketFactory &socketFactory, bool isOwner)
-            : closedTimeMillis(0)
-            , clientContext(clientContext)
-            , invocationService(clientContext.getInvocationService())
-            , readHandler(shared_from_this(), iListener, 16 << 10, clientContext)
-            , writeHandler(shared_from_this(), oListener, 16 << 10)
-            , authenticatedAsOwner(isOwner)
-            , heartBeating(true)
-            , receiveBuffer(new byte[16 << 10])
-            , receiveByteBuffer((char *)receiveBuffer, 16 << 10)
-            , messageBuilder(*this, shared_from_this())
-            , connectionId(-1)
-            , pendingPacketCount(0)
-            , lastHeartbeatReceivedMillis(0)
-            , lastHeartbeatRequestedMillis(0), connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION) {
+            Connection::Connection(const Address &address, spi::ClientContext &clientContext, InSelector &iListener,
+                                   OutSelector &oListener, internal::socket::SocketFactory &socketFactory, bool isOwner)
+                    : closedTimeMillis(0), lastHeartbeatRequestedMillis(0), lastHeartbeatReceivedMillis(0),
+                      clientContext(clientContext),
+                      invocationService(clientContext.getInvocationService()),
+                      readHandler(shared_from_this(), iListener, 16 << 10, clientContext),
+                      writeHandler(shared_from_this(), oListener, 16 << 10), authenticatedAsOwner(isOwner),
+                      heartBeating(true), receiveBuffer(new byte[16 << 10]),
+                      receiveByteBuffer((char *) receiveBuffer, 16 << 10), messageBuilder(*this, shared_from_this()),
+                      connectionId(-1), pendingPacketCount(0),
+                      connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION) {
                 socket = socketFactory.create(address);
-                wrapperMessage.wrapForDecode(receiveBuffer, (int32_t)16 << 10, false);
-                assert(receiveByteBuffer.remaining() >= protocol::ClientMessage::HEADER_SIZE); // Note: Always make sure that the size >= ClientMessage header size.
+                wrapperMessage.wrapForDecode(receiveBuffer, (int32_t) 16 << 10, false);
+                assert(receiveByteBuffer.remaining() >=
+                       protocol::ClientMessage::HEADER_SIZE); // Note: Always make sure that the size >= ClientMessage header size.
             }
 
             Connection::~Connection() {
@@ -132,23 +128,23 @@ namespace hazelcast {
                 return true;
             }
 
-            Socket& Connection::getSocket() {
+            Socket &Connection::getSocket() {
                 return *socket;
             }
 
-            const Address& Connection::getRemoteEndpoint() const {
+            const Address &Connection::getRemoteEndpoint() const {
                 return socket->getRemoteEndpoint();
             }
 
-            void Connection::setRemoteEndpoint(const Address& remoteEndpoint) {
+            void Connection::setRemoteEndpoint(const Address &remoteEndpoint) {
                 socket->setRemoteEndpoint(remoteEndpoint);
             }
 
-            ReadHandler& Connection::getReadHandler() {
+            ReadHandler &Connection::getReadHandler() {
                 return readHandler;
             }
 
-            WriteHandler& Connection::getWriteHandler() {
+            WriteHandler &Connection::getWriteHandler() {
                 return writeHandler;
             }
 
@@ -157,19 +153,19 @@ namespace hazelcast {
             }
 
             void Connection::handleClientMessage(boost::shared_ptr<Connection> &connection,
-                                                 const std::auto_ptr<protocol::ClientMessage> &message) {
+                                                 std::auto_ptr<protocol::ClientMessage> &message) {
                 incrementPendingPacketCount();
-                boost::shared_ptr<protocol::ClientMessage> msg(message);
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
                     spi::impl::listener::AbstractClientListenerService &listenerService =
                             (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();
-                    listenerService.handleClientMessage(msg, connection);
+                    listenerService.handleClientMessage(boost::shared_ptr<protocol::ClientMessage>(message),
+                                                        connection);
                 } else {
-                    invocationService.handleClientMessage(*connection, msg);
+                    invocationService.handleClientMessage(connection, message);
                 }
             }
 
-            int  Connection::getConnectionId() const {
+            int Connection::getConnectionId() const {
                 return connectionId;
             }
 
@@ -195,9 +191,8 @@ namespace hazelcast {
 
             }
 
-            bool Connection::isAlive() const {
-                int64_t closedTimeInMillis = closedTimeMillis;
-                return closedTimeInMillis == 0;
+            bool Connection::isAlive() {
+                return closedTimeMillis.get() == 0;
             }
 
             const std::string &Connection::getCloseReason() const {
@@ -205,7 +200,7 @@ namespace hazelcast {
             }
 
             void Connection::logClose() {
-                std::ostringstream message; 
+                std::ostringstream message;
                 message << *this << " closed. Reason: ";
                 if (!closeReason.empty()) {
                     message << closeReason;

@@ -108,9 +108,7 @@ namespace hazelcast {
 
                 int getConnectionId() const;
 
-                void setConnectionId(int connectionId);
-
-                bool isAlive() const;
+                bool isAlive();
 
                 int64_t lastReadTimeMillis();
 

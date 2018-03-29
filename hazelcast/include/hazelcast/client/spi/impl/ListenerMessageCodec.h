@@ -38,12 +38,12 @@ namespace hazelcast {
                 public:
                     virtual std::auto_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const = 0;
 
-                    virtual std::string decodeAddResponse(const protocol::ClientMessage &responseMessage) const = 0;
+                    virtual std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const = 0;
 
                     virtual std::auto_ptr<protocol::ClientMessage>
                     encodeRemoveRequest(const std::string &realRegistrationId) const = 0;
 
-                    virtual bool decodeRemoveResponse(const protocol::ClientMessage &clientMessage) const = 0;
+                    virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const = 0;
                 };
             }
         }

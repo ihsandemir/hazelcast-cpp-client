@@ -21,6 +21,8 @@
 #include <hazelcast/client/spi/impl/sequence/CallIdFactory.h>
 #include <hazelcast/client/spi/impl/AwsAddressProvider.h>
 #include <hazelcast/client/spi/impl/DefaultAddressProvider.h>
+#include <hazelcast/client/aws/impl/AwsAddressTranslator.h>
+#include "hazelcast/client/spi/impl/DefaultAddressTranslator.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/IdGenerator.h"
 #include "hazelcast/client/ICountDownLatch.h"
@@ -28,7 +30,6 @@
 #include "hazelcast/client/ILock.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/mixedtype/impl/HazelcastClientImpl.h"
-#include "hazelcast/client/spi/impl/DefaultAddressTranslator.h"
 
 #ifndef HAZELCAST_VERSION
 #define HAZELCAST_VERSION "NOT_FOUND"

@@ -33,7 +33,7 @@ namespace hazelcast {
     namespace client {
         namespace aws {
             namespace impl {
-                class HAZELCAST_API AwsAddressTranslator : public connection::AdressTranslator {
+                class HAZELCAST_API AwsAddressTranslator : public connection::AddressTranslator {
                 public:
                     AwsAddressTranslator(config::ClientAwsConfig &awsConfig);
 

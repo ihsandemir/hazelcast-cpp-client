@@ -24,6 +24,7 @@
 #include <vector>
 #include <cassert>
 #include <boost/shared_ptr.hpp>
+#include <ostream>
 
 #include "hazelcast/client/exception/IException.h"
 #include "hazelcast/util/ConditionVariable.h"
@@ -48,14 +49,20 @@ namespace hazelcast {
             class SuccessCallbackRunner : public Runnable {
             public:
                 SuccessCallbackRunner(T &sharedObj,
-                                      const boost::shared_ptr<client::impl::ExecutionCallback<T> > &callback)
-                        : sharedObj(sharedObj), callback(callback) {}
+                                      const boost::shared_ptr<client::impl::ExecutionCallback<T> > &callback,
+                                      ILogger &logger, Future &future) : sharedObj(sharedObj), callback(callback),
+                                                                         logger(logger), future(future) {}
 
                 virtual ~SuccessCallbackRunner() {
                 }
 
                 virtual void run() {
-                    callback->onResponse(sharedObj);
+                    try {
+                        callback->onResponse(sharedObj);
+                    } catch (client::exception::IException &cause) {
+                        logger.severe() << "Failed asynchronous execution of execution success callback: " << callback
+                                        << "for call " << future.invocationToString() << ", Cause:" << cause;
+                    }
                 }
 
                 virtual const std::string getName() const {
@@ -65,19 +72,27 @@ namespace hazelcast {
             private:
                 T &sharedObj;
                 const boost::shared_ptr<client::impl::ExecutionCallback<T> > callback;
+                util::ILogger &logger;
+                Future<T> &future;
             };
 
             class ExceptionCallbackRunner : public Runnable {
             public:
                 ExceptionCallbackRunner(const boost::shared_ptr<client::exception::IException> &exception,
-                                        const boost::shared_ptr<client::impl::ExecutionCallback<T> > &callback)
-                        : exception(exception), callback(callback) {}
+                                        const boost::shared_ptr<client::impl::ExecutionCallback<T> > &callback,
+                                        ILogger &logger, Future &future)
+                        : exception(exception), callback(callback), logger(logger), future(future) {}
 
                 virtual ~ExceptionCallbackRunner() {
                 }
 
                 virtual void run() {
-                    callback->onFailure(boost::shared_ptr<client::exception::IException>(exception->clone()));
+                    try {
+                        callback->onFailure(boost::shared_ptr<client::exception::IException>(exception->clone()));
+                    } catch (client::exception::IException &cause) {
+                        logger.severe() << "Failed asynchronous execution of execution failure callback: " << callback
+                                        << "for call " << future << ", Cause:" << cause;
+                    }
                 }
 
                 virtual const std::string getName() const {
@@ -87,6 +102,8 @@ namespace hazelcast {
             private:
                 boost::shared_ptr<client::exception::IException> exception;
                 const boost::shared_ptr<client::impl::ExecutionCallback<T> > callback;
+                util::ILogger &logger;
+                Future<T> &future;
             };
 
             Future(ILogger &logger) : logger(logger) {}
@@ -97,7 +114,7 @@ namespace hazelcast {
             virtual ~Future() {
             }
 
-            void set_value(T& value) {
+            void set_value(T &value) {
                 LockGuard guard(mutex);
                 if (exceptionReady || resultReady) {
                     logger.warning(std::string("Future.set_value should not be called twice"));
@@ -108,7 +125,8 @@ namespace hazelcast {
                 for (typename std::vector<CallbackInfo>::const_iterator it = callbacks.begin();
                      it != callbacks.end(); ++it) {
                     (*it).getExecutor().execute(
-                            boost::shared_ptr<Runnable>(new SuccessCallbackRunner(sharedObject, (*it).getCallback())));
+                            boost::shared_ptr<Runnable>(
+                                    new SuccessCallbackRunner(sharedObject, (*it).getCallback(), logger, *this)));
                 }
                 onComplete();
             }
@@ -118,7 +136,7 @@ namespace hazelcast {
 
                 if (exceptionReady || resultReady) {
                     logger.warning(std::string("Future.set_exception should not be called twice : details ") +
-                            exception->what());
+                                   exception->what());
                 }
 
                 this->exception = exception;
@@ -127,7 +145,7 @@ namespace hazelcast {
                 for (typename std::vector<CallbackInfo>::const_iterator it = callbacks.begin();
                      it != callbacks.end(); ++it) {
                     (*it).getExecutor().execute(boost::shared_ptr<Runnable>(
-                            new ExceptionCallbackRunner(this->exception, (*it).getCallback())));
+                            new ExceptionCallbackRunner(this->exception, (*it).getCallback(), logger, *this)));
                 }
 
                 onComplete();
@@ -201,12 +219,14 @@ namespace hazelcast {
             andThen(const boost::shared_ptr<client::impl::ExecutionCallback<T> > &callback, util::Executor &executor) {
                 LockGuard guard(mutex);
                 if (resultReady) {
-                    executor.execute(boost::shared_ptr<Runnable>(new SuccessCallbackRunner(sharedObject, callback)));
+                    executor.execute(boost::shared_ptr<Runnable>(
+                            new SuccessCallbackRunner(sharedObject, callback, logger, *this)));
                     return;
                 }
 
                 if (exceptionReady) {
-                    executor.execute(boost::shared_ptr<Runnable>(new ExceptionCallbackRunner(exception, callback)));
+                    executor.execute(boost::shared_ptr<Runnable>(
+                            new ExceptionCallbackRunner(exception, callback, logger, *this)));
                     return;
                 }
 
@@ -214,6 +234,16 @@ namespace hazelcast {
             }
 
             virtual void onComplete() {}
+
+            virtual std::string invocationToString() {
+                return "";
+            }
+
+            friend std::ostream &operator<<(std::ostream &os, const Future &future) {
+                os << "resultReady: " << future.resultReady << " exceptionReady: " << future.exceptionReady;
+                return os;
+            }
+
         protected:
             class CallbackInfo {
             public:
@@ -232,6 +262,7 @@ namespace hazelcast {
                 boost::shared_ptr<client::impl::ExecutionCallback<T> > callback;
                 Executor *executor;
             };
+
             bool resultReady;
             bool exceptionReady;
             ConditionVariable conditionVariable;
@@ -241,9 +272,9 @@ namespace hazelcast {
             std::vector<CallbackInfo> callbacks;
             util::ILogger &logger;
 
-            Future(const Future& rhs);
+            Future(const Future &rhs);
 
-            void operator=(const Future& rhs);
+            void operator=(const Future &rhs);
         };
     }
 }

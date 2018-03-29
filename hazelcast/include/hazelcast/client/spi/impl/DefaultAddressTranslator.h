@@ -28,7 +28,7 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             namespace impl {
-                class HAZELCAST_API DefaultAddressTranslator : public connection::AdressTranslator {
+                class HAZELCAST_API DefaultAddressTranslator : public connection::AddressTranslator {
                 public:
                     virtual Address translate(const Address &address);
 

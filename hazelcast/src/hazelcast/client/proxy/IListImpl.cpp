@@ -61,11 +61,7 @@ namespace hazelcast {
             }
 
             std::string IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                std::auto_ptr<protocol::codec::IAddListenerCodec> addCodec = std::auto_ptr<protocol::codec::IAddListenerCodec>(
-                        new protocol::codec::ListAddListenerCodec(getName(), includeValue,
-                                                                  false));
-
-                return registerListener(addCodec, entryEventHandler);
+                return registerListener(createItemListenerCodec(includeValue), entryEventHandler);
             }
 
             bool IListImpl::removeItemListener(const std::string &registrationId) {
@@ -169,7 +165,7 @@ namespace hazelcast {
             }
 
             std::auto_ptr<serialization::pimpl::Data> IListImpl::setData(int index,
-                                                                     const serialization::pimpl::Data &element) {
+                                                                         const serialization::pimpl::Data &element) {
                 std::auto_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSetCodec::RequestParameters::encode(getName(), index, element);
 
@@ -216,6 +212,36 @@ namespace hazelcast {
                         request, partitionId);
             }
 
+            boost::shared_ptr<spi::impl::ListenerMessageCodec>
+            IListImpl::createItemListenerCodec(bool includeValue) {
+                return boost::shared_ptr<spi::impl::ListenerMessageCodec>(
+                        new ListListenerMessageCodec(getName(), includeValue));
+            }
+
+            IListImpl::ListListenerMessageCodec::ListListenerMessageCodec(const std::string &name,
+                                                                                bool includeValue) : name(name),
+                                                                                                     includeValue(
+                                                                                                             includeValue) {}
+
+            std::auto_ptr<protocol::ClientMessage>
+            IListImpl::ListListenerMessageCodec::encodeAddRequest(bool localOnly) const {
+                return protocol::codec::ListAddListenerCodec(name, includeValue, localOnly).encodeRequest();
+            }
+
+            std::string IListImpl::ListListenerMessageCodec::decodeAddResponse(
+                    protocol::ClientMessage &responseMessage) const {
+                return protocol::codec::ListAddListenerCodec(name, includeValue, false).decodeResponse(responseMessage);
+            }
+
+            std::auto_ptr<protocol::ClientMessage>
+            IListImpl::ListListenerMessageCodec::encodeRemoveRequest(const std::string &realRegistrationId) const {
+                return protocol::codec::ListRemoveListenerCodec(name, realRegistrationId).encodeRequest();
+            }
+
+            bool IListImpl::ListListenerMessageCodec::decodeRemoveResponse(
+                    protocol::ClientMessage &clientMessage) const {
+                return protocol::codec::ListRemoveListenerCodec(name, "").decodeResponse(clientMessage);
+            }
         }
     }
 }

@@ -19,6 +19,7 @@
 #include "hazelcast/client/impl/BuildInfo.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/IOUtil.h"
+#include "hazelcast/util/ILogger.h"
 
 namespace hazelcast {
     namespace client {
@@ -33,13 +34,13 @@ namespace hazelcast {
                         int groupCount = versionTokens.size();
                         if (groupCount >= PATCH_TOKEN_INDEX) {
                             const std::string &patchVersionString = versionTokens[PATCH_TOKEN_INDEX];
-                            if (patchVersionString.find("-") != patchVersionString.begin()) {
+                            if (patchVersionString.find("-") != 0) {
                                 calculatedVersion += util::IOUtil::to_value<int>(patchVersionString);
                             }
                         }
                         return calculatedVersion;
                     } catch (exception::IException &e) {
-                        util::ILogger.getLogger().warning() << "Failed to calculate version using version string "
+                        util::ILogger::getLogger().warning() << "Failed to calculate version using version string "
                                                             << version << e;
                     }
                 }

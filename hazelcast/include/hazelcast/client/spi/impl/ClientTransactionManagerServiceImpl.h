@@ -29,6 +29,8 @@
 
 namespace hazelcast {
     namespace client {
+        class LoadBalancer;
+
         namespace connection {
             class Connection;
         }

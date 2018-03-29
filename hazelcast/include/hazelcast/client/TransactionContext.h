@@ -35,8 +35,6 @@
 namespace hazelcast {
     namespace client {
         namespace spi {
-            class ClientContext;
-
             namespace impl {
                 class ClientTransactionManagerServiceImpl;
             }
@@ -166,12 +164,9 @@ namespace hazelcast {
             }
 
         private :
-            const int CONNECTION_TRY_COUNT;
-            spi::ClientContext &clientContext;
             TransactionOptions options;
             boost::shared_ptr<connection::Connection> txnConnection;
             txn::TransactionProxy transaction;
-            spi::impl::ClientTransactionManagerServiceImpl &transactionManager;
         };
 
     }

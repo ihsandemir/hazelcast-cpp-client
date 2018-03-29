@@ -69,7 +69,6 @@ namespace hazelcast {
 
             namespace impl {
                 class ClientExecutionServiceImpl;
-                class ClientClusterServiceImpl;
 
                 namespace sequence {
                     class CallIdSequence;
@@ -83,7 +82,7 @@ namespace hazelcast {
 
                 serialization::pimpl::SerializationService &getSerializationService();
 
-                impl::ClientClusterServiceImpl &getClientClusterService();
+                spi::ClientClusterService &getClientClusterService();
 
                 hazelcast::client::spi::ClientInvocationService & getInvocationService();
 

@@ -22,9 +22,9 @@
 #include <hazelcast/util/Future.h>
 #include <hazelcast/client/protocol/ClientMessage.h>
 #include <boost/foreach.hpp>
+#include <ostream>
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/impl/sequence/CallIdSequence.h"
-#include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/client/impl/ExecutionCallback.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -42,23 +42,16 @@ namespace hazelcast {
                         : public util::Future<boost::shared_ptr<protocol::ClientMessage> > {
                 public:
                     ClientInvocationFuture(util::ILogger &logger, ClientInvocation &invocation,
-                                           sequence::CallIdSequence &callIdSequence, util::Executor &defaultExecutor)
-                            : util::Future<boost::shared_ptr<protocol::ClientMessage> >(logger), logger(logger),
-                              invocation(invocation), callIdSequence(callIdSequence),
-                              defaultExecutor(defaultExecutor) {}
+                                           sequence::CallIdSequence &callIdSequence, util::Executor &defaultExecutor);
 
-                    virtual void onComplete() {
-                        callIdSequence.complete();
-                    }
+                    virtual void onComplete();
 
-                    ClientInvocation &getInvocation() const {
-                        return invocation;
-                    }
+                    ClientInvocation &getInvocation() const;
 
                     void
-                    andThen(const boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > &callback) {
-                        util::Future<boost::shared_ptr<protocol::ClientMessage> >::andThen(callback, defaultExecutor);
-                    }
+                    andThen(const boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > &callback);
+
+                    virtual std::string invocationToString();
 
                 private:
                     class InternalDelegatingExecutionCallback
@@ -66,35 +59,17 @@ namespace hazelcast {
                     public:
                         InternalDelegatingExecutionCallback(
                                 const boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > &callback,
-                                sequence::CallIdSequence &callIdSequence) : callback(callback),
-                                                                            callIdSequence(callIdSequence) {
-                            this->callIdSequence.forceNext();
-                        }
+                                sequence::CallIdSequence &callIdSequence);
 
-                        virtual void onResponse(const boost::shared_ptr<protocol::ClientMessage> &message) {
-                            try {
-                                callback->onResponse(message);
-                                callIdSequence.complete();
-                            } catch (...) {
-                                callIdSequence.complete();
-                            }
-                        }
+                        virtual void onResponse(const boost::shared_ptr<protocol::ClientMessage> &message);
 
-                        virtual void onFailure(const boost::shared_ptr<exception::IException> &e) {
-                            try {
-                                callback->onFailure(e);
-                                callIdSequence.complete();
-                            } catch (...) {
-                                callIdSequence.complete();
-                            }
-                        }
+                        virtual void onFailure(const boost::shared_ptr<exception::IException> &e);
 
                     private:
                         boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > callback;
                         sequence::CallIdSequence &callIdSequence;
                     };
 
-                    util::ILogger &logger;
                     ClientInvocation &invocation;
                     sequence::CallIdSequence &callIdSequence;
                     util::Executor &defaultExecutor;

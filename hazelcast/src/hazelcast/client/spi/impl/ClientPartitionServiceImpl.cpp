@@ -96,7 +96,7 @@ namespace hazelcast {
                 }
 
                 void ClientPartitionServiceImpl::listenPartitionTable(
-                        boost::shared_ptr<connection::Connection> &ownerConnection) {
+                        const boost::shared_ptr<connection::Connection> &ownerConnection) {
                     //when we connect to cluster back we need to reset partition state version
                     lastPartitionStateVersion = -1;
                     if (ownerConnection->getConnectedServerVersion() >=

@@ -17,13 +17,13 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_ABSTRACTCLIENTINVOCATIONSERVICE_H_
 #define HAZELCAST_CLIENT_SPI_IMPL_ABSTRACTCLIENTINVOCATIONSERVICE_H_
 
+#include <ostream>
 #include <hazelcast/client/ClientProperties.h>
 #include <hazelcast/client/spi/ClientContext.h>
 #include <hazelcast/util/SynchronizedMap.h>
 #include <hazelcast/util/AtomicBoolean.h>
 #include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/listener/AbstractClientListenerService.h>
-#include <ostream>
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/ClientInvocationService.h"
 
@@ -36,6 +36,7 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             class ClientListenerService;
+            class ClientPartitionService;
 
             namespace impl {
                 class HAZELCAST_API AbstractClientInvocationService : public ClientInvocationService {
@@ -120,14 +121,11 @@ namespace hazelcast {
                     ClientContext &client;
                     util::ILogger &invocationLogger;
                     connection::ClientConnectionManagerImpl &connectionManager;
-                    PartitionService &partitionService;
+                    ClientPartitionService &partitionService;
                     spi::impl::listener::AbstractClientListenerService &clientListenerService;
 
                     util::SynchronizedMap<int64_t, ClientInvocation> invocations;
 
-/*
-                    ResponseThread responseThread;
-*/
                     util::AtomicBoolean isShutdown;
                     int64_t invocationTimeoutMillis;
                     int64_t invocationRetryPauseMillis;

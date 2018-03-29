@@ -23,9 +23,12 @@
 namespace hazelcast {
     namespace client {
         TransactionContext::TransactionContext(spi::impl::ClientTransactionManagerServiceImpl &transactionManager,
-                                               const TransactionOptions &txnOptions) : options(txnOptions)
-        , txnConnection(transactionManager.connect())
-        , transaction(options, transactionManager.getClient(), txnConnection) {
+                                               const TransactionOptions &txnOptions) : options(txnOptions),
+                                                                                       txnConnection(
+                                                                                               transactionManager.connect()),
+                                                                                       transaction(options,
+                                                                                                   transactionManager.getClient(),
+                                                                                                   txnConnection) {
         }
 
         std::string TransactionContext::getTxnId() const {

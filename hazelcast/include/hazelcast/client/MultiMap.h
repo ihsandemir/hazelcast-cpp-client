@@ -191,7 +191,7 @@ namespace hazelcast {
             * @return returns registration id.
             */
             std::string addEntryListener(EntryListener<K, V> &listener, bool includeValue) {
-                spi::impl::ClientClusterServiceImpl &clusterService = context->getClientClusterService();
+                spi::ClientClusterService &clusterService = context->getClientClusterService();
                 serialization::pimpl::SerializationService &ss = context->getSerializationService();
                 impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
                         new impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(

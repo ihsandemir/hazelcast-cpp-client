@@ -27,7 +27,7 @@ namespace hazelcast {
             }
 
             void BaseEventHandler::handle(const boost::shared_ptr<protocol::ClientMessage> &event) {
-                handle(event);
+                spi::EventHandler<protocol::ClientMessage>::handle(event);
             }
         }
     }

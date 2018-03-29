@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef HAZELCAST_CONNECTION_ADDRESSTRANSLATOR_H_
-#define HAZELCAST_CONNECTION_ADDRESSTRANSLATOR_H_
+#ifndef HAZELCAST_CLIENT_CONNECTION_ADDRESSTRANSLATOR_H_
+#define HAZELCAST_CLIENT_CONNECTION_ADDRESSTRANSLATOR_H_
 
-#include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/client/Address.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -27,10 +27,8 @@
 
 namespace hazelcast {
     namespace client {
-        class Address;
-
         namespace connection {
-            class HAZELCAST_API AdressTranslator {
+            class HAZELCAST_API AddressTranslator {
             public:
                 /**
                  * Translates the given address to another address specific to
@@ -54,5 +52,5 @@ namespace hazelcast {
 #pragma warning(pop)
 #endif
 
-#endif //HAZELCAST_CONNECTION_ADDRESSTRANSLATOR_H_
+#endif //HAZELCAST_CLIENT_CONNECTION_ADDRESSTRANSLATOR_H_
 
