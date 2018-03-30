@@ -70,7 +70,7 @@ namespace hazelcast {
                                       std::auto_ptr<serialization::pimpl::Data> mergingValue,
                                       const int32_t &eventType, const std::string &uuid,
                                       const int32_t &numberOfAffectedEntries) {
-                    std::auto_ptr<Member> member = clusterService.getMember(uuid);
+                    boost::shared_ptr<Member> member = clusterService.getMember(uuid);
 
                     MapEvent mapEvent(*member, (EntryEventType::Type)eventType, instanceName, numberOfAffectedEntries);
 
@@ -106,7 +106,7 @@ namespace hazelcast {
                     if (NULL != key.get()) {
                         eventKey = serializationService.toObject<K>(*key);
                     }
-                    std::auto_ptr<Member> member = clusterService.getMember(uuid);
+                    boost::shared_ptr<Member> member = clusterService.getMember(uuid);
                     EntryEvent<K, V> entryEvent(instanceName, *member, type, eventKey, val, oldVal, mergingVal);
                     if (type == EntryEventType::ADDED) {
                         listener.entryAdded(entryEvent);

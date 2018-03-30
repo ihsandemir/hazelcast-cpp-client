@@ -39,7 +39,7 @@ namespace hazelcast {
                 class MessageImpl : public Message<E> {
                 public:
                     MessageImpl(std::string topicName, std::auto_ptr<E> message, int64_t publishTime,
-                                std::auto_ptr<Member> member)
+                                const boost::shared_ptr<Member> &member)
                             : messageObject(message)
                             , publishTime(publishTime)
                             , publishingMember(member)
@@ -74,7 +74,7 @@ namespace hazelcast {
                 private:
                     std::auto_ptr<E> messageObject;
                     int64_t publishTime;
-                    std::auto_ptr<Member> publishingMember;
+                    const boost::shared_ptr<Member> &publishingMember;
                     std::string name;
                 };
             }
@@ -86,7 +86,7 @@ namespace hazelcast {
                     class HAZELCAST_API MessageImpl : public client::topic::Message<TypedData> {
                     public:
                         MessageImpl(std::string topicName, std::auto_ptr<TypedData> message, int64_t publishTime,
-                                    boost::shared_ptr<Member> &member)
+                                    const boost::shared_ptr<Member> &member)
                                 : messageObject(message)
                                 , publishTime(publishTime)
                                 , publishingMember(member)
@@ -121,7 +121,7 @@ namespace hazelcast {
                     private:
                         std::auto_ptr<TypedData> messageObject;
                         int64_t publishTime;
-                        boost::shared_ptr<Member> publishingMember;
+                        const boost::shared_ptr<Member> &publishingMember;
                         std::string name;
                     };
                 }

@@ -53,8 +53,6 @@ namespace hazelcast {
 
                 virtual long getThreadId() = 0;
 
-                static void parkNanos(int64_t nanos);
-
             protected:
 
                 virtual void startInternal(Runnable *targetObject) = 0;

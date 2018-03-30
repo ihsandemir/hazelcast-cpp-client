@@ -1254,9 +1254,9 @@ namespace hazelcast {
                                                                                              keyData,
                                                                                              util::getThreadId());
 
-                    spi::impl::ClientInvocationFuture &clientInvocationFuture = invokeAndGetFuture(request, partitionId);
+                    boost::shared_ptr<spi::impl::ClientInvocationFuture> clientInvocationFuture = invokeAndGetFuture(request, partitionId);
 
-                    return client::Future<ResultType>(clientInvocationFuture, getSerializationService(), submitToKeyDecoder);
+                    return client::Future<ResultType>(*clientInvocationFuture, getSerializationService(), submitToKeyDecoder);
                 }
 
                 static std::auto_ptr<serialization::pimpl::Data> submitToKeyDecoder(protocol::ClientMessage &response) {

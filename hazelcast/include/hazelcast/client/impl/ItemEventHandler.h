@@ -47,7 +47,7 @@ namespace hazelcast {
                     if (includeValue) {
                         obj = serializationService.toObject<E>(*item);
                     }
-                    std::auto_ptr<Member> member = clusterService.getMember(uuid);
+                    boost::shared_ptr<Member> member = clusterService.getMember(uuid);
                     ItemEventType type((ItemEventType::Type) eventType);
                     ItemEvent<E> itemEvent(instanceName, type, *obj, *member);
                     if (type == ItemEventType::ADDED) {

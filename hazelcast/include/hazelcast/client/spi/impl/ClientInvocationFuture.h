@@ -73,6 +73,10 @@ namespace hazelcast {
                     ClientInvocation &invocation;
                     sequence::CallIdSequence &callIdSequence;
                     util::Executor &defaultExecutor;
+
+                    ClientInvocationFuture(const ClientInvocationFuture &rhs);
+
+                    void operator=(const ClientInvocationFuture &rhs);
                 };
 
             }

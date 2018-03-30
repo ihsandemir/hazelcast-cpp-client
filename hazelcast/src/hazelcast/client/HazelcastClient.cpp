@@ -258,6 +258,10 @@ namespace hazelcast {
 
             return addressProviders;
         }
+
+        const std::string &HazelcastClient::getName() const {
+            return instanceName;
+        }
     }
 }
 

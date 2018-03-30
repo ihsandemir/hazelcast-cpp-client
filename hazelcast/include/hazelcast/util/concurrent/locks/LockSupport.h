@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_UTIL_CONCURRENT_IDLESTRATEGY_H_
-#define HAZELCAST_UTIL_CONCURRENT_IDLESTRATEGY_H_
+#ifndef HAZELCAST_UTIL_CONCURRENT_LOCKS_LOCKSUPPORT_H_
+#define HAZELCAST_UTIL_CONCURRENT_LOCKS_LOCKSUPPORT_H_
 
 #include <stdint.h>
 
-#include "hazelcast/util/HazelcastDll.h
+#include "hazelcast/util/HazelcastDll.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -71,4 +71,4 @@ namespace hazelcast {
 #pragma warning(pop)
 #endif
 
-#endif //HAZELCAST_UTIL_CONCURRENT_IDLESTRATEGY_H_
+#endif //HAZELCAST_UTIL_CONCURRENT_LOCKS_LOCKSUPPORT_H_

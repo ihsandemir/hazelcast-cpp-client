@@ -47,7 +47,7 @@ namespace hazelcast {
                     internalExecutor.reset(
                             new util::impl::SimpleExecutorService(logger, name + ".internal-", internalPoolSize,
                                                                   INT32_MAX));
-                    internalExecutor.reset(
+                    userExecutor.reset(
                             new util::impl::SimpleExecutorService(logger, name + ".user-", executorPoolSize,
                                                                   INT32_MAX));
                 }

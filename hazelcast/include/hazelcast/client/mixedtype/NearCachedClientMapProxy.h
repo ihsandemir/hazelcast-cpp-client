@@ -178,7 +178,6 @@ namespace hazelcast {
 
                 void invalidateNearCache(boost::shared_ptr<serialization::pimpl::Data> key);
 
-
             private:
                 class NearCacheEntryListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:

@@ -63,19 +63,19 @@ namespace hazelcast {
                             try {
                                 proxy::RingbufferImpl<ReliableTopicMessage> &ringbuffer =
                                         static_cast<proxy::RingbufferImpl<ReliableTopicMessage> &>(rb);
-                                spi::impl::ClientInvocationFuture &future = ringbuffer.readManyAsync(m.sequence, 1, m.maxCount);
+                                boost::shared_ptr<spi::impl::ClientInvocationFuture> future = ringbuffer.readManyAsync(m.sequence, 1, m.maxCount);
                                 boost::shared_ptr<protocol::ClientMessage> responseMsg;
                                 do {
-                                    if (future.waitFor(1000)) {
-                                        responseMsg = future.get(); // every one second
+                                    if (future->waitFor(1000)) {
+                                        responseMsg = future->get(); // every one second
                                     }
                                 } while (!shutdown && (protocol::ClientMessage *)NULL == responseMsg.get());
 
                                 if (!shutdown) {
-                                    std::auto_ptr<DataArray<ReliableTopicMessage> > allMessages = ringbuffer.getReadManyAsyncResponseObject(
-                                            responseMsg);
+                                    boost::shared_ptr<DataArray<ReliableTopicMessage> > allMessages(ringbuffer.getReadManyAsyncResponseObject(
+                                            responseMsg));
 
-                                    m.callback->onResponse(*allMessages);
+                                    m.callback->onResponse(allMessages);
                                 }
                             } catch (exception::ProtocolException &e) {
                                 m.callback->onFailure(boost::shared_ptr<exception::IException>(e.clone()));

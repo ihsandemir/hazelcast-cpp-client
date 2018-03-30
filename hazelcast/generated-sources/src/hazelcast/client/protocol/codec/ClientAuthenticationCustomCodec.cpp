@@ -102,7 +102,7 @@ namespace hazelcast {
                         ownerUuid = std::auto_ptr<std::string>(new std::string(*rhs.ownerUuid));
                         serializationVersion = rhs.serializationVersion;
                         serverHazelcastVersion = rhs.serverHazelcastVersion;
-                        clientUnregisteredMembers = std::auto_ptr<std::vector<Member>>(new std::vector<Member>(*rhs.clientUnregisteredMembers));
+                        clientUnregisteredMembers = std::auto_ptr<std::vector<Member> >(new std::vector<Member>(*rhs.clientUnregisteredMembers));
                 }
                 //************************ EVENTS END **************************************************************************//
 

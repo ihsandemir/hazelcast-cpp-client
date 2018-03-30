@@ -117,7 +117,7 @@ namespace hazelcast {
              * @param version
              * @return
              */
-            static std::vector<std::string> tokenizeVersionString(const::std::string &version);
+            static std::vector<std::string> tokenizeVersionString(const std::string &version);
         };
 
         class HAZELCAST_API Int64Util {

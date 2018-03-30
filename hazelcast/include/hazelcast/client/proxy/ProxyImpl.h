@@ -103,7 +103,7 @@ namespace hazelcast {
                 boost::shared_ptr<protocol::ClientMessage> invokeOnPartition(std::auto_ptr<protocol::ClientMessage> request,
                                                                          int partitionId);
 
-                spi::impl::ClientInvocationFuture &invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request,
+                boost::shared_ptr<spi::impl::ClientInvocationFuture> invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request,
                                                               int partitionId);
 
                 /**

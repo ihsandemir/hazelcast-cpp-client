@@ -39,7 +39,7 @@ namespace hazelcast {
                     msg->setIsBoundToSingleConnection(true);
                     msg->setRetryable(true);
                     msg->setCorrelationId(0xABCDEF12);
-                    msg->setFlags(0x05);
+                    msg->addFlag(0x05);
                     msg->setMessageType(0xABCD);
                     msg->setPartitionId(0x8ABCDEF1);
                     msg->setVersion(4);

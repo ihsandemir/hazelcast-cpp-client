@@ -109,6 +109,14 @@ namespace hazelcast {
                     return true;
                 }
                 alive = true;
+
+                if (!inSelector.start()) {
+                    return false;
+                }
+                if (!outSelector.start()) {
+                    return false;
+                }
+
                 startEventLoopGroup();
                 heartbeat.reset(new HeartbeatManager(client));
                 heartbeat->start();
@@ -116,14 +124,7 @@ namespace hazelcast {
                         new spi::impl::ConnectionHeartbeatListenerDelegator(*this)));
                 connectionStrategy->start();
 
-
                 socketInterceptor = client.getClientConfig().getSocketInterceptor();
-                if (!inSelector.start()) {
-                    return false;
-                }
-                if (!outSelector.start()) {
-                    return false;
-                }
 
                 return socketFactory.start();
             }
@@ -309,10 +310,10 @@ namespace hazelcast {
                                                                                                    principal.get());
                 boost::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         client, clientMessage, "", connection);
-                spi::impl::ClientInvocationFuture &invocationFuture = spi::impl::ClientInvocation::invokeUrgent(
+                boost::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = spi::impl::ClientInvocation::invokeUrgent(
                         clientInvocation);
                 // TODO: executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, TimeUnit.MILLISECONDS);
-                invocationFuture.andThen(
+                invocationFuture->andThen(
                         boost::shared_ptr<impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > >(
                                 new AuthCallback(connection, asOwner, target, future, *this)));
             }

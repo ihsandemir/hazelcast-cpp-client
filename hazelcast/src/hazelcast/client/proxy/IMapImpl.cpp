@@ -350,7 +350,7 @@ namespace hazelcast {
                     std::auto_ptr<protocol::ClientMessage> request =
                             protocol::codec::MapGetAllCodec::RequestParameters::encode(getName(), it->second);
 
-                    futures.push_back(&invokeAndGetFuture(request, it->first));
+                    futures.push_back(invokeAndGetFuture(request, it->first).get());
                 }
 
                 EntryVector result;
@@ -484,7 +484,7 @@ namespace hazelcast {
                     std::auto_ptr<protocol::ClientMessage> request =
                             protocol::codec::MapPutAllCodec::RequestParameters::encode(getName(), it->second);
 
-                    futures.push_back(&invokeAndGetFuture(request, it->first));
+                    futures.push_back(invokeAndGetFuture(request, it->first).get());
                 }
 
                 // wait for all futures

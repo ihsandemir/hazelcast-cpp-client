@@ -42,8 +42,7 @@ namespace hazelcast {
                                   client.getClientProperties().getInvocationTimeoutSeconds().getInteger() * 1000),
                           invocationRetryPauseMillis(
                                   client.getClientProperties().getInvocationRetryPauseMillis().getLong()),
-                          responseThread(client.getName() + ".response-", invocationLogger,
-                                         (AbstractClientInvocationService &) client.getInvocationService(), client) {
+                          responseThread(client.getName() + ".response-", invocationLogger, *this, client) {
                 }
 
                 bool AbstractClientInvocationService::start() {

@@ -50,7 +50,7 @@ namespace hazelcast {
 
                     virtual void handleTopic(const serialization::pimpl::Data &item, const int64_t &publishTime,
                                              const std::string &uuid) {
-                        std::auto_ptr<Member> member = clusterService.getMember(uuid);
+                        boost::shared_ptr<Member> member = clusterService.getMember(uuid);
 
                         std::auto_ptr<E> object = serializationService.toObject<E>(item);
 

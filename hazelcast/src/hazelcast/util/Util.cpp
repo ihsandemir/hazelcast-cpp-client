@@ -17,12 +17,11 @@
 // Created by sancar koyunlu on 5/3/13.
 
 #include "hazelcast/util/Util.h"
-#include "hazelcast/util/Thread.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/date_time/microsec_time_clock.hpp>
 #include <boost/date_time.hpp>
-#include <boost/regex.hpp>
+#include <boost/tokenizer.hpp>
 
 #include <string.h>
 #include <algorithm>
@@ -37,6 +36,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <boost/foreach.hpp>
+
 #endif
 
 namespace hazelcast {
@@ -108,7 +109,7 @@ namespace hazelcast {
 
         boost::posix_time::time_duration getDurationSinceEpoch() {
             boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-            boost::posix_time::ptime now = boost::date_time::microsec_clock::universal_time();
+            boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time();
             boost::posix_time::time_duration diff = now - epoch;
             return diff;
         }
@@ -182,15 +183,16 @@ namespace hazelcast {
             return timeInMillis == 0 ? "never" : timeToString(timeInMillis);
         }
 
-        std::vector<std::string> StringUtil::tokenizeVersionString(const ::std::string &version) {
-            boost::regex expr("^([\\d]+)\\.([\\d]+)(\\.([\\d]+))?(-[\\w]+)?(-SNAPSHOT)?$");
-            boost::regex_token_iterator<std::string::iterator> it(version.begin(), version.end(),
-                                                                  expr);
-            boost::regex_token_iterator<std::string::iterator> end;
+        std::vector<std::string> StringUtil::tokenizeVersionString(const std::string &version) {
+            typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+            boost::char_separator<char> sep(".");
+            tokenizer tok(version, sep);
+
             std::vector<std::string> tokens;
-            while (it != end) {
-                tokens.push_back(*it++);
+            BOOST_FOREACH(const std::string &token , tok) {
+                            tokens.push_back(token);
             }
+
             return tokens;
         }
 

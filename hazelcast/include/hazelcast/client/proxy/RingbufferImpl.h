@@ -105,7 +105,8 @@ namespace hazelcast {
                     return toObject<E>(itemData);
                 }
 
-                spi::impl::ClientInvocationFuture &readManyAsync(int64_t sequence, int32_t maxCount, time_t timeoutSeconds) {
+                boost::shared_ptr<spi::impl::ClientInvocationFuture>
+                readManyAsync(int64_t sequence, int32_t maxCount, time_t timeoutSeconds) {
                     std::auto_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferReadManyCodec::RequestParameters::encode(
                             getName(), sequence, 1, maxCount, (const serialization::pimpl::Data *)NULL);
 

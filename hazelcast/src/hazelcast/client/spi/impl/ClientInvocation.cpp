@@ -44,9 +44,9 @@ namespace hazelcast {
                                                                       partitionId(partitionId),
                                                                       startTimeMillis(util::currentTimeMillis()),
                                                                       objectName(objectName),
-                                                                      clientInvocationFuture(logger, *this,
+                                                                      clientInvocationFuture(new ClientInvocationFuture(logger, *this,
                                                                                              callIdSequence,
-                                                                                             clientContext.getClientExecutionService()) {
+                                                                                             clientContext.getClientExecutionService())) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -74,11 +74,11 @@ namespace hazelcast {
                                                                                                                     objectName),
                                                                                                             connection(
                                                                                                                     connection),
-                                                                                                            clientInvocationFuture(
+                                                                                                            clientInvocationFuture(new ClientInvocationFuture(
                                                                                                                     logger,
                                                                                                                     *this,
                                                                                                                     callIdSequence,
-                                                                                                                    clientContext.getClientExecutionService()) {
+                                                                                                                    clientContext.getClientExecutionService())) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -108,11 +108,11 @@ namespace hazelcast {
                                                                                                         objectName),
                                                                                                 connection(
                                                                                                         connection),
-                                                                                                clientInvocationFuture(
+                                                                                                clientInvocationFuture(new ClientInvocationFuture(
                                                                                                         logger,
                                                                                                         *this,
                                                                                                         callIdSequence,
-                                                                                                        clientContext.getClientExecutionService()) {
+                                                                                                        clientContext.getClientExecutionService())) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -133,21 +133,21 @@ namespace hazelcast {
                                                                                     startTimeMillis(
                                                                                             util::currentTimeMillis()),
                                                                                     objectName(objectName),
-                                                                                    clientInvocationFuture(logger,
+                                                                                    clientInvocationFuture(new ClientInvocationFuture(logger,
                                                                                                            *this,
                                                                                                            callIdSequence,
-                                                                                                           clientContext.getClientExecutionService()) {
+                                                                                                           clientContext.getClientExecutionService())) {
 
                 }
 
-                ClientInvocationFuture &ClientInvocation::invoke(boost::shared_ptr<ClientInvocation> &invocation) {
+                boost::shared_ptr<ClientInvocationFuture> ClientInvocation::invoke(boost::shared_ptr<ClientInvocation> &invocation) {
                     assert (invocation->clientMessage.get() != NULL);
                     invocation->clientMessage->setCorrelationId(invocation->callIdSequence.next());
                     invocation->invokeOnSelection(invocation);
                     return invocation->clientInvocationFuture;
                 }
 
-                ClientInvocationFuture &
+                boost::shared_ptr<ClientInvocationFuture>
                 ClientInvocation::invokeUrgent(boost::shared_ptr<ClientInvocation> &invocation) {
                     assert (invocation->clientMessage.get() != NULL);
                     invocation->clientMessage->setCorrelationId(invocation->callIdSequence.forceNext());
@@ -192,19 +192,19 @@ namespace hazelcast {
                     try {
                         invokeOnSelection(shared_from_this());
                     } catch (exception::IException &e) {
-                        clientInvocationFuture.complete(e);
+                        clientInvocationFuture->complete(e);
                     }
                 }
 
                 void ClientInvocation::notifyException(exception::IException &exception) {
                     if (!lifecycleService.isRunning()) {
-                        clientInvocationFuture.complete(exception::HazelcastClientNotActiveException(
+                        clientInvocationFuture->complete(exception::HazelcastClientNotActiveException(
                                 exception.getSource(), exception.getMessage()));
                         return;
                     }
 
                     if (isNotAllowedToRetryOnSelection(exception)) {
-                        clientInvocationFuture.complete(exception);
+                        clientInvocationFuture->complete(exception);
                         return;
                     }
 
@@ -213,7 +213,7 @@ namespace hazelcast {
                                  || isDisconnectedRetryable(exception, *clientMessage);
 
                     if (!retry) {
-                        clientInvocationFuture.complete(exception);
+                        clientInvocationFuture->complete(exception);
                         return;
                     }
 
@@ -225,14 +225,14 @@ namespace hazelcast {
                             logger.finest(out.str());
                         }
 
-                        clientInvocationFuture.complete(newOperationTimeoutException(exception));
+                        clientInvocationFuture->complete(newOperationTimeoutException(exception));
                         return;
                     }
 
                     try {
                         execute();
                     } catch (exception::RejectedExecutionException &) {
-                        clientInvocationFuture.complete(exception);
+                        clientInvocationFuture->complete(exception);
                     }
 
                 }
@@ -359,7 +359,7 @@ namespace hazelcast {
                     if (clientMessage.get() == NULL) {
                         throw exception::IllegalArgumentException("response can't be null");
                     }
-                    clientInvocationFuture.complete(clientMessage);
+                    clientInvocationFuture->complete(clientMessage);
                 }
 
                 const boost::shared_ptr<protocol::ClientMessage> &ClientInvocation::getClientMessage() const {
@@ -387,13 +387,12 @@ namespace hazelcast {
                 void ClientInvocation::execute() {
                     if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                         // fast retry for the first few invocations
-                        executionService.execute(boost::shared_ptr<util::Runnable>(new util::RunnableDelegator(*this)));
+                        executionService.execute(boost::shared_ptr<util::Runnable>(shared_from_this()));
                     } else {
                         // progressive retry delay
                         long delayMillis = util::min<int64_t>(1 << ((int64_t) invokeCount - MAX_FAST_INVOCATION_COUNT),
                                                               retryPauseMillis);
-                        executionService.schedule(boost::shared_ptr<util::Runnable>(new util::RunnableDelegator(*this)),
-                                                  delayMillis);
+                        executionService.schedule(shared_from_this(), delayMillis);
                     }
                 }
 

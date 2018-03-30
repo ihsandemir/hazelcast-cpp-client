@@ -84,9 +84,9 @@ namespace hazelcast {
                                                                       std::auto_ptr<protocol::ClientMessage> &clientMessage,
                                                                       const std::string &objectName);
 
-                    static ClientInvocationFuture &invoke(boost::shared_ptr<ClientInvocation> &invocation);
+                    static boost::shared_ptr<ClientInvocationFuture> invoke(boost::shared_ptr<ClientInvocation> &invocation);
 
-                    static ClientInvocationFuture &invokeUrgent(boost::shared_ptr<ClientInvocation> &invocation);
+                    static boost::shared_ptr<ClientInvocationFuture> invokeUrgent(boost::shared_ptr<ClientInvocation> &invocation);
 
                     void run();
 
@@ -159,7 +159,7 @@ namespace hazelcast {
                     bool bypassHeartbeatCheck;
                     boost::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     util::Atomic<int64_t> invokeCount;
-                    ClientInvocationFuture clientInvocationFuture;
+                    boost::shared_ptr<ClientInvocationFuture> clientInvocationFuture;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);
 
@@ -170,6 +170,10 @@ namespace hazelcast {
                     exception::IException newOperationTimeoutException(exception::IException &exception);
 
                     void execute();
+
+                    ClientInvocation(const ClientInvocation &rhs);
+
+                    void operator=(const ClientInvocation &rhs);
                 };
             }
         }

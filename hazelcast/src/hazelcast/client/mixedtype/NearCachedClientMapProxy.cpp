@@ -293,7 +293,6 @@ namespace hazelcast {
                 }
             }
 
-
             boost::shared_ptr<spi::impl::ListenerMessageCodec>
             NearCachedClientMapProxy::createNearCacheEntryListenerCodec() {
                 int32_t listenerFlags = EntryEventType::INVALIDATION;

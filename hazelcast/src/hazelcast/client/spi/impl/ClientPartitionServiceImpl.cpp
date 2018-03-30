@@ -106,7 +106,7 @@ namespace hazelcast {
                         boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client, clientMessage,
                                                                                                   "", ownerConnection);
                         invocation->setEventHandler(shared_from_this());
-                        ClientInvocation::invokeUrgent(invocation).get();
+                        ClientInvocation::invokeUrgent(invocation)->get();
                     }
                 }
 
@@ -165,9 +165,9 @@ namespace hazelcast {
                         std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::RequestParameters::encode();
                         boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client,
                                                                                                   requestMessage, "");
-                        ClientInvocationFuture &future = ClientInvocation::invokeUrgent(invocation);
+                        boost::shared_ptr<ClientInvocationFuture> future = ClientInvocation::invokeUrgent(invocation);
                         try {
-                            boost::shared_ptr<protocol::ClientMessage> responseMessage = future.get();
+                            boost::shared_ptr<protocol::ClientMessage> responseMessage = future->get();
                             protocol::codec::ClientGetPartitionsCodec::ResponseParameters response =
                                     protocol::codec::ClientGetPartitionsCodec::ResponseParameters::decode(
                                             *responseMessage);
@@ -206,8 +206,8 @@ namespace hazelcast {
                         std::auto_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::RequestParameters::encode();
                         boost::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client,
                                                                                                   requestMessage, "");
-                        ClientInvocationFuture &future = ClientInvocation::invokeUrgent(invocation);
-                        future.andThen(partitionService.refreshTaskCallback);
+                        boost::shared_ptr<ClientInvocationFuture> future = ClientInvocation::invokeUrgent(invocation);
+                        future->andThen(partitionService.refreshTaskCallback);
                     } catch (exception::IException &e) {
                         if (client.getLifecycleService().isRunning()) {
                             partitionService.logger.warning(

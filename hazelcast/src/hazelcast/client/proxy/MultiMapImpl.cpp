@@ -312,6 +312,11 @@ namespace hazelcast {
                 return protocol::codec::MultiMapRemoveEntryListenerCodec(name, "").decodeResponse(clientMessage);
             }
 
+            MultiMapImpl::MultiMapEntryListenerToKeyCodec::MultiMapEntryListenerToKeyCodec(const std::string &name,
+                                                                                           bool includeValue,
+                                                                                           serialization::pimpl::Data &key)
+                    : name(name), includeValue(includeValue), key(key) {}
+
 
         }
     }

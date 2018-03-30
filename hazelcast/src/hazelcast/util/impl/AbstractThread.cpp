@@ -45,23 +45,6 @@ namespace hazelcast {
 
                 startInternal(target.get());
             }
-
-            void AbstractThread::parkNanos(int64_t) {
-                util::Mutex lock;
-                util::ConditionVariable condition;
-            }
-
-            AbstractThread::RunnableInfo::RunnableInfo(Runnable *runnable, Thread *runnerThread) : runnable(runnable),
-                                                                                                   runnerThread(
-                                                                                                           runnerThread) {}
-
-            Runnable *AbstractThread::RunnableInfo::getRunnable() const {
-                return runnable;
-            }
-
-            Thread *AbstractThread::RunnableInfo::getRunnerThread() const {
-                return runnerThread;
-            }
         }
     }
 }

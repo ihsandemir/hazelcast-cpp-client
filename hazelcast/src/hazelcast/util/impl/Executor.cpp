@@ -114,7 +114,7 @@ namespace hazelcast {
                     } catch (client::exception::InterruptedException &) {
                         logger.finest() << getName() << " is interrupted .";
                     } catch (client::exception::IException &t) {
-                        logger.warning() << getName() << " caught an exception" << t;
+                        logger.warning() << getName() << " caused an exception" << t;
                     }
                 }
             }
@@ -143,7 +143,7 @@ namespace hazelcast {
 
             std::string SimpleExecutorService::Worker::generateThreadName(const std::string &prefix) {
                 std::ostringstream out;
-                out << prefix << "-" << (++THREAD_ID_GENERATOR);
+                out << prefix << (++THREAD_ID_GENERATOR);
                 return out.str();
             }
         }

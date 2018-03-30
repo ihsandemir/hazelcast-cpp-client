@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <hazelcast/util/concurrent/locks/LockSupport.h>
 #include "hazelcast/util/concurrent/BackoffIdleStrategy.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/util/Thread.h"
@@ -47,14 +48,14 @@ namespace hazelcast {
                     Thread::yield();
                     return false;
                 }
-                int64_t parkTime = parkTime(n);
-                locks::LockSupport::parkNanos(parkTime);
-                return parkTime == maxParkPeriodNs;
+                int64_t time = parkTime(n);
+                locks::LockSupport::parkNanos(time);
+                return time == maxParkPeriodNs;
             }
 
             int64_t BackoffIdleStrategy::parkTime(int64_t n) const {
                 const int64_t proposedShift = n - parkThreshold;
-                const int64_t allowedShift = min(maxShift, proposedShift);
+                const int64_t allowedShift = min<int64_t>(maxShift, proposedShift);
                 return proposedShift > maxShift ? maxParkPeriodNs
                                                 : proposedShift < maxShift ? minParkPeriodNs << allowedShift
                                                                            : min(minParkPeriodNs << allowedShift, maxParkPeriodNs);

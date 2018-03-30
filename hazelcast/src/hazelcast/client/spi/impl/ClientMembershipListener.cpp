@@ -188,7 +188,7 @@ namespace hazelcast {
                                                                                               clientMessage, "",
                                                                                               ownerConnection);
                     invocation->setEventHandler(listener);
-                    ClientInvocation::invokeUrgent(invocation).get();
+                    ClientInvocation::invokeUrgent(invocation)->get();
                     listener->waitInitialMemberListFetched();
                 }
 

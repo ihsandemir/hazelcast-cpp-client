@@ -59,10 +59,10 @@ namespace hazelcast {
 
                 boost::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         *context, request, getName(), partitionId);
-                return spi::impl::ClientInvocation::invoke(invocation).get();
+                return spi::impl::ClientInvocation::invoke(invocation)->get();
             }
 
-            spi::impl::ClientInvocationFuture &
+            boost::shared_ptr<spi::impl::ClientInvocationFuture>
             ProxyImpl::invokeAndGetFuture(std::auto_ptr<protocol::ClientMessage> request, int partitionId) {
                 boost::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         *context, request, getName(), partitionId);
@@ -73,7 +73,7 @@ namespace hazelcast {
             ProxyImpl::invoke(std::auto_ptr<protocol::ClientMessage> request) {
                 boost::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         *context, request, getName());
-                return spi::impl::ClientInvocation::invoke(invocation).get();
+                return spi::impl::ClientInvocation::invoke(invocation)->get();
             }
 
             void ProxyImpl::destroy() {
@@ -84,14 +84,14 @@ namespace hazelcast {
 
                 boost::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         *context, request, getName());
-                spi::impl::ClientInvocation::invoke(invocation).get();
+                spi::impl::ClientInvocation::invoke(invocation)->get();
             }
 
             boost::shared_ptr<protocol::ClientMessage> ProxyImpl::invoke(std::auto_ptr<protocol::ClientMessage> request,
                                                                          boost::shared_ptr<connection::Connection> conn) {
                 boost::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         *context, request, getName(), conn);
-                return spi::impl::ClientInvocation::invoke(invocation).get();
+                return spi::impl::ClientInvocation::invoke(invocation)->get();
             }
 
             std::vector<hazelcast::client::TypedData>

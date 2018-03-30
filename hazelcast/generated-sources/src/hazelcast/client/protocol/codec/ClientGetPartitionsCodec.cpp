@@ -45,7 +45,7 @@ namespace hazelcast {
                         throw exception::UnexpectedMessageTypeException("ClientGetPartitionsCodec::ResponseParameters::decode", clientMessage.getMessageType(), TYPE);
                     }
 
-                    partitions = clientMessage.getArray<std::pair<Address, std::vector<int32_t>> >();
+                    partitions = clientMessage.getArray<std::pair<Address, std::vector<int32_t> > >();
 
                     partitionStateVersion = clientMessage.get<int32_t >();
                 }
