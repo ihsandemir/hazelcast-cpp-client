@@ -750,7 +750,7 @@ namespace hazelcast {
             std::auto_ptr<connection::ClientConnectionManagerImpl> connectionManager;
             internal::nearcache::NearCacheManager nearCacheManager;
             spi::impl::ClientClusterServiceImpl clusterService;
-            spi::impl::ClientPartitionServiceImpl partitionService;
+            std::auto_ptr<spi::impl::ClientPartitionServiceImpl> partitionService;
             std::auto_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
             std::auto_ptr<spi::ClientInvocationService> invocationService;
             std::auto_ptr<spi::ClientListenerService> listenerService;

@@ -36,7 +36,7 @@ namespace hazelcast {
 
                     void AbstractClientListenerService::handleClientMessage(
                             const boost::shared_ptr<protocol::ClientMessage> &clientMessage,
-                            const boost::shared_ptr<connection::Connection> connection) {
+                            const boost::shared_ptr<connection::Connection> &connection) {
                         try {
                             eventExecutor.execute(
                                     boost::shared_ptr<util::StripedRunnable>(

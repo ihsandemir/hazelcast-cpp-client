@@ -36,7 +36,7 @@ namespace hazelcast {
             public:
                 virtual ~IMessageHandler() { }
 
-                virtual void handleClientMessage(boost::shared_ptr<connection::Connection> &connection,
+                virtual void handleClientMessage(const boost::shared_ptr<connection::Connection> &connection,
                                                  std::auto_ptr<ClientMessage> &message) = 0;
             };
         }

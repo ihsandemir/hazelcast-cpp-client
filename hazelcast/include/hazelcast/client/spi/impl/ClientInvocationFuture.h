@@ -52,7 +52,6 @@ namespace hazelcast {
                     andThen(const boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > &callback);
 
                     virtual std::string invocationToString();
-
                 private:
                     class InternalDelegatingExecutionCallback
                             : public client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > {

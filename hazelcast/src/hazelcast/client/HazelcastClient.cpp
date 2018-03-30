@@ -48,7 +48,7 @@ namespace hazelcast {
                 : clientConfig(config), clientProperties(clientConfig), shutdownLatch(1), clientContext(*this),
                   serializationService(clientConfig.getSerializationConfig()),
                   nearCacheManager(serializationService), clusterService(clientContext),
-                  partitionService(clientContext), transactionManager(clientContext, *clientConfig.getLoadBalancer()),
+                  transactionManager(clientContext, *clientConfig.getLoadBalancer()),
                   cluster(clusterService),
                   lifecycleService(clientContext, clientConfig.getLifecycleListeners(), shutdownLatch,
                                    clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
@@ -76,13 +76,13 @@ namespace hazelcast {
                                                                                    maxAllowedConcurrentInvocations,
                                                                                    backofftimeoutMs);
 
-
             std::vector<boost::shared_ptr<connection::AddressProvider> > addressProviders = createAddressProviders();
 
             connectionManager = initConnectionManagerService(addressProviders);
 
             invocationService = initInvocationService();
             listenerService = initListenerService();
+            partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext));
 
             try {
                 if (!lifecycleService.start()) {
@@ -239,7 +239,7 @@ namespace hazelcast {
         }
 
         void HazelcastClient::onClusterConnect(const boost::shared_ptr<connection::Connection> &ownerConnection) {
-            partitionService.listenPartitionTable(ownerConnection);
+            partitionService->listenPartitionTable(ownerConnection);
             clusterService.listenMembershipEvents(ownerConnection);
         }
 

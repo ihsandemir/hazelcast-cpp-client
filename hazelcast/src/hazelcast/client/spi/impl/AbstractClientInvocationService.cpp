@@ -87,7 +87,7 @@ namespace hazelcast {
                 }
 
                 void AbstractClientInvocationService::handleClientMessage(
-                        boost::shared_ptr<connection::Connection> &connection,
+                        const boost::shared_ptr<connection::Connection> &connection,
                         std::auto_ptr<protocol::ClientMessage> &clientMessage) {
                     long correlationId = clientMessage->getCorrelationId();
 

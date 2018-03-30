@@ -33,7 +33,7 @@
 namespace hazelcast {
     namespace client {
         namespace connection {
-            ReadHandler::ReadHandler(boost::shared_ptr<Connection> connection, InSelector &iListener, size_t bufferSize, spi::ClientContext& clientContext)
+            ReadHandler::ReadHandler(Connection &connection, InSelector &iListener, size_t bufferSize, spi::ClientContext& clientContext)
             : IOHandler(connection, iListener)
             , buffer(new char[bufferSize])
             , byteBuffer(buffer, bufferSize)
@@ -52,7 +52,7 @@ namespace hazelcast {
             void ReadHandler::handle() {
                 lastReadTimeMillis = util::currentTimeMillis();
                 try {
-                    byteBuffer.readFrom(connection->getSocket());
+                    byteBuffer.readFrom(connection.getSocket());
                 } catch (exception::IOException &e) {
                     handleSocketException(e.what());
                     return;

@@ -43,7 +43,7 @@ namespace hazelcast {
 
             class HAZELCAST_API ReadHandler : public IOHandler {
             public:
-                ReadHandler(boost::shared_ptr<Connection> connection, InSelector &iListener, size_t bufferSize,
+                ReadHandler(Connection &connection, InSelector &iListener, size_t bufferSize,
                             spi::ClientContext &clientContext);
 
                 ~ReadHandler();

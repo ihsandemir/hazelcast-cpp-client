@@ -18,7 +18,7 @@
 namespace hazelcast {
     namespace client {
         namespace config {
-            ClientConnectionStrategyConfig::ClientConnectionStrategyConfig() : reconnectMode(ON) {
+            ClientConnectionStrategyConfig::ClientConnectionStrategyConfig() : asyncStart(false), reconnectMode(ON) {
             }
 
             ClientConnectionStrategyConfig::ReconnectMode ClientConnectionStrategyConfig::getReconnectMode() const {

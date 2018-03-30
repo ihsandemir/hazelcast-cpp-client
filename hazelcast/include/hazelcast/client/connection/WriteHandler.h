@@ -17,7 +17,6 @@
 // Created by sancar koyunlu on 25/12/13.
 //
 
-
 #ifndef HAZELCAST_WriteHandler
 #define HAZELCAST_WriteHandler
 
@@ -49,7 +48,7 @@ namespace hazelcast {
 
             class HAZELCAST_API WriteHandler : public IOHandler {
             public:
-                WriteHandler(boost::shared_ptr<Connection> connection, OutSelector &oListener, size_t bufferSize);
+                WriteHandler(Connection &connection, OutSelector &oListener, size_t bufferSize);
 
                 ~WriteHandler();
 

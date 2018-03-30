@@ -53,7 +53,7 @@ namespace hazelcast {
             class HAZELCAST_API ClientMessageBuilder {
 
             public:
-                ClientMessageBuilder(IMessageHandler &service, boost::shared_ptr<connection::Connection> connection);
+                ClientMessageBuilder(IMessageHandler &service, connection::Connection &connection);
 
                 virtual ~ClientMessageBuilder();
 
@@ -84,7 +84,7 @@ namespace hazelcast {
                 std::auto_ptr<ClientMessage> message;
 
                 IMessageHandler &messageHandler;
-                boost::shared_ptr<connection::Connection> connection;
+                connection::Connection &connection;
 
                 int32_t frameLen;
                 int32_t offset;

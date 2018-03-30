@@ -46,7 +46,7 @@ namespace hazelcast {
             }
 
             ClientPartitionService &ClientContext::getPartitionService() {
-                return hazelcastClient.partitionService;
+                return *hazelcastClient.partitionService;
             }
 
             LifecycleService &ClientContext::getLifecycleService() {

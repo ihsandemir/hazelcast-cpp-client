@@ -60,6 +60,7 @@ namespace hazelcast {
 
             namespace impl {
                 class ClientExecutionServiceImpl;
+                class ClientInvocationFuture;
             }
         }
 
@@ -266,6 +267,19 @@ namespace hazelcast {
                     spi::ClientContext &client;
                 };
 
+                class TimeoutAuthenticationTask : public util::Runnable {
+                public:
+                    TimeoutAuthenticationTask(const boost::shared_ptr<spi::impl::ClientInvocationFuture> &future,
+                                              ClientConnectionManagerImpl &clientConnectionManager);
+
+                    virtual void run();
+
+                    virtual const std::string getName() const;
+
+                private:
+                    boost::shared_ptr<spi::impl::ClientInvocationFuture> future;
+                    ClientConnectionManagerImpl &clientConnectionManager;
+                };
 
                 util::AtomicBoolean alive;
 

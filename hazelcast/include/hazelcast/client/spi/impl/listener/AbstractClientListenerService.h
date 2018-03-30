@@ -59,7 +59,7 @@ namespace hazelcast {
                                              const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
 
                         void handleClientMessage(const boost::shared_ptr<protocol::ClientMessage> &clientMessage,
-                                                 const boost::shared_ptr<connection::Connection> connection);
+                                                 const boost::shared_ptr<connection::Connection> &connection);
 
                     protected:
                         class ClientEventProcessor : public util::StripedRunnable {

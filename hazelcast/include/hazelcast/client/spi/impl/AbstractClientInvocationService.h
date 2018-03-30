@@ -73,7 +73,7 @@ namespace hazelcast {
 
                     bool isRedoOperation();
 
-                    void handleClientMessage(boost::shared_ptr<connection::Connection> &connection,
+                    void handleClientMessage(const boost::shared_ptr<connection::Connection> &connection,
                                              std::auto_ptr<protocol::ClientMessage> &message);
 
                 protected:

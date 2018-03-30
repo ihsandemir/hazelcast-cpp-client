@@ -53,10 +53,10 @@ namespace hazelcast {
                     : closedTimeMillis(0), lastHeartbeatRequestedMillis(0), lastHeartbeatReceivedMillis(0),
                       clientContext(clientContext),
                       invocationService(clientContext.getInvocationService()),
-                      readHandler(shared_from_this(), iListener, 16 << 10, clientContext),
-                      writeHandler(shared_from_this(), oListener, 16 << 10), authenticatedAsOwner(isOwner),
+                      readHandler(*this, iListener, 16 << 10, clientContext),
+                      writeHandler(*this, oListener, 16 << 10), authenticatedAsOwner(isOwner),
                       heartBeating(true), receiveBuffer(new byte[16 << 10]),
-                      receiveByteBuffer((char *) receiveBuffer, 16 << 10), messageBuilder(*this, shared_from_this()),
+                      receiveByteBuffer((char *) receiveBuffer, 16 << 10), messageBuilder(*this, *this),
                       connectionId(-1), pendingPacketCount(0),
                       connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION) {
                 socket = socketFactory.create(address);
@@ -95,6 +95,7 @@ namespace hazelcast {
                     throw exception::IOException("Connection::connect", errorMsg);
                 }
 
+                // TODO: make this send all guarantee
                 socket->send("CB2", 3);
             }
 
@@ -150,7 +151,7 @@ namespace hazelcast {
                 return isAlive() && heartBeating;
             }
 
-            void Connection::handleClientMessage(boost::shared_ptr<Connection> &connection,
+            void Connection::handleClientMessage(const boost::shared_ptr<Connection> &connection,
                                                  std::auto_ptr<protocol::ClientMessage> &message) {
                 incrementPendingPacketCount();
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {

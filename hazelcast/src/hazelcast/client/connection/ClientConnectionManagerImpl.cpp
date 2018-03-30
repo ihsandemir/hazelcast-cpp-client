@@ -110,6 +110,10 @@ namespace hazelcast {
                 }
                 alive = true;
 
+                bool result = socketFactory.start();
+
+                socketInterceptor = client.getClientConfig().getSocketInterceptor();
+
                 if (!inSelector.start()) {
                     return false;
                 }
@@ -124,9 +128,7 @@ namespace hazelcast {
                         new spi::impl::ConnectionHeartbeatListenerDelegator(*this)));
                 connectionStrategy->start();
 
-                socketInterceptor = client.getClientConfig().getSocketInterceptor();
-
-                return socketFactory.start();
+                return result;
             }
 
             void ClientConnectionManagerImpl::shutdown() {
@@ -312,7 +314,10 @@ namespace hazelcast {
                         client, clientMessage, "", connection);
                 boost::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = spi::impl::ClientInvocation::invokeUrgent(
                         clientInvocation);
-                // TODO: executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, TimeUnit.MILLISECONDS);
+                // TODO: let this return a future and pass it to AuthCallback as in Java
+                executionService.schedule(
+                        boost::shared_ptr<util::Runnable>(new TimeoutAuthenticationTask(invocationFuture, *this)),
+                        connectionTimeoutMillis);
                 invocationFuture->andThen(
                         boost::shared_ptr<impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > >(
                                 new AuthCallback(connection, asOwner, target, future, *this)));
@@ -402,9 +407,10 @@ namespace hazelcast {
 
             void
             ClientConnectionManagerImpl::fireConnectionAddedEvent(const boost::shared_ptr<Connection> &connection) {
-                BOOST_FOREACH(const boost::shared_ptr<ConnectionListener> &connectionListener , connectionListeners.toArray()) {
-                    connectionListener->connectionAdded(connection);
-                }
+                BOOST_FOREACH(const boost::shared_ptr<ConnectionListener> &connectionListener,
+                              connectionListeners.toArray()) {
+                                connectionListener->connectionAdded(connection);
+                            }
 /*              TODO
                 connectionStrategy.onConnect(connection);
 */
@@ -515,7 +521,7 @@ namespace hazelcast {
                 }
                 std::ostringstream out;
                 out << "Unable to connect to any address! The following addresses were tried: ";
-                BOOST_FOREACH(const std::set<Address>::value_type & address , triedAddresses) {
+                BOOST_FOREACH(const std::set<Address>::value_type &address, triedAddresses) {
                                 out << address << std::endl;
                             }
                 throw exception::IllegalStateException("ConnectionManager::connectToClusterInternal", out.str());
@@ -571,7 +577,7 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::connectToCluster() {
-                connectToClusterAsync().get();
+                connectToClusterAsync()->get();
             }
 
             void ClientConnectionManagerImpl::startEventLoopGroup() {
@@ -683,8 +689,7 @@ namespace hazelcast {
                 }
                 protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) result->status;
                 switch (authenticationStatus) {
-                    case protocol::AUTHENTICATED:
-                    {
+                    case protocol::AUTHENTICATED: {
                         connection->setConnectedServerVersion(result->serverHazelcastVersion);
                         connection->setRemoteEndpoint(*result->address);
                         if (asOwner) {
@@ -697,16 +702,14 @@ namespace hazelcast {
                         future->onSuccess(connection);
                         break;
                     }
-                    case protocol::CREDENTIALS_FAILED:
-                    {
+                    case protocol::CREDENTIALS_FAILED: {
                         boost::shared_ptr<protocol::Principal> p = connectionManager.principal;
                         onFailure((exception::ExceptionBuilder<exception::AuthenticationException>(
                                 "ConnectionManager::AuthCallback::onResponse") << "Invalid credentials! Principal: "
                                                                                << *p).buildShared());
                         break;
                     }
-                    default:
-                    {
+                    default: {
                         onFailure((exception::ExceptionBuilder<exception::AuthenticationException>(
                                 "ConnectionManager::AuthCallback::onResponse")
                                 << "Authentication status code not supported. status: "
@@ -798,6 +801,24 @@ namespace hazelcast {
                 return "ShutdownTask";
             }
 
+            void ClientConnectionManagerImpl::TimeoutAuthenticationTask::run() {
+                if (future->isDone()) {
+                    return;
+                }
+                future->complete((exception::ExceptionBuilder<exception::TimeoutException>(
+                        "TimeoutAuthenticationTask::TimeoutAuthenticationTask")
+                        << "Authentication response did not come back in "
+                        << clientConnectionManager.connectionTimeoutMillis << " millis").build());
+            }
+
+            const std::string ClientConnectionManagerImpl::TimeoutAuthenticationTask::getName() const {
+                return "ClientConnectionManagerImpl::TimeoutAuthenticationTask";
+            }
+
+            ClientConnectionManagerImpl::TimeoutAuthenticationTask::TimeoutAuthenticationTask(
+                    const boost::shared_ptr<spi::impl::ClientInvocationFuture> &future,
+                    ClientConnectionManagerImpl &clientConnectionManager) : future(future), clientConnectionManager(
+                    clientConnectionManager) {}
         }
     }
 }

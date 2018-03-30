@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-/*
- * ClientMessageBuilder.cpp
- *
- *  Created on: Apr 10, 2015
- *      Author: ihsan
- */
-
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
 #include "hazelcast/util/ByteBuffer.h"
+#include "hazelcast/client/connection/Connection.h"
 
 namespace hazelcast {
     namespace client {
         namespace protocol {
             ClientMessageBuilder::ClientMessageBuilder(IMessageHandler &service,
-                                                       boost::shared_ptr<connection::Connection> connection)
+                                                       connection::Connection &connection)
                     : messageHandler(service), connection(connection) {
             }
 
@@ -57,7 +51,7 @@ namespace hazelcast {
                     if (offset == frameLen) {
                         if (message->isFlagSet(ClientMessage::BEGIN_AND_END_FLAGS)) {
                             //MESSAGE IS COMPLETE HERE
-                            messageHandler.handleClientMessage(connection, message);
+                            messageHandler.handleClientMessage(connection.shared_from_this(), message);
                             isCompleted = true;
                         } else {
                             if (message->isFlagSet(ClientMessage::BEGIN_FLAG)) {
@@ -92,7 +86,7 @@ namespace hazelcast {
 
                         partialMessages.erase(foundItemIter, foundItemIter);
 
-                        messageHandler.handleClientMessage(connection, foundMessage);
+                        messageHandler.handleClientMessage(connection.shared_from_this(), foundMessage);
 
                         result = true;
                     }

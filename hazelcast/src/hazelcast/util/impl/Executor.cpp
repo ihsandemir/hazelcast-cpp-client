@@ -109,7 +109,9 @@ namespace hazelcast {
                     try {
                         task = workQueue.pop();
                         if (task.get()) {
+                            logger.info() << "Worker " << getName() << " is executing runnable " << task->getName();
                             task->run();
+                            logger.info() << "Worker " << getName() << " finished executing runnable " << task->getName();
                         }
                     } catch (client::exception::InterruptedException &) {
                         logger.finest() << getName() << " is interrupted .";

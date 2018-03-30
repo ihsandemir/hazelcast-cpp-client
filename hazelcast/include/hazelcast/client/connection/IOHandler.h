@@ -35,7 +35,7 @@ namespace hazelcast {
             class HAZELCAST_API IOHandler : public ListenerTask {
             public:
 
-                IOHandler(boost::shared_ptr<Connection> connection, IOSelector & ioSelector);
+                IOHandler(Connection &connection, IOSelector & ioSelector);
 
                 virtual ~IOHandler();
 
@@ -48,7 +48,7 @@ namespace hazelcast {
 
             protected:
                 IOSelector & ioSelector;
-                boost::shared_ptr<Connection> connection;
+                Connection &connection;
 
                 void registerHandler();
 

@@ -103,7 +103,7 @@ namespace hazelcast {
 
                 void setIsAuthenticatedAsOwner();
 
-                virtual void handleClientMessage(boost::shared_ptr<Connection> &connection,
+                virtual void handleClientMessage(const boost::shared_ptr<Connection> &connection,
                                                  std::auto_ptr<protocol::ClientMessage> &message);
 
                 int getConnectionId() const;

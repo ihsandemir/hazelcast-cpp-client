@@ -151,15 +151,6 @@ namespace hazelcast {
                 onComplete();
             }
 
-            void reset_exception(std::auto_ptr<client::exception::IException> exception) {
-                LockGuard guard(mutex);
-
-                this->exception = exception;
-                exceptionReady = true;
-                conditionVariable.notify_all();
-                onComplete();
-            }
-
             void complete(const T &value) {
                 set_value(value);
             }
@@ -237,6 +228,11 @@ namespace hazelcast {
 
             virtual std::string invocationToString() {
                 return "";
+            }
+
+            bool isDone() {
+                LockGuard guard(mutex);
+                return resultReady || exceptionReady;
             }
 
             friend std::ostream &operator<<(std::ostream &os, const Future &future) {
