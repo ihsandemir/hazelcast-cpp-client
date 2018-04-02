@@ -105,6 +105,10 @@ namespace hazelcast {
                         }
                         return userRegistrationId;
                     }
+
+                    const std::string NonSmartClientListenerService::RegisterListenerTask::getName() const {
+                        return "NonSmartClientListenerService::RegisterListenerTask";
+                    }
                 }
             }
         }

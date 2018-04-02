@@ -250,6 +250,10 @@ namespace hazelcast {
                         return userRegistrationId;
                     }
 
+                    const std::string SmartClientListenerService::RegisterListenerTask::getName() const {
+                        return "SmartClientListenerService::RegisterListenerTask";
+                    }
+
                     const std::string SmartClientListenerService::DeRegisterListenerTask::getName() const {
                         return "SmartClientListenerService::DeRegisterListenerTask";
                     }

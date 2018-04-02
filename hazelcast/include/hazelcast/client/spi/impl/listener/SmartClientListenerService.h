@@ -63,6 +63,8 @@ namespace hazelcast {
 
                             virtual std::string call();
 
+                            virtual const std::string getName() const;
+
                         private:
                             RegistrationsMap &registrations;
                             const boost::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec;

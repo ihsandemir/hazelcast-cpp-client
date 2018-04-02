@@ -63,6 +63,8 @@ namespace hazelcast {
 
                             virtual std::string call();
 
+                            virtual const std::string getName() const;
+
                         private:
                             RegistrationsMap &activeRegistrations;
                             std::set<ClientRegistrationKey> &userRegistrations;
