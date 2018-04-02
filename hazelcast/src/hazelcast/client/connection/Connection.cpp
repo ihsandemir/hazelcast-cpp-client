@@ -56,7 +56,7 @@ namespace hazelcast {
                       readHandler(*this, iListener, 16 << 10, clientContext),
                       writeHandler(*this, oListener, 16 << 10), authenticatedAsOwner(isOwner),
                       heartBeating(true), receiveBuffer(new byte[16 << 10]),
-                      receiveByteBuffer((char *) receiveBuffer, 16 << 10), messageBuilder(*this, *this),
+                      receiveByteBuffer((char *) receiveBuffer, 16 << 10), messageBuilder(*this),
                       connectionId(-1), pendingPacketCount(0),
                       connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION) {
                 socket = socketFactory.create(address);
@@ -123,6 +123,7 @@ namespace hazelcast {
             }
 
             bool Connection::write(const boost::shared_ptr<protocol::ClientMessage> &message) {
+                util::ILogger::getLogger().info() << "Connection::write " << *message;
                 writeHandler.enqueueData(message);
                 return true;
             }

@@ -84,7 +84,7 @@ namespace hazelcast {
 
                 boost::shared_ptr<connection::Connection>
                 SmartClientInvocationService::getOrTriggerConnect(const boost::shared_ptr<Address> &target) const {
-                    boost::shared_ptr<connection::Connection> connection = connectionManager.getOrTriggerConnect(
+                    boost::shared_ptr<connection::Connection> connection = connectionManager->getOrTriggerConnect(
                             *target);
                     if (connection.get() == NULL) {
                         throw (exception::ExceptionBuilder<exception::IOException>(

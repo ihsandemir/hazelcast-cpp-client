@@ -80,9 +80,10 @@ namespace hazelcast {
 
             connectionManager = initConnectionManagerService(addressProviders);
 
+            partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext));
+
             invocationService = initInvocationService();
             listenerService = initListenerService();
-            partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext));
 
             try {
                 if (!lifecycleService.start()) {

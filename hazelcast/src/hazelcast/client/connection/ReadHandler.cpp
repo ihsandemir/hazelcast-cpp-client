@@ -37,7 +37,7 @@ namespace hazelcast {
             : IOHandler(connection, iListener)
             , buffer(new char[bufferSize])
             , byteBuffer(buffer, bufferSize)
-            , builder(clientContext.getInvocationService(), connection) {
+            , builder(connection) {
 		        lastReadTimeMillis = util::currentTimeMillis();
             }
 

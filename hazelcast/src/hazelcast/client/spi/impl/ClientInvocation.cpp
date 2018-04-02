@@ -44,41 +44,43 @@ namespace hazelcast {
                                                                       partitionId(partitionId),
                                                                       startTimeMillis(util::currentTimeMillis()),
                                                                       objectName(objectName),
-                                                                      clientInvocationFuture(new ClientInvocationFuture(logger, *this,
-                                                                                             callIdSequence,
-                                                                                             clientContext.getClientExecutionService())) {
+                                                                      clientInvocationFuture(
+                                                                              new ClientInvocationFuture(logger, *this,
+                                                                                                         callIdSequence,
+                                                                                                         clientContext.getClientExecutionService())) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
                                                    std::auto_ptr<protocol::ClientMessage> &clientMessage,
                                                    const std::string &objectName,
-                                                   const boost::shared_ptr<connection::Connection> &connection) : logger(
+                                                   const boost::shared_ptr<connection::Connection> &connection)
+                        : logger(
                         util::ILogger::getLogger()),
-                                                                                                            lifecycleService(
-                                                                                                                    clientContext.getLifecycleService()),
-                                                                                                            clientClusterService(
-                                                                                                                    clientContext.getClientClusterService()),
-                                                                                                            invocationService(
-                                                                                                                    clientContext.getInvocationService()),
-                                                                                                            executionService(
-                                                                                                                    clientContext.getClientExecutionService()),
-                                                                                                            clientMessage(
-                                                                                                                    clientMessage),
-                                                                                                            callIdSequence(
-                                                                                                                    clientContext.getCallIdSequence()),
-                                                                                                            partitionId(
-                                                                                                                    UNASSIGNED_PARTITION),
-                                                                                                            startTimeMillis(
-                                                                                                                    util::currentTimeMillis()),
-                                                                                                            objectName(
-                                                                                                                    objectName),
-                                                                                                            connection(
-                                                                                                                    connection),
-                                                                                                            clientInvocationFuture(new ClientInvocationFuture(
-                                                                                                                    logger,
-                                                                                                                    *this,
-                                                                                                                    callIdSequence,
-                                                                                                                    clientContext.getClientExecutionService())) {
+                          lifecycleService(
+                                  clientContext.getLifecycleService()),
+                          clientClusterService(
+                                  clientContext.getClientClusterService()),
+                          invocationService(
+                                  clientContext.getInvocationService()),
+                          executionService(
+                                  clientContext.getClientExecutionService()),
+                          clientMessage(
+                                  clientMessage),
+                          callIdSequence(
+                                  clientContext.getCallIdSequence()),
+                          partitionId(
+                                  UNASSIGNED_PARTITION),
+                          startTimeMillis(
+                                  util::currentTimeMillis()),
+                          objectName(
+                                  objectName),
+                          connection(
+                                  connection),
+                          clientInvocationFuture(new ClientInvocationFuture(
+                                  logger,
+                                  *this,
+                                  callIdSequence,
+                                  clientContext.getClientExecutionService())) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -108,11 +110,12 @@ namespace hazelcast {
                                                                                                         objectName),
                                                                                                 connection(
                                                                                                         connection),
-                                                                                                clientInvocationFuture(new ClientInvocationFuture(
-                                                                                                        logger,
-                                                                                                        *this,
-                                                                                                        callIdSequence,
-                                                                                                        clientContext.getClientExecutionService())) {
+                                                                                                clientInvocationFuture(
+                                                                                                        new ClientInvocationFuture(
+                                                                                                                logger,
+                                                                                                                *this,
+                                                                                                                callIdSequence,
+                                                                                                                clientContext.getClientExecutionService())) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -133,14 +136,17 @@ namespace hazelcast {
                                                                                     startTimeMillis(
                                                                                             util::currentTimeMillis()),
                                                                                     objectName(objectName),
-                                                                                    clientInvocationFuture(new ClientInvocationFuture(logger,
-                                                                                                           *this,
-                                                                                                           callIdSequence,
-                                                                                                           clientContext.getClientExecutionService())) {
+                                                                                    clientInvocationFuture(
+                                                                                            new ClientInvocationFuture(
+                                                                                                    logger,
+                                                                                                    *this,
+                                                                                                    callIdSequence,
+                                                                                                    clientContext.getClientExecutionService())) {
 
                 }
 
-                boost::shared_ptr<ClientInvocationFuture> ClientInvocation::invoke(boost::shared_ptr<ClientInvocation> &invocation) {
+                boost::shared_ptr<ClientInvocationFuture>
+                ClientInvocation::invoke(boost::shared_ptr<ClientInvocation> &invocation) {
                     assert (invocation->clientMessage.get() != NULL);
                     invocation->clientMessage->setCorrelationId(invocation->callIdSequence.next());
                     invocation->invokeOnSelection(invocation);
@@ -307,7 +313,7 @@ namespace hazelcast {
                 std::ostream &operator<<(std::ostream &os, const ClientInvocation &invocation) {
                     std::ostringstream target;
                     if (invocation.isBindToSingleConnection()) {
-                        target << "connection " << invocation.connection;
+                        target << "connection " << *invocation.connection;
                     } else if (invocation.partitionId != -1) {
                         target << "partition " << invocation.partitionId;
                     } else if (invocation.address.get() != NULL) {
@@ -316,9 +322,14 @@ namespace hazelcast {
                         target << "random";
                     }
                     os << "ClientInvocation{" << "clientMessage = " << *invocation.clientMessage << ", objectName = "
-                       << invocation.objectName << ", target = " << target.str() << ", sendConnection = "
-                       << *((const_cast<ClientInvocation &>(invocation)).sendConnection.get())
-                       << '}';
+                       << invocation.objectName << ", target = " << target.str() << ", sendConnection = ";
+                    boost::shared_ptr<connection::Connection> sendConnection = (const_cast<ClientInvocation &>(invocation)).sendConnection.get();
+                    if (sendConnection.get()) {
+                        os << *sendConnection;
+                    } else {
+                        os << "null";
+                    }
+                    os << '}';
 
                     return os;
                 }

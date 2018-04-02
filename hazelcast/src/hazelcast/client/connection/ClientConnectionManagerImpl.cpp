@@ -648,10 +648,11 @@ namespace hazelcast {
                 }
 
                 try {
-                    connection->getReadHandler().registerSocket();
-
                     connectionManager.pendingSocketIdToConnection.put(connection->getSocket().getSocketId(),
                                                                       connection);
+
+                    connection->getReadHandler().registerSocket();
+
                     connectionManager.authenticate(target, connection, asOwner, future);
                 } catch (exception::IException &e) {
                     const boost::shared_ptr<exception::IException> throwable(e.clone());

@@ -329,6 +329,13 @@ namespace hazelcast {
 
                 return std::pair<serialization::pimpl::Data, serialization::pimpl::Data>(key, value);
             }
+
+            template<>
+            std::pair<Address, std::vector<int32_t> > ClientMessage::get() {
+                Address address = codec::AddressCodec::decode(*this);
+                std::vector<int32_t> partitions = getArray<int32_t>();
+                return std::make_pair(address, partitions);
+            }
             //----- Getter methods end --------------------------
 
             //----- Data size calculation functions BEGIN -------

@@ -24,7 +24,7 @@ namespace hazelcast {
             int32_t ClientNetworkConfig::CONNECTION_ATTEMPT_PERIOD = 3000;
 
             ClientNetworkConfig::ClientNetworkConfig()
-                    : connectionTimeout(5000), connectionAttemptLimit(-1),
+                    : connectionTimeout(5000), smartRouting(true), connectionAttemptLimit(-1),
                       connectionAttemptPeriod(CONNECTION_ATTEMPT_PERIOD) {
             }
 

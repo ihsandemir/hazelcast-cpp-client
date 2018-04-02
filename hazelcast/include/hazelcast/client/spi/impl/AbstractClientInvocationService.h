@@ -92,9 +92,9 @@ namespace hazelcast {
 
                         void start();
 
-                    private:
                         // TODO: implement java MPSCQueue and replace this
                         util::BlockingConcurrentQueue<ClientPacket> responseQueue;
+                    private:
                         util::ILogger &invocationLogger;
                         AbstractClientInvocationService &invocationService;
                         ClientContext &client;
@@ -125,9 +125,9 @@ namespace hazelcast {
                     const ClientProperty &CLEAN_RESOURCES_MILLIS;
                     ClientContext &client;
                     util::ILogger &invocationLogger;
-                    connection::ClientConnectionManagerImpl &connectionManager;
+                    connection::ClientConnectionManagerImpl *connectionManager;
                     ClientPartitionService &partitionService;
-                    spi::impl::listener::AbstractClientListenerService &clientListenerService;
+                    spi::impl::listener::AbstractClientListenerService *clientListenerService;
 
                     util::SynchronizedMap<int64_t, ClientInvocation> invocations;
 

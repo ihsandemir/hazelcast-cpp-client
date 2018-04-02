@@ -535,6 +535,9 @@ namespace hazelcast {
             template<>
             std::pair<serialization::pimpl::Data, serialization::pimpl::Data> ClientMessage::get();
 
+            template<>
+            std::pair<Address, std::vector<int32_t> > ClientMessage::get();
+
         }
 
 

@@ -50,11 +50,11 @@ namespace hazelcast {
                     return false;
                 }
 
+                ((spi::impl::ClientClusterServiceImpl &) clientContext.getClientClusterService()).start();
+
                 if (!clientContext.getConnectionManager().start()) {
                     return false;
                 }
-
-                ((spi::impl::ClientClusterServiceImpl &) clientContext.getClientClusterService()).start();
 
                 loadBalancer->init(cluster);
 

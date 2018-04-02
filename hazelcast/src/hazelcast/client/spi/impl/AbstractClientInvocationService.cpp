@@ -34,10 +34,9 @@ namespace hazelcast {
                 AbstractClientInvocationService::AbstractClientInvocationService(ClientContext &client)
                         : CLEAN_RESOURCES_MILLIS(client.getClientProperties().getCleanResourcesPeriodMillis()),
                           client(client), invocationLogger(util::ILogger::getLogger()),
-                          connectionManager(client.getConnectionManager()),
+                          connectionManager(NULL),
                           partitionService(client.getPartitionService()),
-                          clientListenerService(
-                                  static_cast<listener::AbstractClientListenerService &>(client.getClientListenerService())),
+                          clientListenerService(NULL),
                           invocationTimeoutMillis(
                                   client.getClientProperties().getInvocationTimeoutSeconds().getInteger() * 1000),
                           invocationRetryPauseMillis(
@@ -46,6 +45,9 @@ namespace hazelcast {
                 }
 
                 bool AbstractClientInvocationService::start() {
+                    connectionManager = &client.getConnectionManager();
+                    clientListenerService = static_cast<listener::AbstractClientListenerService *>(&client.getClientListenerService());
+
                     responseThread.start();
 
                     long cleanResourcesMillis = CLEAN_RESOURCES_MILLIS.getLong();
@@ -89,25 +91,13 @@ namespace hazelcast {
                 void AbstractClientInvocationService::handleClientMessage(
                         const boost::shared_ptr<connection::Connection> &connection,
                         std::auto_ptr<protocol::ClientMessage> &clientMessage) {
-                    long correlationId = clientMessage->getCorrelationId();
-
-                    boost::shared_ptr<ClientInvocation> future = deRegisterCallId(correlationId);
-                    if (future.get() == NULL) {
-                        invocationLogger.info() << "No call for callId: " << correlationId << ", response: "
-                                                << *clientMessage;
-                        return;
-                    }
-                    if (protocol::codec::ErrorCodec::TYPE == clientMessage->getMessageType()) {
-                        std::auto_ptr<exception::IException> exception = client.getClientExceptionFactory().createException(
-                                "AbstractClientInvocationService::handleClientMessage", *clientMessage);
-                        future->notifyException(*exception);
-                    } else {
-                        boost::shared_ptr<protocol::ClientMessage> message(clientMessage);
-                        future->notify(message);
-                    }
+                    invocationLogger.info() << "AbstractClientInvocationService::handleClientMessage adding call id " << clientMessage->getCorrelationId() << " message: " << *clientMessage;
+                    responseThread.responseQueue.push(
+                            ClientPacket(connection, boost::shared_ptr<protocol::ClientMessage>(clientMessage)));
                 }
 
                 boost::shared_ptr<ClientInvocation> AbstractClientInvocationService::deRegisterCallId(int64_t callId) {
+                    util::ILogger::getLogger().info() << "Removing invocation:" << callId;
                     return invocations.remove(callId);
                 }
 
@@ -145,9 +135,10 @@ namespace hazelcast {
                     const boost::shared_ptr<protocol::ClientMessage> &clientMessage = clientInvocation->getClientMessage();
                     int64_t correlationId = clientMessage->getCorrelationId();
                     invocations.put(correlationId, clientInvocation);
+                    invocationLogger.info() << "Put invocation:" << correlationId << " invocation:" << *clientInvocation;
                     const boost::shared_ptr<EventHandler<protocol::ClientMessage> > handler = clientInvocation->getEventHandler();
                     if (handler.get() != NULL) {
-                        clientListenerService.addEventHandler(correlationId, handler);
+                        clientListenerService->addEventHandler(correlationId, handler);
                     }
                 }
 
@@ -197,6 +188,7 @@ namespace hazelcast {
 
                     BOOST_FOREACH(int64_t invocationId, invocationsToBeRemoved) {
                                     invocations.remove(invocationId);
+                                    util::ILogger::getLogger().info() << "Removed invocation:" << invocationId;
                                 }
                 }
 
@@ -246,7 +238,8 @@ namespace hazelcast {
 
                 AbstractClientInvocationService::ClientPacket::ClientPacket() {}
 
-                std::ostream &operator<<(std::ostream &os, const AbstractClientInvocationService::ClientPacket &packet) {
+                std::ostream &
+                operator<<(std::ostream &os, const AbstractClientInvocationService::ClientPacket &packet) {
                     os << "clientConnection: " << *packet.clientConnection << " clientMessage: "
                        << *packet.clientMessage;
                     return os;
@@ -299,11 +292,10 @@ namespace hazelcast {
                         const boost::shared_ptr<protocol::ClientMessage> &clientMessage) {
                     int64_t correlationId = clientMessage->getCorrelationId();
 
-                    const boost::shared_ptr<ClientInvocation> &future = invocationService.deRegisterCallId(
-                            correlationId);
+                    boost::shared_ptr<ClientInvocation> future = invocationService.deRegisterCallId(correlationId);
                     if (future.get() == NULL) {
                         invocationLogger.warning() << "No call for callId: " << correlationId << ", response: "
-                                                   << clientMessage;
+                                                   << *clientMessage;
                         return;
                     }
                     if (protocol::codec::ErrorCodec::TYPE == clientMessage->getMessageType()) {

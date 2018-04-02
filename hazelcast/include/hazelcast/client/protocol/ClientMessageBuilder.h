@@ -53,7 +53,7 @@ namespace hazelcast {
             class HAZELCAST_API ClientMessageBuilder {
 
             public:
-                ClientMessageBuilder(IMessageHandler &service, connection::Connection &connection);
+                ClientMessageBuilder(connection::Connection &connection);
 
                 virtual ~ClientMessageBuilder();
 
@@ -82,8 +82,6 @@ namespace hazelcast {
                 ClientMessage wrapperMessage;
 
                 std::auto_ptr<ClientMessage> message;
-
-                IMessageHandler &messageHandler;
                 connection::Connection &connection;
 
                 int32_t frameLen;

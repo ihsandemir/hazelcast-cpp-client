@@ -53,8 +53,8 @@ namespace hazelcast {
                 }
 
                 boost::shared_ptr<connection::Connection> NonSmartClientInvocationService::getOwnerConnection() {
-                    const boost::shared_ptr<Address> &ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
-                    boost::shared_ptr<connection::Connection> ownerConnection = connectionManager.getActiveConnection(
+                    const boost::shared_ptr<Address> &ownerConnectionAddress = connectionManager->getOwnerConnectionAddress();
+                    boost::shared_ptr<connection::Connection> ownerConnection = connectionManager->getActiveConnection(
                             *ownerConnectionAddress);
                     if (ownerConnection.get() == NULL) {
                         throw exception::IOException("NonSmartClientInvocationService::getOwnerConnection",
