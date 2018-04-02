@@ -78,6 +78,8 @@ namespace hazelcast {
                 std::auto_ptr<ClientConfig> config = getConfig();
                 config->getNetworkConfig().getSSLConfig().setEnabled(true).addVerifyFile(getCAFilePath()).setCipherList(
                         "HIGH");
+                config->getNetworkConfig().setConnectionTimeout(120 * 1000);
+                config->setProperty(ClientProperties::PROP_HEARTBEAT_TIMEOUT, "120000");
                 std::vector<internal::socket::SSLSocket::CipherInfo> supportedCiphers = getCiphers(*config);
 
                 std::string unsupportedCipher = supportedCiphers[0].name;

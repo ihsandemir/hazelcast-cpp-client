@@ -17,12 +17,12 @@
 // Created by sancar koyunlu on 8/21/13.
 
 #include <boost/foreach.hpp>
-#include <hazelcast/client/impl/ExecutionCallback.h>
-#include <hazelcast/client/LifecycleEvent.h>
-#include <hazelcast/client/connection/DefaultClientConnectionStrategy.h>
-#include <hazelcast/client/connection/AddressProvider.h>
-#include <hazelcast/util/impl/SimpleExecutorService.h>
-#include <hazelcast/client/spi/impl/ClientInvocation.h>
+#include "hazelcast/client/impl/ExecutionCallback.h"
+#include "hazelcast/client/LifecycleEvent.h"
+#include "hazelcast/client/connection/DefaultClientConnectionStrategy.h"
+#include "hazelcast/client/connection/AddressProvider.h"
+#include "hazelcast/util/impl/SimpleExecutorService.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/protocol/AuthenticationStatus.h"
 #include "hazelcast/client/exception/AuthenticationException.h"
@@ -369,7 +369,9 @@ namespace hazelcast {
                                                               const boost::shared_ptr<Connection> &connection) {
                 boost::shared_ptr<Connection> oldConnection = activeConnections.put(connection->getRemoteEndpoint(),
                                                                                     connection);
-                activeConnectionsFileDescriptors.put(connection->getSocket().getSocketId(), connection);
+                int socketId = connection->getSocket().getSocketId();
+                activeConnectionsFileDescriptors.put(socketId, connection);
+                pendingSocketIdToConnection.remove(socketId);
 
                 if (oldConnection.get() == NULL) {
                     if (logger.isFinestEnabled()) {
@@ -619,7 +621,12 @@ namespace hazelcast {
             }
 
             boost::shared_ptr<Connection> ClientConnectionManagerImpl::getActiveConnection(int fileDescriptor) {
-                return activeConnectionsFileDescriptors.get(fileDescriptor);
+                boost::shared_ptr<Connection> connection = activeConnectionsFileDescriptors.get(fileDescriptor);
+                if (connection.get()) {
+                    return connection;
+                }
+
+                return pendingSocketIdToConnection.get(fileDescriptor);
             }
 
             ClientConnectionManagerImpl::InitConnectionTask::InitConnectionTask(const Address &target,
@@ -641,6 +648,10 @@ namespace hazelcast {
                 }
 
                 try {
+                    connection->getReadHandler().registerSocket();
+
+                    connectionManager.pendingSocketIdToConnection.put(connection->getSocket().getSocketId(),
+                                                                      connection);
                     connectionManager.authenticate(target, connection, asOwner, future);
                 } catch (exception::IException &e) {
                     const boost::shared_ptr<exception::IException> throwable(e.clone());
@@ -734,6 +745,7 @@ namespace hazelcast {
                     connectionManager.logger.finest() << "Authentication of " << connection << " failed." << cause;
                 }
                 connection->close("", cause);
+                connectionManager.pendingSocketIdToConnection.remove(connection->getSocket().getSocketId());
                 connectionManager.connectionsInProgress.remove(target);
             }
 
@@ -784,6 +796,10 @@ namespace hazelcast {
                     throw;
                 }
                 return false;
+            }
+
+            const std::string ClientConnectionManagerImpl::ConnectToClusterTask::getName() const {
+                return "ClientConnectionManagerImpl::ConnectToClusterTask";
             }
 
             ClientConnectionManagerImpl::ShutdownTask::ShutdownTask(spi::ClientContext &client)

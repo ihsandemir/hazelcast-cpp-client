@@ -18,7 +18,7 @@
 #define HAZELCAST_CLIENT_SPI_CLIENTLISTENERSERVICE_H_
 
 #include <string>
-#include <hazelcast/client/protocol/ClientMessage.h>
+#include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "EventHandler.h"
 

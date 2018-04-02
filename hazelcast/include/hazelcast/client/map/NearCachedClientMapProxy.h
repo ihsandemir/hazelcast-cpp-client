@@ -17,7 +17,7 @@
 #define HAZELCAST_CLIENT_MAP_NEARCACHEDCLIENTMAPPROXY_H_
 
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/client/protocol/codec/MapRemoveEntryListenerCodec.h>
+#include "hazelcast/client/protocol/codec/MapRemoveEntryListenerCodec.h"
 
 #include "hazelcast/client/map/ClientMapProxy.h"
 #include "hazelcast/client/config/NearCacheConfig.h"

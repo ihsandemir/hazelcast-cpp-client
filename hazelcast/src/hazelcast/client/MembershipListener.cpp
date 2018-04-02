@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #include <string>
-#include <hazelcast/client/MembershipListener.h>
+#include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/MembershipListener.h"
 
 namespace hazelcast {

@@ -18,9 +18,9 @@
 
 #include <stdint.h>
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/client/exception/IOException.h>
-#include <hazelcast/client/spi/impl/ClientInvocation.h>
-#include <hazelcast/client/Address.h>
+#include "hazelcast/client/exception/IOException.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
+#include "hazelcast/client/Address.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
 #include "hazelcast/util/HazelcastDll.h"
 

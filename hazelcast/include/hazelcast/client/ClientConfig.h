@@ -19,7 +19,7 @@
 #include <vector>
 #include <set>
 #include <boost/shared_ptr.hpp>
-#include <hazelcast/client/config/ClientConnectionStrategyConfig.h>
+#include "hazelcast/client/config/ClientConnectionStrategyConfig.h"
 
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/GroupConfig.h"

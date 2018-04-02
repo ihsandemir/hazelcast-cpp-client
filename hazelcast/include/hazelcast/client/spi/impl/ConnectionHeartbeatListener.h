@@ -18,7 +18,7 @@
 #define HAZELCAST_CLIENT_SPI_IMPL_CONNECTIONHEARBEATLISTENER_H
 
 
-#include <hazelcast/client/connection/Connection.h>
+#include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/util/HazelcastDll.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

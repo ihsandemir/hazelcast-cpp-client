@@ -15,8 +15,8 @@
  */
 
 #include "hazelcast/client/connection/ClientConnectionStrategy.h"
-#include <hazelcast/client/spi/ClientContext.h>
-#include <hazelcast/client/config/ClientConnectionStrategyConfig.h>
+#include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/config/ClientConnectionStrategyConfig.h"
 
 namespace hazelcast {
     namespace client {

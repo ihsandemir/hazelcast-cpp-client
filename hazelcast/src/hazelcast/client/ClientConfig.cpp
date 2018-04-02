@@ -15,8 +15,8 @@
  */
 #include <boost/foreach.hpp>
 
-#include <hazelcast/client/config/ClientConnectionStrategyConfig.h>
-#include <hazelcast/client/ClientConfig.h>
+#include "hazelcast/client/config/ClientConnectionStrategyConfig.h"
+#include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/config/NearCacheConfig.h"
 #include "hazelcast/client/LifecycleListener.h"

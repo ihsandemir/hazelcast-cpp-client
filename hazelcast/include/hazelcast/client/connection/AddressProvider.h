@@ -18,7 +18,7 @@
 #define HAZELCAST_CLIENT_CONNECTION_ADDRESSPROVIDER_H_
 
 #include "hazelcast/util/HazelcastDll.h"
-#include <hazelcast/client/Address.h>
+#include "hazelcast/client/Address.h"
 
 namespace hazelcast {
     namespace client {

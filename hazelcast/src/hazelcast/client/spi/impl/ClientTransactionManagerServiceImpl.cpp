@@ -15,9 +15,9 @@
  */
 #include <ostream>
 
-#include <hazelcast/client/spi/impl/ClientTransactionManagerServiceImpl.h>
-#include <hazelcast/client/LoadBalancer.h>
-#include <hazelcast/client/spi/impl/AbstractClientInvocationService.h>
+#include "hazelcast/client/spi/impl/ClientTransactionManagerServiceImpl.h"
+#include "hazelcast/client/LoadBalancer.h"
+#include "hazelcast/client/spi/impl/AbstractClientInvocationService.h"
 #include "hazelcast/client/Cluster.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/ClientConfig.h"

@@ -23,12 +23,12 @@
 #include <stdint.h>
 #include <memory>
 
-#include <hazelcast/client/serialization/pimpl/SerializationService.h>
-#include <hazelcast/util/BlockingConcurrentQueue.h>
-#include <hazelcast/util/ConcurrentSet.h>
-#include <hazelcast/client/LifecycleEvent.h>
-#include <hazelcast/util/Future.h>
-#include <hazelcast/client/spi/impl/ConnectionHeartbeatListener.h>
+#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/util/BlockingConcurrentQueue.h"
+#include "hazelcast/util/ConcurrentSet.h"
+#include "hazelcast/client/LifecycleEvent.h"
+#include "hazelcast/util/Future.h"
+#include "hazelcast/client/spi/impl/ConnectionHeartbeatListener.h"
 #include "hazelcast/client/Address.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/client/connection/InSelector.h"
@@ -251,6 +251,8 @@ namespace hazelcast {
 
                     virtual bool call();
 
+                    virtual const std::string getName() const;
+
                 private:
                     ClientConnectionManagerImpl &connectionManager;
                 };
@@ -299,6 +301,7 @@ namespace hazelcast {
                 boost::shared_ptr<AddressTranslator> translator;
                 util::SynchronizedMap<Address, Connection> activeConnections;
                 util::SynchronizedMap<int, Connection> activeConnectionsFileDescriptors;
+                util::SynchronizedMap<int, Connection> pendingSocketIdToConnection;
                 util::SynchronizedMap<Address, AuthenticationFuture> connectionsInProgress;
                 // TODO: change with CopyOnWriteArraySet<ConnectionListener> as in Java
                 util::ConcurrentSet<boost::shared_ptr<ConnectionListener> > connectionListeners;

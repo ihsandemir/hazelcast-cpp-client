@@ -33,6 +33,8 @@
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Mutex.h"
 #include "hazelcast/util/Executor.h"
+#include "hazelcast/util/concurrent/Cancellable.h"
+#include "hazelcast/util/concurrent/CancellationException.h"
 #include "hazelcast/client/impl/ExecutionCallback.h"
 #include "hazelcast/client/exception/IException.h"
 
@@ -96,7 +98,7 @@ namespace hazelcast {
                 }
 
                 virtual const std::string getName() const {
-                    return "SuccessCallbackRunner";
+                    return "ExceptionCallbackRunner";
                 }
 
             private:
@@ -106,9 +108,9 @@ namespace hazelcast {
                 Future<T> &future;
             };
 
-            Future(ILogger &logger) : logger(logger) {}
+            Future(ILogger &logger) : resultReady(false), exceptionReady(false), cancelled(false), logger(logger) {}
 
-            Future() : resultReady(false), exceptionReady(false), logger(util::ILogger::getLogger()) {
+            Future() : resultReady(false), exceptionReady(false), cancelled(false), logger(util::ILogger::getLogger()) {
             }
 
             virtual ~Future() {
@@ -116,8 +118,13 @@ namespace hazelcast {
 
             void set_value(const T &value) {
                 LockGuard guard(mutex);
+                if (cancelled) {
+                    return;
+                }
+
                 if (exceptionReady || resultReady) {
                     logger.warning(std::string("Future.set_value should not be called twice"));
+                    return;
                 }
                 sharedObject = value;
                 resultReady = true;
@@ -133,10 +140,14 @@ namespace hazelcast {
 
             void set_exception(std::auto_ptr<client::exception::IException> exception) {
                 LockGuard guard(mutex);
+                if (cancelled) {
+                    return;
+                }
 
                 if (exceptionReady || resultReady) {
                     logger.warning(std::string("Future.set_exception should not be called twice : details ") +
                                    exception->what());
+                    return;
                 }
 
                 this->exception = exception;
@@ -159,6 +170,17 @@ namespace hazelcast {
                 set_exception(exception.clone());
             }
 
+            /**
+             * Waits if necessary for the computation to complete, and then
+             * retrieves its result.
+             *
+             * @return the computed result
+             * @throws CancellationException if the computation was cancelled
+             * @throws ExecutionException if the computation threw an
+             * exception
+             * @throws InterruptedException if the current thread was interrupted
+             * while waiting
+             */
             T get() {
                 LockGuard guard(mutex);
 
@@ -230,9 +252,52 @@ namespace hazelcast {
                 return "";
             }
 
+            /**
+             * Attempts to cancel execution of this task.  This attempt will
+             * fail if the task has already completed, has already been cancelled,
+             * or could not be cancelled for some other reason.
+             *
+             * <p>After this method returns, subsequent calls to {@link #isDone} will
+             * always return {@code true}.  Subsequent calls to {@link #isCancelled}
+             * will always return {@code true} if this method returned {@code true}.
+             *
+             * @return {@code false} if the task could not be cancelled,
+             * typically because it has already completed normally;
+             * {@code true} otherwise
+             */
+            bool cancel() {
+                LockGuard guard(mutex);
+                if (resultReady || exceptionReady) {
+                    return false;
+                }
+
+                if (cancelled) {
+                    return true;
+                }
+
+                exception = boost::shared_ptr<client::exception::IException>(
+                        new concurrent::CancellationException("Future::cancel", "Future is cancelled."));
+
+                return true;
+            }
+
+            bool isCancelled() {
+                LockGuard guard(mutex);
+                return cancelled;
+            }
+
+            /**
+             * Returns {@code true} if this task completed.
+             *
+             * Completion may be due to normal termination, an exception, or
+             * cancellation -- in all of these cases, this method will return
+             * {@code true}.
+             *
+             * @return {@code true} if this task completed
+             */
             bool isDone() {
                 LockGuard guard(mutex);
-                return resultReady || exceptionReady;
+                return resultReady || exceptionReady || cancelled;
             }
 
             friend std::ostream &operator<<(std::ostream &os, const Future &future) {
@@ -261,6 +326,7 @@ namespace hazelcast {
 
             bool resultReady;
             bool exceptionReady;
+            bool cancelled;
             ConditionVariable conditionVariable;
             Mutex mutex;
             T sharedObject;

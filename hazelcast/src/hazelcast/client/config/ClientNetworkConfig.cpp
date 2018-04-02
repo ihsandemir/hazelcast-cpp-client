@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <hazelcast/client/exception/IllegalArgumentException.h>
-#include <hazelcast/client/Address.h>
+#include "hazelcast/client/exception/IllegalArgumentException.h"
+#include "hazelcast/client/Address.h"
 #include "hazelcast/client/config/ClientNetworkConfig.h"
 
 namespace hazelcast {

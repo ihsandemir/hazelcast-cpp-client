@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <hazelcast/client/exception/ProtocolExceptions.h>
+#include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/connection/Connection.h"

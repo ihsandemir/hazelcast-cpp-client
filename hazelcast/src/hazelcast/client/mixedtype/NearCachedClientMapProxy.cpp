@@ -15,7 +15,7 @@
  */
 
 #include <boost/foreach.hpp>
-#include <hazelcast/client/protocol/codec/MapRemoveEntryListenerCodec.h>
+#include "hazelcast/client/protocol/codec/MapRemoveEntryListenerCodec.h"
 
 #include "hazelcast/client/mixedtype/NearCachedClientMapProxy.h"
 #include "hazelcast/client/config/NearCacheConfig.h"

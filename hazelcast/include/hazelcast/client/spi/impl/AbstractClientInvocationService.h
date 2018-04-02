@@ -18,12 +18,12 @@
 #define HAZELCAST_CLIENT_SPI_IMPL_ABSTRACTCLIENTINVOCATIONSERVICE_H_
 
 #include <ostream>
-#include <hazelcast/client/ClientProperties.h>
-#include <hazelcast/client/spi/ClientContext.h>
-#include <hazelcast/util/SynchronizedMap.h>
-#include <hazelcast/util/AtomicBoolean.h>
-#include <hazelcast/util/Thread.h>
-#include <hazelcast/client/spi/impl/listener/AbstractClientListenerService.h>
+#include "hazelcast/client/ClientProperties.h"
+#include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/util/SynchronizedMap.h"
+#include "hazelcast/util/AtomicBoolean.h"
+#include "hazelcast/util/Thread.h"
+#include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/ClientInvocationService.h"
 

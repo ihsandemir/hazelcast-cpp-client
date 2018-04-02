@@ -19,7 +19,7 @@
 #ifndef HAZELCAST_ProxyImpl
 #define HAZELCAST_ProxyImpl
 
-#include <hazelcast/client/spi/impl/ListenerMessageCodec.h>
+#include "hazelcast/client/spi/impl/ListenerMessageCodec.h"
 #include "hazelcast/client/protocol/codec/IRemoveListenerCodec.h"
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"

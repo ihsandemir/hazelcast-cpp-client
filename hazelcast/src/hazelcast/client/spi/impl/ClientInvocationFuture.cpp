@@ -39,7 +39,10 @@ namespace hazelcast {
                 void
                 ClientInvocationFuture::andThen(
                         const boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > &callback) {
-                    util::Future<boost::shared_ptr<protocol::ClientMessage> >::andThen(callback, defaultExecutor);
+                    util::Future<boost::shared_ptr<protocol::ClientMessage> >::andThen(
+                            boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > >(
+                                    new InternalDelegatingExecutionCallback(callback, callIdSequence)),
+                            defaultExecutor);
                 }
 
                 std::string ClientInvocationFuture::invocationToString() {
@@ -55,7 +58,8 @@ namespace hazelcast {
                     this->callIdSequence.forceNext();
                 }
 
-                void ClientInvocationFuture::InternalDelegatingExecutionCallback::onResponse(const boost::shared_ptr<protocol::ClientMessage> &message) {
+                void ClientInvocationFuture::InternalDelegatingExecutionCallback::onResponse(
+                        const boost::shared_ptr<protocol::ClientMessage> &message) {
                     try {
                         callback->onResponse(message);
                         callIdSequence.complete();
@@ -64,7 +68,8 @@ namespace hazelcast {
                     }
                 }
 
-                void ClientInvocationFuture::InternalDelegatingExecutionCallback::onFailure(const boost::shared_ptr<exception::IException> &e) {
+                void ClientInvocationFuture::InternalDelegatingExecutionCallback::onFailure(
+                        const boost::shared_ptr<exception::IException> &e) {
                     try {
                         callback->onFailure(e);
                         callIdSequence.complete();

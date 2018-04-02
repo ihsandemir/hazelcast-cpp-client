@@ -19,9 +19,9 @@
 
 #include <vector>
 
-#include <hazelcast/util/AtomicBoolean.h>
-#include <hazelcast/util/SynchronizedQueue.h>
-#include <hazelcast/util/Atomic.h>
+#include "hazelcast/util/AtomicBoolean.h"
+#include "hazelcast/util/SynchronizedQueue.h"
+#include "hazelcast/util/Atomic.h"
 
 #include "hazelcast/client/spi/ClientExecutionService.h"
 

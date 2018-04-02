@@ -23,7 +23,7 @@
 #include<stdint.h>
 #include <boost/shared_ptr.hpp>
 
-#include <hazelcast/util/Atomic.h>
+#include "hazelcast/util/Atomic.h"
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/client/connection/IOHandler.h"
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"

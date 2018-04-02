@@ -19,9 +19,9 @@
 
 #include <boost/enable_shared_from_this.hpp>
 
-#include <hazelcast/util/SynchronizedMap.h>
-#include <hazelcast/util/Runnable.h>
-#include <hazelcast/util/AtomicInt.h>
+#include "hazelcast/util/SynchronizedMap.h"
+#include "hazelcast/util/Runnable.h"
+#include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/EventHandler.h"
 #include "hazelcast/client/impl/ExecutionCallback.h"

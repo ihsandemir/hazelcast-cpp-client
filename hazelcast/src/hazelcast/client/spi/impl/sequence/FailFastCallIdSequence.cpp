@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <hazelcast/client/exception/ProtocolExceptions.h>
+#include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h"
 
 namespace hazelcast {

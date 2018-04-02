@@ -18,7 +18,7 @@
 //
 
 #include <boost/foreach.hpp>
-#include <hazelcast/client/spi/impl/ClientInvocation.h>
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
 
 #include "hazelcast/client/TypedData.h"
 #include "hazelcast/client/protocol/codec/IAddListenerCodec.h"

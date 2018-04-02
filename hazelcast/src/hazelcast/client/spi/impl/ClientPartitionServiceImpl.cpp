@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <hazelcast/util/Runnable.h>
-#include <hazelcast/util/HashUtil.h>
+#include "hazelcast/util/Runnable.h"
+#include "hazelcast/util/HashUtil.h"
 #include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/LifecycleService.h"

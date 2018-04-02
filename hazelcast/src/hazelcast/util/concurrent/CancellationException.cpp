@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-#include "hazelcast/util/Mutex.h"
-#include "hazelcast/util/ConditionVariable.h"
-#include "hazelcast/util/concurrent/locks/LockSupport.h"
+#include "hazelcast/util/concurrent/CancellationException.h"
 
 namespace hazelcast {
     namespace util {
         namespace concurrent {
-            namespace locks {
-
-                void LockSupport::parkNanos(int64_t nanos) {
-                    if (nanos <= 0) {
-                        return;
-                    }
-
-                    Mutex lock;
-                    ConditionVariable conditionVariable;
-                    conditionVariable.waitNanos(lock, nanos);
-                }
-            }
+            CancellationException::CancellationException(const std::string &source, const std::string &message)
+                    : IllegalStateException(source, message) {}
         }
     }
 }

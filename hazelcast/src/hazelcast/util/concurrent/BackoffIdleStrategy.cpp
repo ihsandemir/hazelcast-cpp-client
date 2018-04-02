@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <hazelcast/util/concurrent/locks/LockSupport.h>
+#include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/util/concurrent/BackoffIdleStrategy.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/util/Thread.h"

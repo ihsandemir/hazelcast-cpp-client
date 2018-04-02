@@ -23,9 +23,9 @@
 #endif
 
 #include <stdint.h>
-#include <hazelcast/util/SynchronizedMap.h>
-#include <hazelcast/util/ILogger.h>
-#include <hazelcast/util/impl/SimpleExecutorService.h>
+#include "hazelcast/util/SynchronizedMap.h"
+#include "hazelcast/util/ILogger.h"
+#include "hazelcast/util/impl/SimpleExecutorService.h"
 #include "hazelcast/client/spi/ClientListenerService.h"
 
 namespace hazelcast {

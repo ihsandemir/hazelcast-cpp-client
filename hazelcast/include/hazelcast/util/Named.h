@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-#include "hazelcast/util/Mutex.h"
-#include "hazelcast/util/ConditionVariable.h"
-#include "hazelcast/util/concurrent/locks/LockSupport.h"
+#ifndef HAZELCAST_UTIL_NAMED_H_
+#define HAZELCAST_UTIL_NAMED_H_
+
+#include <string>
+
+#include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
     namespace util {
-        namespace concurrent {
-            namespace locks {
-
-                void LockSupport::parkNanos(int64_t nanos) {
-                    if (nanos <= 0) {
-                        return;
-                    }
-
-                    Mutex lock;
-                    ConditionVariable conditionVariable;
-                    conditionVariable.waitNanos(lock, nanos);
-                }
-            }
-        }
+        class HAZELCAST_API Named {
+        public:
+            virtual const std::string getName() const = 0;
+        };
     }
 }
+
+
+#endif //HAZELCAST_UTIL_NAMED_H_

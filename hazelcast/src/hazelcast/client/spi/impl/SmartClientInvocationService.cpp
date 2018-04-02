@@ -17,7 +17,7 @@
 #include "hazelcast/client/spi/impl/SmartClientInvocationService.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/ClientPartitionService.h"
-#include <hazelcast/client/spi/ClientClusterService.h>
+#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 
 namespace hazelcast {

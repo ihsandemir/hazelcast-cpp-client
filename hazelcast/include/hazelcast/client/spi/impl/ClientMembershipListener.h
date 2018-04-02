@@ -22,9 +22,9 @@
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "ClientClusterServiceImpl.h"
-#include <hazelcast/client/protocol/codec/ClientAddMembershipListenerCodec.h>
-#include <hazelcast/util/CountDownLatch.h>
-#include <hazelcast/client/MembershipEvent.h>
+#include "hazelcast/client/protocol/codec/ClientAddMembershipListenerCodec.h"
+#include "hazelcast/util/CountDownLatch.h"
+#include "hazelcast/client/MembershipEvent.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

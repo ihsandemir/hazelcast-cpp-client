@@ -19,8 +19,8 @@
 
 #include <memory>
 
-#include <hazelcast/util/Future.h>
-#include <hazelcast/client/protocol/ClientMessage.h>
+#include "hazelcast/util/Future.h"
+#include "hazelcast/client/protocol/ClientMessage.h"
 #include <boost/foreach.hpp>
 #include <ostream>
 #include "hazelcast/util/HazelcastDll.h"

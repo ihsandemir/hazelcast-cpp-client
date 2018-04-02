@@ -21,7 +21,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-#include <hazelcast/util/Atomic.h>
+#include "hazelcast/util/Atomic.h"
 #include "hazelcast/client/spi/impl/ClientInvocationFuture.h"
 #include "hazelcast/client/spi/EventHandler.h"
 

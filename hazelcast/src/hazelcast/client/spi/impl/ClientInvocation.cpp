@@ -17,11 +17,11 @@
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/connection/Connection.h"
-#include <hazelcast/util/ILogger.h>
-#include <hazelcast/client/spi/LifecycleService.h>
-#include <hazelcast/client/spi/ClientClusterService.h>
-#include <hazelcast/client/spi/ClientInvocationService.h>
-#include <hazelcast/client/spi/impl/ClientExecutionServiceImpl.h>
+#include "hazelcast/util/ILogger.h"
+#include "hazelcast/client/spi/LifecycleService.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/spi/ClientInvocationService.h"
+#include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 
 namespace hazelcast {
     namespace client {

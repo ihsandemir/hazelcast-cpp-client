@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_QUERY_PREDICATE_H_
-#define HAZELCAST_CLIENT_QUERY_PREDICATE_H_
+#ifndef HAZELCAST_UTIL_CONCURRENT_CANCELLATIONEXCEPTION_H_
+#define HAZELCAST_UTIL_CONCURRENT_CANCELLATIONEXCEPTION_H_
 
-#include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/client/exception/IllegalStateException.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -25,15 +24,16 @@
 #endif
 
 namespace hazelcast {
-    namespace client {
-        namespace query {
+    namespace util {
+        namespace concurrent {
             /**
-             * This is a marker class for Predicate classes. All predicate classes shall extend this class. It is a pure
-             * IdentifiedDataSerializable interface. Making this Predicate interface disallows using any
-             * IdentifiedDataSerializable in places where Predicate is needed. This class also indicates that a Java
-             * implementation is required at the server side.
+             * Exception indicating that the result of a value-producing task, cannot be retrieved because the task
+             * was cancelled.
+             *
              */
-            class HAZELCAST_API Predicate : public serialization::IdentifiedDataSerializable {
+            class HAZELCAST_API CancellationException : public client::exception::IllegalStateException {
+            public:
+                CancellationException(const std::string &source, const std::string &message);
             };
         }
     }
@@ -43,4 +43,4 @@ namespace hazelcast {
 #pragma warning(pop)
 #endif
 
-#endif /* HAZELCAST_CLIENT_QUERY_PREDICATE_H_ */
+#endif //HAZELCAST_UTIL_CONCURRENT_CANCELLATIONEXCEPTION_H_

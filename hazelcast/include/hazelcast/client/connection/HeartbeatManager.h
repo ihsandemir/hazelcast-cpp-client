@@ -17,10 +17,10 @@
 #ifndef HAZELCAST_CLIENT_CONNECTION_HEARBEATMANAGER_H_
 #define HAZELCAST_CLIENT_CONNECTION_HEARBEATMANAGER_H_
 
-#include <hazelcast/util/Thread.h>
-#include <hazelcast/util/Atomic.h>
-#include <hazelcast/client/impl/ExecutionCallback.h>
-#include <hazelcast/util/Executor.h>
+#include "hazelcast/util/Thread.h"
+#include "hazelcast/util/Atomic.h"
+#include "hazelcast/client/impl/ExecutionCallback.h"
+#include "hazelcast/util/Executor.h"
 
 namespace hazelcast {
     namespace util {

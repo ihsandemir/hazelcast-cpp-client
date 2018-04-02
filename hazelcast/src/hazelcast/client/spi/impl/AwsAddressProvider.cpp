@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <hazelcast/client/exception/IException.h>
+#include "hazelcast/client/exception/IException.h"
 #include <boost/foreach.hpp>
 #include "hazelcast/client/spi/impl/AwsAddressProvider.h"
 #include "hazelcast/client/config/ClientNetworkConfig.h"

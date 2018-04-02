@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hazelcast/util/IOUtil.h>
-#include <hazelcast/client/protocol/codec/ClientPingCodec.h>
+#include "hazelcast/util/IOUtil.h"
+#include "hazelcast/client/protocol/codec/ClientPingCodec.h"
 #include "hazelcast/client/connection/HeartbeatManager.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"

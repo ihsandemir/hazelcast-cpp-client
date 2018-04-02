@@ -19,7 +19,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
-#include <hazelcast/util/CountDownLatch.h>
+#include "hazelcast/util/CountDownLatch.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

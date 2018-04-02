@@ -17,17 +17,15 @@
 #ifndef HAZELCAST_UTIL_RUNNABLE_H_
 #define HAZELCAST_UTIL_RUNNABLE_H_
 
-#include <string>
 #include <stdint.h>
 
-#include "hazelcast/util/HazelcastDll.h"
+#include "hazelcast/util/Named.h"
 
 namespace hazelcast {
     namespace util {
-        class HAZELCAST_API Runnable {
+        class HAZELCAST_API Runnable : public Named {
         public:
             virtual void run() = 0;
-            virtual const std::string getName() const = 0;
 
             virtual bool isStriped();
         };

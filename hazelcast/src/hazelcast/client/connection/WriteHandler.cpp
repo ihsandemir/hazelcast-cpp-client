@@ -58,7 +58,7 @@ namespace hazelcast {
             }
 
             void WriteHandler::handle() {
-                if (lastMessage == NULL) {
+                if (lastMessage.get() == NULL) {
                     if (!(lastMessage = writeQueue.poll()).get()) {
                         ready = true;
                         return;
@@ -70,7 +70,7 @@ namespace hazelcast {
                     }
                 }
 
-                while (NULL != lastMessage) {
+                while (NULL != lastMessage.get()) {
                     try {
                         numBytesWrittenToSocketForMessage += lastMessage->writeTo(connection.getSocket(),
                                                                numBytesWrittenToSocketForMessage, lastMessageFrameLen);

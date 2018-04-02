@@ -18,9 +18,9 @@
 #define HAZELCAST_CLIENT_SPI_IMPL_AWSADDRESSPROVIDER_H
 
 #include <map>
-#include <hazelcast/util/ILogger.h>
-#include <hazelcast/client/aws/AWSClient.h>
-#include <hazelcast/util/Atomic.h>
+#include "hazelcast/util/ILogger.h"
+#include "hazelcast/client/aws/AWSClient.h"
+#include "hazelcast/util/Atomic.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/connection/AddressProvider.h"
 

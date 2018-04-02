@@ -15,16 +15,16 @@
  */
 
 #include "hazelcast/client/spi/impl/ClientMembershipListener.h"
-#include <hazelcast/client/MembershipEvent.h>
-#include <hazelcast/client/InitialMembershipEvent.h>
-#include <hazelcast/util/ILogger.h>
-#include <hazelcast/client/spi/ClientContext.h>
-#include <hazelcast/client/spi/impl/ClientPartitionServiceImpl.h>
-#include <hazelcast/client/spi/ClientClusterService.h>
-#include <hazelcast/client/spi/impl/ClientInvocation.h>
-#include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
-#include <hazelcast/client/connection/Connection.h>
-#include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
+#include "hazelcast/client/MembershipEvent.h"
+#include "hazelcast/client/InitialMembershipEvent.h"
+#include "hazelcast/util/ILogger.h"
+#include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
+#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
+#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
+#include "hazelcast/client/connection/Connection.h"
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 
 namespace hazelcast {
     namespace client {

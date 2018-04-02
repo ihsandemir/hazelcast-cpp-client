@@ -199,8 +199,7 @@ namespace hazelcast {
 
                         return (int) readHandler.getNumRead();
                     } else {
-                        size = asio::read(*socket, asio::buffer(buffer, (size_t) len),
-                                          asio::transfer_exactly((size_t) len), ec);
+                        size = socket->read_some(asio::buffer(buffer, (size_t) len), ec);
                     }
 
                     return handleError("SSLSocket::receive", size, ec);

@@ -37,7 +37,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <hazelcast/client/impl/BuildInfo.h>
+#include "hazelcast/client/impl/BuildInfo.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

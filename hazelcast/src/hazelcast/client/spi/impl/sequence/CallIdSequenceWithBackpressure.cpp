@@ -16,9 +16,9 @@
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
 
 #include "hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h"
-#include <hazelcast/util/Preconditions.h>
-#include <hazelcast/util/Util.h>
-#include <hazelcast/util/concurrent/BackoffIdleStrategy.h>
+#include "hazelcast/util/Preconditions.h"
+#include "hazelcast/util/Util.h"
+#include "hazelcast/util/concurrent/BackoffIdleStrategy.h"
 
 namespace hazelcast {
     namespace client {

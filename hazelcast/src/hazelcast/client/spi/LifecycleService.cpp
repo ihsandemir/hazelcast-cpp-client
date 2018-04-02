@@ -17,9 +17,9 @@
 // Created by sancar koyunlu on 6/17/13.
 
 #include "hazelcast/util/Util.h"
-#include <hazelcast/client/spi/impl/AbstractClientInvocationService.h>
-#include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
-#include <hazelcast/client/spi/impl/ClientPartitionServiceImpl.h>
+#include "hazelcast/client/spi/impl/AbstractClientInvocationService.h"
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
+#include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/ClientContext.h"

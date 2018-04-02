@@ -16,13 +16,13 @@
 
 #include <boost/foreach.hpp>
 
-#include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
-#include <hazelcast/client/spi/ClientContext.h>
-#include <hazelcast/client/ClientConfig.h>
-#include <hazelcast/util/UuidUtil.h>
-#include <hazelcast/client/InitialMembershipEvent.h>
-#include <hazelcast/client/InitialMembershipListener.h>
-#include <hazelcast/client/spi/impl/ClientMembershipListener.h>
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
+#include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/ClientConfig.h"
+#include "hazelcast/util/UuidUtil.h"
+#include "hazelcast/client/InitialMembershipEvent.h"
+#include "hazelcast/client/InitialMembershipListener.h"
+#include "hazelcast/client/spi/impl/ClientMembershipListener.h"
 
 namespace hazelcast {
     namespace client {
