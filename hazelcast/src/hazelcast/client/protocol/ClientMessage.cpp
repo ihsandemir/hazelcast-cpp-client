@@ -45,31 +45,31 @@ namespace hazelcast {
             ClientMessage::ClientMessage() : isOwner(false), retryable(false), isBoundToSingleConnection(false) {
             }
 
-            ClientMessage::ClientMessage(int32_t size) : retryable(false),
+            ClientMessage::ClientMessage(int32_t size) : isOwner(true), retryable(false),
                                                          isBoundToSingleConnection(false) {
                 buffer = new byte[size];
                 memset(buffer, 0, size);
-
-                isOwner = true;
 
                 setFrameLength(size);
             }
 
             ClientMessage::~ClientMessage() {
+/*
                 if (isOwner) {
                     delete[] buffer;
                 }
+*/
             }
 
-            void ClientMessage::wrapForDecode(byte *buffer, int32_t size, bool owner) {
-                isOwner = owner;
+            void ClientMessage::wrapForDecode(byte *buffer, int32_t size) {
+                isOwner = false;
                 wrapForRead(buffer, size, HEADER_SIZE);
             }
 
-            void ClientMessage::wrapForEncode(byte *buffer, int32_t size, bool owner) {
+            void ClientMessage::wrapForEncode(byte *buffer, int32_t size) {
                 wrapForWrite(buffer, size, HEADER_SIZE);
 
-                isOwner = owner;
+                isOwner = true;
 
                 setFrameLength(size);
                 setVersion(PROTOCOL_VERSION);
@@ -83,7 +83,7 @@ namespace hazelcast {
                 std::auto_ptr<ClientMessage> msg(new ClientMessage());
                 byte *buffer = new byte[size];
                 memset(buffer, 0, size);
-                msg->wrapForEncode(buffer, size, true);
+                msg->wrapForEncode(buffer, size);
                 return msg;
             }
 

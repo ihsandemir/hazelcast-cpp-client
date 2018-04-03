@@ -85,10 +85,10 @@ namespace hazelcast {
                 }
             }
 
-            void DefaultClientConnectionStrategy::onConnect(boost::shared_ptr<Connection> &connection) {
+            void DefaultClientConnectionStrategy::onConnect(const boost::shared_ptr<Connection> &connection) {
             }
 
-            void DefaultClientConnectionStrategy::onDisconnect(boost::shared_ptr<Connection> &connection) {
+            void DefaultClientConnectionStrategy::onDisconnect(const boost::shared_ptr<Connection> &connection) {
             }
 
             void DefaultClientConnectionStrategy::onHeartbeatStopped(const boost::shared_ptr<Connection> &connection) {

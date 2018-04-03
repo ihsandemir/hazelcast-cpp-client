@@ -94,8 +94,7 @@ namespace hazelcast {
                 }
 
                 BOOST_FOREACH(boost::shared_ptr<Worker> &worker, workers) {
-                                worker->workQueue.clear();
-                                worker->workQueue.interrupt();
+                                worker->shutdown();
                             }
             }
 
@@ -109,9 +108,7 @@ namespace hazelcast {
                     try {
                         task = workQueue.pop();
                         if (task.get()) {
-                            logger.info() << "Worker " << getName() << " is executing runnable " << task->getName();
                             task->run();
-                            logger.info() << "Worker " << getName() << " finished executing runnable " << task->getName();
                         }
                     } catch (client::exception::InterruptedException &) {
                         logger.finest() << getName() << " is interrupted .";
@@ -147,6 +144,13 @@ namespace hazelcast {
                 std::ostringstream out;
                 out << prefix << (++THREAD_ID_GENERATOR);
                 return out.str();
+            }
+
+            void SimpleExecutorService::Worker::shutdown() {
+                workQueue.clear();
+                workQueue.interrupt();
+                thread.cancel();
+                thread.join();
             }
         }
 

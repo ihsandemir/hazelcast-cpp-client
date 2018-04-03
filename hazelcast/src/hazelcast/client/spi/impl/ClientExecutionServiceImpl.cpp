@@ -128,7 +128,7 @@ namespace hazelcast {
                 }
 
                 const std::string ClientExecutionServiceImpl::RepeatingRunner::getName() const {
-                    return "ClientExecutionServiceImpl::RepeatedRunner";
+                    return command->getName();
                 }
 
                 ClientExecutionServiceImpl::AbstractRunner::AbstractRunner(
@@ -187,7 +187,7 @@ namespace hazelcast {
                 }
 
                 const std::string ClientExecutionServiceImpl::DelayedRunner::getName() const {
-                    return "DelayedRunner::DelayedRunner";
+                    return command->getName();
                 }
 
                 ClientExecutionServiceImpl::DelayedRunner::DelayedRunner(

@@ -40,7 +40,7 @@ namespace hazelcast {
             namespace socket {
                 SSLSocket::SSLSocket(const client::Address &address, asio::ssl::context &context)
                         : remoteEndpoint(address), sslContext(context),
-                          deadline(ioService) {
+                          deadline(ioService), socketId(-1) {
                     socket = std::auto_ptr<asio::ssl::stream<asio::ip::tcp::socket> >(
                             new asio::ssl::stream<asio::ip::tcp::socket>(ioService, sslContext));
                 }
@@ -146,6 +146,7 @@ namespace hazelcast {
 
                         // set the socket as blocking by default
                         setBlocking(true);
+                        socketId = socket->lowest_layer().native_handle();
                     } catch (asio::system_error &e) {
                         return e.code().value();
                     }
@@ -173,12 +174,16 @@ namespace hazelcast {
                     return supportedCiphers;
                 }
 
-                int SSLSocket::send(const void *buffer, int len) {
+                int SSLSocket::send(const void *buffer, int len, int flag) {
                     size_t size = 0;
                     asio::error_code ec;
 
-                    size = asio::write(*socket, asio::buffer(buffer, (size_t) len),
-                                       asio::transfer_exactly((size_t) len), ec);
+                    if (flag == MSG_WAITALL) {
+                        size = asio::write(*socket, asio::buffer(buffer, (size_t) len),
+                                           asio::transfer_exactly((size_t) len), ec);
+                    } else {
+                        size = socket->write_some(asio::buffer(buffer, (size_t) len), ec);
+                    }
 
                     return handleError("SSLSocket::send", size, ec);
                 }
@@ -187,10 +192,10 @@ namespace hazelcast {
                     asio::error_code ec;
                     size_t size = 0;
 
+                    ReadHandler readHandler(size, ec);
+                    asio::error_code ioRunErrorCode;
+                    ioService.restart();
                     if (flag == MSG_WAITALL) {
-                        ReadHandler readHandler(size, ec);
-                        asio::error_code ioRunErrorCode;
-                        ioService.restart();
                         asio::async_read(*socket, asio::buffer(buffer, (size_t) len), asio::transfer_exactly((size_t) len), readHandler);
                         do {
                             ioService.run(ioRunErrorCode);
@@ -206,7 +211,7 @@ namespace hazelcast {
                 }
 
                 int SSLSocket::getSocketId() const {
-                    return socket->lowest_layer().native_handle();
+                    return socketId;
                 }
 
                 void SSLSocket::setRemoteEndpoint(const client::Address &address) {

@@ -71,10 +71,11 @@ namespace hazelcast {
                     /**
                      * @param buffer
                      * @param len length of the buffer
+                     * @param flag bsd sockets options flag. Only MSG_WAITALL is supported when SSL is enabled.
                      * @return number of bytes send
                      * @throw IOException in failure.
                      */
-                    int send(const void *buffer, int len);
+                    int send(const void *buffer, int len, int flag = 0);
 
                     /**
                      * @param buffer
@@ -160,6 +161,7 @@ namespace hazelcast {
                     std::auto_ptr<asio::ssl::stream<asio::ip::tcp::socket> > socket;
                     asio::deadline_timer deadline;
                     asio::error_code errorCode;
+                    int socketId;
                 };
 
                 std::ostream &operator<<(std::ostream &out, const SSLSocket::CipherInfo &info);

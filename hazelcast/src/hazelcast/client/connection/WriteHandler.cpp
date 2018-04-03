@@ -76,7 +76,6 @@ namespace hazelcast {
                                                                numBytesWrittenToSocketForMessage, lastMessageFrameLen);
 
                         if (numBytesWrittenToSocketForMessage >= lastMessageFrameLen) {
-                            util::ILogger::getLogger().info() << "WriteHandler::handle() finished writing:" << *lastMessage;
                             // Not deleting message since its memory management is at the future object
                             if ((lastMessage = writeQueue.poll()).get()) {
                                 numBytesWrittenToSocketForMessage = 0;

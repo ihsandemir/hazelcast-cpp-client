@@ -31,17 +31,21 @@ namespace hazelcast {
                         int calculatedVersion = MAJOR_VERSION_MULTIPLIER * util::IOUtil::to_value<int>(versionTokens[0])
                                                 + MINOR_VERSION_MULTIPLIER *
                                                   util::IOUtil::to_value<int>(versionTokens[1]);
-                        int groupCount = versionTokens.size();
-                        if (groupCount >= PATCH_TOKEN_INDEX) {
-                            const std::string &patchVersionString = versionTokens[PATCH_TOKEN_INDEX];
-                            if (patchVersionString.find("-") != 0) {
-                                calculatedVersion += util::IOUtil::to_value<int>(patchVersionString);
+                        if (versionTokens.size() > PATCH_TOKEN_INDEX) {
+                            size_t snapshotStartPosition = versionTokens[PATCH_TOKEN_INDEX].find("-");
+                            if (snapshotStartPosition == std::string::npos) {
+                                calculatedVersion += util::IOUtil::to_value<int>(versionTokens[PATCH_TOKEN_INDEX]);
+                            }
+
+                            if (snapshotStartPosition > 0) {
+                                calculatedVersion += util::IOUtil::to_value<int>(
+                                        versionTokens[PATCH_TOKEN_INDEX].substr(0, snapshotStartPosition));
                             }
                         }
                         return calculatedVersion;
                     } catch (exception::IException &e) {
                         util::ILogger::getLogger().warning() << "Failed to calculate version using version string "
-                                                            << version << e;
+                                                             << version << e;
                     }
                 }
 

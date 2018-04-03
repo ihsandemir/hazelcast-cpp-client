@@ -87,10 +87,11 @@ namespace hazelcast {
                     /**
                      * @param buffer
                      * @param len length of the buffer
+                     * @param flag bsd sockets options flag.
                      * @return number of bytes send
                      * @throw IOException in failure.
                      */
-                    int send(const void *buffer, int len);
+                    int send(const void *buffer, int len, int flag = 0);
 
                     /**
                      * @param buffer

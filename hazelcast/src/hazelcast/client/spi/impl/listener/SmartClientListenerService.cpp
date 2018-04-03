@@ -165,7 +165,7 @@ namespace hazelcast {
 
                         std::string serverRegistrationId = codec->decodeAddResponse(*clientMessage);
                         handler->onListenerRegister();
-                        long correlationId = request->getCorrelationId();
+                        int64_t correlationId = invocation->getClientMessage()->getCorrelationId();
                         boost::shared_ptr<ClientEventRegistration> registration(
                                 new ClientEventRegistration(serverRegistrationId, correlationId, connection, codec));
 

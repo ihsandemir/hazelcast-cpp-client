@@ -33,11 +33,10 @@
 #include "hazelcast/client/internal/socket/TcpSocket.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/spi/LifecycleService.h"
-
+#include "hazelcast/client/impl/BuildInfo.h"
 
 #include <stdint.h>
 #include <string.h>
-#include "hazelcast/client/impl/BuildInfo.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -60,7 +59,6 @@ namespace hazelcast {
                       connectionId(-1), pendingPacketCount(0),
                       connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION) {
                 socket = socketFactory.create(address);
-                wrapperMessage.wrapForDecode(receiveBuffer, (int32_t) 16 << 10, false);
                 assert(receiveByteBuffer.remaining() >=
                        protocol::ClientMessage::HEADER_SIZE); // Note: Always make sure that the size >= ClientMessage header size.
             }
@@ -96,7 +94,7 @@ namespace hazelcast {
                 }
 
                 // TODO: make this send all guarantee
-                socket->send("CB2", 3);
+                socket->send("CB2", 3, MSG_WAITALL);
             }
 
             void Connection::close(const char *reason) {
@@ -109,9 +107,14 @@ namespace hazelcast {
                 }
 
                 closeCause = cause;
-                closeReason = reason;
+                if (reason) {
+                    closeReason = reason;
+                }
 
                 logClose();
+
+                writeHandler.deRegisterSocket();
+                readHandler.deRegisterSocket();
 
                 try {
                     innerClose();
@@ -123,7 +126,6 @@ namespace hazelcast {
             }
 
             bool Connection::write(const boost::shared_ptr<protocol::ClientMessage> &message) {
-                util::ILogger::getLogger().info() << "Connection::write " << *message;
                 writeHandler.enqueueData(message);
                 return true;
             }
@@ -158,8 +160,7 @@ namespace hazelcast {
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
                     spi::impl::listener::AbstractClientListenerService &listenerService =
                             (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();
-                    listenerService.handleClientMessage(boost::shared_ptr<protocol::ClientMessage>(message),
-                                                        connection);
+                    listenerService.handleClientMessage(boost::shared_ptr<protocol::ClientMessage>(message), connection);
                 } else {
                     invocationService.handleClientMessage(connection, message);
                 }
@@ -190,15 +191,10 @@ namespace hazelcast {
 
                 util::ILogger &logger = util::ILogger::getLogger();
                 if (clientContext.getLifecycleService().isRunning()) {
-                    if (closeCause.get()) {
+                    if (!closeCause.get()) {
                         logger.info() << message.str();
                     } else {
-                        try {
-                            closeCause->raise();
-                        } catch (exception::EOFException &) {
-                        } catch (...) {
-                            logger.warning() << message.str() << *closeCause;
-                        }
+                        logger.warning() << message.str() << *closeCause;
                     }
                 } else {
                     if (closeCause.get() == NULL) {

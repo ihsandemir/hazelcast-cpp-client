@@ -83,6 +83,8 @@ namespace hazelcast {
                  */
                 virtual std::auto_ptr<IException> clone() const;
 
+                virtual bool isProtocolException() const;
+
                 const boost::shared_ptr<IException> &getCause() const;
 
                 friend std::ostream HAZELCAST_API &operator<<(std::ostream &os, const IException &exception);

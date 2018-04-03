@@ -150,7 +150,6 @@ namespace hazelcast {
                 util::ByteBuffer receiveByteBuffer;
 
                 protocol::ClientMessageBuilder messageBuilder;
-                protocol::ClientMessage wrapperMessage;
                 std::auto_ptr<protocol::ClientMessage> responseMessage;
 
                 int connectionId;

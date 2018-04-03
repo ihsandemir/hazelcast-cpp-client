@@ -95,13 +95,13 @@ namespace hazelcast {
                  * this method will be called with the connection parameter
                  * @param connection the new established connection
                  */
-                virtual void onConnect(boost::shared_ptr<Connection> &connection) = 0;
+                virtual void onConnect(const boost::shared_ptr<Connection> &connection) = 0;
 
                 /**
                  * If a connection is disconnected, this method will be called with the connection parameter
                  * @param connection the closed connection
                  */
-                virtual void onDisconnect(boost::shared_ptr<Connection> &connection) = 0;
+                virtual void onDisconnect(const boost::shared_ptr<Connection> &connection) = 0;
 
                 /**
                  * The {@link ConnectionManager} will inform this method that the provided connection's heartbeat stopped

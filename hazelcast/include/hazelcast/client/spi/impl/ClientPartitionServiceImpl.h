@@ -129,8 +129,8 @@ namespace hazelcast {
                     ClientExecutionService &clientExecutionService;
                     boost::shared_ptr<client::impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > > refreshTaskCallback;
 
-                    static const int64_t PERIOD = 10;
-                    static const int64_t INITIAL_DELAY = 10;
+                    static const int64_t PERIOD = 10 * 1000;
+                    static const int64_t INITIAL_DELAY = 10 * 1000;
 
                     util::SynchronizedMap<int, Address> partitions;
                     util::AtomicInt partitionCount;

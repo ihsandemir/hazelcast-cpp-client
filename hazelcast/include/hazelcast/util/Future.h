@@ -72,7 +72,7 @@ namespace hazelcast {
                 }
 
             private:
-                T &sharedObj;
+                T sharedObj;
                 const boost::shared_ptr<client::impl::ExecutionCallback<T> > callback;
                 util::ILogger &logger;
                 Future<T> &future;

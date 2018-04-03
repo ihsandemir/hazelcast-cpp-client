@@ -168,7 +168,7 @@ namespace hazelcast {
                     #endif
                 }
 
-                int TcpSocket::send(const void *buffer, int len) {
+                int TcpSocket::send(const void *buffer, int len, int flag) {
                     #if !defined(WIN32) && !defined(_WIN32) && !defined(WIN64) && !defined(_WIN64)
                     errno = 0;
                     #endif
@@ -181,7 +181,7 @@ namespace hazelcast {
                      * Requests not to send SIGPIPE on errors on stream oriented sockets when the other end breaks the connection.
                      * The EPIPE error is still returned.
                      */
-                    if ((bytesSend = ::send(socketId, (char *) buffer, (size_t) len, MSG_NOSIGNAL)) == -1) {
+                    if ((bytesSend = ::send(socketId, (char *) buffer, (size_t) len, flag | MSG_NOSIGNAL)) == -1) {
                         #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
                         int error = WSAGetLastError();
                         if (WSAEWOULDBLOCK == error) {
@@ -261,7 +261,6 @@ namespace hazelcast {
                         ::close(socketId);
                         #endif
 
-                        socketId = -1; // set it to invalid descriptor to avoid misuse of the socket for this connection
                     }
                 }
 

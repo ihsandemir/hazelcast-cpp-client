@@ -60,16 +60,22 @@ namespace hazelcast {
 
             namespace impl {
                 class ClientExecutionServiceImpl;
+
                 class ClientInvocationFuture;
             }
         }
 
         namespace connection {
             class Connection;
+
             class ConnectionListener;
+
             class AuthenticationFuture;
+
             class ClientConnectionStrategy;
+
             class AddressProvider;
+
             class HeartbeatManager;
 
             /**
@@ -77,10 +83,12 @@ namespace hazelcast {
             */
             class HAZELCAST_API ClientConnectionManagerImpl : public spi::impl::ConnectionHeartbeatListener {
                 friend class AuthCallback;
+
             public:
                 ClientConnectionManagerImpl(spi::ClientContext &client,
-                                  const boost::shared_ptr<AddressTranslator> &addressTranslator,
-                                  const std::vector<boost::shared_ptr<AddressProvider> > &addressProviders);
+                                            const boost::shared_ptr<AddressTranslator> &addressTranslator,
+                                            const std::vector<boost::shared_ptr<AddressProvider> > &addressProviders);
+
                 /**
                 * Start clientConnectionManager
                 */
@@ -154,6 +162,7 @@ namespace hazelcast {
                 boost::shared_ptr<AuthenticationFuture> triggerConnect(const Address &target, bool asOwner);
 
                 boost::shared_ptr<Connection> createSocketConnection(const Address &address, bool ownerConnection);
+
                 boost::shared_ptr<Connection> createSocketConnection(const Address &address);
 
                 boost::shared_ptr<Connection> getOrConnect(const Address &address, bool asOwner);
@@ -175,7 +184,8 @@ namespace hazelcast {
 
                 void disconnectFromCluster(const boost::shared_ptr<Connection> &connection);
 
-                boost::shared_ptr<util::impl::SimpleExecutorService> createSingleThreadExecutorService(spi::ClientContext &client);
+                boost::shared_ptr<util::impl::SimpleExecutorService>
+                createSingleThreadExecutorService(spi::ClientContext &client);
 
                 void fireConnectionEvent(const hazelcast::client::LifecycleEvent::LifeCycleState &state);
 
@@ -214,7 +224,8 @@ namespace hazelcast {
                 class AuthCallback : public impl::ExecutionCallback<boost::shared_ptr<protocol::ClientMessage> > {
                 public:
                     AuthCallback(const boost::shared_ptr<Connection> &connection, bool asOwner, const Address &target,
-                                 boost::shared_ptr<AuthenticationFuture> &future, ClientConnectionManagerImpl &connectionManager);
+                                 boost::shared_ptr<AuthenticationFuture> &future,
+                                 ClientConnectionManagerImpl &connectionManager);
 
                     virtual void onResponse(const boost::shared_ptr<protocol::ClientMessage> &response);
 
@@ -234,15 +245,17 @@ namespace hazelcast {
                 class DisconnecFromClusterTask : public util::Runnable {
                 public:
                     DisconnecFromClusterTask(const boost::shared_ptr<Connection> &connection,
-                                             ClientConnectionManagerImpl &connectionManager);
+                                             ClientConnectionManagerImpl &connectionManager,
+                                             ClientConnectionStrategy &connectionStrategy);
 
                     virtual void run();
 
                     virtual const std::string getName() const;
 
                 private:
-                    const boost::shared_ptr<Connection> &connection;
+                    const boost::shared_ptr<Connection> connection;
                     ClientConnectionManagerImpl &connectionManager;
+                    ClientConnectionStrategy &connectionStrategy;
                 };
 
                 class ConnectToClusterTask : public util::Callable<bool> {

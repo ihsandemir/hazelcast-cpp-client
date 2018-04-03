@@ -49,7 +49,7 @@ namespace hazelcast {
              * @return number of bytes send
              * @throw IOException in failure.
              */
-            virtual int send(const void *buffer, int len) = 0;
+            virtual int send(const void *buffer, int len, int flag = 0) = 0;
 
             /**
              * @param buffer

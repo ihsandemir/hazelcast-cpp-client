@@ -91,13 +91,11 @@ namespace hazelcast {
                 void AbstractClientInvocationService::handleClientMessage(
                         const boost::shared_ptr<connection::Connection> &connection,
                         std::auto_ptr<protocol::ClientMessage> &clientMessage) {
-                    invocationLogger.info() << "AbstractClientInvocationService::handleClientMessage adding call id " << clientMessage->getCorrelationId() << " message: " << *clientMessage;
                     responseThread.responseQueue.push(
                             ClientPacket(connection, boost::shared_ptr<protocol::ClientMessage>(clientMessage)));
                 }
 
                 boost::shared_ptr<ClientInvocation> AbstractClientInvocationService::deRegisterCallId(int64_t callId) {
-                    util::ILogger::getLogger().info() << "Removing invocation:" << callId;
                     return invocations.remove(callId);
                 }
 
@@ -135,7 +133,6 @@ namespace hazelcast {
                     const boost::shared_ptr<protocol::ClientMessage> &clientMessage = clientInvocation->getClientMessage();
                     int64_t correlationId = clientMessage->getCorrelationId();
                     invocations.put(correlationId, clientInvocation);
-                    invocationLogger.info() << "Put invocation:" << correlationId << " invocation:" << *clientInvocation;
                     const boost::shared_ptr<EventHandler<protocol::ClientMessage> > handler = clientInvocation->getEventHandler();
                     if (handler.get() != NULL) {
                         clientListenerService->addEventHandler(correlationId, handler);
@@ -188,7 +185,6 @@ namespace hazelcast {
 
                     BOOST_FOREACH(int64_t invocationId, invocationsToBeRemoved) {
                                     invocations.remove(invocationId);
-                                    util::ILogger::getLogger().info() << "Removed invocation:" << invocationId;
                                 }
                 }
 

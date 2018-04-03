@@ -45,9 +45,9 @@ namespace hazelcast {
 
                 virtual void onDisconnectFromCluster();
 
-                virtual void onConnect(boost::shared_ptr<Connection> &connection);
+                virtual void onConnect(const boost::shared_ptr<Connection> &connection);
 
-                virtual void onDisconnect(boost::shared_ptr<Connection> &connection);
+                virtual void onDisconnect(const boost::shared_ptr<Connection> &connection);
 
                 virtual void onHeartbeatStopped(const boost::shared_ptr<Connection> &connection);
 

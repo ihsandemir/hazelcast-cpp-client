@@ -139,6 +139,8 @@ namespace hazelcast {
                     void schedule(const boost::shared_ptr<Runnable> &runnable);
 
                     void start();
+
+                    void shutdown();
                 private:
                     static std::string generateThreadName(const std::string &prefix);
 

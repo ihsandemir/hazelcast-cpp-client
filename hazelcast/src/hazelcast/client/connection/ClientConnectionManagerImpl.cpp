@@ -17,6 +17,7 @@
 // Created by sancar koyunlu on 8/21/13.
 
 #include <boost/foreach.hpp>
+
 #include "hazelcast/client/impl/ExecutionCallback.h"
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/connection/DefaultClientConnectionStrategy.h"
@@ -48,7 +49,6 @@
 #include "hazelcast/client/connection/AuthenticationFuture.h"
 #include "hazelcast/client/config/ClientNetworkConfig.h"
 #include "hazelcast/client/ClientProperties.h"
-#include "hazelcast/client/connection/ClientConnectionStrategy.h"
 #include "hazelcast/client/connection/HeartbeatManager.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -227,11 +227,9 @@ namespace hazelcast {
 
             boost::shared_ptr<Connection>
             ClientConnectionManagerImpl::getConnection(const Address &target, bool asOwner) {
-/*              TODO: Add connection strategy
                 if (!asOwner) {
-                    connectionStrategy.beforeGetConnection(target);
+                    connectionStrategy->beforeGetConnection(target);
                 }
-*/
                 if (!asOwner && getOwnerConnection().get() == NULL) {
                     throw exception::IOException("ConnectionManager::getConnection",
                                                  "Owner connection is not available!");
@@ -260,11 +258,9 @@ namespace hazelcast {
 
             boost::shared_ptr<AuthenticationFuture>
             ClientConnectionManagerImpl::triggerConnect(const Address &target, bool asOwner) {
-/*              TODO
                 if (!asOwner) {
-                    connectionStrategy.beforeOpenConnection(target);
+                    connectionStrategy->beforeOpenConnection(target);
                 }
-*/
                 if (!alive) {
                     throw exception::HazelcastException("ConnectionManager::triggerConnect",
                                                         "ConnectionManager is not active!");
@@ -413,9 +409,7 @@ namespace hazelcast {
                               connectionListeners.toArray()) {
                                 connectionListener->connectionAdded(connection);
                             }
-/*              TODO
-                connectionStrategy.onConnect(connection);
-*/
+                connectionStrategy->onConnect(connection);
             }
 
             void
@@ -445,13 +439,13 @@ namespace hazelcast {
                                connectionListeners.toArray()) {
                                 listener->connectionRemoved(connection);
                             }
-/*              // TODO
-                connectionStrategy.onDisconnect(connection);
-*/
+                connectionStrategy->onDisconnect(connection);
             }
 
             void ClientConnectionManagerImpl::disconnectFromCluster(const boost::shared_ptr<Connection> &connection) {
-
+                clusterConnectionExecutor->execute(
+                        boost::shared_ptr<util::Runnable>(
+                                new DisconnecFromClusterTask(connection, *this, *connectionStrategy)));
             }
 
             boost::shared_ptr<util::impl::SimpleExecutorService>
@@ -602,12 +596,7 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::onClose(Connection &connection) {
-                const Address &target = connection.getRemoteEndpoint();
-                boost::shared_ptr<Connection> activeConnection = getActiveConnection(target);
-                if (activeConnection.get() == NULL || activeConnection->getRemoteEndpoint() != target) {
-                    return;
-                }
-                removeFromActiveConnections(activeConnection);
+                removeFromActiveConnections(connection.shared_from_this());
             }
 
             void
@@ -751,9 +740,10 @@ namespace hazelcast {
             }
 
             ClientConnectionManagerImpl::DisconnecFromClusterTask::DisconnecFromClusterTask(
-                    const boost::shared_ptr<Connection> &connection, ClientConnectionManagerImpl &connectionManager)
+                    const boost::shared_ptr<Connection> &connection, ClientConnectionManagerImpl &connectionManager,
+                    ClientConnectionStrategy &connectionStrategy)
                     : connection(
-                    connection), connectionManager(connectionManager) {
+                    connection), connectionManager(connectionManager), connectionStrategy(connectionStrategy) {
             }
 
             void ClientConnectionManagerImpl::DisconnecFromClusterTask::run() {
@@ -766,9 +756,7 @@ namespace hazelcast {
                 }
 
                 connectionManager.setOwnerConnectionAddress(boost::shared_ptr<Address>());
-/*              TODO
                 connectionStrategy.onDisconnectFromCluster();
-*/
 
                 if (connectionManager.client.getLifecycleService().isRunning()) {
                     connectionManager.fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
@@ -796,7 +784,6 @@ namespace hazelcast {
 
                     throw;
                 }
-                return false;
             }
 
             const std::string ClientConnectionManagerImpl::ConnectToClusterTask::getName() const {

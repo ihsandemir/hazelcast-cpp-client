@@ -37,7 +37,7 @@ namespace hazelcast {
 
                 if (NULL == message.get()) {
                     if (buffer.remaining() >= ClientMessage::HEADER_SIZE) {
-                        wrapperMessage.wrapForDecode((byte *) buffer.ix(), (int32_t) buffer.remaining(), false);
+                        wrapperMessage.wrapForDecode((byte *) buffer.ix(), (int32_t) buffer.remaining());
                         frameLen = wrapperMessage.getFrameLength();
                         message = ClientMessage::create(frameLen);
                         offset = 0;
@@ -51,7 +51,6 @@ namespace hazelcast {
                         if (message->isFlagSet(ClientMessage::BEGIN_AND_END_FLAGS)) {
                             //MESSAGE IS COMPLETE HERE
                             connection.handleClientMessage(connection.shared_from_this(), message);
-                            message.reset();
                             isCompleted = true;
                         } else {
                             if (message->isFlagSet(ClientMessage::BEGIN_FLAG)) {

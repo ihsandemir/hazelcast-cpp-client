@@ -147,7 +147,7 @@ namespace hazelcast {
 
                 virtual ~ClientMessage();
 
-                void wrapForDecode(byte *buffer, int32_t size, bool owner);
+                void wrapForDecode(byte *buffer, int32_t size);
 
                 static std::auto_ptr<ClientMessage> createForEncode(int32_t size);
 
@@ -469,7 +469,7 @@ namespace hazelcast {
             private:
                 ClientMessage(int32_t size);
 
-                inline void wrapForEncode(byte *buffer, int32_t size, bool owner);
+                inline void wrapForEncode(byte *buffer, int32_t size);
 
                 void ensureBufferSize(int32_t newCapacity);
 
