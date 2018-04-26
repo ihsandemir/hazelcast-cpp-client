@@ -36,7 +36,6 @@ private:
 };
 
 util::AtomicBoolean isCancelled;
-util::Mutex threadLock;
 
 class SoakTestTask : public util::Runnable {
 public:
@@ -86,7 +85,7 @@ public:
                                   << valuesCount << ", executeOnKeyCount:" << executeOnKeyCount << "}";
                 }
             } catch (std::exception &e) {
-                logger.warning() << "Exception occured:  " << e;
+                logger.warning() << "Exception occured:  " << e.what();
             }
         }
 
@@ -102,7 +101,7 @@ private:
 };
 
 void signalHandler(int s) {
-    cout << "Caught signal: " << s << endl;
+    util::ILogger::getLogger().warning() << "Caught signal: " << s;
     isCancelled = true;
 }
 
@@ -140,7 +139,8 @@ int main(int argc, char *args[]) {
     vector<boost::shared_ptr<util::Thread> > threads(threadCount);
 
     for (int i = 0; i < threadCount; i++) {
-        boost::shared_ptr<util::Thread> thread(new util::Thread(boost::shared_ptr<util::Runnable>(new SoakTestTask(map, logger))));
+        boost::shared_ptr<util::Thread> thread(
+                new util::Thread(boost::shared_ptr<util::Runnable>(new SoakTestTask(map, logger))));
         threads[i] = thread;
         thread->start();
     }

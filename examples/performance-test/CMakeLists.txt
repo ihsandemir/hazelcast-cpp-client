@@ -5,7 +5,7 @@ INCLUDE(TestBigEndian)
 
 set(CMAKE_CXX_STANDARD 98)
 
-set(HZ_VERSION 3.8.3)
+set(HZ_VERSION 3.10)
 set(HZ_BIT 64)
 
 message (STATUS "Using hazelcast installation at ${HAZELCAST_INSTALL_DIR}.")
