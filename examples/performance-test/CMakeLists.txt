@@ -191,6 +191,4 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
-add_executable(simpleThroughputTest MapPut.cpp)
-add_executable(getThroughputTest MapGet.cpp)
 add_executable(soakTest SoakTest.cpp)

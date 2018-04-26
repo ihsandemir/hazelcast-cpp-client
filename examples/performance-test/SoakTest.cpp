@@ -1,18 +1,10 @@
 #include <iostream>
 #include <vector>
-#include <memory>
-#include <stdint.h>
 #include <signal.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
 
 #include <hazelcast/client/HazelcastAll.h>
 #include <hazelcast/client/query/BetweenPredicate.h>
 #include <hazelcast/client/query/QueryConstants.h>
-#include <hazelcast/client/serialization/ObjectDataOutput.h>
-#include <hazelcast/client/serialization/ObjectDataInput.h>
-#include <hazelcast/client/exception/ProtocolExceptions.h>
 
 using namespace hazelcast;
 using namespace hazelcast::client;
@@ -46,66 +38,68 @@ private:
 util::AtomicBoolean isCancelled;
 util::Mutex threadLock;
 
-void testMap(util::ThreadArgs &args) {
-    IMap<string, string> *map = (IMap<string, string> *) args.arg0;
+class SoakTestTask : public util::Runnable {
+public:
+    SoakTestTask(const IMap<string, string> &map, util::ILogger &logger) : map(map), logger(logger) {}
 
-    {
-        util::LockGuard guard(threadLock);
-        cout << "Thread " << util::getThreadId() << " started." << endl;
-
+    virtual const string getName() const {
+        return "SoakTestTask";
     }
 
-    int64_t getCount = 0;
-    int64_t putCount = 0;
-    int64_t valuesCount = 0;
-    int64_t executeOnKeyCount = 0;
-    int entryCount = 10000;
+    virtual void run() {
+        logger.info() << "Thread " << util::getCurrentThreadId() << " is started.";
 
-    while (!isCancelled) {
-        std::ostringstream out;
-        int operation = rand() % 100;
-        int randomKey = rand() % entryCount;
-        out << randomKey;
-        string key(out.str());
-        try {
-            if (operation < 30) {
-                map->get(key);
-                ++getCount;
-            } else if (operation < 60) {
-                out.clear();
-                out << rand();
-                map->put(key, out.str());
-                ++putCount;
-            } else if (operation < 80) {
-                map->values(query::BetweenPredicate<int>(query::QueryConstants::getValueAttributeName(), 1, 10));
-                ++valuesCount;
-            } else {
-                UpdateEntryProcessor processor(out.str());
-                map->executeOnKey<string, UpdateEntryProcessor>(key, processor);
-                ++executeOnKeyCount;
-            }
+        int64_t getCount = 0;
+        int64_t putCount = 0;
+        int64_t valuesCount = 0;
+        int64_t executeOnKeyCount = 0;
+        int entryCount = 10000;
 
-            int64_t totalCount = putCount + getCount + valuesCount + executeOnKeyCount;
-            if (totalCount % 10000 == 0) {
-                util::LockGuard guard(threadLock);
-                cout << "Thread " << util::getThreadId() << " --> Total:" << totalCount << ":{getCount:" << getCount
-                     << ", putCount:" << putCount << ", valuesCount:" << valuesCount << ", executeOnKeyCount:"
-                     << executeOnKeyCount << "}" << endl;
+        while (!isCancelled) {
+            std::ostringstream out;
+            int operation = rand() % 100;
+            int randomKey = rand() % entryCount;
+            out << randomKey;
+            string key(out.str());
+            try {
+                if (operation < 30) {
+                    map.get(key);
+                    ++getCount;
+                } else if (operation < 60) {
+                    out.clear();
+                    out << rand();
+                    map.put(key, out.str());
+                    ++putCount;
+                } else if (operation < 80) {
+                    map.values(query::BetweenPredicate<int>(query::QueryConstants::getValueAttributeName(), 1, 10));
+                    ++valuesCount;
+                } else {
+                    UpdateEntryProcessor processor(out.str());
+                    map.executeOnKey<string, UpdateEntryProcessor>(key, processor);
+                    ++executeOnKeyCount;
+                }
+
+                int64_t totalCount = putCount + getCount + valuesCount + executeOnKeyCount;
+                if (totalCount % 10000 == 0) {
+                    logger.info() << "Thread " << util::getCurrentThreadId() << " --> Total:" << totalCount
+                                  << ":{getCount:" << getCount << ", putCount:" << putCount << ", valuesCount:"
+                                  << valuesCount << ", executeOnKeyCount:" << executeOnKeyCount << "}";
+                }
+            } catch (std::exception &e) {
+                logger.warning() << "Exception occured:  " << e;
             }
-        } catch (std::exception &e) {
-            util::LockGuard guard(threadLock);
-            cout << "Thread " << util::getThreadId() << " --> Exception occured: " << e.what() << endl;
         }
+
+        int64_t totalCount = putCount + getCount + valuesCount + executeOnKeyCount;
+        logger.info() << "Thread " << util::getCurrentThreadId() << " is ending." << " --> Total:" << totalCount
+                      << ":{getCount:" << getCount << ", putCount:" << putCount << ", valuesCount:" << valuesCount
+                      << ", executeOnKeyCount:" << executeOnKeyCount << "}";
     }
 
-    {
-        int64_t totalCount = putCount + getCount + valuesCount + executeOnKeyCount;
-        util::LockGuard guard(threadLock);
-        cout << "Thread " << util::getThreadId() << " is ending." << " --> Total:" << totalCount << ":{getCount:"
-             << getCount << ", putCount:" << putCount << ", valuesCount:" << valuesCount << ", executeOnKeyCount:"
-             << executeOnKeyCount << "}" << endl;
-    }
-}
+private:
+    IMap<string, string> map;
+    util::ILogger &logger;
+};
 
 void signalHandler(int s) {
     cout << "Caught signal: " << s << endl;
@@ -123,16 +117,17 @@ void registerSignalHandler() {
 }
 
 int main(int argc, char *args[]) {
+    util::ILogger &logger = util::ILogger::getLogger();
 
     if (argc != 3) {
-        cerr << "USAGE: SoakTest threadCount address" << endl;
+        logger.severe() << "USAGE: SoakTest threadCount server_address";
         return -1;
     }
 
     const int threadCount = atoi(args[1]);
-    cout << "threadCount = " << threadCount << endl;
     const string address = args[2];
-    cout << "address = " << address << endl;
+    logger.info() << "Soak test is starting with the following parameters: " << "threadCount = " << threadCount
+                  << ", server address = " << address;
 
     ClientConfig config;
     config.addAddress(Address(address, 5701));
@@ -142,10 +137,12 @@ int main(int argc, char *args[]) {
 
     registerSignalHandler();
 
-    vector<util::Thread *> threads(threadCount);
+    vector<boost::shared_ptr<util::Thread> > threads(threadCount);
 
     for (int i = 0; i < threadCount; i++) {
-        threads[i] = new util::Thread(testMap, &map);
+        boost::shared_ptr<util::Thread> thread(new util::Thread(boost::shared_ptr<util::Runnable>(new SoakTestTask(map, logger))));
+        threads[i] = thread;
+        thread->start();
     }
 
     for (int i = 0; i < threadCount; i++) {
