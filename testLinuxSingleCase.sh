@@ -20,20 +20,37 @@ trap cleanup EXIT
 HZ_BIT_VERSION=$1
 HZ_LIB_TYPE=$2
 HZ_BUILD_TYPE=$3
+HZ_COMPILE_WITH_SSL=ON
 
-if [ "$4" == "WITH_COVERAGE" ]; then
-    if [ ${HZ_BUILD_TYPE} != Debug ]; then
-            echo "WITH_COVERAGE is requested. The build type should be Debug but it is provided as ${HZ_BUILD_TYPE}."
-            exit 1
-    fi
-    HZ_COVERAGE_STRING="-DHZ_CODE_COVERAGE=ON"
-fi
+argc=$#
+argv=($@)
 
-if [ "$4" == "COMPILE_WITHOUT_SSL" ] || [ "$5" == "COMPILE_WITHOUT_SSL" ]; then
-    HZ_COMPILE_WITH_SSL=OFF
-else
-    HZ_COMPILE_WITH_SSL=ON
-fi
+for (( j=3; j<argc; j++ )); do
+	case ${argv[j]} in
+		WITH_COVERAGE)
+            if [ ${HZ_BUILD_TYPE} != Debug ]; then
+                    echo "WITH_COVERAGE is requested. The build type should be Debug but it is provided as ${HZ_BUILD_TYPE}."
+                    exit 1
+            fi
+            HZ_COVERAGE_STRING="-DHZ_CODE_COVERAGE=ON"
+		;;
+		COMPILE_WITHOUT_SSL)
+		    HZ_COMPILE_WITH_SSL=OFF
+		;;
+		--with-address-sanitizer)
+		    SANITIZER_OPTION=-DHZ_USE_ADDRESS_SANITIZER=ON
+        ;;
+		--with-thread-sanitizer)
+		    SANITIZER_OPTION=-DHZ_USE_THREAD_SANITIZER=ON
+        ;;
+		*)
+			# unknown option
+			echo "Unrecognised option ${argv[j]} !!!"
+			exit 1
+		;;
+	esac
+
+done
 
 BUILD_DIR=build${HZ_LIB_TYPE}${HZ_BIT_VERSION}${HZ_BUILD_TYPE}
 
@@ -69,7 +86,7 @@ echo "Spawned remote controller with pid ${rcPid}"
 cd ${BUILD_DIR}
 
 echo "Running cmake to compose Makefiles for compilation."
-cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} ${HZ_COVERAGE_STRING} -DHZ_BUILD_TESTS=ON -DHZ_BUILD_EXAMPLES=ON -DHZ_COMPILE_WITH_SSL=${HZ_COMPILE_WITH_SSL}
+cmake .. -DHZ_LIB_TYPE=${HZ_LIB_TYPE} -DHZ_BIT=${HZ_BIT_VERSION} -DCMAKE_BUILD_TYPE=${HZ_BUILD_TYPE} ${HZ_COVERAGE_STRING} -DHZ_BUILD_TESTS=ON -DHZ_BUILD_EXAMPLES=ON -DHZ_COMPILE_WITH_SSL=${HZ_COMPILE_WITH_SSL} ${SANITIZER_OPTION}
 
 echo "Running make. Building the project."
 make -j 8 -l 4 VERBOSE=1  # run 8 jobs in parallel and a maximum load of 4

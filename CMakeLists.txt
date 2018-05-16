@@ -25,6 +25,8 @@ project (HazelcastClient)
 #  -DHZ_BUILD_TESTS=ON
 #  -DHZ_BUILD_EXAMPLES=ON
 #  -DHZ_COMPILE_WITH_SSL=ON
+#  -DHZ_USE_ADDRESS_SANITIZER=OFF
+#  -DHZ_USE_THREAD_SANITIZER=OFF
 
 INCLUDE(TestBigEndian)
 
@@ -134,6 +136,21 @@ if (${HZ_COMPILE_WITH_SSL} MATCHES "ON")
 ELSE ()
 	message(STATUS "Building the library without SSL.")
 ENDIF()
+
+set(SANITIZER_COMMON_OPTIONS "-fsanitize-blacklist=${PROJECT_SOURCE_DIR}/hazelcast/test/resources/hz_sanitizer_blacklist.snt")
+if ("${HZ_USE_ADDRESS_SANITIZER}" MATCHES "ON" OR "${HZ_USE_THREAD_SANITIZER}" MATCHES "ON")
+	if ("${HZ_USE_ADDRESS_SANITIZER}" MATCHES "ON")
+		set(SANITIZER_OPTIONS "-fsanitize=address -fsanitize-memory-use-after-dtor -fsanitize-memory-track-origins=2 -fsanitize-address-use-after-scope")
+	elseif ("${HZ_USE_THREAD_SANITIZER}" MATCHES "ON")
+		set(SANITIZER_OPTIONS "-fsanitize=thread")
+	ENDIF()
+	IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+		set(SANITIZER_OPTIONS "${SANITIZER_OPTIONS} -fsanitize-blacklist=${PROJECT_SOURCE_DIR}/hazelcast/test/resources/hz_sanitizer_blacklist.snt")
+	endif()
+
+	message(STATUS "Sanitizer enabled. Will use the following sanitizer options: ${SANITIZER_OPTIONS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_OPTIONS}")
+endif()
 
 message(STATUS "${CMAKE_SYSTEM}")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
