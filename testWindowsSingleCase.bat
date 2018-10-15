@@ -80,7 +80,7 @@ set PYTHONPATH=%PYTHON_LIB_DIR%
 SET PATH=%BUILD_DIR%\%HZ_BUILD_TYPE%;%PATH%
 SET PATH=%PYTHON_LIB_DIR%;%PATH%
 
-%BUILD_DIR%\hazelcast\test\src\%HZ_BUILD_TYPE%\%EXECUTABLE_NAME% --gtest_output="xml:CPP_Client_Test_Report.xml"
+%BUILD_DIR%\hazelcast\test\src\%HZ_BUILD_TYPE%\%EXECUTABLE_NAME% --gtest_filter=LoggerConfigFromFileTest.testMultipleLinesLog --gtest_output="xml:CPP_Client_Test_Report.xml"
 set result=%errorlevel%
 
 taskkill /T /F /FI "WINDOWTITLE eq hazelcast-remote-controller"
