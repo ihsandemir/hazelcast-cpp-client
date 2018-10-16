@@ -16,7 +16,6 @@
 
 #include <ostream>
 #include <vector>
-#include <boost/filesystem.hpp>
 #include <hazelcast/util/ILogger.h>
 #include <hazelcast/client/HazelcastClient.h>
 #include <ClientTestSupport.h>
@@ -27,7 +26,7 @@ namespace hazelcast {
             class LoggerConfigFromFileTest : public ClientTestSupport {
             public:
                 LoggerConfigFromFileTest() {
-                    boost::filesystem::remove("testLog.txt");
+                    std::ofstream out("testLog.txt", std::ofstream::trunc);
 
                     config::LoggerConfig loggerConfig;
                     loggerConfig.setConfigurationFileName("hazelcast/test/resources/logger-config.txt");
