@@ -46,10 +46,13 @@ namespace hazelcast {
                         executorPoolSize = util::RuntimeAvailableProcessors::get();
                         logger.info() << "Executor pool size is: " << executorPoolSize;
                     }
+/*
                     if (executorPoolSize <= 0) {
                         executorPoolSize = 4; // hard coded thread pool count in case we could not get the processor count
                     }
+*/
 
+                    executorPoolSize = 1;
                     logger.info() << "Final Executor pool size is: " << executorPoolSize;
 
                     internalExecutor.reset(
