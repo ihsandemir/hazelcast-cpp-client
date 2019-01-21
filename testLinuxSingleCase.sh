@@ -62,7 +62,7 @@ else
 fi
 
 echo "Starting the client test now."
-${BUILD_DIR}/hazelcast/test/src/${EXECUTABLE_NAME} --gtest_output="xml:CPP_Client_Test_Report.xml" &
+${BUILD_DIR}/hazelcast/test/src/${EXECUTABLE_NAME} --gtest_filter=ClientTxnTest.testTxnConnectAfterClientShutdown --gtest_output="xml:CPP_Client_Test_Report.xml" &
 testPid=$!
 wait ${testPid}
 result=$?
