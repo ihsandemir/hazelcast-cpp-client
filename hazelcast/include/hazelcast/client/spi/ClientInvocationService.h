@@ -47,12 +47,12 @@ namespace hazelcast {
                                                 boost::shared_ptr<connection::Connection> connection) = 0;
 
                 virtual void
-                invokeOnPartitionOwner(boost::shared_ptr<impl::ClientInvocation> invocation, int partitionId)  = 0;
+                invokeOnPartitionOwner(boost::shared_ptr<impl::ClientInvocation> invocation, int partitionId) = 0;
 
-                virtual void invokeOnRandomTarget(boost::shared_ptr<impl::ClientInvocation> invocation)  = 0;
+                virtual void invokeOnRandomTarget(boost::shared_ptr<impl::ClientInvocation> invocation) = 0;
 
                 virtual void invokeOnTarget(boost::shared_ptr<impl::ClientInvocation> invocation,
-                                            const boost::shared_ptr<Address> &target)  = 0;
+                                            const boost::shared_ptr<Address> &target) = 0;
 
                 virtual bool isRedoOperation() = 0;
 

@@ -40,7 +40,9 @@ namespace hazelcast {
                     HZ_CLIENT_STATISTICS = 0x0010,
                     HZ_CLIENT_DEPLOYCLASSES = 0x0011,
                     HZ_CLIENT_ADDPARTITIONLISTENER = 0x0012,
-                    HZ_CLIENT_CREATEPROXIES = 0x0013
+                    HZ_CLIENT_CREATEPROXIES = 0x0013,
+                    HZ_CLIENT_ISFAILOVERSUPPORTED = 0x0014,
+                    HZ_CLIENT_LOCALBACKUPLISTENER = 0x004d
                 };
             }
         }

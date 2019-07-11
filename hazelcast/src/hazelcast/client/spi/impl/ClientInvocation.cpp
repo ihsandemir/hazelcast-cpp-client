@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include <hazelcast/client/protocol/ClientProtocolErrorCodes.h>
-#include <hazelcast/client/spi/impl/ClientInvocation.h>
+#include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
+#include "hazelcast/client/spi/impl/AbstractClientInvocationService.h"
 
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/client/spi/ClientContext.h"
@@ -46,7 +47,11 @@ namespace hazelcast {
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
                         invokeCount(0),
-                        clientInvocationFuture(new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(), clientContext.getLogger(), clientMessage, clientContext.getCallIdSequence())) {
+                        clientInvocationFuture(
+                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
+                                                           clientContext.getLogger(), clientMessage,
+                                                           clientContext.getCallIdSequence())),
+                        backupsAcksExpected(-1) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -66,8 +71,11 @@ namespace hazelcast {
                         objectName(objectName),
                         connection(connection),
                         invokeCount(0),
-                        clientInvocationFuture(new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                                          clientContext.getLogger(), clientMessage, clientContext.getCallIdSequence())) {
+                        clientInvocationFuture(
+                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
+                                                           clientContext.getLogger(), clientMessage,
+                                                           clientContext.getCallIdSequence())),
+                        backupsAcksExpected(-1) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -85,8 +93,11 @@ namespace hazelcast {
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
                         invokeCount(0),
-                        clientInvocationFuture(new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                                          clientContext.getLogger(), clientMessage, clientContext.getCallIdSequence())) {
+                        clientInvocationFuture(
+                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
+                                                           clientContext.getLogger(), clientMessage,
+                                                           clientContext.getCallIdSequence())),
+                        backupsAcksExpected(-1) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -105,8 +116,11 @@ namespace hazelcast {
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
                         invokeCount(0),
-                        clientInvocationFuture(new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                                          clientContext.getLogger(), clientMessage, clientContext.getCallIdSequence())) {
+                        clientInvocationFuture(
+                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
+                                                           clientContext.getLogger(), clientMessage,
+                                                           clientContext.getCallIdSequence())),
+                        backupsAcksExpected(-1) {
                 }
 
                 ClientInvocation::~ClientInvocation() {
@@ -167,7 +181,7 @@ namespace hazelcast {
                     try {
                         invokeOnSelection(shared_from_this());
                     } catch (exception::IException &e) {
-                        clientInvocationFuture->complete(boost::shared_ptr<exception::IException>(e.clone()));
+                        complete(boost::shared_ptr<exception::IException>(e.clone()));
                     }
                 }
 
@@ -272,7 +286,8 @@ namespace hazelcast {
                         target << "random";
                     }
                     ClientInvocation &nonConstInvocation = const_cast<ClientInvocation &>(invocation);
-                    os << "ClientInvocation{" << "clientMessage = " << *nonConstInvocation.clientMessage.get() << ", objectName = "
+                    os << "ClientInvocation{" << "clientMessage = " << *nonConstInvocation.clientMessage.get()
+                       << ", objectName = "
                        << invocation.objectName << ", target = " << target.str() << ", sendConnection = ";
                     boost::shared_ptr<connection::Connection> sendConnection = nonConstInvocation.sendConnection.get();
                     if (sendConnection.get()) {
@@ -290,7 +305,9 @@ namespace hazelcast {
                                                                              const std::string &objectName,
                                                                              int partitionId) {
                     boost::shared_ptr<ClientInvocation> invocation = boost::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName, partitionId));
+                            new ClientInvocation(clientContext,
+                                                 boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName,
+                                                 partitionId));
                     invocation->clientInvocationFuture->setInvocation(invocation);
                     return invocation;
                 }
@@ -300,7 +317,9 @@ namespace hazelcast {
                                                                              const std::string &objectName,
                                                                              const boost::shared_ptr<connection::Connection> &connection) {
                     boost::shared_ptr<ClientInvocation> invocation = boost::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName, connection));
+                            new ClientInvocation(clientContext,
+                                                 boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName,
+                                                 connection));
                     invocation->clientInvocationFuture->setInvocation(invocation);
                     return invocation;
                 }
@@ -311,7 +330,9 @@ namespace hazelcast {
                                                                              const std::string &objectName,
                                                                              const Address &address) {
                     boost::shared_ptr<ClientInvocation> invocation = boost::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName, address));
+                            new ClientInvocation(clientContext,
+                                                 boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName,
+                                                 address));
                     invocation->clientInvocationFuture->setInvocation(invocation);
                     return invocation;
                 }
@@ -320,7 +341,9 @@ namespace hazelcast {
                                                                              std::auto_ptr<protocol::ClientMessage> &clientMessage,
                                                                              const std::string &objectName) {
                     boost::shared_ptr<ClientInvocation> invocation = boost::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, boost::shared_ptr<protocol::ClientMessage>(clientMessage), objectName));
+                            new ClientInvocation(clientContext,
+                                                 boost::shared_ptr<protocol::ClientMessage>(clientMessage),
+                                                 objectName));
                     invocation->clientInvocationFuture->setInvocation(invocation);
                     return invocation;
                 }
@@ -342,11 +365,36 @@ namespace hazelcast {
                     ClientInvocation::sendConnection = sendConnection;
                 }
 
-                void ClientInvocation::notify(const boost::shared_ptr<protocol::ClientMessage> &clientMessage) {
-                    if (clientMessage.get() == NULL) {
-                        throw exception::IllegalArgumentException("response can't be null");
+                void ClientInvocation::notify(const boost::shared_ptr<protocol::ClientMessage> &message) {
+                    assert(message.get() != NULL);
+
+                    int expectedBackups = message->getNumberOfBackupAcks();
+
+                    // if a regular response comes and there are backups, we need to wait for the backups
+                    // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
+
+                    if (expectedBackups > backupsAcksReceived) {
+                        // so the invocation has backups and since not all backups have completed, we need to wait
+                        // (it could be that backups arrive earlier than the response)
+
+                        this->pendingResponseReceivedMillis = util::currentTimeMillis();
+
+                        this->backupsAcksExpected.set(expectedBackups);
+
+                        // it is very important that the response is set after the backupsAcksExpected is set, else the system
+                        // can assume the invocation is complete because there is a response and no backups need to respond
+                        this->pendingResponseMessage = message;
+
+                        if (backupsAcksReceived != expectedBackups) {
+                            // we are done since not all backups have completed. Therefor we should not notify the future
+                            return;
+                        }
                     }
-                    clientInvocationFuture->complete(clientMessage);
+
+                    // we are going to notify the future that a response is available; this can happen when:
+                    // - we had a regular operation (so no backups we need to wait for) that completed
+                    // - we had a backup-aware operation that has completed, but also all its backups have completed
+                    complete(message);
                 }
 
                 const boost::shared_ptr<protocol::ClientMessage> ClientInvocation::getClientMessage() {
@@ -380,11 +428,88 @@ namespace hazelcast {
                 }
 
                 boost::shared_ptr<protocol::ClientMessage> ClientInvocation::copyMessage() {
-                    return boost::shared_ptr<protocol::ClientMessage>(new protocol::ClientMessage(*clientMessage.get()));
+                    return boost::shared_ptr<protocol::ClientMessage>(
+                            new protocol::ClientMessage(*clientMessage.get()));
                 }
 
                 boost::shared_ptr<util::Executor> ClientInvocation::getUserExecutor() {
                     return executionService->getUserExecutor();
+                }
+
+                void ClientInvocation::notifyBackup() {
+                    int newBackupAcksCompleted = ++backupsAcksReceived;
+
+                    boost::shared_ptr<protocol::ClientMessage> pendingResponse = this->pendingResponseMessage;
+                    if (pendingResponse.get() == NULL) {
+                        // no pendingResponse has been set, so we are done since the invocation on the primary needs to complete first
+                        return;
+                    }
+
+                    // if a pendingResponse is set, then the backupsAcksExpected has been set (so we can now safely read backupsAcksExpected)
+                    int backupAcksExpected = this->backupsAcksExpected;
+                    if (backupAcksExpected < newBackupAcksCompleted) {
+                        // the backups have not yet completed, so we are done
+                        return;
+                    }
+
+                    if (backupAcksExpected != newBackupAcksCompleted) {
+                        // we managed to complete one backup, but we were not the one completing the last backup, so we are done
+                        return;
+                    }
+
+                    // we are the lucky one since we just managed to complete the last backup for this invocation and since the
+                    // pendingResponse is set, we can set it on the future
+                    complete(pendingResponse);
+                }
+
+                void ClientInvocation::complete(const boost::shared_ptr<protocol::ClientMessage> &response) {
+                    clientInvocationFuture->complete(response);
+                    AbstractClientInvocationService &abstractInvocationService = (AbstractClientInvocationService &) invocationService;
+
+                    abstractInvocationService.deRegisterInvocation(clientMessage.get()->getCorrelationId());
+                }
+
+                void ClientInvocation::complete(const boost::shared_ptr<exception::IException> &exception) {
+                    clientInvocationFuture->complete(exception);
+                    AbstractClientInvocationService &abstractInvocationService = (AbstractClientInvocationService &) invocationService;
+
+                    abstractInvocationService.deRegisterInvocation(clientMessage.get()->getCorrelationId());
+                }
+
+                bool ClientInvocation::detectAndHandleBackupTimeout(int64_t timeoutMillis) {
+                    // if the backups have completed, we are done; this also filters out all non backup-aware operations
+                    // since the backupsAcksExpected will always be equal to the backupsAcksReceived
+                    bool backupsCompleted = backupsAcksExpected.get() == backupsAcksReceived.get();
+                    int64_t responseReceivedMillis = pendingResponseReceivedMillis;
+
+                    // if this has not yet expired (so has not been in the system for a too long period) we ignore it
+                    int64_t expirationTime = responseReceivedMillis + timeoutMillis;
+                    bool timeout = expirationTime > 0 && expirationTime < util::currentTimeMillis();
+
+                    // if no response has yet been received, we we are done; we are only going to re-invoke an operation
+                    // if the response of the primary has been received, but the backups have not replied
+                    bool responseReceived = pendingResponseMessage.get().get() != NULL;
+
+                    if (backupsCompleted || !responseReceived || !timeout) {
+                        return false;
+                    }
+
+                    if (shouldFailOnIndeterminateOperationState()) {
+                        boost::shared_ptr<IndeterminateOperationStateException> stateException = (
+                                exception::ExceptionBuilder<exception::IndeterminateOperationStateException>(
+                                        "ClientInvocation::detectAndHandleBackupTimeout") << *this
+                                                                                          << " failed because backup acks missed.").buildShared();
+                        complete(stateException);
+                        return true;
+                    }
+
+                    // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
+                    complete(pendingResponseMessage);
+                    return true;
+                }
+
+                bool ClientInvocation::shouldFailOnIndeterminateOperationState() {
+                    return ((spi::impl::AbstractClientInvocationService &) invocationService).isShouldFailOnIndeterminateOperationState();
                 }
 
             }

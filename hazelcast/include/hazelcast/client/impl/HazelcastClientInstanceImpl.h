@@ -444,7 +444,7 @@ namespace hazelcast {
                 spi::impl::ClientClusterServiceImpl clusterService;
                 boost::shared_ptr<spi::impl::ClientPartitionServiceImpl> partitionService;
                 boost::shared_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
-                std::auto_ptr<spi::ClientInvocationService> invocationService;
+                boost::shared_ptr<spi::ClientInvocationService> invocationService;
                 boost::shared_ptr<spi::ClientListenerService> listenerService;
                 spi::impl::ClientTransactionManagerServiceImpl transactionManager;
                 Cluster cluster;
@@ -470,7 +470,7 @@ namespace hazelcast {
 
                 boost::shared_ptr<spi::ClientListenerService> initListenerService();
 
-                std::auto_ptr<spi::ClientInvocationService> initInvocationService();
+                boost::shared_ptr<spi::ClientInvocationService> initInvocationService();
 
                 boost::shared_ptr<spi::impl::ClientExecutionServiceImpl> initExecutionService();
 

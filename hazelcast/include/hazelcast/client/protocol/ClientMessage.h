@@ -41,13 +41,12 @@
 * +---------------------------------------------------------------+
 * |R|                      PartitionId                            |
 * +-----------------------------+---------------------------------+
-* |        Data Offset          |                                 |
-* +-----------------------------+                                 |
-* |                      Message Payload Data                    ...
-* |                                                              ...
-*
-* </pre>
-*/
+ * |        Data Offset          |         Number of acks         |
+ * +-----------------------------+--------------------------------+
+ * |                      Message Payload Data                   ...
+ * |                                                             ...
+ * </pre>
+ */
 
 #ifndef HAZELCAST_CLIENT_CLIENTMESSAGE_H_
 #define HAZELCAST_CLIENT_CLIENTMESSAGE_H_
@@ -129,6 +128,16 @@ namespace hazelcast {
                 */
                 static const uint8_t LISTENER_EVENT_FLAG = 0x01;
 
+                /**
+                 * The client sending this request is backup aware
+                 */
+                static const uint8_t BACKUP_AWARE_FLAG = 0x02;
+
+                /**
+                 * Backup event Flag for responses
+                 */
+                static const uint8_t BACKUP_EVENT_FLAG = 0x04;
+
                 static const int32_t FRAME_LENGTH_FIELD_OFFSET = 0;
                 static const int32_t VERSION_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + INT32_SIZE;
                 static const int32_t FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + UINT8_SIZE;
@@ -136,11 +145,12 @@ namespace hazelcast {
                 static const int32_t CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + UINT16_SIZE;
                 static const int32_t PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT64_SIZE;
                 static const int32_t DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT32_SIZE;
+                static const int32_t BACKUP_ACKS_FIELD_OFFSET = DATA_OFFSET_FIELD_OFFSET + INT16_SIZE;
 
                 /**
                 * ClientMessage Fixed Header size in bytes
                 */
-                static const uint16_t HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + UINT16_SIZE;
+                static const uint16_t HEADER_SIZE = BACKUP_ACKS_FIELD_OFFSET + UINT16_SIZE;
 
                 virtual ~ClientMessage();
 
@@ -163,6 +173,18 @@ namespace hazelcast {
                 void addFlag(uint8_t flags);
 
                 void setCorrelationId(int64_t id);
+
+                /**
+                 * @return the number of acks will be send for a request
+                 */
+                uint16_t getNumberOfBackupAcks();
+
+                /**
+                 * Sets the setNumberOfAcks field.
+                 *
+                 * @param numberOfAcks The value to set in the setNumberOfAcks field.
+                 */
+                void setNumberOfBackupAcks(uint16_t numberOfAcks);
 
                 void setPartitionId(int32_t partitionId);
 

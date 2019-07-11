@@ -19,6 +19,8 @@
 
 #include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
 #include "hazelcast/client/spi/EventHandler.h"
+#include "hazelcast/client/spi/impl/ListenerMessageCodec.h"
+#include "hazelcast/client/protocol/codec/ClientLocalBackupListenerCodec.h"
 
 namespace hazelcast {
     namespace client {
@@ -41,10 +43,36 @@ namespace hazelcast {
                                          const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
 
                         void asyncConnectToAllMembersInternal();
+
                     protected:
 
                         virtual bool registersLocalOnly() const;
+
                     private:
+                        class BackupListenerMessageCodec : public ListenerMessageCodec {
+                        public:
+                            virtual std::auto_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
+
+                            virtual std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const;
+
+                            virtual std::auto_ptr<protocol::ClientMessage>
+                            encodeRemoveRequest(const std::string &realRegistrationId) const;
+
+                            virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
+                        };
+
+                        class BackupEventHandler
+                                : public protocol::codec::ClientLocalBackupListenerCodec::AbstractEventHandler {
+                        public:
+                            BackupEventHandler(
+                                    const boost::shared_ptr<AbstractClientInvocationService> &invocationService);
+
+                        public:
+                            virtual void handleBackupEventV19(const int64_t &backupId);
+
+                        private:
+                            boost::weak_ptr<spi::impl::AbstractClientInvocationService> invocationService;
+                        };
 
                         class AsyncConnectToAllMembersTask : public util::Runnable {
                         public:
@@ -71,6 +99,9 @@ namespace hazelcast {
 
                         void sleepBeforeNextTry();
 
+                        void addBackupListener();
+
+                        static const boost::shared_ptr<impl::ListenerMessageCodec> backupListener;
                     };
                 }
             }

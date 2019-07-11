@@ -139,6 +139,9 @@ namespace hazelcast {
             }
 
             void Connection::handleClientMessage(const boost::shared_ptr<protocol::ClientMessage> &message) {
+                if (message->isFlagSet(protocol::ClientMessage::BACKUP_EVENT_FLAG)) {
+                    invocationService.handleClientMessage(shared_from_this(), message);
+                }
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
                     spi::impl::listener::AbstractClientListenerService &listenerService =
                             (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();

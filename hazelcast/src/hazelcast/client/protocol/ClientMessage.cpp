@@ -52,6 +52,7 @@ namespace hazelcast {
                 wrapForWrite(size, HEADER_SIZE);
 
                 setFrameLength(size);
+                setNumberOfBackupAcks(0);
                 setVersion(HAZELCAST_CLIENT_PROTOCOL_VERSION);
                 addFlag(BEGIN_AND_END_FLAGS);
                 setCorrelationId(0);
@@ -94,6 +95,18 @@ namespace hazelcast {
                 util::Bits::nativeToLittleEndian8(&id, &buffer[CORRELATION_ID_FIELD_OFFSET]);
             }
 
+            uint16_t ClientMessage::getNumberOfBackupAcks() {
+                uint16_t numberOfBackups;
+
+                util::Bits::littleEndianToNative2(&buffer[BACKUP_ACKS_FIELD_OFFSET], &numberOfBackups);
+
+                return numberOfBackups;
+            }
+
+            void ClientMessage::setNumberOfBackupAcks(uint16_t numberOfAcks) {
+                util::Bits::nativeToLittleEndian2(&numberOfAcks, &buffer[BACKUP_ACKS_FIELD_OFFSET]);
+            }
+
             void ClientMessage::setPartitionId(int32_t partitionId) {
                 util::Bits::nativeToLittleEndian4(&partitionId, &buffer[PARTITION_ID_FIELD_OFFSET]);
             }
@@ -109,7 +122,6 @@ namespace hazelcast {
             void ClientMessage::set(const std::string *value) {
                 setNullable<std::string>(value);
             }
-
 
             void ClientMessage::set(const Address &data) {
                 codec::AddressCodec::encode(data, *this);

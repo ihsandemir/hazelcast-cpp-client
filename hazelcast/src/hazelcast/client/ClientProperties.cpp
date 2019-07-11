@@ -74,6 +74,12 @@ namespace hazelcast {
         const std::string ClientProperties::STATISTICS_PERIOD_SECONDS = "hazelcast.client.statistics.period.seconds";
         const std::string ClientProperties::STATISTICS_PERIOD_SECONDS_DEFAULT = "3";
 
+        const std::string ClientProperties::OPERATION_BACKUP_TIMEOUT_MILLIS = "hazelcast.client.operation.backup.timeout.millis";
+        const std::string ClientProperties::OPERATION_BACKUP_TIMEOUT_MILLIS_DEFAULT = "5000";
+
+        const std::string ClientProperties::FAIL_ON_INDETERMINATE_OPERATION_STATE = "hazelcast.client.operation.fail.on.indeterminate.state";
+        const std::string ClientProperties::FAIL_ON_INDETERMINATE_OPERATION_STATE_DEFAULT = "false";
+
         ClientProperty::ClientProperty(const std::string &name, const std::string &defaultValue)
                 : name(name), defaultValue(defaultValue) {
         }
@@ -113,6 +119,10 @@ namespace hazelcast {
                                                    BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS_DEFAULT),
                   statisticsEnabled(STATISTICS_ENABLED, STATISTICS_ENABLED_DEFAULT),
                   statisticsPeriodSeconds(STATISTICS_PERIOD_SECONDS, STATISTICS_PERIOD_SECONDS_DEFAULT),
+                  operationBackupTimeoutMillis(OPERATION_BACKUP_TIMEOUT_MILLIS,
+                                               OPERATION_BACKUP_TIMEOUT_MILLIS_DEFAULT),
+                  failOnIndeterminateOperationState(FAIL_ON_INDETERMINATE_OPERATION_STATE,
+                                                    FAIL_ON_INDETERMINATE_OPERATION_STATE_DEFAULT),
                   propertiesMap(properties) {
         }
 
@@ -170,6 +180,14 @@ namespace hazelcast {
 
         const ClientProperty &ClientProperties::getStatisticsPeriodSeconds() const {
             return statisticsPeriodSeconds;
+        }
+
+        const ClientProperty &ClientProperties::getOperationBackupTimeoutMillis() const {
+            return operationBackupTimeoutMillis;
+        }
+
+        const ClientProperty &ClientProperties::getShouldFailOnIndeterminateState() const {
+            return failOnIndeterminateOperationState;
         }
 
         std::string ClientProperties::getString(const ClientProperty &property) const {

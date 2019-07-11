@@ -73,6 +73,9 @@ namespace hazelcast {
 
                         virtual void connectionRemoved(const boost::shared_ptr<connection::Connection> &connection);
 
+                        void handleEventMessageOnCallingThread(
+                                const boost::shared_ptr<protocol::ClientMessage> &clientMessage);
+
                     protected:
                         AbstractClientListenerService(ClientContext &clientContext, int32_t eventThreadCount,
                                                       int32_t eventQueueCapacity);

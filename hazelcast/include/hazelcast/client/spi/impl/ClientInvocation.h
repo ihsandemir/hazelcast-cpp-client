@@ -22,6 +22,7 @@
 #include <boost/enable_shared_from_this.hpp>
 
 #include "hazelcast/util/Runnable.h"
+#include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/util/Atomic.h"
 #include "hazelcast/client/spi/EventHandler.h"
@@ -90,7 +91,8 @@ namespace hazelcast {
 
                     static boost::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                       std::auto_ptr<protocol::ClientMessage> &clientMessage,
-                                                                      const std::string &objectName, const Address &address);
+                                                                      const std::string &objectName,
+                                                                      const Address &address);
 
                     static boost::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                       std::auto_ptr<protocol::ClientMessage> &clientMessage,
@@ -104,7 +106,9 @@ namespace hazelcast {
 
                     virtual const std::string getName() const;
 
-                    void notify(const boost::shared_ptr<protocol::ClientMessage> &clientMessage);
+                    void notify(const boost::shared_ptr<protocol::ClientMessage> &message);
+
+                    void notifyBackup();
 
                     void notifyException(const boost::shared_ptr<exception::IException> &exception);
 
@@ -126,6 +130,9 @@ namespace hazelcast {
                     static bool isRetrySafeException(exception::IException &exception);
 
                     boost::shared_ptr<util::Executor> getUserExecutor();
+
+                    // gets called from the Clean resources task
+                    bool detectAndHandleBackupTimeout(int64_t timeoutMillis);
 
                 private:
                     /**
@@ -183,18 +190,44 @@ namespace hazelcast {
                     boost::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     util::Atomic<int64_t> invokeCount;
                     boost::shared_ptr<ClientInvocationFuture> clientInvocationFuture;
+                    /**
+                     * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
+                     */
+                    util::Atomic<boost::shared_ptr<protocol::ClientMessage> > pendingResponseMessage;
+
+                    /**
+                     * Number of expected backups. It is set correctly as soon as the pending response is set.
+                     */
+                    util::AtomicInt backupsAcksExpected;
+
+                    /**
+                     * The time in millis when the response of the primary has been received.
+                     */
+                    util::Atomic<int64_t> pendingResponseReceivedMillis;
+
+                    /**
+                     * Number of backups acks received.
+                     */
+                    util::AtomicInt backupsAcksReceived;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);
 
-                    boost::shared_ptr<exception::OperationTimeoutException> newOperationTimeoutException(exception::IException &exception);
+                    boost::shared_ptr<exception::OperationTimeoutException>
+                    newOperationTimeoutException(exception::IException &exception);
 
                     void execute();
+
+                    void complete(const boost::shared_ptr<protocol::ClientMessage> &response);
+
+                    void complete(const boost::shared_ptr<exception::IException> &exception);
 
                     ClientInvocation(const ClientInvocation &rhs);
 
                     void operator=(const ClientInvocation &rhs);
 
                     boost::shared_ptr<protocol::ClientMessage> copyMessage();
+
+                    bool shouldFailOnIndeterminateOperationState();
                 };
             }
         }

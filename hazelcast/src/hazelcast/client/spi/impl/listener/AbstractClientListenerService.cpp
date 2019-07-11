@@ -105,6 +105,20 @@ namespace hazelcast {
                                                                   shared_from_this(), connection)));
                     }
 
+                    void AbstractClientListenerService::handleEventMessageOnCallingThread(
+                            const boost::shared_ptr<protocol::ClientMessage> &clientMessage) {
+                        int64_t correlationId = clientMessage->getCorrelationId();
+                        boost::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler = eventHandlerMap.get(
+                                correlationId);
+                        if (eventHandler.get() == NULL) {
+                            logger.warning() << "No eventHandler for callId: " << correlationId << ", event: "
+                                             << *clientMessage;
+                            return;
+                        }
+
+                        eventHandler->handle(clientMessage);
+                    }
+
                     void AbstractClientListenerService::addEventHandler(int64_t callId,
                                                                         const boost::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) {
                         eventHandlerMap.put(callId, handler);

@@ -254,12 +254,12 @@ namespace hazelcast {
                 }
             }
 
-            std::auto_ptr<spi::ClientInvocationService> HazelcastClientInstanceImpl::initInvocationService() {
+            boost::shared_ptr<spi::ClientInvocationService> HazelcastClientInstanceImpl::initInvocationService() {
                 if (clientConfig.getNetworkConfig().isSmartRouting()) {
-                    return std::auto_ptr<spi::ClientInvocationService>(
+                    return boost::shared_ptr<spi::ClientInvocationService>(
                             new spi::impl::SmartClientInvocationService(clientContext));
                 } else {
-                    return std::auto_ptr<spi::ClientInvocationService>(
+                    return boost::shared_ptr<spi::ClientInvocationService>(
                             new spi::impl::NonSmartClientInvocationService(clientContext));
                 }
             }

@@ -36,10 +36,13 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             class ClientListenerService;
+
             class ClientPartitionService;
 
             namespace impl {
-                class HAZELCAST_API AbstractClientInvocationService : public ClientInvocationService {
+                class HAZELCAST_API AbstractClientInvocationService
+                        : public ClientInvocationService,
+                          public boost::enable_shared_from_this<AbstractClientInvocationService> {
                 public:
                     AbstractClientInvocationService(ClientContext &client);
 
@@ -58,8 +61,13 @@ namespace hazelcast {
                     void handleClientMessage(const boost::shared_ptr<connection::Connection> &connection,
                                              const boost::shared_ptr<protocol::ClientMessage> &message);
 
-                protected:
+                    boost::shared_ptr<ClientInvocation> getInvocation(int64_t callId);
 
+                    void deRegisterInvocation(int64_t callId);
+
+                    bool isShouldFailOnIndeterminateOperationState() const;
+
+                protected:
                     class ResponseThread : public util::Runnable {
                     public:
                         ResponseThread(const std::string &name, util::ILogger &invocationLogger,
@@ -93,7 +101,8 @@ namespace hazelcast {
 
                     class CleanResourcesTask : public util::Runnable {
                     public:
-                        CleanResourcesTask(util::SynchronizedMap<int64_t, ClientInvocation> &invocations);
+                        CleanResourcesTask(util::SynchronizedMap<int64_t, ClientInvocation> &invocations,
+                                           int32_t operationBackupTimeoutMillis);
 
                         void run();
 
@@ -104,21 +113,26 @@ namespace hazelcast {
                                              boost::shared_ptr<connection::Connection> &connection);
 
                         util::SynchronizedMap<int64_t, ClientInvocation> &invocations;
+                        int32_t operationBackupTimeoutMillis;
                     };
 
                     const ClientProperty &CLEAN_RESOURCES_MILLIS;
+
                     ClientContext &client;
                     util::ILogger &invocationLogger;
                     connection::ClientConnectionManagerImpl *connectionManager;
                     ClientPartitionService &partitionService;
                     spi::impl::listener::AbstractClientListenerService *clientListenerService;
-
                     util::SynchronizedMap<int64_t, ClientInvocation> invocations;
 
                     util::AtomicBoolean isShutdown;
+
                     int64_t invocationTimeoutMillis;
                     int64_t invocationRetryPauseMillis;
                     ResponseThread responseThread;
+
+                    int32_t operationBackupTimeoutMillis;
+                    bool shouldFailOnIndeterminateOperationState;
 
                     boost::shared_ptr<ClientInvocation> deRegisterCallId(int64_t callId);
 
@@ -129,6 +143,11 @@ namespace hazelcast {
 
                     void send(boost::shared_ptr<impl::ClientInvocation> invocation,
                               boost::shared_ptr<connection::Connection> connection);
+
+                private:
+                    void send0(boost::shared_ptr<impl::ClientInvocation> invocation,
+                               boost::shared_ptr<connection::Connection> connection);
+
                 };
             }
         }

@@ -97,6 +97,10 @@ namespace hazelcast {
 
             const ClientProperty &getStatisticsPeriodSeconds() const;
 
+            const ClientProperty &getOperationBackupTimeoutMillis() const;
+
+            const ClientProperty &getShouldFailOnIndeterminateState() const;
+
             /**
             * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
             * passing between client and member within the given time via this property in seconds the connection
@@ -238,6 +242,22 @@ namespace hazelcast {
             static const std::string STATISTICS_PERIOD_SECONDS_DEFAULT;
 
             /**
+             * If an operation has backups, this property specifies how long the invocation will wait for acks from the backup replicas.
+             * If acks are not received from some backups, there will not be any rollback on other successful replicas.
+             */
+            static const std::string OPERATION_BACKUP_TIMEOUT_MILLIS;
+            static const std::string OPERATION_BACKUP_TIMEOUT_MILLIS_DEFAULT;
+
+            /**
+             * When this configuration is enabled, if an operation has sync backups and acks are not received from backup replicas
+             * in time, or the member which owns primary replica of the target partition leaves the cluster, then the invocation fails
+             * with {@link exception::IndeterminateOperationStateException}. However, even if the invocation fails,
+             * there will not be any rollback on other successful replicas.
+             */
+            static const std::string FAIL_ON_INDETERMINATE_OPERATION_STATE;
+            static const std::string FAIL_ON_INDETERMINATE_OPERATION_STATE_DEFAULT;
+
+            /**
              * Returns the configured boolean value of a {@link ClientProperty}.
              *
              * @param property the {@link ClientProperty} to get the value from
@@ -286,6 +306,8 @@ namespace hazelcast {
             ClientProperty backpressureBackoffTimeoutMillis;
             ClientProperty statisticsEnabled;
             ClientProperty statisticsPeriodSeconds;
+            ClientProperty operationBackupTimeoutMillis;
+            ClientProperty failOnIndeterminateOperationState;
 
             std::map<std::string, std::string> propertiesMap;
         };

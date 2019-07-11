@@ -23,13 +23,15 @@
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/spi/impl/ListenerMessageCodec.h"
 
 namespace hazelcast {
     namespace client {
         namespace spi {
             namespace impl {
                 namespace listener {
+                    const boost::shared_ptr<impl::ListenerMessageCodec> SmartClientListenerService::backupListener(
+                            new BackupListenerMessageCodec);
+
                     SmartClientListenerService::SmartClientListenerService(ClientContext &clientContext,
                                                                            int32_t eventThreadCount,
                                                                            int32_t eventQueueCapacity)
@@ -44,6 +46,8 @@ namespace hazelcast {
                                 boost::shared_ptr<util::Runnable>(new AsyncConnectToAllMembersTask(
                                         boost::static_pointer_cast<SmartClientListenerService>(shared_from_this()))),
                                 1000, 1000);
+
+                        addBackupListener();
                     }
 
                     std::string
@@ -140,6 +144,15 @@ namespace hazelcast {
 
                     }
 
+                    void SmartClientListenerService::addBackupListener() {
+                        ClientListenerService &listenerService = clientContext.getClientListenerService();
+                        AbstractClientInvocationService &abstractClientInvocationService = (AbstractClientInvocationService &) clientContext.getInvocationService();
+                        listenerService.registerListener(backupListener,
+                                                         boost::shared_ptr<EventHandler<protocol::ClientMessage> >(
+                                                                 new BackupEventHandler(
+                                                                         abstractClientInvocationService.shared_from_this())));
+                    }
+
                     SmartClientListenerService::AsyncConnectToAllMembersTask::AsyncConnectToAllMembersTask(
                             const boost::shared_ptr<SmartClientListenerService> &listenerService) : listenerService(
                             listenerService) {}
@@ -151,6 +164,51 @@ namespace hazelcast {
                     const std::string SmartClientListenerService::AsyncConnectToAllMembersTask::getName() const {
                         return "SmartClientListenerService::AsyncConnectToAllMembersTask";
                     }
+
+                    std::auto_ptr<protocol::ClientMessage>
+                    SmartClientListenerService::BackupListenerMessageCodec::encodeAddRequest(bool localOnly) const {
+                        return protocol::codec::ClientLocalBackupListenerCodec::encodeRequest();
+                    }
+
+                    std::string SmartClientListenerService::BackupListenerMessageCodec::decodeAddResponse(
+                            protocol::ClientMessage &responseMessage) const {
+                        return protocol::codec::ClientLocalBackupListenerCodec::ResponseParameters::decode(
+                                responseMessage).response;
+                    }
+
+                    std::auto_ptr<protocol::ClientMessage>
+                    SmartClientListenerService::BackupListenerMessageCodec::encodeRemoveRequest(
+                            const std::string &realRegistrationId) const {
+                        return std::auto_ptr<protocol::ClientMessage>();
+                    }
+
+                    bool SmartClientListenerService::BackupListenerMessageCodec::decodeRemoveResponse(
+                            protocol::ClientMessage &clientMessage) const {
+                        return false;
+                    }
+
+                    void
+                    SmartClientListenerService::BackupEventHandler::handleBackupEventV19(const int64_t &correlationId) {
+                        boost::shared_ptr<AbstractClientInvocationService> invSrv = invocationService.lock();
+                        if (invSrv.get() == NULL) {
+                            return;
+                        }
+
+                        boost::shared_ptr<ClientInvocation> invocation = invSrv->getInvocation(correlationId);
+                        if (invocation.get() == NULL) {
+                            ILogger *logger = getLogger();
+                            if (logger->isFinestEnabled()) {
+                                logger->finest() << "Invocation not found for backup event, invocation id "
+                                                 << correlationId;
+                            }
+                            return;
+                        }
+                        invocation->notifyBackup();
+                    }
+
+                    SmartClientListenerService::BackupEventHandler::BackupEventHandler(
+                            const boost::shared_ptr<AbstractClientInvocationService> &invocationService)
+                            : invocationService(invocationService) {}
                 }
             }
         }
