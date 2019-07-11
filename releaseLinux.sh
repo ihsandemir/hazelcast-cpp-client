@@ -29,63 +29,19 @@ cp -R hazelcast/generated-sources/include/hazelcast/* cpp/Linux_32/hazelcast/inc
 cp -R hazelcast/include/hazelcast/* cpp/Linux_64/hazelcast/include/hazelcast/
 cp -R hazelcast/generated-sources/include/hazelcast/* cpp/Linux_64/hazelcast/include/hazelcast/
 
-scripts/build-linux.sh 32 STATIC Release COMPILE_WITHOUT_SSL &> STATIC_32_linux.txt &
-STATIC_32_pid=$!
-
-scripts/build-linux.sh 32 SHARED Release COMPILE_WITHOUT_SSL &> SHARED_32_linux.txt &
-SHARED_32_pid=$!
-
 scripts/build-linux.sh 64 STATIC Release COMPILE_WITHOUT_SSL &> STATIC_64_linux.txt &
 STATIC_64_pid=$!
 
-scripts/build-linux.sh 64 SHARED Release COMPILE_WITHOUT_SSL &> SHARED_64_linux.txt &
-SHARED_64_pid=$!
-
-scripts/build-linux.sh 32 STATIC Release &> STATIC_32_SSL_linux.txt &
-STATIC_32_SSL_pid=$!
-
-scripts/build-linux.sh 32 SHARED Release &> SHARED_32_SSL_linux.txt &
-SHARED_32_SSL_pid=$!
-
-scripts/build-linux.sh 64 STATIC Release &> STATIC_64_SSL_linux.txt &
-STATIC_64_SSL_pid=$!
-
-scripts/build-linux.sh 64 SHARED Release &> SHARED_64_SSL_linux.txt &
-SHARED_64_SSL_pid=$!
-
 FAIL=0
-wait ${STATIC_32_pid} || let "FAIL+=1"
-wait ${STATIC_32_SSL_pid} || let "FAIL+=1"
-wait ${SHARED_32_pid} || let "FAIL+=1"
-wait ${SHARED_32_SSL_pid} || let "FAIL+=1"
 wait ${STATIC_64_pid} || let "FAIL+=1"
-wait ${STATIC_64_SSL_pid} || let "FAIL+=1"
-wait ${SHARED_64_pid} || let "FAIL+=1"
-wait ${SHARED_64_SSL_pid} || let "FAIL+=1"
 
 if [ $FAIL -ne 0 ]; then
     echo "$FAIL builds FAILED!!!"
     exit $FAIL
 fi
 
-cp buildSTATIC32Release/libHazelcastClient* cpp/Linux_32/hazelcast/lib/
-
-cp buildSHARED32Release/libHazelcastClient* cpp/Linux_32/hazelcast/lib/
-
 cp buildSTATIC64Release/libHazelcastClient* cpp/Linux_64/hazelcast/lib/
 
-cp buildSHARED64Release/libHazelcastClient* cpp/Linux_64/hazelcast/lib/
-
-cp buildSTATIC32Release_SSL/libHazelcastClient* cpp/Linux_32/hazelcast/lib/tls/
-
-cp buildSHARED32Release_SSL/libHazelcastClient* cpp/Linux_32/hazelcast/lib/tls/
-
-cp buildSTATIC64Release_SSL/libHazelcastClient* cpp/Linux_64/hazelcast/lib/tls/
-
-cp buildSHARED64Release_SSL/libHazelcastClient* cpp/Linux_64/hazelcast/lib/tls/
-
-echo "Copying external libraries and the examples"
-mkdir -p cpp/external
 cp -R external/release_include cpp/external/include
 mkdir -p cpp/examples
 cp -r examples cpp/examples/src
@@ -103,5 +59,5 @@ ln -s ../external .
 cd -
 
 # Verify release
-scripts/verifyReleaseLinux.sh
+#scripts/verifyReleaseLinux.sh
 
