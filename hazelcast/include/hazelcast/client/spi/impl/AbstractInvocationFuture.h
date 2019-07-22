@@ -516,12 +516,31 @@ namespace hazelcast {
                     // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException
                     void warnIfSuspiciousDoubleCompletion(const boost::shared_ptr<BaseState> &s0,
                                                           const boost::shared_ptr<BaseState> &s1) {
-                        if (s0 != s1 && !(s0->getType() == BaseState::Exception &&
-                                          boost::static_pointer_cast<ExceptionState>(
-                                                  s0)->getException()->getErrorCode() == protocol::CANCELLATION) &&
-                            !(s1->getType() == BaseState::Exception &&
-                              boost::static_pointer_cast<ExceptionState>(s1)->getException()->getErrorCode() ==
-                              protocol::CANCELLATION)) {
+                        bool suspicious = false;
+                        int type0 = s0->getType();
+                        int type1 = s1->getType();
+
+                        if (type0 != type1) {
+                            suspicious = true;
+                        } else {
+                            if (type0 == BaseState::Value) {
+                                boost::shared_ptr<ValueState> soValue = boost::static_pointer_cast<ValueState>(s0);
+                                boost::shared_ptr<ValueState> s1Value = boost::static_pointer_cast<ValueState>(s1);
+                                if (soValue->getValue() != s1Value->getValue()) {
+                                    suspicious = true;
+                                }
+                            } else if (type0 == BaseState::Exception) {
+                                int error1 = boost::static_pointer_cast<ExceptionState>(s0)->getException()->getErrorCode();
+                                int error2 = boost::static_pointer_cast<ExceptionState>(s1)->getException()->getErrorCode();
+                                if (error1 != error2 && error1 != protocol::CANCELLATION && error2 != protocol::CANCELLATION) {
+                                    suspicious = true;
+                                }
+                            } else if (s0 != s1) {
+                                suspicious = true;
+                            }
+                        }
+
+                        if (suspicious) {
                             logger.warning() << "Future.complete(Object) on completed future. Request: "
                                              << invocationToString();// << ", current value: " << *s0 << ", offered value: " << *s1;
                         }
