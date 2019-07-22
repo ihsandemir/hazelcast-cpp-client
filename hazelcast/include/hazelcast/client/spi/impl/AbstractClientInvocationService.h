@@ -144,7 +144,6 @@ namespace hazelcast {
                     void send(boost::shared_ptr<impl::ClientInvocation> invocation,
                               boost::shared_ptr<connection::Connection> connection);
 
-                private:
                     void send0(boost::shared_ptr<impl::ClientInvocation> invocation,
                                boost::shared_ptr<connection::Connection> connection);
 

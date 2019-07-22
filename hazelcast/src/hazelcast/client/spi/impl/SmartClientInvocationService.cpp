@@ -34,7 +34,7 @@ namespace hazelcast {
                 void
                 SmartClientInvocationService::invokeOnConnection(boost::shared_ptr<impl::ClientInvocation> invocation,
                                                                  boost::shared_ptr<connection::Connection> connection) {
-                    send(invocation, connection);
+                    send0(invocation, connection);
                 }
 
                 void SmartClientInvocationService::invokeOnPartitionOwner(
@@ -52,7 +52,7 @@ namespace hazelcast {
                     }
                     invocation->getClientMessage()->setPartitionId(partitionId);
                     boost::shared_ptr<connection::Connection> connection = getOrTriggerConnect(owner);
-                    send(invocation, connection);
+                    send0(invocation, connection);
                 }
 
                 void SmartClientInvocationService::invokeOnRandomTarget(
@@ -64,7 +64,7 @@ namespace hazelcast {
                                 << "No address found to invoke").build();
                     }
                     boost::shared_ptr<connection::Connection> connection = getOrTriggerConnect(randomAddress);
-                    send(invocation, connection);
+                    send0(invocation, connection);
                 }
 
                 void SmartClientInvocationService::invokeOnTarget(boost::shared_ptr<impl::ClientInvocation> invocation,
