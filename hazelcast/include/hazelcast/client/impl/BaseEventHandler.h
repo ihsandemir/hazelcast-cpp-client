@@ -20,11 +20,12 @@
 #ifndef HAZELCAST_BaseEventHandler
 #define HAZELCAST_BaseEventHandler
 
-#include "hazelcast/util/HazelcastDll.h"
 #include <string>
 #include <memory>
+#include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/EventHandler.h"
 #include "hazelcast/util/ILogger.h"
+#include "hazelcast/util/Atomic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -70,10 +71,10 @@ namespace hazelcast {
 
                 void setLogger(util::ILogger *logger);
 
-                util::ILogger *getLogger() const;
+                util::ILogger *getLogger();
 
             protected:
-                util::ILogger *logger;
+                util::Atomic<util::ILogger *> logger;
             };
         }
     }

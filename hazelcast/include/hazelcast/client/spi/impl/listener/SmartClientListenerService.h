@@ -65,13 +65,15 @@ namespace hazelcast {
                                 : public protocol::codec::ClientLocalBackupListenerCodec::AbstractEventHandler {
                         public:
                             BackupEventHandler(
-                                    const boost::shared_ptr<AbstractClientInvocationService> &invocationService);
+                                    const boost::shared_ptr<AbstractClientInvocationService> &invocationService,
+                                    util::ILogger &logger);
 
                         public:
                             virtual void handleBackupEventV19(const int64_t &backupId);
 
                         private:
                             boost::weak_ptr<spi::impl::AbstractClientInvocationService> invocationService;
+                            util::ILogger &logger;
                         };
 
                         class AsyncConnectToAllMembersTask : public util::Runnable {

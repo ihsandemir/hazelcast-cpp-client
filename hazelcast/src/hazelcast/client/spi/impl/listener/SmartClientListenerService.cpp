@@ -150,7 +150,8 @@ namespace hazelcast {
                         listenerService.registerListener(backupListener,
                                                          boost::shared_ptr<EventHandler<protocol::ClientMessage> >(
                                                                  new BackupEventHandler(
-                                                                         abstractClientInvocationService.shared_from_this())));
+                                                                         abstractClientInvocationService.shared_from_this(),
+                                                                         clientContext.getLogger())));
                     }
 
                     SmartClientListenerService::AsyncConnectToAllMembersTask::AsyncConnectToAllMembersTask(
@@ -196,10 +197,9 @@ namespace hazelcast {
 
                         boost::shared_ptr<ClientInvocation> invocation = invSrv->getInvocation(correlationId);
                         if (invocation.get() == NULL) {
-                            ILogger *logger = getLogger();
-                            if (logger->isFinestEnabled()) {
-                                logger->finest() << "Invocation not found for backup event, invocation id "
-                                                 << correlationId;
+                            if (logger.isFinestEnabled()) {
+                                logger.finest() << "Invocation not found for backup event, invocation id "
+                                                << correlationId;
                             }
                             return;
                         }
@@ -207,8 +207,8 @@ namespace hazelcast {
                     }
 
                     SmartClientListenerService::BackupEventHandler::BackupEventHandler(
-                            const boost::shared_ptr<AbstractClientInvocationService> &invocationService)
-                            : invocationService(invocationService) {}
+                            const boost::shared_ptr<AbstractClientInvocationService> &invocationService,
+                            util::ILogger &logger) : invocationService(invocationService), logger(logger) {}
                 }
             }
         }

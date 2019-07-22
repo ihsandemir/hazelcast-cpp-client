@@ -38,8 +38,8 @@ namespace hazelcast {
                 BaseEventHandler::logger = logger;
             }
 
-            util::ILogger *BaseEventHandler::getLogger() const {
-                return logger;
+            util::ILogger *BaseEventHandler::getLogger() {
+                return logger.get();
             }
         }
     }
