@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef HAZELCAST_CLIENT_TEST_CLIENTALLSTATESLISTENER_H
+#define HAZELCAST_CLIENT_TEST_CLIENTALLSTATESLISTENER_H
+
+#include <gtest/gtest.h>
+#include "hazelcast/client/HazelcastClient.h"
+#include "hazelcast/client/LifecycleEvent.h"
+#include "hazelcast/client/LifecycleListener.h"
+
+namespace hazelcast {
+    namespace client {
+        namespace test {
+            class ClientAllStatesListener : public LifecycleListener {
+            public:
+                ClientAllStatesListener(util::CountDownLatch *startingLatch = NULL,
+                                        util::CountDownLatch *startedLatch = NULL,
+                                        util::CountDownLatch *connectedLatch = NULL,
+                                        util::CountDownLatch *disconnectedLatch = NULL,
+                                        util::CountDownLatch *shuttingDownLatch = NULL,
+                                        util::CountDownLatch *shutdownLatch = NULL);
+
+                virtual void stateChanged(const LifecycleEvent &lifecycleEvent);
+
+            private:
+                util::CountDownLatch *startingLatch;
+                util::CountDownLatch *startedLatch;
+                util::CountDownLatch *connectedLatch;
+                util::CountDownLatch *disconnectedLatch;
+                util::CountDownLatch *shuttingDownLatch;
+                util::CountDownLatch *shutdownLatch;
+            };
+        }
+    }
+}
+
+
+#endif //HAZELCAST_CLIENT_TEST_CLIENTALLSTATESLISTENER_H

@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include "ClientTestSupportBase.h"
 #include "HazelcastServerFactory.h"
+#include "ClientAllStatesListener.h"
 #include "hazelcast/util/CountDownLatch.h"
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
@@ -42,65 +43,6 @@ namespace hazelcast {
                 ClusterTest() : sslFactory(getSslFilePath()) {}
 
             protected:
-                class ClientAllStatesListener : public LifecycleListener {
-                public:
-
-                    ClientAllStatesListener(util::CountDownLatch *startingLatch,
-                                            util::CountDownLatch *startedLatch = NULL,
-                                            util::CountDownLatch *connectedLatch = NULL,
-                                            util::CountDownLatch *disconnectedLatch = NULL,
-                                            util::CountDownLatch *shuttingDownLatch = NULL,
-                                            util::CountDownLatch *shutdownLatch = NULL)
-                            : startingLatch(startingLatch), startedLatch(startedLatch), connectedLatch(connectedLatch),
-                              disconnectedLatch(disconnectedLatch), shuttingDownLatch(shuttingDownLatch),
-                              shutdownLatch(shutdownLatch) {}
-
-                    virtual void stateChanged(const LifecycleEvent &lifecycleEvent) {
-                        switch (lifecycleEvent.getState()) {
-                            case LifecycleEvent::STARTING:
-                                if (startingLatch) {
-                                    startingLatch->countDown();
-                                }
-                                break;
-                            case LifecycleEvent::STARTED:
-                                if (startedLatch) {
-                                    startedLatch->countDown();
-                                }
-                                break;
-                            case LifecycleEvent::CLIENT_CONNECTED:
-                                if (connectedLatch) {
-                                    connectedLatch->countDown();
-                                }
-                                break;
-                            case LifecycleEvent::CLIENT_DISCONNECTED:
-                                if (disconnectedLatch) {
-                                    disconnectedLatch->countDown();
-                                }
-                                break;
-                            case LifecycleEvent::SHUTTING_DOWN:
-                                if (shuttingDownLatch) {
-                                    shuttingDownLatch->countDown();
-                                }
-                                break;
-                            case LifecycleEvent::SHUTDOWN:
-                                if (shutdownLatch) {
-                                    shutdownLatch->countDown();
-                                }
-                                break;
-                            default:
-                                FAIL() << "No such state expected:" << lifecycleEvent.getState();
-                        }
-                    }
-
-                private:
-                    util::CountDownLatch *startingLatch;
-                    util::CountDownLatch *startedLatch;
-                    util::CountDownLatch *connectedLatch;
-                    util::CountDownLatch *disconnectedLatch;
-                    util::CountDownLatch *shuttingDownLatch;
-                    util::CountDownLatch *shutdownLatch;
-                };
-
                 std::auto_ptr<HazelcastServer> startServer(ClientConfig &clientConfig) {
                     if (clientConfig.getNetworkConfig().getSSLConfig().isEnabled()) {
                         return std::auto_ptr<HazelcastServer>(new HazelcastServer(sslFactory));
