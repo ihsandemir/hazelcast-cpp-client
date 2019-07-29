@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,11 +101,11 @@ namespace hazelcast {
                     util::CountDownLatch *shutdownLatch;
                 };
 
-                std::auto_ptr<HazelcastServer> startServer(ClientConfig &clientConfig) {
+                HazelcastServer startServer(ClientConfig &clientConfig) {
                     if (clientConfig.getNetworkConfig().getSSLConfig().isEnabled()) {
-                        return std::auto_ptr<HazelcastServer>(new HazelcastServer(sslFactory));
+                        return HazelcastServer(sslFactory);
                     } else {
-                        return std::auto_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory));
+                        return HazelcastServer(*g_srvFactory);
                     }
                 }
 
@@ -138,7 +138,7 @@ namespace hazelcast {
             TEST_P(ClusterTest, testAllClientStates) {
                 ClientConfig &clientConfig = *const_cast<ParamType &>(GetParam());
 
-                std::auto_ptr<HazelcastServer> instance = startServer(clientConfig);
+                HazelcastServer instance = startServer(clientConfig);
 
                 clientConfig.setAttemptPeriod(1000);
                 clientConfig.setConnectionAttemptLimit(1);
@@ -158,7 +158,7 @@ namespace hazelcast {
                 ASSERT_TRUE(startedLatch.await(0));
                 ASSERT_TRUE(connectedLatch.await(0));
 
-                instance->shutdown();
+                instance.shutdown();
 
                 ASSERT_OPEN_EVENTUALLY(disconnectedLatch);
                 ASSERT_OPEN_EVENTUALLY(shuttingDownLatch);
@@ -182,7 +182,7 @@ namespace hazelcast {
 
             TEST_P(ClusterTest, testAllClientStatesWhenUserShutdown) {
                 ClientConfig &clientConfig = *const_cast<ParamType &>(GetParam());
-                std::auto_ptr<HazelcastServer> instance = startServer(clientConfig);
+                HazelcastServer instance = startServer(clientConfig);
 
                 util::CountDownLatch startingLatch(1);
                 util::CountDownLatch startedLatch(1);
@@ -204,6 +204,15 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(shuttingDownLatch);
                 ASSERT_OPEN_EVENTUALLY(shutdownLatch);
+            }
+
+            TEST_P(ClusterTest, testGroupConfig) {
+                ClientConfig &clientConfig = *const_cast<ParamType &>(GetParam());
+
+                HazelcastServer instance = startServer(clientConfig);
+
+                clientConfig.setGroupConfig(GroupConfig("dev", "dev-pass"));
+                HazelcastClient client(clientConfig);
             }
 
             #ifdef HZ_BUILD_WITH_SSL
