@@ -60,7 +60,7 @@ namespace hazelcast {
                 void terminateRandomNode(HazelcastClient &client) {
                     size_t index = rand() % servers.size();
                     vector<boost::shared_ptr<HazelcastServer> >::const_iterator iterator = servers.begin();
-                    for (int i = 0; i <= index; ++i) {
+                    for (size_t i = 0; i <= index; ++i) {
                         ++iterator;
                     }
                     (*iterator)->terminate();
