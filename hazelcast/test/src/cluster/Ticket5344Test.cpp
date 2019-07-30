@@ -42,12 +42,18 @@ namespace hazelcast {
                         IMap<int, int> map = client.getMap<int, int>("MyMap");
                         while (true) {
                             int key = rand() % 1000;
-                            if (key % 2) {
-                                map.get(key);
-                                std::cout << "Get for " << key << std::endl;
-                            } else {
-                                map.put(key, key);
-                                std::cout << "Put for " << key << std::endl;
+
+                            try {
+                                if (key % 2) {
+                                    map.get(key);
+                                    std::cout << "Get for " << key << std::endl;
+                                } else {
+                                    map.put(key, key);
+                                    std::cout << "Put for " << key << std::endl;
+                                }
+                            } catch (exception::IException &e) {
+                                std::cout << "Operation caused exception:" << e << std::endl;
+                                std::cout << "Test continues." << std::endl;
                             }
                             sleep(5);
                         }
@@ -72,11 +78,16 @@ namespace hazelcast {
             };
 
             TEST_F(Ticket5344Test, testTicket5344) {
+/*
                 servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
                 servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
                 servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
                 servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
+*/
+                boost::shared_ptr<HazelcastServer> server(new HazelcastServer(*g_srvFactory));
 
+                ClientConfig config;
+                config.getNetworkConfig().setConnectionAttemptLimit(INT32_MAX);
                 HazelcastClient client;
 
                 util::Thread clientThread(boost::shared_ptr<util::Runnable>(new MapPutGetTask(client)), getLogger());
@@ -85,10 +96,13 @@ namespace hazelcast {
                 while (true) {
                     sleep(30);
 
-                    terminateRandomNode(client);
+                    //terminateRandomNode(client);
+                    server->terminate();
 
                     // start a new server
-                    servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
+                    server.reset(new HazelcastServer(*g_srvFactory));
+
+                    //servers.push_back();
                 }
             }
 
