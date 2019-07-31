@@ -24,12 +24,66 @@
 
 #include "ClientTestSupport.h"
 #include "hazelcast/client/HazelcastClient.h"
+#include "hazelcast/client/LifecycleListener.h"
 
 namespace hazelcast {
     namespace client {
         namespace test {
             class Ticket5344Test : public ClientTestSupport {
             protected:
+                class ClientDisconnectedLifeCycleListener : public LifecycleListener {
+                public:
+                    ClientDisconnectedLifeCycleListener(CountDownLatch &latch) : latch(latch) {}
+
+                public:
+                    virtual void stateChanged(const LifecycleEvent &lifecycleEvent) {
+                        if (lifecycleEvent.getState() == LifecycleEvent::CLIENT_DISCONNECTED) {
+                            latch.countDown();
+                        }
+                    }
+
+                private:
+                    util::CountDownLatch &latch;
+                };
+
+                class WaitListenerInfiniteTask : public util::Runnable {
+                public:
+                    virtual const string getName() const {
+                        return "WaitListenerInfiniteTask";
+                    }
+
+                    virtual void run() {
+                        ClientConfig *config = 0;
+                        HazelcastClient *client = 0;
+
+                        while (true) {
+                            util::CountDownLatch disconnectedLatch(1);
+                            ClientDisconnectedLifeCycleListener listener(disconnectedLatch);
+
+                            if (config == 0) {
+                                config = new ClientConfig;
+
+                                GroupConfig &groupConfig = config->getGroupConfig();
+                                groupConfig.setName("dev");
+                                groupConfig.setPassword("dev-pass");
+                                config->addAddress(Address("127.0.0.1", 5701));
+                                config->addListener(&listener);
+
+                                client = new HazelcastClient(*config);
+                            }
+
+                            disconnectedLatch.await();
+
+                            client->removeLifecycleListener(&listener);
+                            client->shutdown();
+                            delete client;
+                            client = 0;
+                            delete config;
+                            config = 0;
+                        }
+                    }
+                };
+
                 class MapPutGetTask : public Runnable {
                 public:
                     MapPutGetTask(HazelcastClient &client) : client(client) {}
@@ -77,7 +131,7 @@ namespace hazelcast {
                 std::vector<boost::shared_ptr<HazelcastServer> > servers;
             };
 
-            TEST_F(Ticket5344Test, testTicket5344) {
+            TEST_F(Ticket5344Test, testTicket5344_PutGet) {
 /*
                 servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
                 servers.push_back(boost::shared_ptr<HazelcastServer>(new HazelcastServer(*g_srvFactory)));
@@ -106,6 +160,23 @@ namespace hazelcast {
                 }
             }
 
+            TEST_F(Ticket5344Test, testTicket5344_WaitForLifeCycleListener) {
+                boost::shared_ptr<HazelcastServer> server(new HazelcastServer(*g_srvFactory));
+
+                util::Thread clientThread(boost::shared_ptr<util::Runnable>(new WaitListenerInfiniteTask()),
+                                          getLogger());
+                clientThread.start();
+
+                while (true) {
+                    sleep(10);
+
+                    server->terminate();
+
+                    // start a new server
+                    server.reset(new HazelcastServer(*g_srvFactory));
+                }
+
+            }
         }
     }
 }
