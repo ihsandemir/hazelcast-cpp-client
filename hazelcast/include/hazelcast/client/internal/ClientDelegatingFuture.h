@@ -161,7 +161,7 @@ namespace hazelcast {
                     std::flush(std::cout);
 
                     // TODO: Java uses a message wrapper here --> ClientMessage message = ClientMessage.createForDecode(clientMessage.buffer(), 0);
-                    boost::shared_ptr<protocol::ClientMessage> message = protocol::ClientMessage::createForDecode(*clientMessage);
+                    boost::shared_ptr<protocol::ClientMessage> message(protocol::ClientMessage::createForDecode(*clientMessage));
                     boost::shared_ptr<V> newDecodedResponse = clientMessageDecoder->decodeClientMessage(message,
                                                                                                         serializationService);
 
