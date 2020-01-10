@@ -100,6 +100,9 @@ namespace hazelcast {
 
                 virtual boost::shared_ptr<V> get(int64_t timeout, const TimeUnit &unit) {
                     boost::shared_ptr<protocol::ClientMessage> response = future->get(timeout, unit);
+                    std::cout << "get(): response:" << response.get() << std::endl;
+                    std::flush(std::cout);
+
                     return resolveResponse(response);
                 }
 
@@ -153,8 +156,13 @@ namespace hazelcast {
                     if (decodedResponse != boost::static_pointer_cast<V>(VOIDOBJ)) {
                         return decodedResponse;
                     }
+
+                    std::cout << "decodeResponse(): clientMessage:" << clientMessage.get() << std::endl;
+                    std::flush(std::cout);
+
                     // TODO: Java uses a message wrapper here --> ClientMessage message = ClientMessage.createForDecode(clientMessage.buffer(), 0);
-                    boost::shared_ptr<V> newDecodedResponse = clientMessageDecoder->decodeClientMessage(clientMessage,
+                    boost::shared_ptr<protocol::ClientMessage> message = protocol::ClientMessage::createForDecode(*clientMessage);
+                    boost::shared_ptr<V> newDecodedResponse = clientMessageDecoder->decodeClientMessage(message,
                                                                                                         serializationService);
 
                     decodedResponse.compareAndSet(boost::static_pointer_cast<V>(VOIDOBJ), newDecodedResponse);
@@ -167,6 +175,9 @@ namespace hazelcast {
                     if (defaultValue.get() != NULL) {
                         return defaultValue;
                     }
+
+                    std::cout << "resolveResponse(): clientMessage:" << clientMessage.get() << std::endl;
+                    std::flush(std::cout);
 
                     return decodeResponse(clientMessage);
                 }

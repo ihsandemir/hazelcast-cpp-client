@@ -65,6 +65,12 @@ namespace hazelcast {
                 return msg;
             }
 
+            std::auto_ptr<ClientMessage> ClientMessage::createForDecode(const ClientMessage &msg) {
+                std::auto_ptr<ClientMessage> copy(new ClientMessage(msg));
+                copy->wrapForRead(copy->getCapacity(), ClientMessage::HEADER_SIZE);
+                return copy;
+            }
+
             std::auto_ptr<ClientMessage> ClientMessage::create(int32_t size) {
                 return std::auto_ptr<ClientMessage>(new ClientMessage(size));
             }
@@ -229,7 +235,7 @@ namespace hazelcast {
             serialization::pimpl::Data ClientMessage::get() {
                 int32_t len = getInt32();
 
-                checkAvailable(len);
+                assert(checkReadAvailable(len));
 
                 byte *start = ix();
                 std::auto_ptr<std::vector<byte> > bytes = std::auto_ptr<std::vector<byte> >(new std::vector<byte>(start,

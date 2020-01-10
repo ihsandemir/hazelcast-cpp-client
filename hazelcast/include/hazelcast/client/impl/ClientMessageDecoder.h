@@ -48,8 +48,13 @@ namespace hazelcast {
                 virtual boost::shared_ptr<V>
                 decodeClientMessage(const boost::shared_ptr<protocol::ClientMessage> &clientMessage,
                                     serialization::pimpl::SerializationService &serializationService) {
-                    return boost::shared_ptr<V>(serializationService.toObject<V>(
-                            CODEC::ResponseParameters::decode(*clientMessage).response.get()));
+                    std::cout << "decodeClientMessage(): before decode clientMessage:" << clientMessage.get() << std::endl;
+                    std::flush(std::cout);
+                    typename CODEC::ResponseParameters responseParams = CODEC::ResponseParameters::decode(*clientMessage);
+                    std::cout << "decodeClientMessage(): after decode clientMessage:" << clientMessage.get() << std::endl;
+                    std::flush(std::cout);
+
+                    return boost::shared_ptr<V>(serializationService.toObject<V>(responseParams.response.get()));
                 }
 
                 static const boost::shared_ptr<ClientMessageDecoder<V> > &instance();

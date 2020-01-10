@@ -17,6 +17,7 @@
  * This has to be the first include, so that Python.h is the first include. Otherwise, compilation warning such as
  * "_POSIX_C_SOURCE" redefined occurs.
  */
+#include <serialization/Employee.h>
 #include "HazelcastServerFactory.h"
 #include "HazelcastServer.h"
 #include "ClientTestSupport.h"
@@ -38,12 +39,13 @@ namespace hazelcast {
                     instance = new HazelcastServer(*g_srvFactory);
                     client = new HazelcastClient(ClientConfig());
 
-                    map = new IMap<int, int>(client->getMap<int, int>(MAP_NAME));
-                    expected = new std::vector<int>;
+                    map = new IMap<int, Employee>(client->getMap<int, Employee>(MAP_NAME));
+                    expected = new std::vector<Employee>;
                     for (int k = 0; k < MAP_SIZE; ++k) {
                         int item = rand();
-                        expected->push_back(item);
-                        map->put(k, item);
+                        Employee e("name", item);
+                        expected->push_back(e);
+                        map->put(k, e);
                     }
                 }
 
@@ -59,31 +61,31 @@ namespace hazelcast {
                 }
 
             protected:
-                void testPipelining(const boost::shared_ptr<Pipelining<int> > &pipelining) {
+                void testPipelining(const boost::shared_ptr<Pipelining<Employee> > &pipelining) {
                     for (int k = 0; k < MAP_SIZE; k++) {
                         pipelining->add(map->getAsync(k));
                     }
 
-                    vector<boost::shared_ptr<int> > results = pipelining->results();
+                    vector<boost::shared_ptr<Employee> > results = pipelining->results();
                     ASSERT_EQ(expected->size(), results.size());
                     for (int k = 0; k < MAP_SIZE; ++k) {
-                        ASSERT_EQ_PTR((*expected)[k], results[k].get(), int);
+                        ASSERT_EQ_PTR((*expected)[k], results[k].get(), Employee);
                     }
                 }
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
                 static const char *MAP_NAME;
-                static IMap<int, int> *map;
-                static std::vector<int> *expected;
+                static IMap<int, Employee> *map;
+                static std::vector<Employee> *expected;
                 static const int MAP_SIZE = 10000;
             };
 
             HazelcastServer *PipeliningTest::instance = NULL;
             HazelcastClient *PipeliningTest::client = NULL;
             const char *PipeliningTest::MAP_NAME = "PipeliningTestMap";
-            IMap<int, int> *PipeliningTest::map = NULL;
-            std::vector<int> *PipeliningTest::expected = NULL;
+            IMap<int, Employee> *PipeliningTest::map = NULL;
+            std::vector<Employee> *PipeliningTest::expected = NULL;
 
             TEST_F(PipeliningTest, testConstructor_whenNegativeDepth) {
                 ASSERT_THROW(Pipelining<string>::create(0), exception::IllegalArgumentException);
@@ -97,11 +99,11 @@ namespace hazelcast {
             }
 
             TEST_F(PipeliningTest, testPipeliningFunctionalityDepthOne) {
-                testPipelining(Pipelining<int>::create(1));
+                testPipelining(Pipelining<Employee>::create(1));
             }
 
             TEST_F(PipeliningTest, testPipeliningFunctionalityDepth100) {
-                testPipelining(Pipelining<int>::create(100));
+                testPipelining(Pipelining<Employee>::create(12));
             }
         }
     }
