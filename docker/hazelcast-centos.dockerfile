@@ -1,5 +1,6 @@
 FROM centos:latest
 
+RUN echo ihsan
 RUN yum install -y epel-release
 
 RUN yum groups install -y "Development Tools"
