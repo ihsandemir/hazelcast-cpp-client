@@ -241,8 +241,7 @@ namespace hazelcast {
                 }
 
                 void SSLSocket::setSocketOptions() {
-                    asio::basic_socket<asio::ip::tcp, asio::stream_socket_service<asio::ip::tcp> > &lowestLayer =
-                            socket->lowest_layer();
+                    auto &lowestLayer = socket->lowest_layer();
 
                     lowestLayer.set_option(asio::ip::tcp::no_delay(socketOptions.isTcpNoDelay()));
 

@@ -5,6 +5,7 @@ RUN yum install -y epel-release
 RUN yum groups install -y "Development Tools"
 RUN yum install -y cmake
 RUN yum install -y maven
+RUN yum install -y python2
 
 RUN yum install -y wget
 
