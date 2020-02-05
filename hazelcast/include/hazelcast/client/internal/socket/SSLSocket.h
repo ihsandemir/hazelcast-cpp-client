@@ -148,7 +148,7 @@ namespace hazelcast {
                     asio::io_service ioService;
                     asio::ssl::context &sslContext;
                     std::unique_ptr<asio::ssl::stream<asio::ip::tcp::socket> > socket;
-                    asio::steady_timer deadline;
+                    asio::system_timer deadline;
                     asio::error_code errorCode;
                     int socketId;
                     const client::config::SocketOptions &socketOptions;

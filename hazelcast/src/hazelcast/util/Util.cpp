@@ -35,6 +35,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <iomanip>
+#include <sstream>
 
 #endif
 
@@ -105,12 +107,12 @@ namespace hazelcast {
 
         int64_t currentTimeMillis() {
             return std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count();
+                    std::chrono::system_clock::now().time_since_epoch()).count();
         }
 
         int64_t currentTimeNanos() {
             return std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count();
+                    std::chrono::system_clock::now().time_since_epoch()).count();
         }
 
         int strerror_s(int errnum, char *strerrbuf, size_t buflen, const char *msgPrefix) {
@@ -162,10 +164,17 @@ namespace hazelcast {
         }
 
         std::string StringUtil::timeToString(int64_t timeInMillis) {
-            auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-            std::string s(30, '\0');
-            std::strftime(&s[0], s.size(), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
-            return s;
+            using namespace std::chrono;
+
+            auto timePoint = system_clock::time_point() + milliseconds(timeInMillis);
+            auto brokenTime = system_clock::to_time_t(timePoint);
+            auto localBrokenTime = std::localtime(&brokenTime);
+
+            std::ostringstream oss;
+            oss << std::put_time(localBrokenTime, "%Y-%m-%d %H:%M:%S");
+            oss << '.' << std::setfill('0') << std::setw(3) << timeInMillis % 1000;
+
+            return oss.str();
         }
 
         std::string StringUtil::timeToStringFriendly(int64_t timeInMillis) {

@@ -65,7 +65,7 @@ namespace hazelcast {
                     // Check whether the deadline has passed. We compare the deadline against
                     // the current time since a new asynchronous operation may have moved the
                     // deadline before this actor had a chance to run.
-                    if (deadline.expires_at() <= std::chrono::steady_clock::now()) {
+                    if (deadline.expires_at() <= std::chrono::system_clock::now()) {
                         // The deadline has passed. The socket is closed so that any outstanding
                         // asynchronous operations are cancelled. This allows the blocked
                         // connect(), read_line() or write_line() functions to return.

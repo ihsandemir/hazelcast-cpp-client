@@ -44,10 +44,10 @@ namespace hazelcast {
                     }
 
                     void CallIdSequenceWithBackpressure::handleNoSpaceLeft() {
-                        auto start = std::chrono::steady_clock::now();
+                        auto start = std::chrono::system_clock::now();
                         for (int64_t idleCount = 0;; idleCount++) {
                             int64_t elapsedNanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                    std::chrono::steady_clock::now() - start).count();
+                                    std::chrono::system_clock::now() - start).count();
                             if (elapsedNanos > backoffTimeoutNanos) {
                                 throw (exception::ExceptionBuilder<exception::HazelcastOverloadException>(
                                         "CallIdSequenceWithBackpressure::handleNoSpaceLeft")
