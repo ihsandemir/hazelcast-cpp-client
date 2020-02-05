@@ -288,7 +288,7 @@ namespace hazelcast {
                 assertTrue(map.removeEntryListener(listenerRegistrationId));
             }
 
-            INSTANTIATE_TEST_CASE_P(All,
+            INSTANTIATE_TEST_SUITE_P(All,
                                     SimpleListenerTest,
                                     ::testing::Values(new SmartTcpClientConfig(), new NonSmartTcpClientConfig()));
         }

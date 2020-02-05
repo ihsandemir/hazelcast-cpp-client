@@ -549,7 +549,7 @@ namespace hazelcast {
                                                          expectedEvictions, 0);
             }
 
-            INSTANTIATE_TEST_CASE_P(ClientNearCacheTest, BasicClientNearCacheTest,
+            INSTANTIATE_TEST_SUITE_P(ClientNearCacheTest, BasicClientNearCacheTest,
                                     ::testing::Values(config::BINARY, config::OBJECT));
         }
     }

@@ -173,7 +173,7 @@ namespace hazelcast {
                     mixedtype::IMap *imap;
                 };
 
-                INSTANTIATE_TEST_CASE_P(MixedMapAPITestInstance,
+                INSTANTIATE_TEST_SUITE_P(MixedMapAPITestInstance,
                                         MixedMapAPITest,
                                         ::testing::Values(new MapClientConfig(), new NearCachedDataMapClientConfig()));
 

@@ -550,7 +550,7 @@ namespace hazelcast {
                                                          expectedEvictions, 0);
             }
 
-            INSTANTIATE_TEST_CASE_P(ReplicatedMapNearCacheTest, BasicClientReplicatedMapNearCacheTest,
+            INSTANTIATE_TEST_SUITE_P(ReplicatedMapNearCacheTest, BasicClientReplicatedMapNearCacheTest,
                                     ::testing::Values(config::BINARY, config::OBJECT));
         }
     }

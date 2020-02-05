@@ -506,7 +506,7 @@ namespace hazelcast {
             IMap<int, Employee> *ClientMapTest<CONFIGTYPE>::employees = NULL;
 
             typedef ::testing::Types<MapClientConfig, NearCachedDataMapClientConfig, NearCachedObjectMapClientConfig> ConfigTypes;
-            TYPED_TEST_CASE(ClientMapTest, ConfigTypes);
+            TYPED_TEST_SUITE(ClientMapTest, ConfigTypes);
 
             TYPED_TEST(ClientMapTest, testIssue537) {
                 util::CountDownLatch latch(2);

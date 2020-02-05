@@ -428,7 +428,7 @@ namespace hazelcast {
                         doEvictionWithEntryCountMaxSizePolicy(GetParam(), config::RANDOM);
                     }
 
-                    INSTANTIATE_TEST_CASE_P(BasicStoreTest, NearCacheRecordStoreTest,
+                    INSTANTIATE_TEST_SUITE_P(BasicStoreTest, NearCacheRecordStoreTest,
                                             ::testing::Values(config::BINARY, config::OBJECT));
 
                 }
