@@ -7,7 +7,7 @@ RUN yum install -y cmake
 
 # needed for test
 RUN yum install -y maven
-RUN yum install -y netstat
+RUN yum install -y net-tools
 RUN yum install -y python2
 RUN yum install -y thrift-devel
 
