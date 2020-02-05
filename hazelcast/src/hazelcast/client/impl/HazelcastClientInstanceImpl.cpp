@@ -362,6 +362,10 @@ namespace hazelcast {
             Client HazelcastClientInstanceImpl::getLocalEndpoint() const {
                 return clusterService.getLocalClient();
             }
+
+            const std::shared_ptr<util::ILogger> &HazelcastClientInstanceImpl::getLogger() const {
+                return logger;
+            }
         }
     }
 }

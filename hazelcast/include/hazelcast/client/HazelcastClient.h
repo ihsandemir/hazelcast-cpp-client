@@ -405,6 +405,8 @@ namespace hazelcast {
             */
             HazelcastClient(const ClientConfig &config);
 
+            virtual ~HazelcastClient();
+
             /**
              * Returns the name of this Hazelcast instance.
              *

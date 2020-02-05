@@ -467,7 +467,7 @@ namespace hazelcast {
             }
 
             std::shared_ptr<util::Future<bool> > ClientConnectionManagerImpl::connectToClusterAsync() {
-                std::shared_ptr<util::Callable<bool> > task(new ConnectToClusterTask(*this));
+                std::shared_ptr<util::Callable<bool> > task(new ConnectToClusterTask(client));
                 return clusterConnectionExecutor->submit<bool>(task);
             }
 
@@ -785,22 +785,23 @@ namespace hazelcast {
             }
 
             ClientConnectionManagerImpl::ConnectToClusterTask::ConnectToClusterTask(
-                    ClientConnectionManagerImpl &connectionManager)
-                    : connectionManager(connectionManager) {
+                    const spi::ClientContext &clientContext) : clientContext(clientContext) {
             }
 
             std::shared_ptr<bool> ClientConnectionManagerImpl::ConnectToClusterTask::call() {
+                ClientConnectionManagerImpl &connectionManager = clientContext.getConnectionManager();
                 try {
                     connectionManager.connectToClusterInternal();
                     return std::shared_ptr<bool>(new bool(true));
                 } catch (exception::IException &e) {
-                    connectionManager.logger.warning() << "Could not connect to cluster, shutting down the client. "
+                    connectionManager.getLogger().warning() << "Could not connect to cluster, shutting down the client. "
                                                        << e.getMessage();
 
-                    std::shared_ptr<ShutdownTask> task(new ShutdownTask(connectionManager.client));
-                    std::shared_ptr<util::Thread> shutdownThread(new util::Thread(task, connectionManager.getLogger()));
+                    std::shared_ptr<ShutdownTask> task(
+                            new ShutdownTask(clientContext.getHazelcastClientImplementation()));
+                    std::shared_ptr<util::Thread> shutdownThread(new util::Thread(task, clientContext.getLogger()));
                     shutdownThread->start();
-                    connectionManager.shutdownThreads.offer(shutdownThread);
+                    clientContext.getConnectionManager().shutdownThreads.offer(shutdownThread);
 
                     throw;
                 } catch (...) {
@@ -812,8 +813,8 @@ namespace hazelcast {
                 return "ClientConnectionManagerImpl::ConnectToClusterTask";
             }
 
-            ClientConnectionManagerImpl::ShutdownTask::ShutdownTask(spi::ClientContext &client) : clientImpl(
-                    client.getHazelcastClientImplementation()), logger(client.getLogger()) {
+            ClientConnectionManagerImpl::ShutdownTask::ShutdownTask(
+                    std::weak_ptr<client::impl::HazelcastClientInstanceImpl> &&client) : clientImpl(client) {
             }
 
             void ClientConnectionManagerImpl::ShutdownTask::run() {
@@ -825,7 +826,7 @@ namespace hazelcast {
                 try {
                     clientInstance->getLifecycleService().shutdown();
                 } catch (exception::IException &exception) {
-                    logger.severe() << "Exception during client shutdown task "
+                    clientInstance->getLogger()->severe() << "Exception during client shutdown task "
                         << clientInstance->getName() + ".clientShutdown-" << ":" << exception;
                 }
             }

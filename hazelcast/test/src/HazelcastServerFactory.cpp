@@ -50,9 +50,7 @@ namespace hazelcast {
             }
 
             HazelcastServerFactory::~HazelcastServerFactory() {
-                if (remoteController->shutdownCluster(clusterId)) {
-                    logger.severe() << "Failed to shutdown the cluster with id " << clusterId;
-                }
+                remoteController->shutdownCluster(clusterId);
             }
 
             Member HazelcastServerFactory::startServer() {

@@ -34,6 +34,7 @@
 #include "hazelcast/client/connection/InSelector.h"
 #include "hazelcast/client/connection/OutSelector.h"
 #include "hazelcast/client/protocol/Principal.h"
+#include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/internal/socket/SocketFactory.h"
 #include "hazelcast/util/Sync.h"
 #include "hazelcast/util/Thread.h"
@@ -57,8 +58,6 @@ namespace hazelcast {
         class SocketInterceptor;
 
         namespace spi {
-            class ClientContext;
-
             namespace impl {
                 class ClientExecutionServiceImpl;
 
@@ -261,19 +260,19 @@ namespace hazelcast {
 
                 class ConnectToClusterTask : public util::Callable<bool> {
                 public:
-                    ConnectToClusterTask(ClientConnectionManagerImpl &connectionManager);
+                    ConnectToClusterTask(const spi::ClientContext &clientContext);
 
                     virtual std::shared_ptr<bool> call();
 
                     virtual const std::string getName() const;
 
                 private:
-                    ClientConnectionManagerImpl &connectionManager;
+                    spi::ClientContext clientContext;
                 };
 
                 class ShutdownTask : public util::Runnable {
                 public:
-                    ShutdownTask(spi::ClientContext &clientContext);
+                    ShutdownTask(std::weak_ptr<client::impl::HazelcastClientInstanceImpl> &&client);
 
                     virtual void run();
 
@@ -282,7 +281,6 @@ namespace hazelcast {
                 private:
                     // Keep weak_ptr for preventing cyclic dependency
                     std::weak_ptr<client::impl::HazelcastClientInstanceImpl> clientImpl;
-                    util::ILogger &logger;
                 };
 
                 class TimeoutAuthenticationTask : public util::Runnable {

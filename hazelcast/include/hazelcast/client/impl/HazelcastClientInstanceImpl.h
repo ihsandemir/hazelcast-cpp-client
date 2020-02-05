@@ -435,6 +435,8 @@ namespace hazelcast {
 
                 spi::ProxyManager &getProxyManager();
 
+                const std::shared_ptr <util::ILogger> &getLogger() const;
+
             private:
                 ClientConfig clientConfig;
                 ClientProperties clientProperties;

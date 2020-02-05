@@ -115,6 +115,10 @@ namespace hazelcast {
         Client HazelcastClient::getLocalEndpoint() const {
             return clientImpl->getLocalEndpoint();
         }
+
+        HazelcastClient::~HazelcastClient() {
+            clientImpl->shutdown();
+        }
     }
 }
 
