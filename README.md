@@ -3345,6 +3345,7 @@ You can use the following channels for your questions and development/usage issu
 
 * This repository by opening an issue.
 * Hazelcast Hazelcast channel on Gitter: 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/16d458569e404dfd9696e1e5b4f7d2e0)](https://app.codacy.com/manual/ihsandemir/hazelcast-cpp-client?utm_source=github.com&utm_medium=referral&utm_content=ihsandemir/hazelcast-cpp-client&utm_campaign=Badge_Grade_Dashboard)
 [![Join the chat at https://gitter.im/hazelcast/hazelcast](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/hazelcast/hazelcast?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 * Our Google Groups directory: https://groups.google.com/forum/#!forum/hazelcast
 * Stack Overflow: https://stackoverflow.com/questions/tagged/hazelcast
