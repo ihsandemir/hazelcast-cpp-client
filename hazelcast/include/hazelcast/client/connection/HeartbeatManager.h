@@ -17,10 +17,7 @@
 #ifndef HAZELCAST_CLIENT_CONNECTION_HEARBEATMANAGER_H_
 #define HAZELCAST_CLIENT_CONNECTION_HEARBEATMANAGER_H_
 
-#include "hazelcast/util/Thread.h"
-
-#include "hazelcast/client/ExecutionCallback.h"
-#include "hazelcast/util/Executor.h"
+#include <chrono>
 
 namespace hazelcast {
     namespace util {
@@ -30,9 +27,6 @@ namespace hazelcast {
     namespace client {
         namespace spi {
             class ClientContext;
-            namespace impl {
-                class ConnectionHeartbeatListener;
-            }
         }
         namespace connection {
             class ClientConnectionManagerImpl;
@@ -58,12 +52,12 @@ namespace hazelcast {
                 spi::ClientContext &client;
                 ClientConnectionManagerImpl &clientConnectionManager;
                 util::ILogger &logger;
-                int64_t heartbeatInterval;
-                int64_t heartbeatTimeout;
+                std::chrono::seconds heartbeatIntervalSeconds;
+                std::chrono::seconds heartbeatTimeoutSeconds;
 
-                void checkConnection(int64_t now, std::shared_ptr<Connection> &connection);
+                void checkConnection(const std::shared_ptr<Connection> &connection);
 
-                void onHeartbeatStopped(std::shared_ptr<Connection> &connection, const std::string &reason);
+                void onHeartbeatStopped(const std::shared_ptr<Connection> &connection, const std::string &reason);
             };
         }
     }

@@ -84,21 +84,6 @@ namespace hazelcast {
                         void handleClientMessage(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
                     };
 
-                    class CleanResourcesTask : public util::Runnable {
-                    public:
-                        CleanResourcesTask(util::SynchronizedMap<int64_t, ClientInvocation> &invocations);
-
-                        void run();
-
-                        virtual const std::string getName() const;
-
-                    private:
-                        void notifyException(ClientInvocation &invocation,
-                                             std::shared_ptr<connection::Connection> &connection);
-
-                        util::SynchronizedMap<int64_t, ClientInvocation> &invocations;
-                    };
-
                     const ClientProperty &CLEAN_RESOURCES_MILLIS;
                     ClientContext &client;
                     util::ILogger &invocationLogger;

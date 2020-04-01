@@ -54,7 +54,6 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/util/Thread.h"
-#include "hazelcast/util/Executor.h"
 #include "hazelcast/client/SocketInterceptor.h"
 #include "hazelcast/client/connection/AuthenticationFuture.h"
 #include "hazelcast/client/config/ClientNetworkConfig.h"
@@ -877,8 +876,8 @@ namespace hazelcast {
             }
 
             ReadHandler::ReadHandler(Connection &connection, size_t bufferSize)
-                    : buffer(new char[bufferSize]), byteBuffer(buffer, bufferSize), builder(connection) {
-                lastReadTimeMillis = util::currentTimeMillis();
+                    : buffer(new char[bufferSize]), byteBuffer(buffer, bufferSize), builder(connection),
+                      lastReadTime(std::chrono::steady_clock::now()) {
             }
 
             ReadHandler::~ReadHandler() {
@@ -886,7 +885,7 @@ namespace hazelcast {
             }
 
             void ReadHandler::handle() {
-                lastReadTimeMillis = util::currentTimeMillis();
+                lastReadTime = std::chrono::steady_clock::now();
 
                 if (byteBuffer.position() == 0)
                     return;
@@ -905,8 +904,8 @@ namespace hazelcast {
                 }
             }
 
-            int64_t ReadHandler::getLastReadTimeMillis() {
-                return lastReadTimeMillis;
+            const std::chrono::steady_clock::time_point ReadHandler::getLastReadTime() const {
+                return lastReadTime;
             }
 
             Connection::Connection(const Address &address, spi::ClientContext &clientContext, int connectionId,
@@ -1068,8 +1067,8 @@ namespace hazelcast {
                 return socket->localSocketAddress();
             }
 
-            int64_t Connection::lastReadTimeMillis() {
-                return readHandler.getLastReadTimeMillis();
+            auto Connection::lastReadTime() {
+                return readHandler.getLastReadTime();
             }
 
             void Connection::innerClose() {
@@ -1082,7 +1081,7 @@ namespace hazelcast {
 
             std::ostream &operator<<(std::ostream &os, const Connection &connection) {
                 Connection &conn = const_cast<Connection &>(connection);
-                int64_t lastRead = conn.lastReadTimeMillis();
+                int64_t lastRead = conn.lastReadTime();
                 int64_t closedTime = conn.closedTimeMillis;
                 os << "ClientConnection{"
                    << "alive=" << conn.isAlive()
@@ -1126,50 +1125,44 @@ namespace hazelcast {
                     client.getConnectionManager()), logger(client.getLogger()) {
                 ClientProperties &clientProperties = client.getClientProperties();
                 int timeoutSeconds = clientProperties.getInteger(clientProperties.getHeartbeatTimeout());
-                heartbeatTimeout = timeoutSeconds > 0 ? timeoutSeconds * 1000 : util::IOUtil::to_value<int>(
-                        (std::string) ClientProperties::PROP_HEARTBEAT_TIMEOUT_DEFAULT) * 1000;
+                heartbeatTimeoutSeconds = std::chrono::seconds(
+                        timeoutSeconds > 0 ? timeoutSeconds : util::IOUtil::to_value<int>(
+                                (std::string) ClientProperties::PROP_HEARTBEAT_TIMEOUT_DEFAULT));
 
                 int intervalSeconds = clientProperties.getInteger(clientProperties.getHeartbeatInterval());
-                heartbeatInterval = intervalSeconds > 0 ? intervalSeconds * 1000 : util::IOUtil::to_value<int>(
-                        (std::string) ClientProperties::PROP_HEARTBEAT_INTERVAL_DEFAULT) * 1000;
+                heartbeatIntervalSeconds = std::chrono::seconds(
+                        intervalSeconds > 0 ? intervalSeconds : util::IOUtil::to_value<int>(
+                                (std::string) ClientProperties::PROP_HEARTBEAT_INTERVAL_DEFAULT));
             }
 
             void HeartbeatManager::start() {
                 spi::impl::ClientExecutionServiceImpl &clientExecutionService = client.getClientExecutionService();
 
-                clientExecutionService.scheduleWithRepetition(
-                        std::shared_ptr<util::Runnable>(new util::RunnableDelegator(*this)), heartbeatInterval,
-                        heartbeatInterval);
+                clientExecutionService.scheduleWithRepetition([=]() {
+                    if (!clientConnectionManager.isAlive()) {
+                        return;
+                    }
+
+                    for (std::shared_ptr<Connection> connection : clientConnectionManager.getActiveConnections()) {
+                        checkConnection(connection);
+                    }
+                }, heartbeatIntervalSeconds, heartbeatIntervalSeconds);
             }
 
-            void HeartbeatManager::run() {
-                if (!clientConnectionManager.isAlive()) {
-                    return;
-                }
-
-                int64_t now = util::currentTimeMillis();
-                for (std::shared_ptr<Connection> connection : clientConnectionManager.getActiveConnections()) {
-                    checkConnection(now, connection);
-                }
-            }
-
-            const std::string HeartbeatManager::getName() const {
-                return "HeartbeatManager";
-            }
-
-            void HeartbeatManager::checkConnection(int64_t now, std::shared_ptr<Connection> &connection) {
+            void HeartbeatManager::checkConnection(const std::shared_ptr<Connection> &connection) {
                 if (!connection->isAlive()) {
                     return;
                 }
 
-                if (now - connection->lastReadTimeMillis() > heartbeatTimeout) {
+                auto now = std::chrono::steady_clock::now();
+                if (now - connection->lastReadTime() > heartbeatTimeoutSeconds) {
                     if (connection->isAlive()) {
                         logger.warning("Heartbeat failed over the connection: ", *connection);
                         onHeartbeatStopped(connection, "Heartbeat timed out");
                     }
                 }
 
-                if (now - connection->lastReadTimeMillis() > heartbeatInterval) {
+                if (now - connection->lastReadTime() > heartbeatIntervalSeconds) {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ClientPingCodec::encodeRequest();
                     std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                             client, request, "", connection);
@@ -1178,7 +1171,8 @@ namespace hazelcast {
             }
 
             void
-            HeartbeatManager::onHeartbeatStopped(std::shared_ptr<Connection> &connection, const std::string &reason) {
+            HeartbeatManager::onHeartbeatStopped(const std::shared_ptr<Connection> &connection,
+                                                 const std::string &reason) {
                 connection->close(reason.c_str(), (exception::ExceptionBuilder<exception::TargetDisconnectedException>(
                         "HeartbeatManager::onHeartbeatStopped") << "Heartbeat timed out to connection "
                                                                 << *connection).buildShared());

@@ -22,15 +22,6 @@
 #include <string>
 #include <atomic>
 
-#include "hazelcast/util/Thread.h"
-#include "hazelcast/util/BlockingConcurrentQueue.h"
-#include "hazelcast/util/Future.h"
-#include "hazelcast/util/Executor.h"
-#include "hazelcast/util/Callable.h"
-#include "hazelcast/util/AtomicBoolean.h"
-#include "hazelcast/util/SynchronizedQueue.h"
-#include "hazelcast/util/SynchronizedQueue.h"
-
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
 #pragma warning(disable: 4251) //for dll export

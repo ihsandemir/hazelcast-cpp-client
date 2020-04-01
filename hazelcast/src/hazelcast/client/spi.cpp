@@ -601,8 +601,33 @@ namespace hazelcast {
                                 CLEAN_RESOURCES_MILLIS.getDefaultValue());
                     }
 
-                    client.getClientExecutionService().scheduleWithRepetition(std::shared_ptr<util::Runnable>(
-                            new CleanResourcesTask(invocations)), cleanResourcesMillis, cleanResourcesMillis);
+                    auto duration = std::chrono::milliseconds(cleanResourcesMillis);
+                    client.getClientExecutionService().scheduleWithRepetition([&]() {
+                        std::vector<int64_t> invocationsToBeRemoved;
+                        for (auto &entry : this->invocations.entrySet()) {
+                            int64_t key = entry.first;
+                            const std::shared_ptr<ClientInvocation> &invocation = entry.second;
+                            std::shared_ptr<connection::Connection> connection = invocation->getSendConnection();
+                            if (!connection.get()) {
+                                continue;
+                            }
+
+                            if (connection->isAlive()) {
+                                continue;
+                            }
+
+                            invocationsToBeRemoved.push_back(key);
+
+                            std::shared_ptr<exception::IException> ex(
+                                    new exception::TargetDisconnectedException("CleanResourcesTask",
+                                                                               connection->getCloseReason()));
+                            invocation->notifyException(ex);
+                        }
+
+                        for (int64_t invocationId : invocationsToBeRemoved) {
+                            invocations.remove(invocationId);
+                        }
+                    }, duration, duration);
 
                     return true;
                 }
@@ -693,46 +718,6 @@ namespace hazelcast {
                                                                         const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
                     clientMessage->addFlag(protocol::ClientMessage::BEGIN_AND_END_FLAGS);
                     return connection.write(clientMessage);
-                }
-
-                void AbstractClientInvocationService::CleanResourcesTask::run() {
-                    std::vector<int64_t> invocationsToBeRemoved;
-                    typedef std::vector<std::pair<int64_t, std::shared_ptr<ClientInvocation> > > INVOCATION_ENTRIES;
-                    for (const INVOCATION_ENTRIES::value_type &entry : invocations.entrySet()) {
-                        int64_t key = entry.first;
-                        const std::shared_ptr<ClientInvocation> &invocation = entry.second;
-                        std::shared_ptr<connection::Connection> connection = invocation->getSendConnection();
-                        if (!connection.get()) {
-                            continue;
-                        }
-
-                        if (connection->isAlive()) {
-                            continue;
-                        }
-
-                        invocationsToBeRemoved.push_back(key);
-
-                        notifyException(*invocation, connection);
-                    }
-
-                    for (int64_t invocationId : invocationsToBeRemoved) {
-                        invocations.remove(invocationId);
-                    }
-                }
-
-                void AbstractClientInvocationService::CleanResourcesTask::notifyException(ClientInvocation &invocation,
-                                                                                          std::shared_ptr<connection::Connection> &connection) {
-                    std::shared_ptr<exception::IException> ex(
-                            new exception::TargetDisconnectedException("CleanResourcesTask::notifyException",
-                                                                       connection->getCloseReason()));
-                    invocation.notifyException(ex);
-                }
-
-                AbstractClientInvocationService::CleanResourcesTask::CleanResourcesTask(
-                        util::SynchronizedMap<int64_t, ClientInvocation> &invocations) : invocations(invocations) {}
-
-                const std::string AbstractClientInvocationService::CleanResourcesTask::getName() const {
-                    return "AbstractClientInvocationService::CleanResourcesTask";
                 }
 
                 AbstractClientInvocationService::~AbstractClientInvocationService() {
@@ -1297,8 +1282,6 @@ namespace hazelcast {
                     }
                 }
 
-                const int ClientExecutionServiceImpl::SHUTDOWN_CHECK_INTERVAL_SECONDS = 30;
-
                 ClientExecutionServiceImpl::ClientExecutionServiceImpl(const std::string &name,
                                                                        const ClientProperties &clientProperties,
                                                                        int32_t poolSize, util::ILogger &logger)
@@ -1318,13 +1301,9 @@ namespace hazelcast {
                         executorPoolSize = 4; // hard coded thread pool count in case we could not get the processor count
                     }
 
-                    internalExecutor.reset(
-                            new util::impl::SimpleExecutorService(logger, name + ".internal-", internalPoolSize,
-                                                                  INT32_MAX));
+                    internalExecutor.reset(new boost::asio::thread_pool(internalPoolSize));
 
-                    userExecutor.reset(
-                            new util::impl::SimpleExecutorService(logger, name + ".user-", executorPoolSize,
-                                                                  INT32_MAX));
+                    userExecutor.reset(new boost::asio::thread_pool(executorPoolSize));
                 }
 
                 void ClientExecutionServiceImpl::execute(const std::shared_ptr<util::Runnable> &command) {
@@ -1332,52 +1311,11 @@ namespace hazelcast {
                 }
 
                 void ClientExecutionServiceImpl::start() {
-                    userExecutor->start();
-                    internalExecutor->start();
                 }
 
                 void ClientExecutionServiceImpl::shutdown() {
-                    shutdownExecutor("user", *userExecutor, logger);
-                    shutdownExecutor("internal", *internalExecutor, logger);
-                }
-
-                void
-                ClientExecutionServiceImpl::shutdownExecutor(const std::string &name, util::ExecutorService &executor,
-                                                             util::ILogger &logger) {
-                    try {
-                        int64_t startTimeMilliseconds = util::currentTimeMillis();
-                        bool success = false;
-                        // Wait indefinitely until the threads gracefully shutdown an log the problem periodically.
-                        while (!success) {
-                            int64_t waitTimeMillis = 100;
-                            auto intervalStartTimeMillis = util::currentTimeMillis();
-                            while (!success && util::currentTimeMillis() - intervalStartTimeMillis <
-                                               1000 * SHUTDOWN_CHECK_INTERVAL_SECONDS) {
-                                executor.shutdown();
-                                auto &executorService = static_cast<util::impl::SimpleExecutorService &>(executor);
-                                success = executorService.awaitTerminationMilliseconds(waitTimeMillis);
-                            }
-
-                            if (!success) {
-                                logger.warning(name, " executor awaitTermination could not be completed in ",
-                                               (util::currentTimeMillis() - startTimeMilliseconds), " msecs.");
-                            }
-                        }
-                    } catch (exception::InterruptedException &e) {
-                        logger.warning(name, " executor await termination is interrupted. ", e);
-                    }
-                }
-
-                void
-                ClientExecutionServiceImpl::scheduleWithRepetition(const std::shared_ptr<util::Runnable> &command,
-                                                                   int64_t initialDelayInMillis,
-                                                                   int64_t periodInMillis) {
-                    internalExecutor->scheduleAtFixedRate(command, initialDelayInMillis, periodInMillis);
-                }
-
-                void ClientExecutionServiceImpl::schedule(const std::shared_ptr<util::Runnable> &command,
-                                                          int64_t initialDelayInMillis) {
-                    internalExecutor->schedule(command, initialDelayInMillis);
+                    userExecutor->stop();
+                    internalExecutor->stop();
                 }
 
                 const std::shared_ptr<util::ExecutorService> ClientExecutionServiceImpl::getUserExecutor() const {
@@ -1728,14 +1666,18 @@ namespace hazelcast {
                 }
 
                 void ClientInvocation::execute() {
+                    auto this_invocation = shared_from_this();
+                    auto command = [=]() {
+                        this_invocation->run();
+                    };
                     if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                         // fast retry for the first few invocations
-                        executionService->execute(std::shared_ptr<util::Runnable>(shared_from_this()));
+                        executionService->execute(command);
                     } else {
                         // progressive retry delay
                         int64_t delayMillis = util::min<int64_t>(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT),
                                                                  retryPauseMillis);
-                        executionService->schedule(shared_from_this(), delayMillis);
+                        executionService->schedule(command, std::chrono::milliseconds(delayMillis));
                     }
                 }
 
@@ -2002,33 +1944,10 @@ namespace hazelcast {
                 }
 
 
-                ClientPartitionServiceImpl::RefreshTaskCallback::RefreshTaskCallback(
-                        ClientPartitionServiceImpl &partitionService) : partitionService(partitionService) {}
-
-                void ClientPartitionServiceImpl::RefreshTaskCallback::onResponse(
-                        const std::shared_ptr<protocol::ClientMessage> &responseMessage) {
-                    if (!responseMessage.get()) {
-                        return;
-                    }
-                    protocol::codec::ClientGetPartitionsCodec::ResponseParameters response =
-                            protocol::codec::ClientGetPartitionsCodec::ResponseParameters::decode(*responseMessage);
-                    partitionService.processPartitionResponse(response.partitions, response.partitionStateVersion,
-                                                              response.partitionStateVersionExist);
-                }
-
-                void ClientPartitionServiceImpl::RefreshTaskCallback::onFailure(
-                        const std::shared_ptr<exception::IException> &t) {
-                    if (partitionService.client.getLifecycleService().isRunning()) {
-                        partitionService.logger.warning("Error while fetching cluster partition table! Cause:", *t);
-                    }
-                }
-
                 ClientPartitionServiceImpl::ClientPartitionServiceImpl(ClientContext &client,
                                                                        hazelcast::client::spi::impl::ClientExecutionServiceImpl &executionService)
-                        : client(client), logger(client.getLogger()),
-                          clientExecutionService(executionService),
-                          refreshTaskCallback(new RefreshTaskCallback(*this)), partitionCount(0),
-                          lastPartitionStateVersion(0) {
+                        : client(client), logger(client.getLogger()), clientExecutionService(executionService),
+                          partitionCount(0), lastPartitionStateVersion(0) {
                 }
 
                 bool ClientPartitionServiceImpl::processPartitionResponse(
@@ -2059,9 +1978,6 @@ namespace hazelcast {
                 }
 
                 void ClientPartitionServiceImpl::start() {
-                    //scheduling left in place to support server versions before 3.9.
-                    clientExecutionService.scheduleWithRepetition(
-                            std::shared_ptr<util::Runnable>(new RefreshTask(client, *this)), INITIAL_DELAY, PERIOD);
                 }
 
                 void ClientPartitionServiceImpl::listenPartitionTable(
@@ -2077,16 +1993,6 @@ namespace hazelcast {
                                                                                                 "", ownerConnection);
                         invocation->setEventHandler(shared_from_this());
                         invocation->invokeUrgent()->get();
-                    }
-                }
-
-                void ClientPartitionServiceImpl::refreshPartitions() {
-                    try {
-                        // use internal execution service for all partition refresh process (do not use the user executor thread)
-                        clientExecutionService.execute(
-                                std::shared_ptr<util::Runnable>(new RefreshTask(client, *this)));
-                    } catch (exception::RejectedExecutionException &) {
-                        // ignore
                     }
                 }
 

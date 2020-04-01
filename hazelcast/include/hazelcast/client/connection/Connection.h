@@ -101,7 +101,7 @@ namespace hazelcast {
 
                 bool isAlive();
 
-                int64_t lastReadTimeMillis();
+                auto lastReadTime();
 
                 const std::string &getCloseReason() const;
 

@@ -22,7 +22,6 @@
 #include "hazelcast/util/SynchronizedQueue.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/client/config/ClientConnectionStrategyConfig.h"
-#include "hazelcast/util/Executor.h"
 #include "hazelcast/client/connection/ClientConnectionStrategy.h"
 
 namespace hazelcast {

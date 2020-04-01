@@ -51,8 +51,6 @@ namespace hazelcast {
         namespace spi {
             class LifecycleService;
 
-            class ClientClusterService;
-
             class ClientInvocationService;
 
             class ClientContext;
@@ -60,6 +58,8 @@ namespace hazelcast {
             class ClientExecutionService;
 
             namespace impl {
+                class ClientClusterServiceImpl;
+
                 namespace sequence {
                     class CallIdSequence;
                 }
@@ -170,7 +170,7 @@ namespace hazelcast {
                     LifecycleService &lifecycleService;
                     ClientClusterService &clientClusterService;
                     ClientInvocationService &invocationService;
-                    std::shared_ptr<ClientExecutionService> executionService;
+                    std::shared_ptr<ClientExecutionServiceImpl> executionService;
                     util::Sync<std::shared_ptr<protocol::ClientMessage> > clientMessage;
                     std::shared_ptr<sequence::CallIdSequence> callIdSequence;
                     std::shared_ptr<Address> address;

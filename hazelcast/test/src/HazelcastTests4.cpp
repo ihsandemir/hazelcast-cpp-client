@@ -46,7 +46,6 @@
 #include <hazelcast/util/IOUtil.h>
 #include <hazelcast/util/CountDownLatch.h>
 #include <ClientTestSupportBase.h>
-#include <hazelcast/util/Executor.h>
 #include <hazelcast/util/Util.h>
 #include <hazelcast/util/impl/SimpleExecutorService.h>
 #include <TestHelperFunctions.h>
