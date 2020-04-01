@@ -586,7 +586,7 @@ namespace hazelcast {
                                   client.getClientProperties().getInvocationTimeoutSeconds()) * 1000),
                           invocationRetryPauseMillis(client.getClientProperties().getLong(
                                   client.getClientProperties().getInvocationRetryPauseMillis())),
-                          responseThread(client.getName() + ".response-", invocationLogger, *this, client) {
+                          responseThread(invocationLogger, *this, client) {
                 }
 
                 bool AbstractClientInvocationService::start() {
@@ -638,7 +638,7 @@ namespace hazelcast {
                 void AbstractClientInvocationService::handleClientMessage(
                         const std::shared_ptr<connection::Connection> &connection,
                         const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
-                    responseThread.responseQueue.push(clientMessage);
+                    responseThread.process(clientMessage);
                 }
 
                 std::shared_ptr<ClientInvocation> AbstractClientInvocationService::deRegisterCallId(int64_t callId) {
@@ -738,47 +738,23 @@ namespace hazelcast {
                 AbstractClientInvocationService::~AbstractClientInvocationService() {
                 }
 
-                AbstractClientInvocationService::ResponseThread::ResponseThread(const std::string &name,
-                                                                                util::ILogger &invocationLogger,
-                                                                                AbstractClientInvocationService &invocationService,
-                                                                                ClientContext &clientContext)
-                        : responseQueue(100000), invocationLogger(invocationLogger),
-                          invocationService(invocationService), client(clientContext),
-                          worker(std::shared_ptr<util::Runnable>(new util::RunnableDelegator(*this)),
-                                 invocationLogger) {
+                AbstractClientInvocationService::ResponseProcessor::ResponseProcessor(util::ILogger &invocationLogger,
+                                                                                      AbstractClientInvocationService &invocationService,
+                                                                                      ClientContext &clientContext)
+                        : invocationLogger(invocationLogger), invocationService(invocationService), client(clientContext) {
                 }
 
-                void AbstractClientInvocationService::ResponseThread::run() {
-                    try {
-                        doRun();
-                    } catch (exception::IException &t) {
-                        invocationLogger.severe(t);
-                    }
-                }
-
-                void AbstractClientInvocationService::ResponseThread::doRun() {
-                    while (!invocationService.isShutdown) {
-                        std::shared_ptr<protocol::ClientMessage> task;
-                        try {
-                            task = responseQueue.pop();
-                        } catch (exception::InterruptedException &) {
-                            continue;
-                        }
-                        process(task);
-                    }
-                }
-
-                void AbstractClientInvocationService::ResponseThread::process(
+                void AbstractClientInvocationService::ResponseProcessor::processInternal(
                         const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
                     try {
                         handleClientMessage(clientMessage);
                     } catch (exception::IException &e) {
-                        invocationLogger.severe("Failed to process task: ", clientMessage, " on responseThread: ",
-                                                getName(), e);
+                        invocationLogger.severe("Failed to process response message: ", clientMessage,
+                                                " on responseThread: ", e);
                     }
                 }
 
-                void AbstractClientInvocationService::ResponseThread::handleClientMessage(
+                void AbstractClientInvocationService::ResponseProcessor::handleClientMessage(
                         const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
                     int64_t correlationId = clientMessage->getCorrelationId();
 
@@ -798,23 +774,32 @@ namespace hazelcast {
                     }
                 }
 
-                void AbstractClientInvocationService::ResponseThread::shutdown() {
-                    do {
-                        responseQueue.interrupt();
-                    } while (!worker.waitMilliseconds(100));
-
-                    worker.join();
+                void AbstractClientInvocationService::ResponseProcessor::shutdown() {
+                    if (pool) {
+                        pool->stop();
+                    }
                 }
 
-                void AbstractClientInvocationService::ResponseThread::start() {
-                    worker.start();
+                void AbstractClientInvocationService::ResponseProcessor::start() {
+                    ClientProperties &clientProperties = client.getClientProperties();
+                    auto threadCount = clientProperties.getInteger(clientProperties.getResponseExecutorThreadCount());
+                    if (threadCount > 0) {
+                        pool = std::make_unique<boost::asio::thread_pool>(threadCount);
+                    }
                 }
 
-                const std::string AbstractClientInvocationService::ResponseThread::getName() const {
-                    return "AbstractClientInvocationService::ResponseThread";
+                AbstractClientInvocationService::ResponseProcessor::~ResponseProcessor() {
+                    shutdown();
                 }
 
-                AbstractClientInvocationService::ResponseThread::~ResponseThread() {
+                void AbstractClientInvocationService::ResponseProcessor::process(
+                        const std::shared_ptr<protocol::ClientMessage> &message) {
+                    if (!pool) {
+                        processInternal(message);
+                        return;
+                    }
+
+                    boost::asio::post(*pool, [=] { processInternal(message); });
                 }
 
                 NonSmartClientInvocationService::NonSmartClientInvocationService(ClientContext &client)
@@ -2373,18 +2358,19 @@ namespace hazelcast {
 
                 namespace listener {
                     AbstractClientListenerService::AbstractClientListenerService(ClientContext &clientContext,
-                                                                                 int32_t eventThreadCount,
-                                                                                 int32_t eventQueueCapacity)
+                                                                                 int32_t eventThreadCount)
                             : clientContext(clientContext),
                               serializationService(clientContext.getSerializationService()),
                               logger(clientContext.getLogger()),
                               clientConnectionManager(clientContext.getConnectionManager()),
-                              eventExecutor(logger, clientContext.getName() + ".event-", eventThreadCount,
-                                            eventQueueCapacity),
+                              eventExecutor(eventThreadCount),
                               registrationExecutor(logger, clientContext.getName() + ".eventRegistration-", 1) {
                         AbstractClientInvocationService &invocationService = (AbstractClientInvocationService &) clientContext.getInvocationService();
                         invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
                         invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
+                        for (int i = 0; i < eventThreadCount; ++i) {
+                            eventStrands.emplace_back(eventExecutor.get_executor());
+                        }
                     }
 
                     AbstractClientListenerService::~AbstractClientListenerService() {
@@ -2463,57 +2449,31 @@ namespace hazelcast {
                             const std::shared_ptr<protocol::ClientMessage> &clientMessage,
                             const std::shared_ptr<connection::Connection> &connection) {
                         try {
-                            eventExecutor.execute(
-                                    std::shared_ptr<util::StripedRunnable>(
-                                            new ClientEventProcessor(clientMessage, connection, eventHandlerMap,
-                                                                     logger)));
-                        } catch (exception::RejectedExecutionException &e) {
-                            logger.warning("Event clientMessage could not be handled. ", e);
+                            auto partitionId = clientMessage->getPartitionId();
+                            if (partitionId == -1) {
+                                // execute on random thread on the thread pool
+                                boost::asio::post(eventExecutor, [=] () { processEventMessage(clientMessage);});
+                                return;
+                            }
+
+                            // process on certain thread which is same for the partition id
+                            boost::asio::post(eventStrands[partitionId % eventStrands.size()],
+                                              [=]() { processEventMessage(clientMessage); });
+
+                        } catch (const std::exception &e) {
+                            logger.warning("Event clientMessage could not be handled. ", e.what());
                         }
                     }
 
                     void AbstractClientListenerService::shutdown() {
-                        clientContext.getClientExecutionService().shutdownExecutor(eventExecutor.getThreadNamePrefix(),
-                                                                                   eventExecutor, logger);
+                        eventExecutor.stop();
                         clientContext.getClientExecutionService().shutdownExecutor(
                                 registrationExecutor.getThreadNamePrefix(), registrationExecutor, logger);
                     }
 
                     void AbstractClientListenerService::start() {
                         registrationExecutor.start();
-                        eventExecutor.start();
                         clientConnectionManager.addConnectionListener(shared_from_this());
-                    }
-
-                    void AbstractClientListenerService::ClientEventProcessor::run() {
-                        int64_t correlationId = clientMessage->getCorrelationId();
-                        std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler = eventHandlerMap.get(
-                                correlationId);
-                        if (eventHandler.get() == NULL) {
-                            logger.warning("No eventHandler for callId: ", correlationId, ", event: ", *clientMessage);
-                            return;
-                        }
-
-                        eventHandler->handle(clientMessage);
-                    }
-
-                    const std::string AbstractClientListenerService::ClientEventProcessor::getName() const {
-                        return "AbstractClientListenerService::ClientEventProcessor";
-                    }
-
-                    int32_t AbstractClientListenerService::ClientEventProcessor::getKey() {
-                        return clientMessage->getPartitionId();
-                    }
-
-                    AbstractClientListenerService::ClientEventProcessor::ClientEventProcessor(
-                            const std::shared_ptr<protocol::ClientMessage> &clientMessage,
-                            const std::shared_ptr<connection::Connection> &connection,
-                            util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > &eventHandlerMap,
-                            util::ILogger &logger)
-                            : clientMessage(clientMessage), eventHandlerMap(eventHandlerMap), logger(logger) {
-                    }
-
-                    AbstractClientListenerService::ClientEventProcessor::~ClientEventProcessor() {
                     }
 
                     AbstractClientListenerService::RegisterListenerTask::RegisterListenerTask(
@@ -2730,6 +2690,19 @@ namespace hazelcast {
                         (*registrationMap)[connection] = registration;
                     }
 
+                    void AbstractClientListenerService::processEventMessage(
+                            const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
+                        int64_t correlationId = clientMessage->getCorrelationId();
+                        std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler = eventHandlerMap.get(
+                                correlationId);
+                        if (eventHandler.get() == NULL) {
+                            logger.warning("No eventHandler for callId: ", correlationId, ", event: ", *clientMessage);
+                            return;
+                        }
+
+                        eventHandler->handle(clientMessage);
+                    }
+
                     bool AbstractClientListenerService::ConnectionPointerLessComparator::operator()(
                             const std::shared_ptr<connection::Connection> &lhs,
                             const std::shared_ptr<connection::Connection> &rhs) const {
@@ -2785,9 +2758,8 @@ namespace hazelcast {
                     ClientEventRegistration::ClientEventRegistration() {}
 
                     SmartClientListenerService::SmartClientListenerService(ClientContext &clientContext,
-                                                                           int32_t eventThreadCount,
-                                                                           int32_t eventQueueCapacity)
-                            : AbstractClientListenerService(clientContext, eventThreadCount, eventQueueCapacity) {
+                                                                           int32_t eventThreadCount)
+                            : AbstractClientListenerService(clientContext, eventThreadCount) {
                     }
 
 
@@ -2952,10 +2924,8 @@ namespace hazelcast {
                     ClientRegistrationKey::ClientRegistrationKey() {}
 
                     NonSmartClientListenerService::NonSmartClientListenerService(ClientContext &clientContext,
-                                                                                 int32_t eventThreadCount,
-                                                                                 int32_t eventQueueCapacity)
-                            : AbstractClientListenerService(clientContext, eventThreadCount, eventQueueCapacity) {
-
+                                                                                 int32_t eventThreadCount)
+                            : AbstractClientListenerService(clientContext, eventThreadCount) {
                     }
 
                     bool NonSmartClientListenerService::registersLocalOnly() const {

@@ -17,6 +17,9 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_LISTENER_ABSTRACTCLIENTLISTERNERSERVICE_H_
 #define HAZELCAST_CLIENT_SPI_IMPL_LISTENER_ABSTRACTCLIENTLISTERNERSERVICE_H_
 
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/strand.hpp>
+
 #include <stdint.h>
 #include "hazelcast/client/connection/ConnectionListener.h"
 #include "hazelcast/util/SynchronizedMap.h"
@@ -74,33 +77,12 @@ namespace hazelcast {
                         virtual void connectionRemoved(const std::shared_ptr<connection::Connection> &connection);
 
                     protected:
-                        AbstractClientListenerService(ClientContext &clientContext, int32_t eventThreadCount,
-                                                      int32_t eventQueueCapacity);
+                        AbstractClientListenerService(ClientContext &clientContext, int32_t eventThreadCount);
+
+                        void processEventMessage(
+                                const std::shared_ptr<protocol::ClientMessage> &clientMessage);
 
                         virtual bool registersLocalOnly() const = 0;
-
-                        class ClientEventProcessor : public util::StripedRunnable {
-                            friend class AbstractClientListenerService;
-
-                        public:
-                            virtual ~ClientEventProcessor();
-
-                            virtual void run();
-
-                            virtual const std::string getName() const;
-
-                            virtual int32_t getKey();
-
-                        private:
-                            ClientEventProcessor(const std::shared_ptr<protocol::ClientMessage> &clientMessage,
-                                                 const std::shared_ptr<connection::Connection> &connection,
-                                                 util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > &eventHandlerMap,
-                                                 util::ILogger &logger);
-
-                            const std::shared_ptr<protocol::ClientMessage> clientMessage;
-                            util::SynchronizedMap<int64_t, EventHandler<protocol::ClientMessage> > &eventHandlerMap;
-                            util::ILogger &logger;
-                        };
 
                         class RegisterListenerTask : public util::Callable<std::string> {
                         public:
@@ -199,7 +181,8 @@ namespace hazelcast {
                         serialization::pimpl::SerializationService &serializationService;
                         util::ILogger &logger;
                         connection::ClientConnectionManagerImpl &clientConnectionManager;
-                        util::impl::SimpleExecutorService eventExecutor;
+                        boost::asio::thread_pool eventExecutor;
+                        std::vector<boost::asio::thread_pool::executor_type> eventStrands;
                         util::impl::SimpleExecutorService registrationExecutor;
                         int64_t invocationTimeoutMillis;
                         int64_t invocationRetryPauseMillis;

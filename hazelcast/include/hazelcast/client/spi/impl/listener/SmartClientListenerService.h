@@ -31,8 +31,7 @@ namespace hazelcast {
                 namespace listener {
                     class SmartClientListenerService : public AbstractClientListenerService {
                     public:
-                        SmartClientListenerService(ClientContext &clientContext, int32_t eventThreadCount,
-                                                   int32_t eventQueueCapacity);
+                        SmartClientListenerService(ClientContext &clientContext, int32_t eventThreadCount);
 
                         virtual void start();
 

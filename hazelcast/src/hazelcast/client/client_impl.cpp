@@ -374,17 +374,14 @@ namespace hazelcast {
             }
 
             std::shared_ptr<spi::ClientListenerService> HazelcastClientInstanceImpl::initListenerService() {
-                int eventQueueCapacity = clientProperties.getInteger(clientProperties.getEventQueueCapacity());
                 int eventThreadCount = clientProperties.getInteger(clientProperties.getEventThreadCount());
                 config::ClientNetworkConfig &networkConfig = clientConfig.getNetworkConfig();
                 if (networkConfig.isSmartRouting()) {
                     return std::shared_ptr<spi::ClientListenerService>(
-                            new spi::impl::listener::SmartClientListenerService(clientContext, eventThreadCount,
-                                                                                eventQueueCapacity));
+                            new spi::impl::listener::SmartClientListenerService(clientContext, eventThreadCount));
                 } else {
                     return std::shared_ptr<spi::ClientListenerService>(
-                            new spi::impl::listener::NonSmartClientListenerService(clientContext, eventThreadCount,
-                                                                                   eventQueueCapacity));
+                            new spi::impl::listener::NonSmartClientListenerService(clientContext, eventThreadCount));
                 }
             }
 
@@ -761,9 +758,6 @@ namespace hazelcast {
         const std::string ClientProperties::EVENT_THREAD_COUNT = "hazelcast.client.event.thread.count";
         const std::string ClientProperties::EVENT_THREAD_COUNT_DEFAULT = "5";
 
-        const std::string ClientProperties::EVENT_QUEUE_CAPACITY = "hazelcast.client.event.queue.capacity";
-        const std::string ClientProperties::EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
-
         const std::string ClientProperties::INTERNAL_EXECUTOR_POOL_SIZE = "hazelcast.client.internal.executor.pool.size";
         const std::string ClientProperties::INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT = "3";
 
@@ -785,6 +779,9 @@ namespace hazelcast {
 
         const std::string ClientProperties::IO_THREAD_COUNT = "hazelcast.client.io.thread.count";
         const std::string ClientProperties::IO_THREAD_COUNT_DEFAULT = "1";
+
+        const std::string ClientProperties::RESPONSE_EXECUTOR_THREAD_COUNT = "hazelcast.client.response.executor.thread.count";
+        const std::string ClientProperties::RESPONSE_EXECUTOR_THREAD_COUNT_DEFAULT = "0";
 
         ClientProperty::ClientProperty(const std::string &name, const std::string &defaultValue)
                 : name(name), defaultValue(defaultValue) {
@@ -815,7 +812,6 @@ namespace hazelcast {
                   invocationTimeoutSeconds(INVOCATION_TIMEOUT_SECONDS,
                                            INVOCATION_TIMEOUT_SECONDS_DEFAULT),
                   eventThreadCount(EVENT_THREAD_COUNT, EVENT_THREAD_COUNT_DEFAULT),
-                  eventQueueCapacity(EVENT_QUEUE_CAPACITY, EVENT_QUEUE_CAPACITY_DEFAULT),
                   internalExecutorPoolSize(INTERNAL_EXECUTOR_POOL_SIZE,
                                            INTERNAL_EXECUTOR_POOL_SIZE_DEFAULT),
                   shuffleMemberList(SHUFFLE_MEMBER_LIST, SHUFFLE_MEMBER_LIST_DEFAULT),
@@ -826,6 +822,7 @@ namespace hazelcast {
                   statisticsEnabled(STATISTICS_ENABLED, STATISTICS_ENABLED_DEFAULT),
                   statisticsPeriodSeconds(STATISTICS_PERIOD_SECONDS, STATISTICS_PERIOD_SECONDS_DEFAULT),
                   ioThreadCount(IO_THREAD_COUNT, IO_THREAD_COUNT_DEFAULT),
+                  responseExecutorThreadCount(RESPONSE_EXECUTOR_THREAD_COUNT, RESPONSE_EXECUTOR_THREAD_COUNT_DEFAULT),
                   propertiesMap(properties) {
         }
 
@@ -855,10 +852,6 @@ namespace hazelcast {
 
         const ClientProperty &ClientProperties::getEventThreadCount() const {
             return eventThreadCount;
-        }
-
-        const ClientProperty &ClientProperties::getEventQueueCapacity() const {
-            return eventQueueCapacity;
         }
 
         const ClientProperty &ClientProperties::getInternalExecutorPoolSize() const {
@@ -913,6 +906,10 @@ namespace hazelcast {
 
         int64_t ClientProperties::getLong(const ClientProperty &property) const {
             return util::IOUtil::to_value<int64_t>(getString(property));
+        }
+
+        const ClientProperty &ClientProperties::getResponseExecutorThreadCount() const {
+            return responseExecutorThreadCount;
         }
 
         namespace exception {

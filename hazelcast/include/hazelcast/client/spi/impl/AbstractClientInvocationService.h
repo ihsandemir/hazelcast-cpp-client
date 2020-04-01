@@ -60,33 +60,26 @@ namespace hazelcast {
 
                 protected:
 
-                    class ResponseThread : public util::Runnable {
+                    class ResponseProcessor {
                     public:
-                        ResponseThread(const std::string &name, util::ILogger &invocationLogger,
-                                       AbstractClientInvocationService &invocationService,
-                                       ClientContext &clientContext);
+                        ResponseProcessor(util::ILogger &invocationLogger,
+                                          AbstractClientInvocationService &invocationService,
+                                          ClientContext &clientContext);
 
-                        virtual ~ResponseThread();
-
-                        virtual void run();
-
-                        virtual const std::string getName() const;
+                        virtual ~ResponseProcessor();
 
                         void shutdown();
 
                         void start();
 
-                        // TODO: implement java MPSCQueue and replace this
-                        util::BlockingConcurrentQueue<std::shared_ptr<protocol::ClientMessage> > responseQueue;
+                        void process(const std::shared_ptr<protocol::ClientMessage> &message);
                     private:
                         util::ILogger &invocationLogger;
                         AbstractClientInvocationService &invocationService;
                         ClientContext &client;
-                        util::Thread worker;
+                        std::unique_ptr<boost::asio::thread_pool> pool;
 
-                        void doRun();
-
-                        void process(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
+                        void processInternal(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
 
                         void handleClientMessage(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
                     };
@@ -118,7 +111,7 @@ namespace hazelcast {
                     util::AtomicBoolean isShutdown;
                     int64_t invocationTimeoutMillis;
                     int64_t invocationRetryPauseMillis;
-                    ResponseThread responseThread;
+                    ResponseProcessor responseThread;
 
                     std::shared_ptr<ClientInvocation> deRegisterCallId(int64_t callId);
 
