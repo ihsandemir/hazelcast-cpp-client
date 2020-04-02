@@ -34,8 +34,10 @@ namespace hazelcast {
             class AuthenticationFuture;
         }
 
-        namespace protocol {
-            class ClientMessage;
+        namespace spi {
+            namespace impl {
+                class ClientInvocation;
+            }
         }
 
         class HAZELCAST_API Socket {
@@ -49,7 +51,7 @@ namespace hazelcast {
 
             virtual void
             asyncWrite(const std::shared_ptr<connection::Connection> &connection,
-                       const std::shared_ptr<protocol::ClientMessage> &message) = 0;
+                       const std::shared_ptr<spi::impl::ClientInvocation> &invocation) = 0;
 
             virtual void close() = 0;
 

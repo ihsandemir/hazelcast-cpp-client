@@ -36,12 +36,11 @@ namespace hazelcast {
              * @param <V> Value type that the user expects
              */
             template<typename V>
-            class ClientDelegatingFuture
-                    : public spi::InternalCompletableFuture<V>,
-                      public std::enable_shared_from_this<ClientDelegatingFuture<V> > {
+            class ClientDelegatingFuture :
+                    public std::enable_shared_from_this<ClientDelegatingFuture<V> > {
             public:
                 ClientDelegatingFuture(
-                        const std::shared_ptr<spi::impl::ClientInvocationFuture> &clientInvocationFuture,
+                        future<protocol::ClientMessage> &clientInvocationFuture,
                         serialization::pimpl::SerializationService &serializationService,
                         const std::shared_ptr<impl::ClientMessageDecoder<V> > &clientMessageDecoder,
                         const std::shared_ptr<V> &defaultValue) : future(
@@ -172,7 +171,7 @@ namespace hazelcast {
                 }
 
                 static const std::shared_ptr<void> VOIDOBJ;
-                const std::shared_ptr<spi::impl::ClientInvocationFuture> future;
+                future<protocol::ClientMessage> future;
                 serialization::pimpl::SerializationService &serializationService;
                 const std::shared_ptr<impl::ClientMessageDecoder<V> > clientMessageDecoder;
                 const std::shared_ptr<V> defaultValue;

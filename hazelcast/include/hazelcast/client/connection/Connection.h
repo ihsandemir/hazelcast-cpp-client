@@ -22,6 +22,7 @@
 #include <ostream>
 #include <stdint.h>
 #include <atomic>
+#include <unordered_map>
 #include <boost/asio.hpp>
 
 #include "hazelcast/client/Socket.h"
@@ -85,7 +86,7 @@ namespace hazelcast {
 
                 void close(const std::string &reason, const std::shared_ptr<exception::IException> &cause);
 
-                bool write(const std::shared_ptr<protocol::ClientMessage> &message);
+                void write(const std::shared_ptr<spi::impl::ClientInvocation> &clientInvocation);
 
                 const std::shared_ptr<Address> &getRemoteEndpoint() const;
 
@@ -101,7 +102,7 @@ namespace hazelcast {
 
                 bool isAlive();
 
-                auto lastReadTime();
+                const std::chrono::steady_clock::time_point lastReadTime();
 
                 const std::string &getCloseReason() const;
 
@@ -130,6 +131,7 @@ namespace hazelcast {
                 friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
 
                 ReadHandler readHandler;
+                std::unordered_map<int64_t, std::shared_ptr<spi::impl::ClientInvocation>> invocations;
             private:
                 void logClose();
 

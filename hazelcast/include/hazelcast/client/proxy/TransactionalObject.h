@@ -97,7 +97,7 @@ namespace hazelcast {
 
                 int getTimeoutInMilliseconds() const;
 
-                std::shared_ptr<protocol::ClientMessage> invoke(std::unique_ptr<protocol::ClientMessage> &request);
+                protocol::ClientMessage invoke(std::unique_ptr<protocol::ClientMessage> &request);
 
                 template<typename T, typename CODEC>
                 T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request) {

@@ -91,17 +91,17 @@ namespace hazelcast {
                                 mayInterruptIfRunning);
                         std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                                 context, request, objectName, partitionId);
-                        std::shared_ptr<spi::impl::ClientInvocationFuture> f = clientInvocation->invoke();
+                        auto message = clientInvocation->invoke().get();
                         return protocol::codec::ExecutorServiceCancelOnPartitionCodec::ResponseParameters::decode(
-                                *f->get()).response;
+                                message).response;
                     } else {
                         std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ExecutorServiceCancelOnAddressCodec::encodeRequest(
                                 uuid, *target, mayInterruptIfRunning);
                         std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                                 context, request, objectName, *target);
-                        std::shared_ptr<spi::impl::ClientInvocationFuture> f = clientInvocation->invoke();
+                        auto f = clientInvocation->invoke();
                         return protocol::codec::ExecutorServiceCancelOnAddressCodec::ResponseParameters::decode(
-                                *f->get()).response;
+                                f.get()).response;
                     }
                 }
 

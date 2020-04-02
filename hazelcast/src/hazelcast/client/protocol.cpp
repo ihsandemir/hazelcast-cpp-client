@@ -888,7 +888,7 @@ namespace hazelcast {
 
         namespace impl {
             std::shared_ptr<void>
-            VoidMessageDecoder::decodeClientMessage(const std::shared_ptr<protocol::ClientMessage> &clientMessage,
+            VoidMessageDecoder::decodeClientMessage(protocol::ClientMessage &&clientMessage,
                                                     serialization::pimpl::SerializationService &serializationService) {
                 return std::shared_ptr<void>();
             }

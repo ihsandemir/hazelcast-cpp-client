@@ -188,8 +188,8 @@ namespace hazelcast {
                             name, dataCollection, overflowPolicy);
 
                     try {
-                        std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = spi::impl::ClientInvocation::create(
-                                getContext(), request, getName(), partitionId)->invoke();
+                        auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
+                                                                                    partitionId)->invoke();
                         return std::shared_ptr<ICompletableFuture<int64_t> >(
                                 new internal::ClientDelegatingFuture<int64_t>(invocationFuture,
                                                                               getSerializationService(),

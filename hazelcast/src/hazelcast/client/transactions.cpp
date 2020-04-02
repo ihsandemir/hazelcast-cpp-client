@@ -227,8 +227,7 @@ namespace hazelcast {
                 try {
                     std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                             client, request, objectName, connection);
-                    std::shared_ptr<spi::impl::ClientInvocationFuture> future = clientInvocation->invoke();
-                    return future->get();
+                    return clientInvocation->invoke().get();
                 } catch (exception::IException &e) {
                     TRANSACTION_EXCEPTION_FACTORY()->rethrow(e, "ClientTransactionUtil::invoke failed");
                 }
@@ -570,7 +569,7 @@ namespace hazelcast {
                 std::shared_ptr<connection::Connection> connection = context->getConnection();
                 std::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         context->getClientContext(), request, name, connection);
-                invocation->invoke()->get();
+                invocation->invoke().get();
             }
 
             void TransactionalObject::onDestroy() {
@@ -585,12 +584,12 @@ namespace hazelcast {
                 return context->getTimeoutSeconds() * MILLISECONDS_IN_A_SECOND;
             }
 
-            std::shared_ptr<protocol::ClientMessage> TransactionalObject::invoke(
+            protocol::ClientMessage TransactionalObject::invoke(
                     std::unique_ptr<protocol::ClientMessage> &request) {
                 std::shared_ptr<connection::Connection> connection = context->getConnection();
                 std::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                         context->getClientContext(), request, name, connection);
-                return invocation->invoke()->get();
+                return invocation->invoke().get();
             }
         }
 

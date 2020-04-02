@@ -591,9 +591,7 @@ namespace hazelcast {
                                            const std::shared_ptr<ExecutionCallback<T> > &callback) {
                 std::string uuid = util::UuidUtil::newUnsecureUuidString();
 
-                std::shared_ptr<spi::impl::ClientInvocationFuture> f = invokeOnPartitionInternal(taskData,
-                                                                                                   partitionId, uuid);
-
+                auto f = invokeOnPartitionInternal(taskData, partitionId, uuid);
 
                 std::shared_ptr<ICompletableFuture<T> > delegatingFuture(
                         new internal::ClientDelegatingFuture<T>(f, getContext().getSerializationService(),
@@ -603,8 +601,7 @@ namespace hazelcast {
                 delegatingFuture->andThen(callback);
             }
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
-            invokeOnPartitionInternal(const Data &taskData, int partitionId, const std::string &uuid) {
+            auto invokeOnPartitionInternal(const Data &taskData, int partitionId, const std::string &uuid) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ExecutorServiceSubmitToPartitionCodec::encodeRequest(name, uuid, taskData,
                                                                                               partitionId);
@@ -613,9 +610,8 @@ namespace hazelcast {
             }
 
             template<typename HazelcastSerializable, typename T, typename K>
-            std::shared_ptr<ICompletableFuture<T> >
-            submitToKeyOwnerInternal(const HazelcastSerializable &task, const K &key,
-                                     const std::shared_ptr<T> &defaultValue, bool preventSync) {
+            auto submitToKeyOwnerInternal(const HazelcastSerializable &task, const K &key,
+                                          const std::shared_ptr<T> &defaultValue, bool preventSync) {
 
                 Data dataKey = toData<K>(key);
 
@@ -637,7 +633,7 @@ namespace hazelcast {
             }
 
             template<typename T>
-            std::shared_ptr<ICompletableFuture<T> >
+            auto
             submitToRandomInternal(const serialization::pimpl::Data &taskData, const std::shared_ptr<T> &defaultValue,
                                    bool preventSync) {
 
@@ -656,9 +652,8 @@ namespace hazelcast {
             }
 
             template<typename HazelcastSerializable, typename T>
-            std::shared_ptr<ICompletableFuture<T> >
-            submitToTargetInternal(const HazelcastSerializable &task, const Address &address,
-                                   const std::shared_ptr<T> &defaultValue, bool preventSync) {
+            auto submitToTargetInternal(const HazelcastSerializable &task, const Address &address,
+                                        const std::shared_ptr<T> &defaultValue, bool preventSync) {
                 std::string uuid = util::UuidUtil::newUnsecureUuidString();
 
                 std::shared_ptr<spi::impl::ClientInvocationFuture> f = invokeOnAddressInternal<HazelcastSerializable>(
@@ -684,23 +679,19 @@ namespace hazelcast {
             }
 
             template<typename HazelcastSerializable>
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
-            invokeOnAddressInternal(const HazelcastSerializable &task, const Address &address,
-                                    const std::string &uuid) {
+            auto invokeOnAddressInternal(const HazelcastSerializable &task, const Address &address,
+                                         const std::string &uuid) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ExecutorServiceSubmitToAddressCodec::encodeRequest(name, uuid,
                                                                                             toData(
                                                                                                     task), address);
 
-                std::shared_ptr<spi::impl::ClientInvocationFuture> f = invokeOnTarget(request, address);
-                return f;
+                return invokeOnTarget(request, address);
             }
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
-            invokeOnPartitionOwner(std::unique_ptr<protocol::ClientMessage> &request, int partitionId);
+            auto invokeOnPartitionOwner(std::unique_ptr<protocol::ClientMessage> &request, int partitionId);
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
-            invokeOnTarget(std::unique_ptr<protocol::ClientMessage> &request, const Address &target);
+            auto invokeOnTarget(std::unique_ptr<protocol::ClientMessage> &request, const Address &target);
 
             template<typename T>
             std::shared_ptr<T>

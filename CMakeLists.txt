@@ -68,7 +68,7 @@ project (HazelcastClient
 		HOMEPAGE_URL https://hazelcast.org/clients/cplusplus/
 		LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 include(TestBigEndian)

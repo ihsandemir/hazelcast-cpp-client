@@ -71,7 +71,7 @@ namespace hazelcast {
                         });
                     }
 
-                    virtual const std::shared_ptr<util::ExecutorService> getUserExecutor() const;
+                    boost::asio::thread_pool &getUserExecutor() const;
 
                 private:
                     util::ILogger &logger;

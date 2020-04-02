@@ -59,40 +59,44 @@ namespace hazelcast {
                           logger(context->getLogger()) {
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<V> > getAsync(const K &key) {
+                virtual future <std::shared_ptr<V>> getAsync(const K &key) {
                     std::shared_ptr<serialization::pimpl::Data> ncKey = ClientMapProxy<K, V>::toSharedData(key);
                     std::shared_ptr<V> cached = nearCache->get(ncKey);
                     if (cached.get() != NULL) {
-                        std::shared_ptr<ExecutorService> executor = spi::ClientProxy::getContext().getClientExecutionService().getUserExecutor();
                         if (internal::nearcache::NearCache<K, V>::NULL_OBJECT == cached) {
-                            return std::shared_ptr<ICompletableFuture<V> >(
-                                    new internal::executor::CompletedFuture<V>(std::shared_ptr<V>(), executor));
+                            make_ready_future<std::shared_ptr<V>>(std::shared_ptr<V>());
                         }
-                        return std::shared_ptr<ICompletableFuture<V> >(
-                                new internal::executor::CompletedFuture<V>(cached, executor));
                     }
 
                     bool marked = keyStateMarker->tryMark(*ncKey);
                     try {
-                        std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = ClientMapProxy<K, V>::getAsyncInternal(
-                                *ncKey);
+                        auto invocationFuture = ClientMapProxy<K, V>::getAsyncInternal(*ncKey);
                         if (marked) {
                             std::shared_ptr<ExecutionCallback<protocol::ClientMessage> > callback(
                                     new GetAsyncExecutionCallback(ncKey,
                                                                   std::enable_shared_from_this<NearCachedClientMapProxy<K, V> >::shared_from_this()));
-                            invocationFuture->andThen(callback,
-                                                      spi::ClientProxy::getContext().getClientExecutionService().shared_from_this());
+                            return invocationFuture.then([=](future <protocol::ClientMessage> f) {
+                                try {
+                                    std::shared_ptr<V> value = ClientMapProxy<K, V>::GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(
+                                            f.get(), getSerializationService());
+                                    tryToPutNearCache(ncKey, value);
+                                    return value;
+                                } catch (...) {
+                                    resetToUnmarkedState(ncKey);
+                                    rethrow_exception(current_exception());
+                                }
+                            });
                         }
-                        return std::shared_ptr<ICompletableFuture<V> >(
-                                new internal::ClientDelegatingFuture<V>(invocationFuture,
-                                                                        ClientMapProxy<K, V>::getSerializationService(),
-                                                                        ClientMapProxy<K, V>::PUT_ASYNC_RESPONSE_DECODER()));
+
+                        return invocationFuture.then([=](future <protocol::ClientMessage> f) {
+                            ClientMapProxy<K, V>::GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(
+                                    f.get(), getSerializationService());
+                        });
                     } catch (exception::IException &e) {
                         resetToUnmarkedState(ncKey);
                         util::ExceptionUtil::rethrow(e);
                     }
 
-                    return std::shared_ptr<ICompletableFuture<V> >();
                 }
 
                 virtual monitor::LocalMapStats &getLocalMapStats() {
@@ -208,11 +212,10 @@ namespace hazelcast {
                     }
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<V> >
+                virtual future <std::shared_ptr<V>>
                 removeAsyncInternal(const serialization::pimpl::Data &keyData) {
                     try {
-                        std::shared_ptr<ICompletableFuture<V> > future = ClientMapProxy<K, V>::removeAsyncInternal(
-                                keyData);
+                        auto future = ClientMapProxy<K, V>::removeAsyncInternal(keyData);
                         invalidateNearCache(keyData);
                         return future;
                     } catch (exception::IException &) {
@@ -280,17 +283,13 @@ namespace hazelcast {
                     }
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<V> >
+                virtual future <std::shared_ptr<V>>
                 putAsyncInternal(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
                                  const util::concurrent::TimeUnit &maxIdleUnit,
                                  const serialization::pimpl::Data &keyData, const V &value) {
                     try {
-                        std::shared_ptr<ICompletableFuture<V> > future = ClientMapProxy<K, V>::putAsyncInternal(ttl,
-                                                                                                                  ttlUnit,
-                                                                                                                  maxIdle,
-                                                                                                                  maxIdleUnit,
-                                                                                                                  keyData,
-                                                                                                                  value);
+                        auto future = ClientMapProxy<K, V>::putAsyncInternal(ttl, ttlUnit, maxIdle, maxIdleUnit,
+                                                                             keyData, value);
                         invalidateNearCache(keyData);
                         return future;
                     } catch (exception::IException &) {
@@ -605,7 +604,7 @@ namespace hazelcast {
 
                     bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const {
                         return protocol::codec::MapRemoveEntryListenerCodec::ResponseParameters::decode(
-                                clientMessage).response;
+                                std::move(clientMessage)).response;
                     }
 
                     NearCacheEntryListenerMessageCodec(const std::string &name, int32_t listenerFlags)

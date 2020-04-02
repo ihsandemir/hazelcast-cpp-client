@@ -176,7 +176,7 @@ namespace hazelcast {
                         clientProxy->getName(),
                         clientProxy->getServiceName(), *initializationTarget);
                 spi::impl::ClientInvocation::create(client, clientMessage, clientProxy->getServiceName(),
-                                                    *initializationTarget)->invoke()->get();
+                                                    *initializationTarget)->invoke().get();
                 clientProxy->onInitialize();
             }
 
@@ -535,7 +535,7 @@ namespace hazelcast {
             void ClientProxy::destroyRemotely() {
                 std::unique_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientDestroyProxyCodec::encodeRequest(
                         getName(), getServiceName());
-                spi::impl::ClientInvocation::create(getContext(), clientMessage, getName())->invoke()->get();
+                spi::impl::ClientInvocation::create(getContext(), clientMessage, getName())->invoke().get();
             }
 
             ClientProxy::EventHandlerDelegator::EventHandlerDelegator(client::impl::BaseEventHandler *handler)
@@ -661,9 +661,9 @@ namespace hazelcast {
                 }
 
                 void AbstractClientInvocationService::handleClientMessage(
-                        const std::shared_ptr<connection::Connection> &connection,
-                        const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
-                    responseThread.process(clientMessage);
+                        const std::shared_ptr<ClientInvocation> &invocation,
+                        const std::shared_ptr<connection::Connection> &connection) {
+                    responseThread.process(invocation);
                 }
 
                 std::shared_ptr<ClientInvocation> AbstractClientInvocationService::deRegisterCallId(int64_t callId) {
@@ -676,29 +676,8 @@ namespace hazelcast {
                         throw exception::HazelcastClientNotActiveException("AbstractClientInvocationService::send",
                                                                            "Client is shut down");
                     }
-                    registerInvocation(invocation);
 
-                    const std::shared_ptr<protocol::ClientMessage> &clientMessage = invocation->getClientMessage();
-                    if (!writeToConnection(*connection, clientMessage)) {
-                        int64_t callId = clientMessage->getCorrelationId();
-                        std::shared_ptr<ClientInvocation> clientInvocation = deRegisterCallId(callId);
-                        if (clientInvocation.get() != NULL) {
-                            std::ostringstream out;
-                            out << "Packet not sent to ";
-                            if (connection->getRemoteEndpoint().get()) {
-                                out << *connection->getRemoteEndpoint();
-                            } else {
-                                out << "null";
-                            }
-                            throw exception::IOException("AbstractClientInvocationService::send", out.str());
-                        } else {
-                            if (invocationLogger.isFinestEnabled()) {
-                                invocationLogger.finest("Invocation not found to deregister for call ID ", callId);
-                            }
-                            return;
-                        }
-                    }
-
+                    writeToConnection(*connection, invocation);
                     invocation->setSendConnection(connection);
                 }
 
@@ -714,10 +693,11 @@ namespace hazelcast {
                     }
                 }
 
-                bool AbstractClientInvocationService::writeToConnection(connection::Connection &connection,
-                                                                        const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
+                void AbstractClientInvocationService::writeToConnection(connection::Connection &connection,
+                                                                        const std::shared_ptr<ClientInvocation> &clientInvocation) {
+                    auto clientMessage = clientInvocation->getClientMessage();
                     clientMessage->addFlag(protocol::ClientMessage::BEGIN_AND_END_FLAGS);
-                    return connection.write(clientMessage);
+                    connection.write(clientInvocation);
                 }
 
                 AbstractClientInvocationService::~AbstractClientInvocationService() {
@@ -730,32 +710,20 @@ namespace hazelcast {
                 }
 
                 void AbstractClientInvocationService::ResponseProcessor::processInternal(
-                        const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
+                        const std::shared_ptr<ClientInvocation> &invocation) {
                     try {
-                        handleClientMessage(clientMessage);
+                        auto response = invocation->getResponse();
+                        if (protocol::codec::ErrorCodec::TYPE == response->getMessageType()) {
+                            std::shared_ptr<exception::IException> exception(
+                                    client.getClientExceptionFactory().createException(
+                                            "AbstractClientInvocationService::ResponseThread::handleClientMessage",
+                                            *response));
+                            invocation->notifyException(exception);
+                        } else {
+                            invocation->notify(response);
+                        }
                     } catch (exception::IException &e) {
-                        invocationLogger.severe("Failed to process response message: ", clientMessage,
-                                                " on responseThread: ", e);
-                    }
-                }
-
-                void AbstractClientInvocationService::ResponseProcessor::handleClientMessage(
-                        const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
-                    int64_t correlationId = clientMessage->getCorrelationId();
-
-                    std::shared_ptr<ClientInvocation> future = invocationService.deRegisterCallId(correlationId);
-                    if (future.get() == NULL) {
-                        invocationLogger.warning("No call for callId: ", correlationId, ", response: ", *clientMessage);
-                        return;
-                    }
-                    if (protocol::codec::ErrorCodec::TYPE == clientMessage->getMessageType()) {
-                        std::shared_ptr<exception::IException> exception(
-                                client.getClientExceptionFactory().createException(
-                                        "AbstractClientInvocationService::ResponseThread::handleClientMessage",
-                                        *clientMessage));
-                        future->notifyException(exception);
-                    } else {
-                        future->notify(clientMessage);
+                        invocationLogger.severe("Failed to process response for ", *invocation, ". ", e);
                     }
                 }
 
@@ -778,13 +746,13 @@ namespace hazelcast {
                 }
 
                 void AbstractClientInvocationService::ResponseProcessor::process(
-                        const std::shared_ptr<protocol::ClientMessage> &message) {
+                        const std::shared_ptr<ClientInvocation> &invocation) {
                     if (!pool) {
-                        processInternal(message);
+                        processInternal(invocation);
                         return;
                     }
 
-                    boost::asio::post(*pool, [=] { processInternal(message); });
+                    boost::asio::post(*pool, [=] { processInternal(invocation); });
                 }
 
                 NonSmartClientInvocationService::NonSmartClientInvocationService(ClientContext &client)
@@ -1318,7 +1286,7 @@ namespace hazelcast {
                     internalExecutor->stop();
                 }
 
-                const std::shared_ptr<util::ExecutorService> ClientExecutionServiceImpl::getUserExecutor() const {
+                boost::asio::thread_pool &ClientExecutionServiceImpl::getUserExecutor() const {
                     return userExecutor;
                 }
 
@@ -1337,11 +1305,7 @@ namespace hazelcast {
                         startTimeMillis(util::currentTimeMillis()),
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
-                        invokeCount(0),
-                        clientInvocationFuture(
-                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                           clientContext.getLogger(), this->clientMessage,
-                                                           clientContext.getCallIdSequence())) {
+                        invokeCount(0) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -1360,11 +1324,7 @@ namespace hazelcast {
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
                         connection(connection),
-                        invokeCount(0),
-                        clientInvocationFuture(
-                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                           clientContext.getLogger(), std::move(clientMessage),
-                                                           clientContext.getCallIdSequence())) {
+                        invokeCount(0) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -1381,11 +1341,7 @@ namespace hazelcast {
                         startTimeMillis(util::currentTimeMillis()),
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
-                        invokeCount(0),
-                        clientInvocationFuture(
-                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                           clientContext.getLogger(), this->clientMessage,
-                                                           clientContext.getCallIdSequence())) {
+                        invokeCount(0) {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
@@ -1403,28 +1359,24 @@ namespace hazelcast {
                         startTimeMillis(util::currentTimeMillis()),
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
                         objectName(objectName),
-                        invokeCount(0),
-                        clientInvocationFuture(
-                                new ClientInvocationFuture(clientContext.getClientExecutionService().shared_from_this(),
-                                                           clientContext.getLogger(), this->clientMessage,
-                                                           clientContext.getCallIdSequence())) {
+                        invokeCount(0) {
                 }
 
                 ClientInvocation::~ClientInvocation() {
                 }
 
-                std::shared_ptr<ClientInvocationFuture> ClientInvocation::invoke() {
+                future<protocol::ClientMessage> ClientInvocation::invoke() {
                     assert (clientMessage.get() != NULL);
                     clientMessage.get()->setCorrelationId(callIdSequence->next());
                     invokeOnSelection(shared_from_this());
-                    return clientInvocationFuture;
+                    return invocationPromise.get_future();
                 }
 
-                std::shared_ptr<ClientInvocationFuture> ClientInvocation::invokeUrgent() {
+                future<protocol::ClientMessage> ClientInvocation::invokeUrgent() {
                     assert (clientMessage.get() != NULL);
                     clientMessage.get()->setCorrelationId(callIdSequence->forceNext());
                     invokeOnSelection(shared_from_this());
-                    return clientInvocationFuture;
+                    return invocationPromise.get_future();
                 }
 
                 void ClientInvocation::invokeOnSelection(const std::shared_ptr<ClientInvocation> &invocation) {
@@ -1468,22 +1420,20 @@ namespace hazelcast {
                     try {
                         invokeOnSelection(shared_from_this());
                     } catch (exception::IException &e) {
-                        clientInvocationFuture->complete(std::shared_ptr<exception::IException>(e.clone()));
+                        invocationPromise.set_exception(std::make_exception_ptr(e));
                     }
                 }
 
                 void ClientInvocation::notifyException(const std::shared_ptr<exception::IException> &exception) {
                     if (!lifecycleService.isRunning()) {
-                        std::shared_ptr<exception::IException> notActiveException(
-                                new exception::HazelcastClientNotActiveException(exception->getSource(),
-                                                                                 "Client is shutting down", exception));
-
-                        clientInvocationFuture->complete(notActiveException);
+                        invocationPromise.set_exception(std::make_exception_ptr(
+                                exception::HazelcastClientNotActiveException(exception->getSource(),
+                                                                             "Client is shutting down", exception)));
                         return;
                     }
 
                     if (isNotAllowedToRetryOnSelection(*exception)) {
-                        clientInvocationFuture->complete(exception);
+                        invocationPromise.set_exception(std::make_exception_ptr(*exception));
                         return;
                     }
 
@@ -1493,7 +1443,7 @@ namespace hazelcast {
                                      clientMessage.get()->isRetryable());
 
                     if (!retry) {
-                        clientInvocationFuture->complete(exception);
+                        invocationPromise.set_exception(std::make_exception_ptr(*exception));
                         return;
                     }
 
@@ -1505,14 +1455,15 @@ namespace hazelcast {
                             logger.finest(out.str());
                         }
 
-                        clientInvocationFuture->complete(newOperationTimeoutException(*exception));
+                        invocationPromise.set_exception(
+                                std::make_exception_ptr(newOperationTimeoutException(*exception)));
                         return;
                     }
 
                     try {
                         execute();
-                    } catch (exception::RejectedExecutionException &) {
-                        clientInvocationFuture->complete(exception);
+                    } catch (...) {
+                        invocationPromise.set_exception(std::make_exception_ptr(*exception));
                     }
 
                 }
@@ -1542,7 +1493,7 @@ namespace hazelcast {
                     return false;
                 }
 
-                std::shared_ptr<exception::OperationTimeoutException>
+                exception::OperationTimeoutException
                 ClientInvocation::newOperationTimeoutException(exception::IException &exception) {
                     int64_t nowInMillis = util::currentTimeMillis();
 
@@ -1558,7 +1509,7 @@ namespace hazelcast {
                                                                                       startTimeMillis)
                                                                               << ". Total elapsed time: "
                                                                               << (nowInMillis - startTimeMillis)
-                                                                              << " ms. ").buildShared();
+                                                                              << " ms. ").build();
                 }
 
                 std::ostream &operator<<(std::ostream &os, const ClientInvocation &invocation) {
@@ -1573,14 +1524,21 @@ namespace hazelcast {
                         target << "random";
                     }
                     ClientInvocation &nonConstInvocation = const_cast<ClientInvocation &>(invocation);
-                    os << "ClientInvocation{" << "clientMessage = " << *nonConstInvocation.clientMessage.get()
+                    os << "ClientInvocation{" << "requestMessage = " << *nonConstInvocation.clientMessage.get()
                        << ", objectName = "
                        << invocation.objectName << ", target = " << target.str() << ", sendConnection = ";
                     std::shared_ptr<connection::Connection> sendConnection = nonConstInvocation.sendConnection.get();
                     if (sendConnection.get()) {
                         os << *sendConnection;
                     } else {
-                        os << "null";
+                        os << "nullptr";
+                    }
+                    auto response = invocation.getResponse();
+                    os << ", response: ";
+                    if (response) {
+                        os << *response;
+                    } else {
+                        os << "nullptr";
                     }
                     os << '}';
 
@@ -1648,7 +1606,7 @@ namespace hazelcast {
                     if (clientMessage.get() == NULL) {
                         throw exception::IllegalArgumentException("response can't be null");
                     }
-                    clientInvocationFuture->complete(clientMessage);
+                    invocationPromise.set_value(*clientMessage);
                 }
 
                 const std::shared_ptr<protocol::ClientMessage> ClientInvocation::getClientMessage() {
@@ -1691,6 +1649,18 @@ namespace hazelcast {
 
                 std::shared_ptr<util::Executor> ClientInvocation::getUserExecutor() {
                     return executionService->getUserExecutor();
+                }
+
+                promise<protocol::ClientMessage> &ClientInvocation::getPromise() {
+                    return invocationPromise;
+                }
+
+                const std::shared_ptr<protocol::ClientMessage> &ClientInvocation::getResponse() const {
+                    return response;
+                }
+
+                void ClientInvocation::setResponse(const std::shared_ptr<protocol::ClientMessage> &response) {
+                    ClientInvocation::response = response;
                 }
 
                 ClientContext &impl::ClientTransactionManagerServiceImpl::getClient() const {
@@ -2352,19 +2322,20 @@ namespace hazelcast {
                     }
 
                     void AbstractClientListenerService::handleClientMessage(
-                            const std::shared_ptr<protocol::ClientMessage> &clientMessage,
+                            const std::shared_ptr<ClientInvocation> &invocation,
                             const std::shared_ptr<connection::Connection> &connection) {
                         try {
-                            auto partitionId = clientMessage->getPartitionId();
+                            auto response = invocation->getResponse();
+                            auto partitionId = response->getPartitionId();
                             if (partitionId == -1) {
                                 // execute on random thread on the thread pool
-                                boost::asio::post(eventExecutor, [=] () { processEventMessage(clientMessage);});
+                                boost::asio::post(eventExecutor, [=]() { processEventMessage(invocation); });
                                 return;
                             }
 
                             // process on certain thread which is same for the partition id
                             boost::asio::post(eventStrands[partitionId % eventStrands.size()],
-                                              [=]() { processEventMessage(clientMessage); });
+                                              [=]() { processEventMessage(invocation); });
 
                         } catch (const std::exception &e) {
                             logger.warning("Event clientMessage could not be handled. ", e.what());
@@ -2373,8 +2344,6 @@ namespace hazelcast {
 
                     void AbstractClientListenerService::shutdown() {
                         eventExecutor.stop();
-                        clientContext.getClientExecutionService().shutdownExecutor(
-                                registrationExecutor.getThreadNamePrefix(), registrationExecutor, logger);
                     }
 
                     void AbstractClientListenerService::start() {
@@ -2492,7 +2461,7 @@ namespace hazelcast {
                                 std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
                                                                                                         request, "",
                                                                                                         subscriber);
-                                invocation->invoke()->get();
+                                invocation->invoke().get();
                                 removeEventHandler(registration.getCallId());
 
                                 ConnectionRegistrationsMap::iterator oldEntry = it;
@@ -2597,16 +2566,15 @@ namespace hazelcast {
                     }
 
                     void AbstractClientListenerService::processEventMessage(
-                            const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
-                        int64_t correlationId = clientMessage->getCorrelationId();
-                        std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler = eventHandlerMap.get(
-                                correlationId);
+                            const std::shared_ptr<ClientInvocation> &invocation) {
+                        auto eventHandler = invocation->getEventHandler();
                         if (eventHandler.get() == NULL) {
-                            logger.warning("No eventHandler for callId: ", correlationId, ", event: ", *clientMessage);
+                            logger.warning("No eventHandler for invocation. Ignoring this invocation response. ",
+                                           *invocation);
                             return;
                         }
 
-                        eventHandler->handle(clientMessage);
+                        eventHandler->handle(invocation->getResponse());
                     }
 
                     bool AbstractClientListenerService::ConnectionPointerLessComparator::operator()(

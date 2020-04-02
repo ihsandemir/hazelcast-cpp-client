@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <unordered_map>
+
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 
@@ -94,16 +96,36 @@ namespace hazelcast {
                     }
 
                     void asyncWrite(const std::shared_ptr<connection::Connection> &connection,
-                                    const std::shared_ptr<protocol::ClientMessage> &message) override {
+                                    const std::shared_ptr<spi::impl::ClientInvocation> &invocation) override {
+                        auto message = invocation->getClientMessage();
                         boost::asio::async_write(*socket_,
                                                  boost::asio::buffer(message->getBuffer()->data(),
                                                                      message->getFrameLength()),
                                                  [=](const boost::system::error_code &ec, std::size_t bytesWritten) {
+                                                     auto correlationId = message->getCorrelationId();
+                                                     auto result = connection->invocations.insert(
+                                                             {correlationId, invocation});
+                                                     if (!result.second) {
+                                                         auto existingEntry = *result.first;
+                                                         invocation->notifyException(
+                                                                 std::make_shared<exception::IllegalStateException>(
+                                                                         "Connection::write", (boost::format(
+                                                                                 "There is already an existing invocation with the same correlation id: %1%. Existing: %2% New invocation:%3%") %
+                                                                                               correlationId %
+                                                                                               (*existingEntry.second) %
+                                                                                               *invocation).str()));
+                                                         return;
+                                                     }
+
                                                      if (ec) {
-                                                         connection->close(
-                                                                 (boost::format{
-                                                                         "Error %1% during message write for %2% on connection %3%"} %
-                                                                  ec % *message % *connection).str());
+                                                         auto message = (boost::format{
+                                                                 "Error %1% during invocation write for %2% on connection %3%"} %
+                                                                         ec % *invocation % *connection).str();
+                                                         invocation->notifyException(
+                                                                 std::make_shared<exception::IOException>(
+                                                                         "Connection::write", message));
+
+                                                         connection->close(message);
                                                      }
                                                  });
                     }

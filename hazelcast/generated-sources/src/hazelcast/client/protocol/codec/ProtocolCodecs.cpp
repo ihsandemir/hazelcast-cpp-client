@@ -61,7 +61,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongAddAndGetCodec::ResponseParameters
-                AtomicLongAddAndGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongAddAndGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongAddAndGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -113,7 +113,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongCompareAndSetCodec::ResponseParameters
-                AtomicLongCompareAndSetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongCompareAndSetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongCompareAndSetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -157,7 +157,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongDecrementAndGetCodec::ResponseParameters
-                AtomicLongDecrementAndGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongDecrementAndGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongDecrementAndGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -205,7 +205,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongGetAndAddCodec::ResponseParameters
-                AtomicLongGetAndAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongGetAndAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongGetAndAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -249,7 +249,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongGetAndIncrementCodec::ResponseParameters
-                AtomicLongGetAndIncrementCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongGetAndIncrementCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongGetAndIncrementCodec::ResponseParameters(clientMessage);
                 }
 
@@ -297,7 +297,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongGetAndSetCodec::ResponseParameters
-                AtomicLongGetAndSetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongGetAndSetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongGetAndSetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -341,7 +341,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongGetCodec::ResponseParameters
-                AtomicLongGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -385,7 +385,7 @@ namespace hazelcast {
                 }
 
                 AtomicLongIncrementAndGetCodec::ResponseParameters
-                AtomicLongIncrementAndGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                AtomicLongIncrementAndGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return AtomicLongIncrementAndGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -465,7 +465,7 @@ namespace hazelcast {
                 }
 
                 ClientAddMembershipListenerCodec::ResponseParameters
-                ClientAddMembershipListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ClientAddMembershipListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ClientAddMembershipListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -657,7 +657,7 @@ namespace hazelcast {
                 }
 
                 ClientAuthenticationCodec::ResponseParameters
-                ClientAuthenticationCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ClientAuthenticationCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ClientAuthenticationCodec::ResponseParameters(clientMessage);
                 }
 
@@ -760,7 +760,7 @@ namespace hazelcast {
                 }
 
                 ClientAuthenticationCustomCodec::ResponseParameters
-                ClientAuthenticationCustomCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ClientAuthenticationCustomCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ClientAuthenticationCustomCodec::ResponseParameters(clientMessage);
                 }
 
@@ -893,7 +893,7 @@ namespace hazelcast {
                 }
 
                 ClientGetPartitionsCodec::ResponseParameters
-                ClientGetPartitionsCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ClientGetPartitionsCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ClientGetPartitionsCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1001,7 +1001,7 @@ namespace hazelcast {
                 }
 
                 CountDownLatchAwaitCodec::ResponseParameters
-                CountDownLatchAwaitCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                CountDownLatchAwaitCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return CountDownLatchAwaitCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1077,7 +1077,7 @@ namespace hazelcast {
                 }
 
                 CountDownLatchGetCountCodec::ResponseParameters
-                CountDownLatchGetCountCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                CountDownLatchGetCountCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return CountDownLatchGetCountCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1125,7 +1125,7 @@ namespace hazelcast {
                 }
 
                 CountDownLatchTrySetCountCodec::ResponseParameters
-                CountDownLatchTrySetCountCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                CountDownLatchTrySetCountCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return CountDownLatchTrySetCountCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1178,7 +1178,7 @@ namespace hazelcast {
                 }
 
                 ExecutorServiceCancelOnAddressCodec::ResponseParameters
-                ExecutorServiceCancelOnAddressCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ExecutorServiceCancelOnAddressCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ExecutorServiceCancelOnAddressCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1231,7 +1231,7 @@ namespace hazelcast {
                 }
 
                 ExecutorServiceCancelOnPartitionCodec::ResponseParameters
-                ExecutorServiceCancelOnPartitionCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ExecutorServiceCancelOnPartitionCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ExecutorServiceCancelOnPartitionCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1275,7 +1275,7 @@ namespace hazelcast {
                 }
 
                 ExecutorServiceIsShutdownCodec::ResponseParameters
-                ExecutorServiceIsShutdownCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ExecutorServiceIsShutdownCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ExecutorServiceIsShutdownCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1364,7 +1364,7 @@ namespace hazelcast {
                 }
 
                 ExecutorServiceSubmitToAddressCodec::ResponseParameters
-                ExecutorServiceSubmitToAddressCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ExecutorServiceSubmitToAddressCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ExecutorServiceSubmitToAddressCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1426,7 +1426,7 @@ namespace hazelcast {
                 }
 
                 ExecutorServiceSubmitToPartitionCodec::ResponseParameters
-                ExecutorServiceSubmitToPartitionCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ExecutorServiceSubmitToPartitionCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ExecutorServiceSubmitToPartitionCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1485,7 +1485,7 @@ namespace hazelcast {
                 }
 
                 FlakeIdGeneratorNewIdBatchCodec::ResponseParameters
-                FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return FlakeIdGeneratorNewIdBatchCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1534,7 +1534,7 @@ namespace hazelcast {
                 }
 
                 ListAddAllCodec::ResponseParameters
-                ListAddAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListAddAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListAddAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1586,7 +1586,7 @@ namespace hazelcast {
                 }
 
                 ListAddAllWithIndexCodec::ResponseParameters
-                ListAddAllWithIndexCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListAddAllWithIndexCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListAddAllWithIndexCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1634,7 +1634,7 @@ namespace hazelcast {
                 }
 
                 ListAddCodec::ResponseParameters
-                ListAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1686,7 +1686,7 @@ namespace hazelcast {
                 }
 
                 ListAddListenerCodec::ResponseParameters
-                ListAddListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListAddListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListAddListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1832,7 +1832,7 @@ namespace hazelcast {
                 }
 
                 ListCompareAndRemoveAllCodec::ResponseParameters
-                ListCompareAndRemoveAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListCompareAndRemoveAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListCompareAndRemoveAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1880,7 +1880,7 @@ namespace hazelcast {
                 }
 
                 ListCompareAndRetainAllCodec::ResponseParameters
-                ListCompareAndRetainAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListCompareAndRetainAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListCompareAndRetainAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1928,7 +1928,7 @@ namespace hazelcast {
                 }
 
                 ListContainsAllCodec::ResponseParameters
-                ListContainsAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListContainsAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListContainsAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -1976,7 +1976,7 @@ namespace hazelcast {
                 }
 
                 ListContainsCodec::ResponseParameters
-                ListContainsCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListContainsCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListContainsCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2020,7 +2020,7 @@ namespace hazelcast {
                 }
 
                 ListGetAllCodec::ResponseParameters
-                ListGetAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListGetAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListGetAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2068,7 +2068,7 @@ namespace hazelcast {
                 }
 
                 ListGetCodec::ResponseParameters
-                ListGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2120,7 +2120,7 @@ namespace hazelcast {
                 }
 
                 ListIndexOfCodec::ResponseParameters
-                ListIndexOfCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListIndexOfCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListIndexOfCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2164,7 +2164,7 @@ namespace hazelcast {
                 }
 
                 ListIsEmptyCodec::ResponseParameters
-                ListIsEmptyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListIsEmptyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListIsEmptyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2212,7 +2212,7 @@ namespace hazelcast {
                 }
 
                 ListLastIndexOfCodec::ResponseParameters
-                ListLastIndexOfCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListLastIndexOfCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListLastIndexOfCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2260,7 +2260,7 @@ namespace hazelcast {
                 }
 
                 ListRemoveCodec::ResponseParameters
-                ListRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2308,7 +2308,7 @@ namespace hazelcast {
                 }
 
                 ListRemoveListenerCodec::ResponseParameters
-                ListRemoveListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListRemoveListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListRemoveListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2356,7 +2356,7 @@ namespace hazelcast {
                 }
 
                 ListRemoveWithIndexCodec::ResponseParameters
-                ListRemoveWithIndexCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListRemoveWithIndexCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListRemoveWithIndexCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2413,7 +2413,7 @@ namespace hazelcast {
                 }
 
                 ListSetCodec::ResponseParameters
-                ListSetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListSetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListSetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2461,7 +2461,7 @@ namespace hazelcast {
                 }
 
                 ListSizeCodec::ResponseParameters
-                ListSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2513,7 +2513,7 @@ namespace hazelcast {
                 }
 
                 ListSubCodec::ResponseParameters
-                ListSubCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ListSubCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ListSubCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2593,7 +2593,7 @@ namespace hazelcast {
                 }
 
                 LockGetLockCountCodec::ResponseParameters
-                LockGetLockCountCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                LockGetLockCountCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return LockGetLockCountCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2637,7 +2637,7 @@ namespace hazelcast {
                 }
 
                 LockGetRemainingLeaseTimeCodec::ResponseParameters
-                LockGetRemainingLeaseTimeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                LockGetRemainingLeaseTimeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return LockGetRemainingLeaseTimeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2685,7 +2685,7 @@ namespace hazelcast {
                 }
 
                 LockIsLockedByCurrentThreadCodec::ResponseParameters
-                LockIsLockedByCurrentThreadCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                LockIsLockedByCurrentThreadCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return LockIsLockedByCurrentThreadCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2729,7 +2729,7 @@ namespace hazelcast {
                 }
 
                 LockIsLockedCodec::ResponseParameters
-                LockIsLockedCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                LockIsLockedCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return LockIsLockedCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2833,7 +2833,7 @@ namespace hazelcast {
                 }
 
                 LockTryLockCodec::ResponseParameters
-                LockTryLockCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                LockTryLockCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return LockTryLockCodec::ResponseParameters(clientMessage);
                 }
 
@@ -2929,7 +2929,7 @@ namespace hazelcast {
                 }
 
                 MapAddEntryListenerCodec::ResponseParameters
-                MapAddEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapAddEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapAddEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3024,7 +3024,7 @@ namespace hazelcast {
                 }
 
                 MapAddEntryListenerToKeyCodec::ResponseParameters
-                MapAddEntryListenerToKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapAddEntryListenerToKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapAddEntryListenerToKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3121,7 +3121,7 @@ namespace hazelcast {
                 }
 
                 MapAddEntryListenerWithPredicateCodec::ResponseParameters
-                MapAddEntryListenerWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapAddEntryListenerWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapAddEntryListenerWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3244,7 +3244,7 @@ namespace hazelcast {
                 }
 
                 MapAddInterceptorCodec::ResponseParameters
-                MapAddInterceptorCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapAddInterceptorCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapAddInterceptorCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3297,7 +3297,7 @@ namespace hazelcast {
                 }
 
                 MapAddNearCacheEntryListenerCodec::ResponseParameters
-                MapAddNearCacheEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapAddNearCacheEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapAddNearCacheEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3430,7 +3430,7 @@ namespace hazelcast {
                 }
 
                 MapContainsKeyCodec::ResponseParameters
-                MapContainsKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapContainsKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapContainsKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3478,7 +3478,7 @@ namespace hazelcast {
                 }
 
                 MapContainsValueCodec::ResponseParameters
-                MapContainsValueCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapContainsValueCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapContainsValueCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3567,7 +3567,7 @@ namespace hazelcast {
                 }
 
                 MapEntriesWithPagingPredicateCodec::ResponseParameters
-                MapEntriesWithPagingPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapEntriesWithPagingPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapEntriesWithPagingPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3615,7 +3615,7 @@ namespace hazelcast {
                 }
 
                 MapEntriesWithPredicateCodec::ResponseParameters
-                MapEntriesWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapEntriesWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapEntriesWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3659,7 +3659,7 @@ namespace hazelcast {
                 }
 
                 MapEntrySetCodec::ResponseParameters
-                MapEntrySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapEntrySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapEntrySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3743,7 +3743,7 @@ namespace hazelcast {
                 }
 
                 MapEvictCodec::ResponseParameters
-                MapEvictCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapEvictCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapEvictCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3791,7 +3791,7 @@ namespace hazelcast {
                 }
 
                 MapExecuteOnAllKeysCodec::ResponseParameters
-                MapExecuteOnAllKeysCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapExecuteOnAllKeysCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapExecuteOnAllKeysCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3847,7 +3847,7 @@ namespace hazelcast {
                 }
 
                 MapExecuteOnKeyCodec::ResponseParameters
-                MapExecuteOnKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapExecuteOnKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapExecuteOnKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3904,7 +3904,7 @@ namespace hazelcast {
                 }
 
                 MapExecuteOnKeysCodec::ResponseParameters
-                MapExecuteOnKeysCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapExecuteOnKeysCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapExecuteOnKeysCodec::ResponseParameters(clientMessage);
                 }
 
@@ -3956,7 +3956,7 @@ namespace hazelcast {
                 }
 
                 MapExecuteWithPredicateCodec::ResponseParameters
-                MapExecuteWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapExecuteWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapExecuteWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4076,7 +4076,7 @@ namespace hazelcast {
                 }
 
                 MapGetAllCodec::ResponseParameters
-                MapGetAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapGetAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapGetAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4127,7 +4127,7 @@ namespace hazelcast {
 
                 }
 
-                MapGetCodec::ResponseParameters MapGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapGetCodec::ResponseParameters MapGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4183,7 +4183,7 @@ namespace hazelcast {
                 }
 
                 MapGetEntryViewCodec::ResponseParameters
-                MapGetEntryViewCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapGetEntryViewCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapGetEntryViewCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4231,7 +4231,7 @@ namespace hazelcast {
                 }
 
                 MapIsEmptyCodec::ResponseParameters
-                MapIsEmptyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapIsEmptyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapIsEmptyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4279,7 +4279,7 @@ namespace hazelcast {
                 }
 
                 MapIsLockedCodec::ResponseParameters
-                MapIsLockedCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapIsLockedCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapIsLockedCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4323,7 +4323,7 @@ namespace hazelcast {
                 }
 
                 MapKeySetCodec::ResponseParameters
-                MapKeySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapKeySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapKeySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4372,7 +4372,7 @@ namespace hazelcast {
                 }
 
                 MapKeySetWithPagingPredicateCodec::ResponseParameters
-                MapKeySetWithPagingPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapKeySetWithPagingPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapKeySetWithPagingPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4420,7 +4420,7 @@ namespace hazelcast {
                 }
 
                 MapKeySetWithPredicateCodec::ResponseParameters
-                MapKeySetWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapKeySetWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapKeySetWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4565,7 +4565,7 @@ namespace hazelcast {
 
                 }
 
-                MapPutCodec::ResponseParameters MapPutCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapPutCodec::ResponseParameters MapPutCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapPutCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4629,7 +4629,7 @@ namespace hazelcast {
                 }
 
                 MapPutIfAbsentCodec::ResponseParameters
-                MapPutIfAbsentCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapPutIfAbsentCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapPutIfAbsentCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4746,7 +4746,7 @@ namespace hazelcast {
                 }
 
                 MapPutWithMaxIdleCodec::ResponseParameters
-                MapPutWithMaxIdleCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapPutWithMaxIdleCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapPutWithMaxIdleCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4839,7 +4839,7 @@ namespace hazelcast {
                 }
 
                 MapRemoveCodec::ResponseParameters
-                MapRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4891,7 +4891,7 @@ namespace hazelcast {
                 }
 
                 MapRemoveEntryListenerCodec::ResponseParameters
-                MapRemoveEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapRemoveEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapRemoveEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4947,7 +4947,7 @@ namespace hazelcast {
                 }
 
                 MapRemoveIfSameCodec::ResponseParameters
-                MapRemoveIfSameCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapRemoveIfSameCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapRemoveIfSameCodec::ResponseParameters(clientMessage);
                 }
 
@@ -4995,7 +4995,7 @@ namespace hazelcast {
                 }
 
                 MapRemoveInterceptorCodec::ResponseParameters
-                MapRemoveInterceptorCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapRemoveInterceptorCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapRemoveInterceptorCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5051,7 +5051,7 @@ namespace hazelcast {
                 }
 
                 MapReplaceCodec::ResponseParameters
-                MapReplaceCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapReplaceCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapReplaceCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5116,7 +5116,7 @@ namespace hazelcast {
                 }
 
                 MapReplaceIfSameCodec::ResponseParameters
-                MapReplaceIfSameCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapReplaceIfSameCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapReplaceIfSameCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5228,7 +5228,7 @@ namespace hazelcast {
                 }
 
                 MapSetWithMaxIdleCodec::ResponseParameters
-                MapSetWithMaxIdleCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapSetWithMaxIdleCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapSetWithMaxIdleCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5277,7 +5277,7 @@ namespace hazelcast {
                 }
 
                 MapSizeCodec::ResponseParameters
-                MapSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5333,7 +5333,7 @@ namespace hazelcast {
                 }
 
                 MapSubmitToKeyCodec::ResponseParameters
-                MapSubmitToKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapSubmitToKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapSubmitToKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5402,7 +5402,7 @@ namespace hazelcast {
                 }
 
                 MapTryLockCodec::ResponseParameters
-                MapTryLockCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapTryLockCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapTryLockCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5462,7 +5462,7 @@ namespace hazelcast {
                 }
 
                 MapTryPutCodec::ResponseParameters
-                MapTryPutCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapTryPutCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapTryPutCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5518,7 +5518,7 @@ namespace hazelcast {
                 }
 
                 MapTryRemoveCodec::ResponseParameters
-                MapTryRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapTryRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapTryRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5606,7 +5606,7 @@ namespace hazelcast {
                 }
 
                 MapValuesCodec::ResponseParameters
-                MapValuesCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapValuesCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapValuesCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5655,7 +5655,7 @@ namespace hazelcast {
                 }
 
                 MapValuesWithPagingPredicateCodec::ResponseParameters
-                MapValuesWithPagingPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapValuesWithPagingPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapValuesWithPagingPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5703,7 +5703,7 @@ namespace hazelcast {
                 }
 
                 MapValuesWithPredicateCodec::ResponseParameters
-                MapValuesWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MapValuesWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MapValuesWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5755,7 +5755,7 @@ namespace hazelcast {
                 }
 
                 MultiMapAddEntryListenerCodec::ResponseParameters
-                MultiMapAddEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapAddEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapAddEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5847,7 +5847,7 @@ namespace hazelcast {
                 }
 
                 MultiMapAddEntryListenerToKeyCodec::ResponseParameters
-                MultiMapAddEntryListenerToKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapAddEntryListenerToKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapAddEntryListenerToKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -5970,7 +5970,7 @@ namespace hazelcast {
                 }
 
                 MultiMapContainsEntryCodec::ResponseParameters
-                MultiMapContainsEntryCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapContainsEntryCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapContainsEntryCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6022,7 +6022,7 @@ namespace hazelcast {
                 }
 
                 MultiMapContainsKeyCodec::ResponseParameters
-                MultiMapContainsKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapContainsKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapContainsKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6070,7 +6070,7 @@ namespace hazelcast {
                 }
 
                 MultiMapContainsValueCodec::ResponseParameters
-                MultiMapContainsValueCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapContainsValueCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapContainsValueCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6114,7 +6114,7 @@ namespace hazelcast {
                 }
 
                 MultiMapEntrySetCodec::ResponseParameters
-                MultiMapEntrySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapEntrySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapEntrySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6206,7 +6206,7 @@ namespace hazelcast {
                 }
 
                 MultiMapGetCodec::ResponseParameters
-                MultiMapGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6254,7 +6254,7 @@ namespace hazelcast {
                 }
 
                 MultiMapIsLockedCodec::ResponseParameters
-                MultiMapIsLockedCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapIsLockedCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapIsLockedCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6298,7 +6298,7 @@ namespace hazelcast {
                 }
 
                 MultiMapKeySetCodec::ResponseParameters
-                MultiMapKeySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapKeySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapKeySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6402,7 +6402,7 @@ namespace hazelcast {
                 }
 
                 MultiMapPutCodec::ResponseParameters
-                MultiMapPutCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapPutCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapPutCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6454,7 +6454,7 @@ namespace hazelcast {
                 }
 
                 MultiMapRemoveCodec::ResponseParameters
-                MultiMapRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6510,7 +6510,7 @@ namespace hazelcast {
                 }
 
                 MultiMapRemoveEntryCodec::ResponseParameters
-                MultiMapRemoveEntryCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapRemoveEntryCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapRemoveEntryCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6558,7 +6558,7 @@ namespace hazelcast {
                 }
 
                 MultiMapRemoveEntryListenerCodec::ResponseParameters
-                MultiMapRemoveEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapRemoveEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapRemoveEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6602,7 +6602,7 @@ namespace hazelcast {
                 }
 
                 MultiMapSizeCodec::ResponseParameters
-                MultiMapSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6666,7 +6666,7 @@ namespace hazelcast {
                 }
 
                 MultiMapTryLockCodec::ResponseParameters
-                MultiMapTryLockCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapTryLockCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapTryLockCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6762,7 +6762,7 @@ namespace hazelcast {
                 }
 
                 MultiMapValueCountCodec::ResponseParameters
-                MultiMapValueCountCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapValueCountCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapValueCountCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6806,7 +6806,7 @@ namespace hazelcast {
                 }
 
                 MultiMapValuesCodec::ResponseParameters
-                MultiMapValuesCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                MultiMapValuesCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return MultiMapValuesCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6873,7 +6873,7 @@ namespace hazelcast {
                 }
 
                 PNCounterAddCodec::ResponseParameters
-                PNCounterAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                PNCounterAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return PNCounterAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6931,7 +6931,7 @@ namespace hazelcast {
                 }
 
                 PNCounterGetCodec::ResponseParameters
-                PNCounterGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                PNCounterGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return PNCounterGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -6976,7 +6976,7 @@ namespace hazelcast {
                 }
 
                 PNCounterGetConfiguredReplicaCountCodec::ResponseParameters
-                PNCounterGetConfiguredReplicaCountCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                PNCounterGetConfiguredReplicaCountCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return PNCounterGetConfiguredReplicaCountCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7024,7 +7024,7 @@ namespace hazelcast {
                 }
 
                 QueueAddAllCodec::ResponseParameters
-                QueueAddAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueAddAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueAddAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7076,7 +7076,7 @@ namespace hazelcast {
                 }
 
                 QueueAddListenerCodec::ResponseParameters
-                QueueAddListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueAddListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueAddListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7182,7 +7182,7 @@ namespace hazelcast {
                 }
 
                 QueueCompareAndRemoveAllCodec::ResponseParameters
-                QueueCompareAndRemoveAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueCompareAndRemoveAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueCompareAndRemoveAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7230,7 +7230,7 @@ namespace hazelcast {
                 }
 
                 QueueCompareAndRetainAllCodec::ResponseParameters
-                QueueCompareAndRetainAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueCompareAndRetainAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueCompareAndRetainAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7278,7 +7278,7 @@ namespace hazelcast {
                 }
 
                 QueueContainsAllCodec::ResponseParameters
-                QueueContainsAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueContainsAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueContainsAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7326,7 +7326,7 @@ namespace hazelcast {
                 }
 
                 QueueContainsCodec::ResponseParameters
-                QueueContainsCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueContainsCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueContainsCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7370,7 +7370,7 @@ namespace hazelcast {
                 }
 
                 QueueDrainToCodec::ResponseParameters
-                QueueDrainToCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueDrainToCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueDrainToCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7418,7 +7418,7 @@ namespace hazelcast {
                 }
 
                 QueueDrainToMaxSizeCodec::ResponseParameters
-                QueueDrainToMaxSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueDrainToMaxSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueDrainToMaxSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7462,7 +7462,7 @@ namespace hazelcast {
                 }
 
                 QueueIsEmptyCodec::ResponseParameters
-                QueueIsEmptyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueIsEmptyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueIsEmptyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7506,7 +7506,7 @@ namespace hazelcast {
                 }
 
                 QueueIteratorCodec::ResponseParameters
-                QueueIteratorCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueIteratorCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueIteratorCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7558,7 +7558,7 @@ namespace hazelcast {
                 }
 
                 QueueOfferCodec::ResponseParameters
-                QueueOfferCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueOfferCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueOfferCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7602,7 +7602,7 @@ namespace hazelcast {
                 }
 
                 QueuePeekCodec::ResponseParameters
-                QueuePeekCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueuePeekCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueuePeekCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7654,7 +7654,7 @@ namespace hazelcast {
                 }
 
                 QueuePollCodec::ResponseParameters
-                QueuePollCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueuePollCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueuePollCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7738,7 +7738,7 @@ namespace hazelcast {
                 }
 
                 QueueRemainingCapacityCodec::ResponseParameters
-                QueueRemainingCapacityCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueRemainingCapacityCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueRemainingCapacityCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7786,7 +7786,7 @@ namespace hazelcast {
                 }
 
                 QueueRemoveCodec::ResponseParameters
-                QueueRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7834,7 +7834,7 @@ namespace hazelcast {
                 }
 
                 QueueRemoveListenerCodec::ResponseParameters
-                QueueRemoveListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueRemoveListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueRemoveListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7878,7 +7878,7 @@ namespace hazelcast {
                 }
 
                 QueueSizeCodec::ResponseParameters
-                QueueSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                QueueSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return QueueSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -7927,7 +7927,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapAddEntryListenerCodec::ResponseParameters
-                ReplicatedMapAddEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapAddEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapAddEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8015,7 +8015,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapAddEntryListenerToKeyCodec::ResponseParameters
-                ReplicatedMapAddEntryListenerToKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapAddEntryListenerToKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapAddEntryListenerToKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8287,7 +8287,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapAddNearCacheEntryListenerCodec::ResponseParameters
-                ReplicatedMapAddNearCacheEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapAddNearCacheEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapAddNearCacheEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8402,7 +8402,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapContainsKeyCodec::ResponseParameters
-                ReplicatedMapContainsKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapContainsKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapContainsKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8450,7 +8450,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapContainsValueCodec::ResponseParameters
-                ReplicatedMapContainsValueCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapContainsValueCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapContainsValueCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8494,7 +8494,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapEntrySetCodec::ResponseParameters
-                ReplicatedMapEntrySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapEntrySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapEntrySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8542,7 +8542,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapGetCodec::ResponseParameters
-                ReplicatedMapGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8591,7 +8591,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapIsEmptyCodec::ResponseParameters
-                ReplicatedMapIsEmptyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapIsEmptyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapIsEmptyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8635,7 +8635,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapKeySetCodec::ResponseParameters
-                ReplicatedMapKeySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapKeySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapKeySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8729,7 +8729,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapPutCodec::ResponseParameters
-                ReplicatedMapPutCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapPutCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapPutCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8782,7 +8782,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapRemoveCodec::ResponseParameters
-                ReplicatedMapRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8836,7 +8836,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapRemoveEntryListenerCodec::ResponseParameters
-                ReplicatedMapRemoveEntryListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapRemoveEntryListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapRemoveEntryListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8880,7 +8880,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapSizeCodec::ResponseParameters
-                ReplicatedMapSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8924,7 +8924,7 @@ namespace hazelcast {
                 }
 
                 ReplicatedMapValuesCodec::ResponseParameters
-                ReplicatedMapValuesCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                ReplicatedMapValuesCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return ReplicatedMapValuesCodec::ResponseParameters(clientMessage);
                 }
 
@@ -8976,7 +8976,7 @@ namespace hazelcast {
                 }
 
                 RingbufferAddAllCodec::ResponseParameters
-                RingbufferAddAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferAddAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferAddAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9028,7 +9028,7 @@ namespace hazelcast {
                 }
 
                 RingbufferAddCodec::ResponseParameters
-                RingbufferAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9072,7 +9072,7 @@ namespace hazelcast {
                 }
 
                 RingbufferCapacityCodec::ResponseParameters
-                RingbufferCapacityCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferCapacityCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferCapacityCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9116,7 +9116,7 @@ namespace hazelcast {
                 }
 
                 RingbufferHeadSequenceCodec::ResponseParameters
-                RingbufferHeadSequenceCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferHeadSequenceCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferHeadSequenceCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9192,7 +9192,7 @@ namespace hazelcast {
                 }
 
                 RingbufferReadManyCodec::ResponseParameters
-                RingbufferReadManyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferReadManyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferReadManyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9247,7 +9247,7 @@ namespace hazelcast {
                 }
 
                 RingbufferReadOneCodec::ResponseParameters
-                RingbufferReadOneCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferReadOneCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferReadOneCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9296,7 +9296,7 @@ namespace hazelcast {
                 }
 
                 RingbufferRemainingCapacityCodec::ResponseParameters
-                RingbufferRemainingCapacityCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferRemainingCapacityCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferRemainingCapacityCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9340,7 +9340,7 @@ namespace hazelcast {
                 }
 
                 RingbufferSizeCodec::ResponseParameters
-                RingbufferSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9384,7 +9384,7 @@ namespace hazelcast {
                 }
 
                 RingbufferTailSequenceCodec::ResponseParameters
-                RingbufferTailSequenceCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                RingbufferTailSequenceCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return RingbufferTailSequenceCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9464,7 +9464,7 @@ namespace hazelcast {
                 }
 
                 SemaphoreAvailablePermitsCodec::ResponseParameters
-                SemaphoreAvailablePermitsCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SemaphoreAvailablePermitsCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SemaphoreAvailablePermitsCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9508,7 +9508,7 @@ namespace hazelcast {
                 }
 
                 SemaphoreDrainPermitsCodec::ResponseParameters
-                SemaphoreDrainPermitsCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SemaphoreDrainPermitsCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SemaphoreDrainPermitsCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9592,7 +9592,7 @@ namespace hazelcast {
                 }
 
                 SemaphoreInitCodec::ResponseParameters
-                SemaphoreInitCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SemaphoreInitCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SemaphoreInitCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9716,7 +9716,7 @@ namespace hazelcast {
                 }
 
                 SemaphoreTryAcquireCodec::ResponseParameters
-                SemaphoreTryAcquireCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SemaphoreTryAcquireCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SemaphoreTryAcquireCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9764,7 +9764,7 @@ namespace hazelcast {
                 }
 
                 SetAddAllCodec::ResponseParameters
-                SetAddAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetAddAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetAddAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9811,7 +9811,7 @@ namespace hazelcast {
 
                 }
 
-                SetAddCodec::ResponseParameters SetAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetAddCodec::ResponseParameters SetAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9863,7 +9863,7 @@ namespace hazelcast {
                 }
 
                 SetAddListenerCodec::ResponseParameters
-                SetAddListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetAddListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetAddListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -9969,7 +9969,7 @@ namespace hazelcast {
                 }
 
                 SetCompareAndRemoveAllCodec::ResponseParameters
-                SetCompareAndRemoveAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetCompareAndRemoveAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetCompareAndRemoveAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10017,7 +10017,7 @@ namespace hazelcast {
                 }
 
                 SetCompareAndRetainAllCodec::ResponseParameters
-                SetCompareAndRetainAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetCompareAndRetainAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetCompareAndRetainAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10065,7 +10065,7 @@ namespace hazelcast {
                 }
 
                 SetContainsAllCodec::ResponseParameters
-                SetContainsAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetContainsAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetContainsAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10113,7 +10113,7 @@ namespace hazelcast {
                 }
 
                 SetContainsCodec::ResponseParameters
-                SetContainsCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetContainsCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetContainsCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10157,7 +10157,7 @@ namespace hazelcast {
                 }
 
                 SetGetAllCodec::ResponseParameters
-                SetGetAllCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetGetAllCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetGetAllCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10201,7 +10201,7 @@ namespace hazelcast {
                 }
 
                 SetIsEmptyCodec::ResponseParameters
-                SetIsEmptyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetIsEmptyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetIsEmptyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10249,7 +10249,7 @@ namespace hazelcast {
                 }
 
                 SetRemoveCodec::ResponseParameters
-                SetRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10297,7 +10297,7 @@ namespace hazelcast {
                 }
 
                 SetRemoveListenerCodec::ResponseParameters
-                SetRemoveListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetRemoveListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetRemoveListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10341,7 +10341,7 @@ namespace hazelcast {
                 }
 
                 SetSizeCodec::ResponseParameters
-                SetSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                SetSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return SetSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10389,7 +10389,7 @@ namespace hazelcast {
                 }
 
                 TopicAddMessageListenerCodec::ResponseParameters
-                TopicAddMessageListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TopicAddMessageListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TopicAddMessageListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10499,7 +10499,7 @@ namespace hazelcast {
                 }
 
                 TopicRemoveMessageListenerCodec::ResponseParameters
-                TopicRemoveMessageListenerCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TopicRemoveMessageListenerCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TopicRemoveMessageListenerCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10591,7 +10591,7 @@ namespace hazelcast {
                 }
 
                 TransactionCreateCodec::ResponseParameters
-                TransactionCreateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionCreateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionCreateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10683,7 +10683,7 @@ namespace hazelcast {
                 }
 
                 TransactionalListAddCodec::ResponseParameters
-                TransactionalListAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalListAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalListAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10739,7 +10739,7 @@ namespace hazelcast {
                 }
 
                 TransactionalListRemoveCodec::ResponseParameters
-                TransactionalListRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalListRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalListRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10791,7 +10791,7 @@ namespace hazelcast {
                 }
 
                 TransactionalListSizeCodec::ResponseParameters
-                TransactionalListSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalListSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalListSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10847,7 +10847,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapContainsKeyCodec::ResponseParameters
-                TransactionalMapContainsKeyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapContainsKeyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapContainsKeyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -10947,7 +10947,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapGetCodec::ResponseParameters
-                TransactionalMapGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11004,7 +11004,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapIsEmptyCodec::ResponseParameters
-                TransactionalMapIsEmptyCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapIsEmptyCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapIsEmptyCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11056,7 +11056,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapKeySetCodec::ResponseParameters
-                TransactionalMapKeySetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapKeySetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapKeySetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11113,7 +11113,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapKeySetWithPredicateCodec::ResponseParameters
-                TransactionalMapKeySetWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapKeySetWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapKeySetWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11177,7 +11177,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapPutCodec::ResponseParameters
-                TransactionalMapPutCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapPutCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapPutCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11242,7 +11242,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapPutIfAbsentCodec::ResponseParameters
-                TransactionalMapPutIfAbsentCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapPutIfAbsentCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapPutIfAbsentCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11303,7 +11303,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapRemoveCodec::ResponseParameters
-                TransactionalMapRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11369,7 +11369,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapRemoveIfSameCodec::ResponseParameters
-                TransactionalMapRemoveIfSameCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapRemoveIfSameCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapRemoveIfSameCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11429,7 +11429,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapReplaceCodec::ResponseParameters
-                TransactionalMapReplaceCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapReplaceCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapReplaceCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11499,7 +11499,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapReplaceIfSameCodec::ResponseParameters
-                TransactionalMapReplaceIfSameCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapReplaceIfSameCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapReplaceIfSameCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11599,7 +11599,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapSizeCodec::ResponseParameters
-                TransactionalMapSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11651,7 +11651,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapValuesCodec::ResponseParameters
-                TransactionalMapValuesCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapValuesCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapValuesCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11708,7 +11708,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMapValuesWithPredicateCodec::ResponseParameters
-                TransactionalMapValuesWithPredicateCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMapValuesWithPredicateCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMapValuesWithPredicateCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11764,7 +11764,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMultiMapGetCodec::ResponseParameters
-                TransactionalMultiMapGetCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMultiMapGetCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMultiMapGetCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11824,7 +11824,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMultiMapPutCodec::ResponseParameters
-                TransactionalMultiMapPutCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMultiMapPutCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMultiMapPutCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11880,7 +11880,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMultiMapRemoveCodec::ResponseParameters
-                TransactionalMultiMapRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMultiMapRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMultiMapRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11941,7 +11941,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMultiMapRemoveEntryCodec::ResponseParameters
-                TransactionalMultiMapRemoveEntryCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMultiMapRemoveEntryCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMultiMapRemoveEntryCodec::ResponseParameters(clientMessage);
                 }
 
@@ -11993,7 +11993,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMultiMapSizeCodec::ResponseParameters
-                TransactionalMultiMapSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMultiMapSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMultiMapSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12050,7 +12050,7 @@ namespace hazelcast {
                 }
 
                 TransactionalMultiMapValueCountCodec::ResponseParameters
-                TransactionalMultiMapValueCountCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalMultiMapValueCountCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalMultiMapValueCountCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12110,7 +12110,7 @@ namespace hazelcast {
                 }
 
                 TransactionalQueueOfferCodec::ResponseParameters
-                TransactionalQueueOfferCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalQueueOfferCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalQueueOfferCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12166,7 +12166,7 @@ namespace hazelcast {
                 }
 
                 TransactionalQueuePollCodec::ResponseParameters
-                TransactionalQueuePollCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalQueuePollCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalQueuePollCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12223,7 +12223,7 @@ namespace hazelcast {
                 }
 
                 TransactionalQueueSizeCodec::ResponseParameters
-                TransactionalQueueSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalQueueSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalQueueSizeCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12279,7 +12279,7 @@ namespace hazelcast {
                 }
 
                 TransactionalSetAddCodec::ResponseParameters
-                TransactionalSetAddCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalSetAddCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalSetAddCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12335,7 +12335,7 @@ namespace hazelcast {
                 }
 
                 TransactionalSetRemoveCodec::ResponseParameters
-                TransactionalSetRemoveCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalSetRemoveCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalSetRemoveCodec::ResponseParameters(clientMessage);
                 }
 
@@ -12387,7 +12387,7 @@ namespace hazelcast {
                 }
 
                 TransactionalSetSizeCodec::ResponseParameters
-                TransactionalSetSizeCodec::ResponseParameters::decode(ClientMessage &clientMessage) {
+                TransactionalSetSizeCodec::ResponseParameters::decode(ClientMessage &&clientMessage) {
                     return TransactionalSetSizeCodec::ResponseParameters(clientMessage);
                 }
 

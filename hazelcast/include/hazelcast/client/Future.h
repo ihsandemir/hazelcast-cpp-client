@@ -336,7 +336,7 @@ namespace hazelcast {
              * FutureUninitialized).
              */
             void wait() const {
-                wait_for(INT64_MAX);
+                clientInvocationFuture.wait();
             }
 
             /**
@@ -347,11 +347,11 @@ namespace hazelcast {
              * @return true if *this refers to a shared state, otherwise false.
              */
             bool valid() const {
-                return clientInvocationFuture.get() != NULL;
+                return clientInvocationFuture.valid();
             }
 
         private:
-            std::shared_ptr<spi::impl::ClientInvocationFuture> clientInvocationFuture;
+            std::future<protocol::ClientMessage> clientInvocationFuture;
             serialization::pimpl::SerializationService &serializationService;
             Decoder decoderFunction;
         };

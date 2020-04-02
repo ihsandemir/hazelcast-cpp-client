@@ -55,8 +55,8 @@ namespace hazelcast {
 
                     bool isRedoOperation();
 
-                    void handleClientMessage(const std::shared_ptr<connection::Connection> &connection,
-                                             const std::shared_ptr<protocol::ClientMessage> &message);
+                    void handleClientMessage(const std::shared_ptr<ClientInvocation> &invocation,
+                                             const std::shared_ptr<connection::Connection> &connection);
 
                 protected:
 
@@ -72,16 +72,14 @@ namespace hazelcast {
 
                         void start();
 
-                        void process(const std::shared_ptr<protocol::ClientMessage> &message);
+                        void process(const std::shared_ptr<ClientInvocation> &invocation);
                     private:
                         util::ILogger &invocationLogger;
                         AbstractClientInvocationService &invocationService;
                         ClientContext &client;
                         std::unique_ptr<boost::asio::thread_pool> pool;
 
-                        void processInternal(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
-
-                        void handleClientMessage(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
+                        void processInternal(const std::shared_ptr<ClientInvocation> &invocation);
                     };
 
                     const ClientProperty &CLEAN_RESOURCES_MILLIS;
@@ -102,8 +100,8 @@ namespace hazelcast {
 
                     void registerInvocation(const std::shared_ptr<ClientInvocation> &clientInvocation);
 
-                    bool writeToConnection(connection::Connection &connection,
-                                           const std::shared_ptr<protocol::ClientMessage> &clientMessage);
+                    void writeToConnection(connection::Connection &connection,
+                                           const std::shared_ptr<ClientInvocation> &clientInvocation);
 
                     void send(std::shared_ptr<impl::ClientInvocation> invocation,
                               std::shared_ptr<connection::Connection> connection);

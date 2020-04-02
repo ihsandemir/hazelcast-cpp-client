@@ -972,9 +972,8 @@ namespace hazelcast {
                 clientContext.getConnectionManager().onClose(*this);
             }
 
-            bool Connection::write(const std::shared_ptr<protocol::ClientMessage> &message) {
-                socket->asyncWrite(shared_from_this(), message);
-                return true;
+            void Connection::write(const std::shared_ptr<spi::impl::ClientInvocation> &clientInvocation) {
+                socket->asyncWrite(shared_from_this(), clientInvocation);
             }
 
             const std::shared_ptr<Address> &Connection::getRemoteEndpoint() const {
@@ -986,12 +985,20 @@ namespace hazelcast {
             }
 
             void Connection::handleClientMessage(const std::shared_ptr<protocol::ClientMessage> &message) {
+                auto correlationId = message->getCorrelationId();
+                auto invocationIterator = invocations.find(correlationId);
+                if (invocationIterator == invocations.end()) {
+                    logger.warning("No invocation' for callId: ", correlationId, ". Dropping this message: ", *message);
+                    return;
+                }
+                auto invocation = invocationIterator->second;
+                invocation->setResponse(message);
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
                     spi::impl::listener::AbstractClientListenerService &listenerService =
                             (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();
-                    listenerService.handleClientMessage(message, shared_from_this());
+                    listenerService.handleClientMessage(invocation, shared_from_this());
                 } else {
-                    invocationService.handleClientMessage(shared_from_this(), message);
+                    invocationService.handleClientMessage(invocation, shared_from_this());
                 }
             }
 
@@ -1067,7 +1074,7 @@ namespace hazelcast {
                 return socket->localSocketAddress();
             }
 
-            auto Connection::lastReadTime() {
+            const std::chrono::steady_clock::time_point Connection::lastReadTime() {
                 return readHandler.getLastReadTime();
             }
 

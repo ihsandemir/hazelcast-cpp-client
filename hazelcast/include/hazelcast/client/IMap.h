@@ -780,7 +780,7 @@ namespace hazelcast {
              * @return Future from which the result of the operation can be retrieved.
              */
             template<typename ResultType, typename EntryProcessor>
-            Future<ResultType> submitToKey(const K &key, const EntryProcessor &entryProcessor) {
+            future<ResultType> submitToKey(const K &key, const EntryProcessor &entryProcessor) {
                 return mapImpl->template submitToKey<ResultType, EntryProcessor>(key, entryProcessor);
             }
 
@@ -975,7 +975,7 @@ namespace hazelcast {
              * @return ICompletableFuture from which the value of the key can be retrieved
              * @see ICompletableFuture
              */
-            std::shared_ptr<ICompletableFuture<V> > getAsync(const K &key) {
+            future<std::shared_ptr<V>> getAsync(const K &key) {
                 return mapImpl->getAsync(key);
             }
 
@@ -1034,7 +1034,7 @@ namespace hazelcast {
              * @see ICompletableFuture
              * @see #setAsync(Object, Object)
              */
-            std::shared_ptr<ICompletableFuture<V> > putAsync(const K &key, const V &value) {
+            future<std::shared_ptr<V>> putAsync(const K &key, const V &value) {
                 return mapImpl->putAsync(key, value);
             }
 
@@ -1104,7 +1104,7 @@ namespace hazelcast {
              * @see ICompletableFuture
              * @see #setAsync(const K&, const V&, int64_t, TimeUnit)
              */
-            std::shared_ptr<ICompletableFuture<V> >
+            future<std::shared_ptr<V>>
             putAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit) {
                 return mapImpl->putAsync(key, value, ttl, ttlUnit);
             }
@@ -1182,7 +1182,7 @@ namespace hazelcast {
              * @see ICompletableFuture
              * @see #setAsync(const K&, const V&, int64_t, TimeUnit)
              */
-            std::shared_ptr<ICompletableFuture<V> >
+            future<std::shared_ptr<V>>
             putAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
                      int64_t maxIdle, const util::concurrent::TimeUnit &maxIdleUnit) {
                 return mapImpl->putAsync(key, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
@@ -1399,7 +1399,7 @@ namespace hazelcast {
              * @return {@link ICompletableFuture} from which the value removed from the map can be retrieved
              * @see ICompletableFuture
              */
-            std::shared_ptr<ICompletableFuture<V> > removeAsync(const K &key) {
+            future<std::shared_ptr<V>> removeAsync(const K &key) {
                 return mapImpl->removeAsync(key);
             }
 

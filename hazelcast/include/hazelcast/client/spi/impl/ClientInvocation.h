@@ -21,6 +21,11 @@
 #include <memory>
 #include <atomic>
 
+#define BOOST_THREAD_PROVIDES_FUTURE
+#define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
+
+#include <boost/thread/future.hpp>
+
 #include "hazelcast/util/Runnable.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 
@@ -38,6 +43,8 @@ namespace hazelcast {
     }
 
     namespace client {
+        using namespace boost;
+
         class Address;
 
         namespace connection {
@@ -55,14 +62,14 @@ namespace hazelcast {
 
             class ClientContext;
 
-            class ClientExecutionService;
-
             namespace impl {
                 class ClientClusterServiceImpl;
 
                 namespace sequence {
                     class CallIdSequence;
                 }
+
+                using namespace boost;
 
                 /**
                  * Handles the routing of a request from a Hazelcast client.
@@ -72,18 +79,17 @@ namespace hazelcast {
                  * 3) How many times is it retried?
                  */
                 class HAZELCAST_API ClientInvocation
-                        : public util::Runnable,
-                          public std::enable_shared_from_this<ClientInvocation> {
+                        : public std::enable_shared_from_this<ClientInvocation> {
                 public:
                     virtual ~ClientInvocation();
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
-                                                                      std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                                      const std::string &objectName, int partitionId);
+                                                                    std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                    const std::string &objectName, int partitionId);
 
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
-                                                                      std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                    std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                       const std::string &objectName,
                                                                       const std::shared_ptr<connection::Connection> &connection);
 
@@ -96,9 +102,9 @@ namespace hazelcast {
                                                                       std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                       const std::string &objectName);
 
-                    std::shared_ptr<ClientInvocationFuture> invoke();
+                    future<protocol::ClientMessage> invoke();
 
-                    std::shared_ptr<ClientInvocationFuture> invokeUrgent();
+                    future<protocol::ClientMessage> invokeUrgent();
 
                     void run();
 
@@ -126,6 +132,12 @@ namespace hazelcast {
                     static bool isRetrySafeException(exception::IException &exception);
 
                     std::shared_ptr<util::Executor> getUserExecutor();
+
+                    promise<protocol::ClientMessage> &getPromise();
+
+                    const std::shared_ptr<protocol::ClientMessage> &getResponse() const;
+
+                    void setResponse(const std::shared_ptr<protocol::ClientMessage> &response);
 
                 private:
                     /**
@@ -182,11 +194,12 @@ namespace hazelcast {
                     util::Sync<std::shared_ptr<connection::Connection> > sendConnection;
                     std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     std::atomic<int64_t> invokeCount;
-                    std::shared_ptr<ClientInvocationFuture> clientInvocationFuture;
+                    promise<protocol::ClientMessage> invocationPromise;
+                    std::shared_ptr<protocol::ClientMessage> response;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);
 
-                    std::shared_ptr<exception::OperationTimeoutException> newOperationTimeoutException(exception::IException &exception);
+                    exception::OperationTimeoutException newOperationTimeoutException(exception::IException &exception);
 
                     void execute();
 

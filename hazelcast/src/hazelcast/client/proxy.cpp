@@ -1081,10 +1081,10 @@ namespace hazelcast {
             flakeidgen::impl::IdBatch ClientFlakeIdGeneratorProxy::newIdBatch(int32_t batchSize) {
                 std::unique_ptr<protocol::ClientMessage> requestMsg = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::encodeRequest(
                         getName(), batchSize);
-                std::shared_ptr<protocol::ClientMessage> responseMsg = spi::impl::ClientInvocation::create(
-                        getContext(), requestMsg, getName())->invoke()->get();
-                protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters response =
-                        protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(*responseMsg);
+                auto invocation = spi::impl::ClientInvocation::create(getContext(), requestMsg,
+                                                                      getName())->invoke();
+                auto response =
+                        protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(invocation.get());
                 return flakeidgen::impl::IdBatch(response.base, response.increment, response.batchSize);
             }
 
@@ -1299,19 +1299,16 @@ namespace hazelcast {
                 return getContext().getPartitionService().getPartitionId(key);
             }
 
-            std::shared_ptr<protocol::ClientMessage> ProxyImpl::invokeOnPartition(
+            protocol::ClientMessage ProxyImpl::invokeOnPartition(
                     std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
                 try {
-                    std::shared_ptr<spi::impl::ClientInvocationFuture> future = invokeAndGetFuture(request,
-                                                                                                   partitionId);
-                    return future->get();
+                    return invokeAndGetFuture(request, partitionId).get();
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
-                return std::shared_ptr<protocol::ClientMessage>();
             }
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
+            future<protocol::ClientMessage>
             ProxyImpl::invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
                 try {
                     std::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
@@ -1320,10 +1317,9 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
-                return std::shared_ptr<spi::impl::ClientInvocationFuture>();
             }
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
+            future<protocol::ClientMessage>
             ProxyImpl::invokeOnKeyOwner(std::unique_ptr<protocol::ClientMessage> &request,
                                         const serialization::pimpl::Data &keyData) {
                 int partitionId = getPartitionId(keyData);
@@ -1332,29 +1328,27 @@ namespace hazelcast {
                 return invocation->invoke();
             }
 
-            std::shared_ptr<protocol::ClientMessage>
+            protocol::ClientMessage
             ProxyImpl::invoke(std::unique_ptr<protocol::ClientMessage> &request) {
                 try {
                     std::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                             getContext(), request, getName());
-                    return invocation->invoke()->get();
+                    return invocation->invoke().get();
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
-                return std::shared_ptr<protocol::ClientMessage>();
             }
 
-            std::shared_ptr<protocol::ClientMessage>
+            protocol::ClientMessage
             ProxyImpl::invokeOnAddress(std::unique_ptr<protocol::ClientMessage> &request, const Address &address) {
                 try {
 
                     std::shared_ptr<spi::impl::ClientInvocation> invocation = spi::impl::ClientInvocation::create(
                             getContext(), request, getName(), address);
-                    return invocation->invoke()->get();
+                    return invocation->invoke().get();
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
-                return std::shared_ptr<protocol::ClientMessage>();
             }
 
             std::vector<hazelcast::client::TypedData>
@@ -1784,7 +1778,7 @@ namespace hazelcast {
 
             EntryVector
             IMapImpl::getAllData(const std::map<int, std::vector<serialization::pimpl::Data> > &partitionToKeyData) {
-                std::vector<std::shared_ptr<spi::impl::ClientInvocationFuture> > futures;
+                std::vector<future<protocol::ClientMessage> > futures;
 
                 for (std::map<int, std::vector<serialization::pimpl::Data> >::const_iterator it = partitionToKeyData.begin();
                      it != partitionToKeyData.end(); ++it) {
@@ -1794,13 +1788,12 @@ namespace hazelcast {
                     futures.push_back(invokeAndGetFuture(request, it->first));
                 }
 
+                // TODO: change to use boost::when_all
                 EntryVector result;
                 // wait for all futures
-                for (const std::shared_ptr<spi::impl::ClientInvocationFuture> &future : futures) {
-                    std::shared_ptr<protocol::ClientMessage> responseForPartition = future->get();
+                for (auto &future : futures) {
                     protocol::codec::MapGetAllCodec::ResponseParameters resultForPartition =
-                            protocol::codec::MapGetAllCodec::ResponseParameters::decode(
-                                    *responseForPartition);
+                            protocol::codec::MapGetAllCodec::ResponseParameters::decode(future.get());
                     result.insert(result.end(), resultForPartition.response.begin(),
                                   resultForPartition.response.end());
 
