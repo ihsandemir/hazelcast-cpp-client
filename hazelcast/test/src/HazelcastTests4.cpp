@@ -47,7 +47,6 @@
 #include <hazelcast/util/CountDownLatch.h>
 #include <ClientTestSupportBase.h>
 #include <hazelcast/util/Util.h>
-#include <hazelcast/util/impl/SimpleExecutorService.h>
 #include <TestHelperFunctions.h>
 #include <ostream>
 #include <hazelcast/util/ILogger.h>
@@ -156,7 +155,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/impl/SimpleExecutorService.h"
 #include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
@@ -3348,23 +3346,8 @@ namespace hazelcast {
 // Waits at the server side before running the operation
                     WaitMultiplierProcessor processor(3000, 4);
 
-                    hazelcast::client::Future<int> initialFuture =
-                            employees->submitToKey<int, WaitMultiplierProcessor>(
-                                    4, processor);
+                    auto future = employees->submitToKey<int, WaitMultiplierProcessor>(4, processor);
 
-// Should invalidate the initialFuture
-                    hazelcast::client::Future<int> future = initialFuture;
-
-                    ASSERT_FALSE(initialFuture.valid());
-                    ASSERT_THROW(initialFuture.wait_for(1000), exception::FutureUninitialized);
-                    ASSERT_TRUE(future.valid());
-
-                    future_status status = future.wait_for(1 * 1000);
-                    ASSERT_EQ(future_status::timeout, status);
-                    ASSERT_TRUE(future.valid());
-
-                    status = future.wait_for(3 * 1000);
-                    ASSERT_EQ(future_status::ready, status);
                     std::unique_ptr<int> result = future.get();
                     ASSERT_NE((int *) NULL, result.get());
                     ASSERT_EQ(4 * processor.getMultiplier(), *result);
@@ -3383,10 +3366,10 @@ namespace hazelcast {
 // Waits at the server side before running the operation
                     WaitMultiplierProcessor processor(waitTimeInMillis, 4);
 
-                    std::vector<hazelcast::client::Future<int> > allFutures;
+                    std::vector<future<std::shared_ptr<int>>> allFutures;
 
 // test putting into a vector of futures
-                    hazelcast::client::Future<int> future = employees->submitToKey<int, WaitMultiplierProcessor>(
+                    auto future = employees->submitToKey<int, WaitMultiplierProcessor>(
                             3, processor);
                     allFutures.push_back(future);
 

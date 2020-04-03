@@ -33,9 +33,7 @@
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/EntryView.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
-#include "hazelcast/client/Future.h"
 #include "hazelcast/client/impl/ClientMessageDecoder.h"
-#include "hazelcast/client/internal/ClientDelegatingFuture.h"
 #include "hazelcast/util/ExceptionUtil.h"
 
 // Codecs
@@ -1124,10 +1122,6 @@ namespace hazelcast {
                     proxy::IMapImpl::clear();
                 }
 
-                serialization::pimpl::SerializationService &getSerializationService() {
-                    return getContext().getSerializationService();
-                }
-
                 virtual monitor::LocalMapStats &getLocalMapStats() {
                     return stats;
                 }
@@ -1155,16 +1149,16 @@ namespace hazelcast {
                     return putAsyncInternal(ttl, ttlUnit, &maxIdle, maxIdleUnit, toData<K>(key), value);
                 }
 
-                std::shared_ptr<ICompletableFuture<void> > setAsync(const K &key, const V &value) {
+                future<void> setAsync(const K &key, const V &value) {
                     return setAsync(key, value, DEFAULT_TTL, util::concurrent::TimeUnit::MILLISECONDS());
                 }
 
-                std::shared_ptr<ICompletableFuture<void> >
+                future<void>
                 setAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit) {
                     return setAsyncInternal(ttl, ttlUnit, NULL, ttlUnit, toData<K>(key), value);
                 }
 
-                std::shared_ptr<ICompletableFuture<void> >
+                future<void>
                 setAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
                          int64_t maxIdle, const util::concurrent::TimeUnit &maxIdleUnit) {
                     return setAsyncInternal(ttl, ttlUnit, &maxIdle, maxIdleUnit, toData<K>(key), value);

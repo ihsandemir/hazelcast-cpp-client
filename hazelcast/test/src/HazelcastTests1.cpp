@@ -47,7 +47,6 @@
 #include <hazelcast/util/CountDownLatch.h>
 #include <ClientTestSupportBase.h>
 #include <hazelcast/util/Util.h>
-#include <hazelcast/util/impl/SimpleExecutorService.h>
 #include <TestHelperFunctions.h>
 #include <ostream>
 #include <hazelcast/util/ILogger.h>
@@ -156,8 +155,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/impl/SimpleExecutorService.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
@@ -832,11 +829,10 @@ namespace hazelcast {
                 }
 
                 TEST_F(RingbufferTest, readManyAsync_whenHitsStale_shouldNotBeBlocked) {
-                    std::shared_ptr<ICompletableFuture<client::ringbuffer::ReadResultSet<std::string> > > f = clientRingbuffer->readManyAsync<void>(
-                            0, 1, 10, NULL);
+                    auto f = clientRingbuffer->readManyAsync<void>(0, 1, 10, NULL);
                     client2Ringbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
                     try {
-                        f->get();
+                        f.get();
                     } catch (exception::ExecutionException &e) {
                         std::shared_ptr<exception::IException> cause = e.getCause();
                         ASSERT_NOTNULL(cause.get(), exception::IException);
@@ -894,9 +890,8 @@ namespace hazelcast {
                 }
 
                 TEST_F(RingbufferTest, addAsync) {
-                    std::shared_ptr<ICompletableFuture<int64_t> > f = clientRingbuffer->addAsync("foo",
-                                                                                                 Ringbuffer<std::string>::OVERWRITE);
-                    std::shared_ptr<int64_t> result = f->get();
+                    auto f = clientRingbuffer->addAsync("foo", Ringbuffer<std::string>::OVERWRITE);
+                    auto result = f.get();
 
                     ASSERT_EQ_PTR(client2Ringbuffer->headSequence(), result.get(), int64_t);
                     ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne(0).get(), std::string);
@@ -908,9 +903,8 @@ namespace hazelcast {
                     std::vector<std::string> items;
                     items.push_back("foo");
                     items.push_back("bar");
-                    std::shared_ptr<ICompletableFuture<int64_t> > f = clientRingbuffer->addAllAsync(items,
-                                                                                                    Ringbuffer<std::string>::OVERWRITE);
-                    std::shared_ptr<int64_t> result = f->get();
+                    auto f = clientRingbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
+                    auto result = f->get();
 
                     ASSERT_EQ_PTR(client2Ringbuffer->tailSequence(), result.get(), int64_t);
                     ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne(0).get(), std::string);
@@ -929,9 +923,8 @@ namespace hazelcast {
                     client2Ringbuffer->add("2");
                     client2Ringbuffer->add("3");
 
-                    std::shared_ptr<ICompletableFuture<client::ringbuffer::ReadResultSet<std::string> > > f = clientRingbuffer->readManyAsync<void>(
-                            0, 3, 3, NULL);
-                    std::shared_ptr<client::ringbuffer::ReadResultSet<std::string> > rs = f->get();
+                    auto f = clientRingbuffer->readManyAsync<void>(0, 3, 3, NULL);
+                    auto rs = f.get();
 
                     ASSERT_EQ(3, rs->readCount());
                     ASSERT_EQ_PTR("1", rs->getItems().get(0), std::string);
@@ -948,9 +941,8 @@ namespace hazelcast {
                     client2Ringbuffer->add("5");
                     client2Ringbuffer->add("6");
 
-                    std::shared_ptr<ICompletableFuture<client::ringbuffer::ReadResultSet<std::string> > > f = clientRingbuffer->readManyAsync<void>(
-                            0, 3, 3, NULL);
-                    std::shared_ptr<client::ringbuffer::ReadResultSet<std::string> > rs = f->get();
+                    auto f = clientRingbuffer->readManyAsync<void>(0, 3, 3, NULL);
+                    auto rs = f.get();
 
                     ASSERT_EQ(3, rs->readCount());
                     DataArray<string> &items1 = rs->getItems();
@@ -968,10 +960,9 @@ namespace hazelcast {
                     client2Ringbuffer->add("bad3");
 
                     StartsWithStringFilter filter("good");
-                    std::shared_ptr<ICompletableFuture<client::ringbuffer::ReadResultSet<std::string> > > f = clientRingbuffer->readManyAsync<StartsWithStringFilter>(
-                            0, 3, 3, &filter);
+                    auto f = clientRingbuffer->readManyAsync<StartsWithStringFilter>(0, 3, 3, &filter);
 
-                    std::shared_ptr<client::ringbuffer::ReadResultSet<std::string> > rs = f->get();
+                    auto rs = f.get();
 
                     ASSERT_EQ(5, rs->readCount());
                     DataArray<string> &items = rs->getItems();

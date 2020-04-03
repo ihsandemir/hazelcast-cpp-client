@@ -40,7 +40,6 @@
 #include "hazelcast/client/internal/socket/SocketFactory.h"
 #include "hazelcast/util/Sync.h"
 #include "hazelcast/util/Thread.h"
-#include "hazelcast/util/impl/SimpleExecutorService.h"
 #include "hazelcast/client/connection/AddressTranslator.h"
 #include "hazelcast/client/connection/ConnectionListenable.h"
 
@@ -149,7 +148,7 @@ namespace hazelcast {
 
                 void connectToCluster();
 
-                std::shared_ptr<util::Future<bool> > connectToClusterAsync();
+                std::future<bool> connectToClusterAsync();
 
                 bool isAlive();
 
@@ -232,34 +231,6 @@ namespace hazelcast {
                     void scheduleTimeoutTask();
                 };
 
-                class DisconnecFromClusterTask : public util::Runnable {
-                public:
-                    DisconnecFromClusterTask(const std::shared_ptr<Connection> &connection,
-                                             ClientConnectionManagerImpl &connectionManager,
-                                             ClientConnectionStrategy &connectionStrategy);
-
-                    virtual void run();
-
-                    virtual const std::string getName() const;
-
-                private:
-                    const std::shared_ptr<Connection> connection;
-                    ClientConnectionManagerImpl &connectionManager;
-                    ClientConnectionStrategy &connectionStrategy;
-                };
-
-                class ConnectToClusterTask : public util::Callable<bool> {
-                public:
-                    ConnectToClusterTask(const spi::ClientContext &clientContext);
-
-                    virtual std::shared_ptr<bool> call();
-
-                    virtual const std::string getName() const;
-
-                private:
-                    spi::ClientContext clientContext;
-                };
-
                 util::AtomicBoolean alive;
 
                 util::ILogger &logger;
@@ -282,7 +253,7 @@ namespace hazelcast {
 
                 util::Sync<std::shared_ptr<protocol::Principal> > principal;
                 std::unique_ptr<ClientConnectionStrategy> connectionStrategy;
-                std::shared_ptr<util::impl::SimpleExecutorService> clusterConnectionExecutor;
+                boost::asio::thread_pool clusterConnectionExecutor;
                 int32_t connectionAttemptPeriod;
                 int32_t connectionAttemptLimit;
                 int32_t ioThreadCount;

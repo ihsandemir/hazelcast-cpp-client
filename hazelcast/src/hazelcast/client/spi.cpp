@@ -111,15 +111,15 @@ namespace hazelcast {
             std::shared_ptr<ClientProxy> ProxyManager::getOrCreateProxy(
                     const std::string &service, const std::string &id, ClientProxyFactory &factory) {
                 DefaultObjectNamespace ns(service, id);
-                std::shared_ptr<util::Future<ClientProxy> > proxyFuture = proxies.get(ns);
+                auto proxyFuture = proxies.get(ns);
                 if (proxyFuture.get() != NULL) {
-                    return proxyFuture->get();
+                    return proxyFuture->get_future().get();
                 }
 
-                proxyFuture.reset(new util::Future<ClientProxy>(client.getLogger()));
-                std::shared_ptr<util::Future<ClientProxy> > current = proxies.putIfAbsent(ns, proxyFuture);
+                proxyFuture.reset(new promise<std::shared_ptr<ClientProxy>>());
+                auto current = proxies.putIfAbsent(ns, proxyFuture);
                 if (current.get()) {
-                    return current->get();
+                    return current->get_future().get();
                 }
 
                 try {
@@ -129,7 +129,7 @@ namespace hazelcast {
                     return clientProxy;
                 } catch (exception::IException &e) {
                     proxies.remove(ns);
-                    proxyFuture->complete(e);
+                    proxyFuture->set_exception(e);
                     throw;
                 }
             }
@@ -218,11 +218,10 @@ namespace hazelcast {
 
             void ProxyManager::destroyProxy(ClientProxy &proxy) {
                 DefaultObjectNamespace objectNamespace(proxy.getServiceName(), proxy.getName());
-                std::shared_ptr<util::Future<ClientProxy> > registeredProxyFuture = proxies.remove(
-                        objectNamespace);
+                auto registeredProxyFuture = proxies.remove(objectNamespace);
                 std::shared_ptr<ClientProxy> registeredProxy;
                 if (registeredProxyFuture.get()) {
-                    registeredProxy = registeredProxyFuture->get();
+                    registeredProxy = registeredProxyFuture->get_future().get();
                 }
 
                 try {
@@ -1286,7 +1285,7 @@ namespace hazelcast {
                     internalExecutor->stop();
                 }
 
-                boost::asio::thread_pool &ClientExecutionServiceImpl::getUserExecutor() const {
+                const boost::asio::thread_pool &ClientExecutionServiceImpl::getUserExecutor() const {
                     return userExecutor;
                 }
 
@@ -1549,20 +1548,16 @@ namespace hazelcast {
                                                                            std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                            const std::string &objectName,
                                                                            int partitionId) {
-                    std::shared_ptr<ClientInvocation> invocation = std::shared_ptr<ClientInvocation>(
+                    return std::shared_ptr<ClientInvocation>(
                             new ClientInvocation(clientContext, clientMessage, objectName, partitionId));
-                    invocation->clientInvocationFuture->setInvocation(invocation);
-                    return invocation;
                 }
 
                 std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
                                                                            std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                            const std::string &objectName,
                                                                            const std::shared_ptr<connection::Connection> &connection) {
-                    std::shared_ptr<ClientInvocation> invocation = std::shared_ptr<ClientInvocation>(
+                    return std::shared_ptr<ClientInvocation>(
                             new ClientInvocation(clientContext, clientMessage, objectName, connection));
-                    invocation->clientInvocationFuture->setInvocation(invocation);
-                    return invocation;
                 }
 
 
@@ -1570,19 +1565,15 @@ namespace hazelcast {
                                                                            std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                            const std::string &objectName,
                                                                            const Address &address) {
-                    std::shared_ptr<ClientInvocation> invocation = std::shared_ptr<ClientInvocation>(
+                    return std::shared_ptr<ClientInvocation>(
                             new ClientInvocation(clientContext, clientMessage, objectName, address));
-                    invocation->clientInvocationFuture->setInvocation(invocation);
-                    return invocation;
                 }
 
                 std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
                                                                            std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                            const std::string &objectName) {
-                    std::shared_ptr<ClientInvocation> invocation = std::shared_ptr<ClientInvocation>(
+                    return std::shared_ptr<ClientInvocation>(
                             new ClientInvocation(clientContext, clientMessage, objectName));
-                    invocation->clientInvocationFuture->setInvocation(invocation);
-                    return invocation;
                 }
 
                 std::shared_ptr<connection::Connection> ClientInvocation::getSendConnection() {
@@ -1590,7 +1581,7 @@ namespace hazelcast {
                 }
 
                 std::shared_ptr<connection::Connection> ClientInvocation::getSendConnectionOrWait() {
-                    while (sendConnection.get().get() == NULL && !clientInvocationFuture->isDone()) {
+                    while (sendConnection.get().get() == NULL && !invocationPromise.get_future().is_ready())) {
                         // TODO: Make sleep interruptible
                         util::sleepmillis(retryPauseMillis);
                     }
@@ -1647,7 +1638,7 @@ namespace hazelcast {
                     return std::shared_ptr<protocol::ClientMessage>(new protocol::ClientMessage(*clientMessage.get()));
                 }
 
-                std::shared_ptr<util::Executor> ClientInvocation::getUserExecutor() {
+                const boost::asio::thread_pool &ClientInvocation::getUserExecutor() const {
                     return executionService->getUserExecutor();
                 }
 
@@ -2240,7 +2231,7 @@ namespace hazelcast {
                               logger(clientContext.getLogger()),
                               clientConnectionManager(clientContext.getConnectionManager()),
                               eventExecutor(eventThreadCount),
-                              registrationExecutor(logger, clientContext.getName() + ".eventRegistration-", 1) {
+                              registrationExecutor(1) {
                         AbstractClientInvocationService &invocationService = (AbstractClientInvocationService &) clientContext.getInvocationService();
                         invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
                         invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
@@ -2256,14 +2247,11 @@ namespace hazelcast {
                     AbstractClientListenerService::registerListener(
                             const std::shared_ptr<impl::ListenerMessageCodec> &listenerMessageCodec,
                             const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) {
-                        //This method should not be called from registrationExecutor
-/*                      TODO
-                        assert (!Thread.currentThread().getName().contains("eventRegistration"));
-*/
-                        std::shared_ptr<util::Callable<std::string> > task(
-                                new RegisterListenerTask("AbstractClientListenerService::registerListener",
-                                                         shared_from_this(), listenerMessageCodec, handler));
-                        return *registrationExecutor.submit<std::string>(task)->get();
+                        std::packaged_task<std::string()> task([=]() {
+                            return registerListenerInternal(listenerMessageCodec, handler);
+                        });
+                        boost::asio::post(registrationExecutor, task);
+                        return task.get_future().get();
                     }
 
                     bool AbstractClientListenerService::deregisterListener(const std::string &registrationId) {
@@ -2271,20 +2259,11 @@ namespace hazelcast {
 /*                      TODO
                         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 */
-
-                        try {
-                            std::shared_ptr<util::Future<bool> > future = registrationExecutor.submit(
-                                    std::shared_ptr<util::Callable<bool> >(
-                                            new DeregisterListenerTask(
-                                                    "AbstractClientListenerService::deregisterListener",
-                                                    shared_from_this(), registrationId)));
-
-                            return *future->get();
-                        } catch (exception::RejectedExecutionException &) {
-                            //RejectedExecutionException executor(hence the client) is already shutdown
-                            //listeners are cleaned up by the server side. We can ignore the exception and return true safely
-                            return true;
-                        }
+                        std::packaged_task<bool()> task([=]() {
+                            return deregisterListener(registrationId);
+                        });
+                        boost::asio::post(registrationExecutor, task);
+                        return task.get_future().get();
                     }
 
                     void AbstractClientListenerService::connectionAdded(
@@ -2293,10 +2272,7 @@ namespace hazelcast {
 /*                      TODO
                         assert (Thread.currentThread().getName().contains("eventRegistration"));
 */
-                        registrationExecutor.execute(
-                                std::shared_ptr<util::Runnable>(
-                                        new ConnectionAddedTask("AbstractClientListenerService::connectionAdded",
-                                                                shared_from_this(), connection)));
+                        boost::asio::post(registrationExecutor, [=]() { connectionAddedInternal(connection); });
                     }
 
                     void AbstractClientListenerService::connectionRemoved(
@@ -2306,10 +2282,7 @@ namespace hazelcast {
                         assert (Thread.currentThread().getName().contains("eventRegistration"));
 */
 
-                        registrationExecutor.execute(
-                                std::shared_ptr<util::Runnable>(
-                                        new ConnectionRemovedTask("AbstractClientListenerService::connectionRemoved",
-                                                                  shared_from_this(), connection)));
+                        boost::asio::post(registrationExecutor, [=]() { connectionRemovedInternal(connection); });
                     }
 
                     void AbstractClientListenerService::addEventHandler(int64_t callId,
@@ -2344,73 +2317,11 @@ namespace hazelcast {
 
                     void AbstractClientListenerService::shutdown() {
                         eventExecutor.stop();
+                        registrationExecutor.stop();
                     }
 
                     void AbstractClientListenerService::start() {
-                        registrationExecutor.start();
                         clientConnectionManager.addConnectionListener(shared_from_this());
-                    }
-
-                    AbstractClientListenerService::RegisterListenerTask::RegisterListenerTask(
-                            const std::string &taskName,
-                            const std::shared_ptr<AbstractClientListenerService> &listenerService,
-                            const std::shared_ptr<ListenerMessageCodec> &listenerMessageCodec,
-                            const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) : taskName(
-                            taskName), listenerService(listenerService), listenerMessageCodec(listenerMessageCodec),
-                                                                                                      handler(handler) {}
-
-                    std::shared_ptr<std::string> AbstractClientListenerService::RegisterListenerTask::call() {
-                        return std::shared_ptr<std::string>(new std::string(
-                                listenerService->registerListenerInternal(listenerMessageCodec, handler)));
-                    }
-
-                    const std::string AbstractClientListenerService::RegisterListenerTask::getName() const {
-                        return taskName;
-                    }
-
-                    AbstractClientListenerService::DeregisterListenerTask::DeregisterListenerTask(
-                            const std::string &taskName,
-                            const std::shared_ptr<AbstractClientListenerService> &listenerService,
-                            const std::string &registrationId) : taskName(taskName), listenerService(listenerService),
-                                                                 registrationId(registrationId) {}
-
-                    std::shared_ptr<bool> AbstractClientListenerService::DeregisterListenerTask::call() {
-                        return std::shared_ptr<bool>(
-                                new bool(listenerService->deregisterListenerInternal(registrationId)));
-                    }
-
-                    const std::string AbstractClientListenerService::DeregisterListenerTask::getName() const {
-                        return taskName;
-                    }
-
-                    AbstractClientListenerService::ConnectionAddedTask::ConnectionAddedTask(const std::string &taskName,
-                                                                                            const std::shared_ptr<AbstractClientListenerService> &listenerService,
-                                                                                            const std::shared_ptr<connection::Connection> &connection)
-                            : taskName(taskName), listenerService(listenerService), connection(connection) {}
-
-                    const std::string AbstractClientListenerService::ConnectionAddedTask::getName() const {
-                        return taskName;
-                    }
-
-                    void AbstractClientListenerService::ConnectionAddedTask::run() {
-                        listenerService->connectionAddedInternal(connection);
-                    }
-
-
-                    AbstractClientListenerService::ConnectionRemovedTask::ConnectionRemovedTask(
-                            const std::string &taskName,
-                            const std::shared_ptr<AbstractClientListenerService> &listenerService,
-                            const std::shared_ptr<connection::Connection> &connection) : taskName(taskName),
-                                                                                         listenerService(
-                                                                                                 listenerService),
-                                                                                         connection(connection) {}
-
-                    const std::string AbstractClientListenerService::ConnectionRemovedTask::getName() const {
-                        return taskName;
-                    }
-
-                    void AbstractClientListenerService::ConnectionRemovedTask::run() {
-                        listenerService->connectionRemovedInternal(connection);
                     }
 
                     std::string AbstractClientListenerService::registerListenerInternal(
@@ -2640,10 +2551,16 @@ namespace hazelcast {
                     void SmartClientListenerService::start() {
                         AbstractClientListenerService::start();
 
-                        registrationExecutor.scheduleAtFixedRate(
-                                std::shared_ptr<util::Runnable>(new AsyncConnectToAllMembersTask(
-                                        std::static_pointer_cast<SmartClientListenerService>(shared_from_this()))),
-                                1000, 1000);
+                        scheduleConnectToAllMembers();
+                    }
+
+                    void SmartClientListenerService::scheduleConnectToAllMembers() {
+                        asio::steady_timer timer(registrationExecutor);
+                        timer.expires_from_now(std::chrono::seconds(1));
+                        timer.async_wait([=]() {
+                            asyncConnectToAllMembersInternal();
+                            scheduleConnectToAllMembers();
+                        });
                     }
 
                     std::string

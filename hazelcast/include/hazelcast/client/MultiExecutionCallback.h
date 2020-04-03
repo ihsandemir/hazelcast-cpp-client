@@ -57,7 +57,7 @@ namespace hazelcast {
              * @param member member that the task is submitted to.
              * @param exception result of the execution
              */
-            virtual void onFailure(const Member &member, const std::shared_ptr<exception::IException> &exception) = 0;
+            virtual void onFailure(const Member &member, std::exception_ptr exception) = 0;
 
             /**
              * Called after all executions are completed.
@@ -66,7 +66,7 @@ namespace hazelcast {
              * @param exceptions The exceptions produced by failing members.
              */
             virtual void onComplete(const std::map<Member, std::shared_ptr<V> > &values,
-                                    const std::map<Member, std::shared_ptr<exception::IException> > &exceptions) = 0;
+                                    const std::map<Member, std::exception_ptr> &exceptions) = 0;
         };
     }
 }

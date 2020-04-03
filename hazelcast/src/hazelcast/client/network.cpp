@@ -34,7 +34,6 @@
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/connection/DefaultClientConnectionStrategy.h"
 #include "hazelcast/client/connection/AddressProvider.h"
-#include "hazelcast/util/impl/SimpleExecutorService.h"
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/protocol/AuthenticationStatus.h"
@@ -92,7 +91,8 @@ namespace hazelcast {
                     : logger(client.getLogger()), client(client),
                       socketInterceptor(client.getClientConfig().getSocketInterceptor()),
                       executionService(client.getClientExecutionService()),
-                      translator(addressTranslator), connectionIdGen(0), socketFactory(client, ioContext) {
+                      translator(addressTranslator), clusterConnectionExecutor(1), connectionIdGen(0),
+                      socketFactory(client, ioContext) {
                 config::ClientNetworkConfig &networkConfig = client.getClientConfig().getNetworkConfig();
 
                 int64_t connTimeout = networkConfig.getConnectionTimeout();
@@ -101,9 +101,6 @@ namespace hazelcast {
                 credentials = client.getClientConfig().getCredentials();
 
                 connectionStrategy = initializeStrategy(client);
-
-                clusterConnectionExecutor.reset(
-                        new util::impl::SimpleExecutorService(logger, client.getName() + ".cluster-", 1));
 
                 ClientProperties &clientProperties = client.getClientProperties();
                 shuffleMemberList = clientProperties.getBoolean(clientProperties.getShuffleMemberList());
@@ -131,8 +128,6 @@ namespace hazelcast {
                     return true;
                 }
                 alive.store(true);
-
-                clusterConnectionExecutor->start();
 
                 if (!socketFactory.start()) {
                     return false;
@@ -183,7 +178,7 @@ namespace hazelcast {
                     util::IOUtil::closeResource(connection.get(), "Hazelcast client is shutting down");
                 }
 
-                spi::impl::ClientExecutionServiceImpl::shutdownExecutor("cluster", *clusterConnectionExecutor, logger);
+                clusterConnectionExecutor.stop();
 
                 connectionListeners.clear();
                 activeConnections.clear();
@@ -506,9 +501,22 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::disconnectFromCluster(const std::shared_ptr<Connection> &connection) {
-                clusterConnectionExecutor->execute(
-                        std::shared_ptr<util::Runnable>(
-                                new DisconnecFromClusterTask(connection, *this, *connectionStrategy)));
+                boost::asio::post(clusterConnectionExecutor, [=]() {
+                    std::shared_ptr<Address> endpoint = connection->getRemoteEndpoint();
+                    // it may be possible that while waiting on executor queue, the client got connected (another connection),
+                    // then we do not need to do anything for cluster disconnect.
+                    std::shared_ptr<Address> ownerAddress = ownerConnectionAddress;
+                    if (ownerAddress.get() && (endpoint.get() && *endpoint != *ownerAddress)) {
+                        return;
+                    }
+
+                    setOwnerConnectionAddress(std::shared_ptr<Address>());
+                    connectionStrategy->onDisconnectFromCluster();
+
+                    if (client.getLifecycleService().isRunning()) {
+                        fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
+                    }
+                });
             }
 
             void
@@ -525,9 +533,24 @@ namespace hazelcast {
                 lifecycleService.fireLifecycleEvent(state);
             }
 
-            std::shared_ptr<util::Future<bool> > ClientConnectionManagerImpl::connectToClusterAsync() {
-                std::shared_ptr<util::Callable<bool> > task(new ConnectToClusterTask(client));
-                return clusterConnectionExecutor->submit<bool>(task);
+            std::future<bool> ClientConnectionManagerImpl::connectToClusterAsync() {
+                std::packaged_task<bool()> task([=]() {
+                    try {
+                        connectToClusterInternal();
+                        return true;
+                    } catch (exception::IException &e) {
+                        logger.warning("Could not connect to cluster, shutting down the client. ",
+                                       e.getMessage());
+
+                        static_cast<DefaultClientConnectionStrategy &>(*connectionStrategy).shutdownWithExternalThread(
+                                client.getHazelcastClientImplementation());
+                        throw;
+                    } catch (...) {
+                        throw;
+                    }
+                });
+                boost::asio::post(clusterConnectionExecutor, task);
+                return task.get_future();
             }
 
             void ClientConnectionManagerImpl::connectToClusterInternal() {
@@ -782,59 +805,6 @@ namespace hazelcast {
                 }
                 connection->close("", cause);
                 connectionManager.connectionsInProgress.remove(target);
-            }
-
-            ClientConnectionManagerImpl::DisconnecFromClusterTask::DisconnecFromClusterTask(
-                    const std::shared_ptr<Connection> &connection, ClientConnectionManagerImpl &connectionManager,
-                    ClientConnectionStrategy &connectionStrategy)
-                    : connection(
-                    connection), connectionManager(connectionManager), connectionStrategy(connectionStrategy) {
-            }
-
-            void ClientConnectionManagerImpl::DisconnecFromClusterTask::run() {
-                std::shared_ptr<Address> endpoint = connection->getRemoteEndpoint();
-                // it may be possible that while waiting on executor queue, the client got connected (another connection),
-                // then we do not need to do anything for cluster disconnect.
-                std::shared_ptr<Address> ownerAddress = connectionManager.ownerConnectionAddress;
-                if (ownerAddress.get() && (endpoint.get() && *endpoint != *ownerAddress)) {
-                    return;
-                }
-
-                connectionManager.setOwnerConnectionAddress(std::shared_ptr<Address>());
-                connectionStrategy.onDisconnectFromCluster();
-
-                if (connectionManager.client.getLifecycleService().isRunning()) {
-                    connectionManager.fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
-                }
-            }
-
-            const std::string ClientConnectionManagerImpl::DisconnecFromClusterTask::getName() const {
-                return "DisconnecFromClusterTask";
-            }
-
-            ClientConnectionManagerImpl::ConnectToClusterTask::ConnectToClusterTask(
-                    const spi::ClientContext &clientContext) : clientContext(clientContext) {
-            }
-
-            std::shared_ptr<bool> ClientConnectionManagerImpl::ConnectToClusterTask::call() {
-                ClientConnectionManagerImpl &connectionManager = clientContext.getConnectionManager();
-                try {
-                    connectionManager.connectToClusterInternal();
-                    return std::shared_ptr<bool>(new bool(true));
-                } catch (exception::IException &e) {
-                    connectionManager.getLogger().warning("Could not connect to cluster, shutting down the client. ",
-                                                          e.getMessage());
-
-                    static_cast<DefaultClientConnectionStrategy &>(*connectionManager.connectionStrategy).shutdownWithExternalThread(
-                            clientContext.getHazelcastClientImplementation());
-                    throw;
-                } catch (...) {
-                    throw;
-                }
-            }
-
-            const std::string ClientConnectionManagerImpl::ConnectToClusterTask::getName() const {
-                return "ClientConnectionManagerImpl::ConnectToClusterTask";
             }
 
             AuthenticationFuture::AuthenticationFuture(const Address &address,
@@ -1430,7 +1400,7 @@ namespace hazelcast {
 
                 TcpSocket::TcpSocket(boost::asio::io_context &io, const Address &address,
                                      client::config::SocketOptions &socketOptions, int64_t connectTimeoutInMillis)
-                        : BaseSocket<boost::asio::ip::tcp::socket>(std::make_unique<boost::asio::ip::tcp::socket>(io),
+                        : BaseSocket<boost::asio::ip::tcp::socket>(boost::make_unique<boost::asio::ip::tcp::socket>(io),
                                                                    address, socketOptions, io, connectTimeoutInMillis) {
                 }
 

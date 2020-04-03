@@ -49,7 +49,6 @@
 #include "hazelcast/client/map/DataEntryView.h"
 #include "hazelcast/client/topic/impl/reliable/ReliableTopicExecutor.h"
 #include "hazelcast/client/proxy/ClientRingbufferProxy.h"
-#include "hazelcast/client/spi/impl/ClientInvocationFuture.h"
 #include "hazelcast/client/atomiclong/impl/AtomicLongProxyFactory.h"
 #include "hazelcast/client/proxy/ClientAtomicLongProxy.h"
 #include "hazelcast/client/ICountDownLatch.h"
@@ -1401,49 +1400,42 @@ namespace hazelcast {
             }
 
             int64_t ClientAtomicLongProxy::addAndGet(int64_t delta) {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(
-                        addAndGetAsync(delta))->join());
+                return *addAndGetAsync(delta).get();
             }
 
             bool ClientAtomicLongProxy::compareAndSet(int64_t expect, int64_t update) {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<bool> >(
-                        compareAndSetAsync(expect, update))->join());
+                return *compareAndSetAsync(expect, update).get();
             }
 
             int64_t ClientAtomicLongProxy::decrementAndGet() {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(
-                        decrementAndGetAsync())->join());
+                return *decrementAndGetAsync().get();
             }
 
             int64_t ClientAtomicLongProxy::get() {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(getAsync())->join());
+                return *getAsync().get();
             }
 
             int64_t ClientAtomicLongProxy::getAndAdd(int64_t delta) {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(
-                        getAndAddAsync(delta))->join());
+                return *getAndAddAsync(delta).get();
             }
 
             int64_t ClientAtomicLongProxy::getAndSet(int64_t newValue) {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(
-                        getAndSetAsync(newValue))->join());
+                return *getAndSetAsync(newValue).get();
             }
 
             int64_t ClientAtomicLongProxy::incrementAndGet() {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(
-                        incrementAndGetAsync())->join());
+                return *incrementAndGetAsync().get();
             }
 
             int64_t ClientAtomicLongProxy::getAndIncrement() {
-                return *(std::static_pointer_cast<spi::InternalCompletableFuture<int64_t> >(
-                        getAndIncrementAsync())->join());
+                return *getAndIncrementAsync().get();
             }
 
             void ClientAtomicLongProxy::set(int64_t newValue) {
-                std::static_pointer_cast<spi::InternalCompletableFuture<void> >(setAsync(newValue))->join();
+                setAsync(newValue).get();
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> >
+            future<std::shared_ptr<int64_t>>
             ClientAtomicLongProxy::addAndGetAsync(int64_t delta) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongAddAndGetCodec::encodeRequest(name, delta);
@@ -1452,7 +1444,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongAddAndGetCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<bool> >
+            future<std::shared_ptr<bool>>
             ClientAtomicLongProxy::compareAndSetAsync(int64_t expect, int64_t update) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongCompareAndSetCodec::encodeRequest(name, expect, update);
@@ -1461,7 +1453,7 @@ namespace hazelcast {
                                                     impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongCompareAndSetCodec, bool>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> > ClientAtomicLongProxy::decrementAndGetAsync() {
+            future<std::shared_ptr<int64_t>> ClientAtomicLongProxy::decrementAndGetAsync() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongDecrementAndGetCodec::encodeRequest(name);
 
@@ -1469,7 +1461,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongDecrementAndGetCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> > ClientAtomicLongProxy::getAsync() {
+            future<std::shared_ptr<int64_t>> ClientAtomicLongProxy::getAsync() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongGetCodec::encodeRequest(name);
 
@@ -1477,7 +1469,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongGetCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> >
+            future<std::shared_ptr<int64_t>>
             ClientAtomicLongProxy::getAndAddAsync(int64_t delta) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongGetAndAddCodec::encodeRequest(name, delta);
@@ -1486,7 +1478,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongGetAndAddCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> >
+            future<std::shared_ptr<int64_t>>
             ClientAtomicLongProxy::getAndSetAsync(int64_t newValue) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongGetAndSetCodec::encodeRequest(name, newValue);
@@ -1495,7 +1487,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongGetAndSetCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> > ClientAtomicLongProxy::incrementAndGetAsync() {
+            future<std::shared_ptr<int64_t>> ClientAtomicLongProxy::incrementAndGetAsync() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongIncrementAndGetCodec::encodeRequest(name);
 
@@ -1503,7 +1495,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongIncrementAndGetCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<int64_t> > ClientAtomicLongProxy::getAndIncrementAsync() {
+            future<std::shared_ptr<int64_t>> ClientAtomicLongProxy::getAndIncrementAsync() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongGetAndIncrementCodec::encodeRequest(name);
 
@@ -1511,7 +1503,7 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongGetAndIncrementCodec, int64_t>::instance());
             }
 
-            std::shared_ptr<ICompletableFuture<void> > ClientAtomicLongProxy::setAsync(int64_t newValue) {
+            future<std::shared_ptr<void>> ClientAtomicLongProxy::setAsync(int64_t newValue) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongSetCodec::encodeRequest(name, newValue);
 
@@ -1912,7 +1904,7 @@ namespace hazelcast {
             }
 
             void IMapImpl::putAllData(const std::map<int, EntryVector> &partitionedEntries) {
-                std::vector<std::shared_ptr<spi::impl::ClientInvocationFuture> > futures;
+                std::vector<future<protocol::ClientMessage>> futures;
 
                 for (std::map<int, EntryVector>::const_iterator it = partitionedEntries.begin();
                      it != partitionedEntries.end(); ++it) {
@@ -1923,9 +1915,7 @@ namespace hazelcast {
                 }
 
                 // wait for all futures
-                for (const std::shared_ptr<spi::impl::ClientInvocationFuture> &future : futures) {
-                    future->get();
-                }
+                wait_for_all(futures.begin(), futures.end());
             }
 
             void IMapImpl::clear() {
@@ -2096,7 +2086,7 @@ namespace hazelcast {
                 return protocol::codec::MapRemoveEntryListenerCodec::ResponseParameters::decode(clientMessage).response;
             }
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
+            future<protocol::ClientMessage>
             IMapImpl::putAsyncInternalData(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
                                            const int64_t *maxIdle, const util::concurrent::TimeUnit &maxIdleUnit,
                                            const serialization::pimpl::Data &keyData,
@@ -2119,7 +2109,7 @@ namespace hazelcast {
                 return invokeOnKeyOwner(request, keyData);
             }
 
-            std::shared_ptr<spi::impl::ClientInvocationFuture>
+            future<protocol::ClientMessage>
             IMapImpl::setAsyncInternalData(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
                                            const int64_t *maxIdle, const util::concurrent::TimeUnit &maxIdleUnit,
                                            const serialization::pimpl::Data &keyData,
@@ -2477,22 +2467,15 @@ namespace hazelcast {
                             try {
                                 proxy::ClientRingbufferProxy<ReliableTopicMessage> &ringbuffer =
                                         static_cast<proxy::ClientRingbufferProxy<ReliableTopicMessage> &>(rb);
-                                std::shared_ptr<spi::impl::ClientInvocationFuture> future = ringbuffer.readManyAsync(
-                                        m.sequence, 1, m.maxCount);
-                                std::shared_ptr<protocol::ClientMessage> responseMsg;
+                                auto future = ringbuffer.readManyAsync(m.sequence, 1, m.maxCount);
                                 do {
-                                    if (future->get(1000, TimeUnit::MILLISECONDS())) {
-                                        responseMsg = future->get(); // every one second
+                                    if (future.wait_for(chrono::seconds(1)) == future_status::ready) {
+                                        std::shared_ptr<DataArray<ReliableTopicMessage> > allMessages(
+                                                ringbuffer.getReadManyAsyncResponseObject(future.get()));
+
+                                        m.callback->onResponse(allMessages);
                                     }
-                                } while (!shutdown && (protocol::ClientMessage *) NULL == responseMsg.get());
-
-                                if (!shutdown) {
-                                    std::shared_ptr<DataArray<ReliableTopicMessage> > allMessages(
-                                            ringbuffer.getReadManyAsyncResponseObject(
-                                                    responseMsg));
-
-                                    m.callback->onResponse(allMessages);
-                                }
+                                } while (!shutdown);
                             } catch (exception::IException &e) {
                                 m.callback->onFailure(std::shared_ptr<exception::IException>(e.clone()));
                             }

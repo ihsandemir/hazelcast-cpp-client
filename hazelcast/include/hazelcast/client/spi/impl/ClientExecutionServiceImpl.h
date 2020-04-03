@@ -71,7 +71,7 @@ namespace hazelcast {
                         });
                     }
 
-                    boost::asio::thread_pool &getUserExecutor() const;
+                    const boost::asio::thread_pool &getUserExecutor() const;
 
                 private:
                     util::ILogger &logger;

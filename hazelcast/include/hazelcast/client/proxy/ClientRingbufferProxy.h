@@ -24,7 +24,6 @@
 #include "hazelcast/client/DataArray.h"
 #include "hazelcast/client/impl/DataArrayImpl.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
-#include "hazelcast/client/internal/executor/CompletedFuture.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
@@ -69,9 +68,8 @@ namespace hazelcast {
                     if (-1 == bufferCapacity) {
                         std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferCapacityCodec::encodeRequest(
                                 getName());
-                        std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                         protocol::codec::RingbufferCapacityCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferCapacityCodec::ResponseParameters::decode(
-                                *response);
+                                invoke(msg, partitionId));
                         bufferCapacity = resultParamaters.response;
                     }
                     return bufferCapacity;
@@ -80,36 +78,32 @@ namespace hazelcast {
                 int64_t size() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferSizeCodec::encodeRequest(
                             getName());
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                     protocol::codec::RingbufferSizeCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferSizeCodec::ResponseParameters::decode(
-                            *response);
+                            invoke(msg, partitionId));
                     return resultParamaters.response;
                 }
 
                 int64_t tailSequence() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferTailSequenceCodec::encodeRequest(
                             getName());
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                     protocol::codec::RingbufferTailSequenceCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferTailSequenceCodec::ResponseParameters::decode(
-                            *response);
+                            invoke(msg, partitionId));
                     return resultParamaters.response;
                 }
 
                 int64_t headSequence() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferHeadSequenceCodec::encodeRequest(
                             getName());
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                     protocol::codec::RingbufferHeadSequenceCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferHeadSequenceCodec::ResponseParameters::decode(
-                            *response);
+                            invoke(msg, partitionId));
                     return resultParamaters.response;
                 }
 
                 int64_t remainingCapacity() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferRemainingCapacityCodec::encodeRequest(
                             getName());
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                     protocol::codec::RingbufferRemainingCapacityCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferRemainingCapacityCodec::ResponseParameters::decode(
-                            *response);
+                            invoke(msg, partitionId));
                     return resultParamaters.response;
                 }
 
@@ -117,9 +111,8 @@ namespace hazelcast {
                     serialization::pimpl::Data itemData = toData<E>(item);
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferAddCodec::encodeRequest(
                             getName(), Ringbuffer<E>::OVERWRITE, itemData);
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                     protocol::codec::RingbufferAddCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferAddCodec::ResponseParameters::decode(
-                            *response);
+                            invoke(msg, partitionId));
                     return resultParamaters.response;
                 }
 
@@ -128,9 +121,8 @@ namespace hazelcast {
 
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferReadOneCodec::encodeRequest(
                             getName(), sequence);
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(msg, partitionId);
                     protocol::codec::RingbufferReadOneCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferReadOneCodec::ResponseParameters::decode(
-                            *response);
+                            invoke(msg, partitionId));
 
                     return toObject<E>(resultParamaters.response);
                 }
@@ -139,7 +131,7 @@ namespace hazelcast {
                  * This method will be removed when the ReliableTopic implementation is fixed later to use client
                  * execution service.
                  */
-                std::shared_ptr<spi::impl::ClientInvocationFuture>
+                future<protocol::ClientMessage>
                 readManyAsync(int64_t sequence, int32_t maxCount, time_t timeoutSeconds) {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferReadManyCodec::encodeRequest(
                             getName(), sequence, 1, maxCount, (const serialization::pimpl::Data *) NULL);
@@ -151,34 +143,32 @@ namespace hazelcast {
                  * This method will be removed when the ReliableTopic implementation is fixed later to use client
                  * execution service.
                  */
-                std::unique_ptr<DataArray<E> > getReadManyAsyncResponseObject(
-                        std::shared_ptr<protocol::ClientMessage> responseMsg) {
+                std::unique_ptr<DataArray<E> > getReadManyAsyncResponseObject(protocol::ClientMessage &&responseMsg) {
                     protocol::codec::RingbufferReadManyCodec::ResponseParameters responseParameters =
-                            protocol::codec::RingbufferReadManyCodec::ResponseParameters::decode(*responseMsg);
+                            protocol::codec::RingbufferReadManyCodec::ResponseParameters::decode(responseMsg);
                     return std::unique_ptr<DataArray<E> >(new impl::DataArrayImpl<E>(responseParameters.items,
-                                                                                   getContext().getSerializationService()));
+                                                                                     getContext().getSerializationService()));
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<int64_t> >
+                virtual future<std::shared_ptr<int64_t>>
                 addAsync(const E &item, typename Ringbuffer<E>::OverflowPolicy overflowPolicy) {
 
                     serialization::pimpl::Data element = toData<E>(item);
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::RingbufferAddCodec::encodeRequest(
                             name, overflowPolicy, element);
                     try {
-                        std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = spi::impl::ClientInvocation::create(
-                                getContext(), request, getName(), partitionId)->invoke();
-                        return std::shared_ptr<ICompletableFuture<int64_t> >(
-                                new internal::ClientDelegatingFuture<int64_t>(invocationFuture,
-                                                                              getSerializationService(),
-                                                                              impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddCodec, int64_t>::instance()));
+                        auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
+                                                                                    partitionId)->invoke();
+                        return invocationFuture.then([=](future<protocol::ClientMessage> f) {
+                            impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddCodec, int64_t>::instance()->decodeClientMessage(
+                                    f.get(), getSerializationService());
+                        });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
-                    return std::shared_ptr<ICompletableFuture<int64_t> >();
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<int64_t> >
+                virtual future<std::shared_ptr<int64_t>>
                 addAllAsync(const std::vector<E> &items, typename Ringbuffer<E>::OverflowPolicy overflowPolicy) {
                     util::Preconditions::checkNotEmpty(items, "items can't be empty");
                     util::Preconditions::checkMax((int32_t) items.size(), MAX_BATCH_SIZE, "items");
@@ -190,19 +180,18 @@ namespace hazelcast {
                     try {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
-                        return std::shared_ptr<ICompletableFuture<int64_t> >(
-                                new internal::ClientDelegatingFuture<int64_t>(invocationFuture,
-                                                                              getSerializationService(),
-                                                                              impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddAllCodec, int64_t>::instance()));
+                        return invocationFuture.then([=](future<protocol::ClientMessage> f) {
+                            impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddAllCodec, int64_t>::instance()->decodeClientMessage(
+                                    f.get(), getSerializationService());
+                        });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
-                    return std::shared_ptr<ICompletableFuture<int64_t> >();
                 }
 
                 /***************** RingBuffer<E> interface implementation ends here ***********************************/
             protected:
-                std::shared_ptr<protocol::ClientMessage>
+                protocol::ClientMessage
                 invoke(std::unique_ptr<protocol::ClientMessage> &clientMessage, int32_t partitionId) {
                     try {
                         return invokeOnPartition(clientMessage, partitionId);
@@ -220,10 +209,9 @@ namespace hazelcast {
                     } catch (const exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
-                    return std::shared_ptr<protocol::ClientMessage>();
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<ringbuffer::ReadResultSet<E> > >
+                future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>
                 readManyAsyncInternal(int64_t startSequence, int32_t minCount, int32_t maxCount,
                                       const serialization::pimpl::Data &filterData) {
                     checkSequence(startSequence);
@@ -235,13 +223,10 @@ namespace hazelcast {
                         capacity();
                     } catch (exception::IException &e) {
                         //in case of exception return the exception via future to behave consistently to member
-                        std::shared_ptr<exception::IException> executionException(
-                                new exception::ExecutionException("ClientRingbufferProxy::readManyAsync",
-                                                                  "capacity() method failed", e));
-                        std::shared_ptr<ExecutorService> userExecutor = getContext().getClientExecutionService().getUserExecutor();
-                        return std::shared_ptr<ICompletableFuture<ringbuffer::ReadResultSet<E> > >(
-                                new internal::executor::CompletedFuture<ringbuffer::ReadResultSet<E> >(
-                                        executionException, userExecutor));
+                        return make_exceptional_future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>(
+                                exception::ExecutionException("ClientRingbufferProxy::readManyAsync",
+                                                              "capacity() method failed", e));
+
                     }
 
                     util::Preconditions::checkTrue(maxCount <= bufferCapacity,
@@ -256,18 +241,14 @@ namespace hazelcast {
                             &filterData);
 
                     try {
-                        std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = spi::impl::ClientInvocation::create(
-                                getContext(), request, getName(), partitionId)->invoke();
-                        return std::shared_ptr<ICompletableFuture<ringbuffer::ReadResultSet<E> > >(
-                                new internal::ClientDelegatingFuture<ringbuffer::ReadResultSet<E> >(invocationFuture,
-                                                                                                    getSerializationService(),
-                                                                                                    READ_MANY_ASYNC_RESPONSE_DECODER));
-
+                        auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
+                                                                                    partitionId)->invoke();
+                        return invocationFuture.then([=](future<protocol::ClientMessage> f) {
+                            READ_MANY_ASYNC_RESPONSE_DECODER->decodeClientMessage(f.get(), getSerializationService());
+                        });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
-
-                    return std::shared_ptr<ICompletableFuture<ringbuffer::ReadResultSet<E> > >();
                 }
 
                 virtual SerializationService &getSerializationService() {
@@ -278,10 +259,10 @@ namespace hazelcast {
                 class ReadManyAsyncResponseDecoder : public impl::ClientMessageDecoder<ringbuffer::ReadResultSet<E> > {
                 public:
                     virtual std::shared_ptr<ringbuffer::ReadResultSet<E> >
-                    decodeClientMessage(const std::shared_ptr<protocol::ClientMessage> &clientMessage,
+                    decodeClientMessage(protocol::ClientMessage &&clientMessage,
                                         serialization::pimpl::SerializationService &serializationService) {
                         protocol::codec::RingbufferReadManyCodec::ResponseParameters params = protocol::codec::RingbufferReadManyCodec::ResponseParameters::decode(
-                                *clientMessage);
+                                clientMessage);
                         return std::shared_ptr<ringbuffer::ReadResultSet<E> >(
                                 new ringbuffer::ReadResultSet<E>(params.readCount, params.items,
                                                                  serializationService, params.itemSeqs,

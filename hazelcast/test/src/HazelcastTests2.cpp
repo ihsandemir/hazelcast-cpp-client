@@ -47,7 +47,6 @@
 #include <hazelcast/util/CountDownLatch.h>
 #include <ClientTestSupportBase.h>
 #include <hazelcast/util/Util.h>
-#include <hazelcast/util/impl/SimpleExecutorService.h>
 #include <TestHelperFunctions.h>
 #include <ostream>
 #include <hazelcast/util/ILogger.h>
@@ -156,8 +155,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/impl/SimpleExecutorService.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
@@ -432,212 +429,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
-
-using namespace hazelcast::util;
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            namespace util {
-                namespace executor {
-                    class ExecutorTest : public ClientTestSupport {
-                    protected:
-                        class StripedIntRunable : public StripedRunnable {
-                        public:
-                            StripedIntRunable(int32_t key, CountDownLatch &latch, std::atomic<int64_t> &threadId,
-                                              bool controlThread)
-                                    : key(key), latch(latch), threadId(threadId), isControlThread(controlThread) {}
-
-                            virtual void run() {
-                                if (isControlThread) {
-                                    if (threadId.load() == hazelcast::util::getCurrentThreadId()) {
-                                        latch.countDown();
-                                    }
-                                } else {
-                                    threadId = hazelcast::util::getCurrentThreadId();
-                                    latch.countDown();
-                                }
-                            }
-
-                            virtual int32_t getKey() {
-                                return key;
-                            }
-
-                            virtual const std::string getName() const {
-                                return "StripedIntRunable";
-                            }
-
-                        private:
-                            int32_t key;
-                            CountDownLatch &latch;
-                            std::atomic<int64_t> &threadId;
-                            bool isControlThread;
-                        };
-
-                        class ValueReflector : public Callable<int> {
-                        public:
-                            ValueReflector(int returnValue) : returnValue(new int(returnValue)) {}
-
-                            virtual std::shared_ptr<int> call() {
-                                return returnValue;
-                            }
-
-                            virtual const std::string getName() const {
-                                return "Multiplier";
-                            }
-
-                        protected:
-                            std::shared_ptr<int> returnValue;
-                        };
-
-                        class LatchDecrementer : public Runnable {
-                        public:
-                            LatchDecrementer(CountDownLatch &latch) : latch(latch) {}
-
-                            virtual void run() {
-                                latch.countDown();
-                            }
-
-                            virtual const std::string getName() const {
-                                return "LatchDecrementer";
-                            }
-
-                        protected:
-                            CountDownLatch &latch;
-                        };
-
-                        class SequentialLatchDecrementer : public LatchDecrementer {
-                        public:
-                            SequentialLatchDecrementer(CountDownLatch &latch, int threadIndex, int totalNumberOfThreads)
-                                    : LatchDecrementer(latch),
-                                      threadIndex(threadIndex),
-                                      totalNumberOfThreads(totalNumberOfThreads) {}
-
-                            virtual void run() {
-                                if (latch.get() == totalNumberOfThreads - threadIndex) {
-                                    latch.countDown();
-                                }
-                            }
-
-                            virtual const std::string getName() const {
-                                return "SequentialLatchDecrementer";
-                            }
-
-                        private:
-                            int threadIndex;
-                            int totalNumberOfThreads;
-                        };
-
-                    };
-
-                    TEST_F(ExecutorTest, testSingleThreadSequentialExecution) {
-                        hazelcast::util::impl::SimpleExecutorService singleThreadExecutor(getLogger(),
-                                                                                          "testGetPossibleSocketAddresses",
-                                                                                          1);
-
-                        singleThreadExecutor.start();
-
-                        int numThreads = 10;
-                        CountDownLatch latch(numThreads);
-
-                        for (int i = 0; i < numThreads; ++i) {
-                            singleThreadExecutor.execute(
-                                    std::shared_ptr<Runnable>(new SequentialLatchDecrementer(latch, i, numThreads)));
-                        }
-
-                        ASSERT_OPEN_EVENTUALLY(latch);
-                    }
-
-                    TEST_F(ExecutorTest, testMultiThreadExecution) {
-                        int32_t numThreads = 10;
-                        hazelcast::util::impl::SimpleExecutorService executorService(getLogger(),
-                                                                                     "testMultiThreadExecution",
-                                                                                     numThreads);
-
-                        executorService.start();
-
-                        CountDownLatch latch(numThreads);
-
-                        for (int i = 0; i < numThreads; ++i) {
-                            executorService.execute(std::shared_ptr<Runnable>(new LatchDecrementer(latch)));
-                        }
-
-                        ASSERT_OPEN_EVENTUALLY(latch);
-
-                        executorService.shutdown();
-                    }
-
-                    TEST_F(ExecutorTest, testRejectExecuteAfterShutdown) {
-                        int32_t numThreads = 10;
-                        hazelcast::util::impl::SimpleExecutorService executorService(getLogger(),
-                                                                                     "testRejectExecuteAfterShutdown",
-                                                                                     numThreads);
-                        executorService.start();
-
-                        executorService.shutdown();
-                        CountDownLatch latch(numThreads);
-                        ASSERT_THROW(executorService.execute(std::shared_ptr<Runnable>(new LatchDecrementer(latch))),
-                                     client::exception::RejectedExecutionException);
-                        ASSERT_THROW(
-                                executorService.submit<int>(std::shared_ptr<Callable<int> >(new ValueReflector(1))),
-                                client::exception::RejectedExecutionException);
-                    }
-
-                    TEST_F(ExecutorTest, testExecutorSubmit) {
-                        int32_t numThreads = 10;
-                        int32_t numJobs = 5 * numThreads;
-                        hazelcast::util::impl::SimpleExecutorService executorService(getLogger(),
-                                                                                     "testExecutorSubmit",
-                                                                                     numThreads);
-
-                        executorService.start();
-
-                        std::vector<std::shared_ptr<hazelcast::util::Future<int> > > futures;
-                        for (int i = 0; i < numJobs; ++i) {
-                            futures.push_back(
-                                    executorService.submit<int>(
-                                            std::shared_ptr<Callable<int> >(new ValueReflector(i))));
-                        }
-
-                        for (int i = 0; i < numJobs; ++i) {
-                            ASSERT_EQ(i, *futures[i]->get());
-                        }
-                    }
-
-                    TEST_F(ExecutorTest, testStripedExecutorAlwaysRunsAtTheSameThread) {
-                        int32_t numThreads = 10;
-                        hazelcast::util::impl::SimpleExecutorService executorService(getLogger(),
-                                                                                     "testMultiThreadExecution",
-                                                                                     numThreads);
-
-                        executorService.start();
-
-                        CountDownLatch latch(1);
-                        std::atomic<int64_t> threadId(0);
-                        int32_t key = 5;
-// the following gets the thread id fr the key
-                        executorService.execute(
-                                std::shared_ptr<StripedRunnable>(new StripedIntRunable(key, latch, threadId, false)));
-                        ASSERT_OPEN_EVENTUALLY(latch);
-
-                        CountDownLatch latch2(1);
-// this makes sure that the execution occured at the same thread as the previous runnable
-                        executorService.execute(std::shared_ptr<StripedRunnable>(
-                                new StripedIntRunable(key, latch2, threadId, true)));
-                        ASSERT_OPEN_EVENTUALLY(latch2);
-                    }
-
-                }
-            }
-        }
-    }
-}
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1172,23 +963,6 @@ namespace hazelcast {
                     cv->notify();
                 }
 
-                static void setValueToFuture(hazelcast::util::ThreadArgs &args) {
-                    hazelcast::util::Future<int> *future = (hazelcast::util::Future<int> *) args.arg0;
-                    std::shared_ptr<int> value = *(std::shared_ptr<int> *) args.arg1;
-                    int wakeUpTime = *(int *) args.arg2;
-                    hazelcast::util::sleep(wakeUpTime);
-                    future->set_value(value);
-                }
-
-                static void setExceptionToFuture(hazelcast::util::ThreadArgs &args) {
-                    hazelcast::util::Future<int> *future = (hazelcast::util::Future<int> *) args.arg0;
-                    int wakeUpTime = *(int *) args.arg1;
-                    hazelcast::util::sleep(wakeUpTime);
-                    std::unique_ptr<client::exception::IException> exception(
-                            new exception::IOException("exceptionName", "details"));
-                    future->set_exception(exception);
-                }
-
                 static void cancelJoinFromRunningThread(hazelcast::util::ThreadArgs &args) {
                     hazelcast::util::Thread *currentThread = args.currentThread;
                     hazelcast::util::CountDownLatch *latch = (hazelcast::util::CountDownLatch *) args.arg0;
@@ -1244,152 +1018,6 @@ namespace hazelcast {
 // the following call should not fail with assertion for EINVAL
                     conditionVariable.waitFor(mutex, 19999);
                 }
-            }
-
-            TEST_F (ClientUtilTest, testFutureWaitTimeout) {
-                hazelcast::util::Future<int> future(getLogger());
-                int waitSeconds = 3;
-                time_t beg = time(NULL);
-                ASSERT_FALSE(future.waitFor(waitSeconds * 1000));
-                ASSERT_NEAR((double) (time(NULL) - beg), (double) waitSeconds, 1);
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetValue) {
-                hazelcast::util::Future<int> future(getLogger());
-                int waitSeconds = 3;
-                std::shared_ptr<int> expectedValue(new int(2));
-                future.set_value(expectedValue);
-                ASSERT_TRUE(future.waitFor(waitSeconds * 1000));
-                int value = *future.get();
-                ASSERT_EQ(*expectedValue, value);
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetException) {
-                hazelcast::util::Future<int> future(getLogger());
-
-                std::unique_ptr<client::exception::IException> exception(
-                        new client::exception::IOException("testFutureSetException", "details"));
-                future.set_exception(exception);
-
-                ASSERT_THROW(future.get(), client::exception::IOException);
-            }
-
-            TEST_F (ClientUtilTest, testFutureCancel) {
-                hazelcast::util::Future<int> future(getLogger());
-
-                ASSERT_FALSE(future.isCancelled());
-
-                future.cancel();
-
-                ASSERT_TRUE(future.isCancelled());
-
-                ASSERT_THROW(future.get(), hazelcast::util::concurrent::CancellationException);
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetUnclonedIOException) {
-                hazelcast::util::Future<int> future(getLogger());
-
-                std::unique_ptr<client::exception::IException> ioe(
-                        new client::exception::IOException("testFutureSetUnclonedIOException", "details"));
-                future.set_exception(ioe);
-
-                try {
-                    future.get();
-                } catch (client::exception::IOException &) {
-// success
-                } catch (client::exception::IException &) {
-                    FAIL();
-                }
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetValue_afterSomeTime) {
-                hazelcast::util::Future<int> future(getLogger());
-                int waitSeconds = 30;
-                int wakeUpTime = 3;
-                std::shared_ptr<int> expectedValue(new int(2));
-                hazelcast::util::StartedThread thread(ClientUtilTest::setValueToFuture, &future, &expectedValue,
-                                                      &wakeUpTime);
-                ASSERT_TRUE(future.waitFor(waitSeconds * 1000));
-                std::shared_ptr<int> value = future.get();
-                ASSERT_EQ(*expectedValue, *value);
-
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetException_afterSomeTime) {
-                hazelcast::util::Future<int> future(getLogger());
-                int waitSeconds = 30;
-                int wakeUpTime = 3;
-                hazelcast::util::StartedThread thread(ClientUtilTest::setExceptionToFuture, &future, &wakeUpTime);
-                ASSERT_TRUE(future.waitFor(waitSeconds * 1000));
-
-                try {
-                    future.get();
-                    FAIL();
-                } catch (exception::IException &) {
-// expect exception here
-                }
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetValueAndThen) {
-                hazelcast::util::Future<int> future(getLogger());
-                hazelcast::util::CountDownLatch successLatch(1);
-                hazelcast::util::CountDownLatch failLatch(1);
-                hazelcast::util::impl::SimpleExecutorService executorService(getLogger(), "testFutureAndThen", 3);
-                executorService.start();
-                future.andThen(std::shared_ptr<ExecutionCallback<int> >(
-                        new LatchExecutionCallback(successLatch, failLatch)), executorService);
-
-                int wakeUpTime = 0;
-                std::shared_ptr<int> expectedValue(new int(2));
-                hazelcast::util::StartedThread thread(ClientUtilTest::setValueToFuture, &future, &expectedValue,
-                                                      &wakeUpTime);
-
-                ASSERT_OPEN_EVENTUALLY(successLatch);
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetValueBeforeAndThen) {
-                hazelcast::util::Future<int> future(getLogger());
-                hazelcast::util::CountDownLatch successLatch(1);
-                hazelcast::util::CountDownLatch failLatch(1);
-                hazelcast::util::impl::SimpleExecutorService executorService(getLogger(), "testFutureAndThen", 3);
-                executorService.start();
-                std::shared_ptr<int> value(new int(5));
-                future.set_value(value);
-                future.andThen(std::shared_ptr<ExecutionCallback<int> >(
-                        new LatchExecutionCallback(successLatch, failLatch)), executorService);
-
-                ASSERT_OPEN_EVENTUALLY(successLatch);
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetExceptionAndThen) {
-                hazelcast::util::Future<int> future(getLogger());
-                hazelcast::util::CountDownLatch successLatch(1);
-                hazelcast::util::CountDownLatch failLatch(1);
-                hazelcast::util::impl::SimpleExecutorService executorService(getLogger(), "testFutureAndThen", 3);
-                executorService.start();
-                future.andThen(std::shared_ptr<ExecutionCallback<int> >(
-                        new LatchExecutionCallback(successLatch, failLatch)), executorService);
-
-                int wakeUpTime = 0;
-                hazelcast::util::StartedThread thread(ClientUtilTest::setExceptionToFuture, &future, &wakeUpTime);
-
-                ASSERT_OPEN_EVENTUALLY(failLatch);
-                ASSERT_THROW(future.get(), exception::IOException);
-            }
-
-            TEST_F (ClientUtilTest, testFutureSetExceptionBeforeAndThen) {
-                hazelcast::util::Future<int> future(getLogger());
-                hazelcast::util::CountDownLatch successLatch(1);
-                hazelcast::util::CountDownLatch failLatch(1);
-                hazelcast::util::impl::SimpleExecutorService executorService(getLogger(), "testFutureAndThen", 3);
-                executorService.start();
-                future.set_exception(std::unique_ptr<client::exception::IException>(
-                        new exception::IOException("exceptionName", "details")));
-                future.andThen(std::shared_ptr<ExecutionCallback<int> >(
-                        new LatchExecutionCallback(successLatch, failLatch)), executorService);
-
-                ASSERT_OPEN_EVENTUALLY(failLatch);
-                ASSERT_THROW(future.get(), exception::IOException);
             }
 
             TEST_F (ClientUtilTest, testThreadName) {
@@ -1851,12 +1479,6 @@ namespace hazelcast {
             TEST_F(PipeliningTest, testConstructor_whenNegativeDepth) {
                 ASSERT_THROW(Pipelining<string>::create(0), exception::IllegalArgumentException);
                 ASSERT_THROW(Pipelining<string>::create(-1), exception::IllegalArgumentException);
-            }
-
-            TEST_F(PipeliningTest, add_whenNull) {
-                std::shared_ptr<Pipelining<string> > pipelining = Pipelining<string>::create(1);
-                ASSERT_THROW(pipelining->add(std::shared_ptr<ICompletableFuture<string> >()),
-                             exception::NullPointerException);
             }
 
             TEST_F(PipeliningTest, testPipeliningFunctionalityDepthOne) {

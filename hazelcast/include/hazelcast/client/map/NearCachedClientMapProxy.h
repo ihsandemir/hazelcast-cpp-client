@@ -24,7 +24,6 @@
 #include "hazelcast/client/internal/nearcache/impl/KeyStateMarkerImpl.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/internal/nearcache/NearCache.h"
-#include "hazelcast/client/internal/executor/CompletedFuture.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/spi/ClientPartitionService.h"
@@ -358,12 +357,12 @@ namespace hazelcast {
                     }
                 }
 
-                virtual std::shared_ptr<ICompletableFuture<void> >
+                virtual future<void>
                 setAsyncInternal(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
                                  const util::concurrent::TimeUnit &maxIdleUnit,
                                  const serialization::pimpl::Data &keyData, const V &value) {
                     try {
-                        std::shared_ptr<ICompletableFuture<void> > future = ClientMapProxy<K, V>::setAsyncInternal(
+                        auto future = ClientMapProxy<K, V>::setAsyncInternal(
                                 ttl,
                                 ttlUnit,
                                 maxIdle,
@@ -592,7 +591,7 @@ namespace hazelcast {
                                                                                                  localOnly);
                     }
 
-                    std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const {
+                    std::string decodeAddResponse(protocol::ClientMessage &&responseMessage) const {
                         return protocol::codec::MapAddNearCacheEntryListenerCodec::ResponseParameters::decode(
                                 responseMessage).response;
                     }

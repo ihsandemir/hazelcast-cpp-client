@@ -70,6 +70,7 @@ namespace hazelcast {
 
                         void sleepBeforeNextTry();
 
+                        void scheduleConnectToAllMembers();
                     };
                 }
             }

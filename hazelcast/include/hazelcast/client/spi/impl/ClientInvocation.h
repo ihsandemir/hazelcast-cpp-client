@@ -23,14 +23,15 @@
 
 #define BOOST_THREAD_PROVIDES_FUTURE
 #define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
+#define BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
 
 #include <boost/thread/future.hpp>
+#include <boost/asio/thread_pool.hpp>
 
-#include "hazelcast/util/Runnable.h"
+#include "hazelcast/util/Sync.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 
 #include "hazelcast/client/spi/EventHandler.h"
-#include "hazelcast/client/spi/impl/ClientInvocationFuture.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -131,7 +132,7 @@ namespace hazelcast {
 
                     static bool isRetrySafeException(exception::IException &exception);
 
-                    std::shared_ptr<util::Executor> getUserExecutor();
+                    const boost::asio::thread_pool &getUserExecutor() const;
 
                     promise<protocol::ClientMessage> &getPromise();
 
