@@ -52,7 +52,6 @@
 #include "hazelcast/client/protocol/codec/ErrorCodec.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/LifecycleService.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/client/SocketInterceptor.h"
 #include "hazelcast/client/connection/AuthenticationFuture.h"
 #include "hazelcast/client/config/ClientNetworkConfig.h"
@@ -357,11 +356,16 @@ namespace hazelcast {
                                                                                                      principal.get());
                 std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         client, clientMessage, "", connection);
-                std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture = clientInvocation->invokeUrgent();
+                auto invocationFuture = clientInvocation->invokeUrgent();
 
-                auto authCallback = std::make_shared<AuthCallback>(invocationFuture, connection, asOwner, target,
-                                                                   future, *this);
-                invocationFuture->andThen(authCallback);
+                auto authCallback = std::make_shared<AuthCallback>(connection, asOwner, target, future, *this);
+                invocationFuture.then([=](boost::future<protocol::ClientMessage> f) {
+                    try {
+                        authCallback->onResponse(f.get());
+                    } catch (exception::IException &e) {
+                        authCallback->onFailure(std::shared_ptr<exception::IException>(e.clone()));
+                    }
+                });
             }
 
             void
@@ -548,6 +552,7 @@ namespace hazelcast {
                     } catch (...) {
                         throw;
                     }
+                    return false;
                 });
                 boost::asio::post(clusterConnectionExecutor, task);
                 return task.get_future();
@@ -587,7 +592,8 @@ namespace hazelcast {
                                        " of ", connectionAttemptLimit, ".");
 
                         if (remainingTime > 0) {
-                            util::Thread::sleep(remainingTime);
+                            // TODO use a condition variable here
+                            std::this_thread::sleep_for(std::chrono::milliseconds(remainingTime));
                         }
                     } else {
                         logger.warning("Unable to get alive cluster connection, attempt ", attempt, " of ",
@@ -659,7 +665,7 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::connectToCluster() {
-                connectToClusterAsync()->get();
+                connectToClusterAsync().get();
             }
 
             bool ClientConnectionManagerImpl::isAlive() {
@@ -684,17 +690,15 @@ namespace hazelcast {
                 return client.getLogger();
             }
 
-            ClientConnectionManagerImpl::AuthCallback::AuthCallback(
-                    std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture,
-                    const std::shared_ptr<Connection> &connection,
-                    bool asOwner,
-                    const Address &target,
-                    std::shared_ptr<AuthenticationFuture> &future,
-                    ClientConnectionManagerImpl &connectionManager) : invocationFuture(invocationFuture),
-                                                                      connection(connection), asOwner(asOwner),
-                                                                      target(target), future(future),
-                                                                      connectionManager(connectionManager),
-                                                                      cancelled(false) {
+            ClientConnectionManagerImpl::AuthCallback::AuthCallback(const std::shared_ptr<Connection> &connection,
+                                                                    bool asOwner,
+                                                                    const Address &target,
+                                                                    std::shared_ptr<AuthenticationFuture> &future,
+                                                                    ClientConnectionManagerImpl &connectionManager)
+                    : connection(connection), asOwner(asOwner),
+                      target(target), future(future),
+                      connectionManager(connectionManager),
+                      cancelled(false) {
                 scheduleTimeoutTask();
             }
 
@@ -720,7 +724,7 @@ namespace hazelcast {
                         return;
                     }
 
-                    invocationFuture->complete((exception::ExceptionBuilder<exception::TimeoutException>(
+                    future->onFailure((exception::ExceptionBuilder<exception::TimeoutException>(
                             "ClientConnectionManagerImpl::authenticate")
                             << "Authentication response did not come back in "
                             << connectionManager.connectionTimeoutMillis
@@ -728,14 +732,13 @@ namespace hazelcast {
                 });
             }
 
-            void ClientConnectionManagerImpl::AuthCallback::onResponse(
-                    const std::shared_ptr<protocol::ClientMessage> &response) {
+            void ClientConnectionManagerImpl::AuthCallback::onResponse(protocol::ClientMessage response) {
                 cancelTimeoutTask();
 
                 std::unique_ptr<protocol::codec::ClientAuthenticationCodec::ResponseParameters> result;
                 try {
                     result.reset(new protocol::codec::ClientAuthenticationCodec::ResponseParameters(
-                            protocol::codec::ClientAuthenticationCodec::ResponseParameters::decode(*response)));
+                            protocol::codec::ClientAuthenticationCodec::ResponseParameters::decode(response)));
                 } catch (exception::IException &e) {
                     handleAuthenticationException(std::shared_ptr<exception::IException>(e.clone()));
                     return;
@@ -1349,7 +1352,8 @@ namespace hazelcast {
                                      const client::Address &address, client::config::SocketOptions &socketOptions,
                                      int64_t connectTimeoutInMillis)
                         : BaseSocket<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>>(
-                        std::make_unique<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>>(ioService, sslContext),
+                        std::unique_ptr<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>>(
+                                new boost::asio::ssl::stream<boost::asio::ip::tcp::socket>(ioService, sslContext)),
                         address, socketOptions, ioService, connectTimeoutInMillis) {
                 }
 
@@ -1400,8 +1404,9 @@ namespace hazelcast {
 
                 TcpSocket::TcpSocket(boost::asio::io_context &io, const Address &address,
                                      client::config::SocketOptions &socketOptions, int64_t connectTimeoutInMillis)
-                        : BaseSocket<boost::asio::ip::tcp::socket>(boost::make_unique<boost::asio::ip::tcp::socket>(io),
-                                                                   address, socketOptions, io, connectTimeoutInMillis) {
+                        : BaseSocket<boost::asio::ip::tcp::socket>(
+                        std::unique_ptr<boost::asio::ip::tcp::socket>(new boost::asio::ip::tcp::socket(io)),
+                        address, socketOptions, io, connectTimeoutInMillis) {
                 }
 
             }

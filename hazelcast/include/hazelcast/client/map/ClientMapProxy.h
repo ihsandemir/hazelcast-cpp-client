@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <climits>
 #include <assert.h>
+#include <hazelcast/util/concurrent/TimeUnit.h>
 
 #include "hazelcast/client/monitor/LocalMapStats.h"
 #include "hazelcast/client/monitor/impl/NearCacheStatsImpl.h"
@@ -970,7 +971,7 @@ namespace hazelcast {
                 }
 
                 template<typename ResultType, typename EntryProcessor>
-                future <ResultType> submitToKey(const K &key, const EntryProcessor &entryProcessor) {
+                future <std::shared_ptr<ResultType>> submitToKey(const K &key, const EntryProcessor &entryProcessor) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data processorData = toData(entryProcessor);
 
@@ -1335,7 +1336,7 @@ namespace hazelcast {
                 }
 
                 template<typename ResultType>
-                future <ResultType>
+                future <std::shared_ptr<ResultType>>
                 submitToKeyInternal(const serialization::pimpl::Data &keyData,
                                     const serialization::pimpl::Data &processor) {
                     int partitionId = getPartitionId(keyData);
@@ -1347,14 +1348,9 @@ namespace hazelcast {
                                                                                 util::getCurrentThreadId());
 
                     auto future = invokeAndGetFuture(request, partitionId);
-                    future.then([=](future <protocol::ClientMessage> f) {
-                        return getSerializationService().template toObject<ResultType>(*f.get());
+                    return future.then([=](boost::future<protocol::ClientMessage> f) {
+                        return getSerializationService().template toObject<ResultType>(f.get());
                     });
-                }
-
-                static std::unique_ptr<serialization::pimpl::Data>
-                submitToKeyDecoder(protocol::ClientMessage &&response) {
-                    return protocol::codec::MapExecuteOnKeyCodec::ResponseParameters::decode(response).response;
                 }
 
                 template<typename EntryProcessor>

@@ -55,7 +55,7 @@ namespace hazelcast {
                     * @param message
                     * @return ErrorCodec
                     */
-                    static ErrorCodec decode(ClientMessage &clientMessage);
+                    static ErrorCodec decode(ClientMessage clientMessage);
 
 
                     std::string toString() const;

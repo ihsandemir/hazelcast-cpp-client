@@ -515,11 +515,11 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeGetInternal(EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeGetInternal(EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
                 protocol::codec::PNCounterGetCodec::ResponseParameters resultParameters = protocol::codec::PNCounterGetCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -530,12 +530,12 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(delta, true, EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(delta, true, EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -546,13 +546,13 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(delta, false,
-                                                                                      EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(delta, false,
+                                                  EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -563,13 +563,13 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndSubtract",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(-delta, true,
-                                                                                      EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(-delta, true,
+                                                  EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -580,13 +580,13 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::subtractAndGet",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(-delta, false,
-                                                                                      EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(-delta, false,
+                                                  EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -597,12 +597,12 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::decrementAndGet",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(-1, false, EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(-1, false, EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -613,12 +613,12 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::incrementAndGet",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(1, false, EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(1, false, EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -629,12 +629,12 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndDecrement",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(-1, true, EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(-1, true, EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -645,12 +645,12 @@ namespace hazelcast {
                     throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndIncrement",
                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
                 }
-                std::shared_ptr<protocol::ClientMessage> response = invokeAddInternal(1, true, EMPTY_ADDRESS_LIST,
-                                                                                      std::unique_ptr<exception::HazelcastException>(),
-                                                                                      target);
+                auto response = invokeAddInternal(1, true, EMPTY_ADDRESS_LIST,
+                                                  std::unique_ptr<exception::HazelcastException>(),
+                                                  target);
 
                 protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        *response);
+                        response);
                 updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
                 return resultParameters.value;
             }
@@ -715,7 +715,7 @@ namespace hazelcast {
                 return maxConfiguredReplicaCount;
             }
 
-            std::shared_ptr<protocol::ClientMessage>
+            protocol::ClientMessage
             ClientPNCounterProxy::invokeGetInternal(std::shared_ptr<std::set<Address> > excludedAddresses,
                                                     const std::unique_ptr<exception::IException> &lastException,
                                                     const std::shared_ptr<Address> &target) {
@@ -2095,14 +2095,14 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request;
                 if (maxIdle != NULL) {
                     request = protocol::codec::MapPutWithMaxIdleCodec::encodeRequest(name, keyData, valueData,
-                                                                                     getCurrentThreadId(),
+                                                                                     util::getCurrentThreadId(),
                                                                                      ttlMillis,
-                                                                                     TimeUtil::timeInMsOrOneIfResultIsZero(
+                                                                                     util::TimeUtil::timeInMsOrOneIfResultIsZero(
                                                                                              *maxIdle,
                                                                                              maxIdleUnit));
                 } else {
                     request = protocol::codec::MapPutCodec::encodeRequest(name, keyData, valueData,
-                                                                          getCurrentThreadId(),
+                                                                          util::getCurrentThreadId(),
                                                                           ttlMillis);
                 }
 
@@ -2114,18 +2114,18 @@ namespace hazelcast {
                                            const int64_t *maxIdle, const util::concurrent::TimeUnit &maxIdleUnit,
                                            const serialization::pimpl::Data &keyData,
                                            const serialization::pimpl::Data &valueData) {
-                int64_t ttlMillis = TimeUtil::timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
+                int64_t ttlMillis = util::TimeUtil::timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
                 std::unique_ptr<protocol::ClientMessage> request;
                 if (maxIdle != NULL) {
                     request = protocol::codec::MapSetWithMaxIdleCodec::encodeRequest(name, keyData, valueData,
-                                                                                     getCurrentThreadId(),
+                                                                                     util::getCurrentThreadId(),
                                                                                      ttlMillis,
-                                                                                     TimeUtil::timeInMsOrOneIfResultIsZero(
+                                                                                     util::TimeUtil::timeInMsOrOneIfResultIsZero(
                                                                                              *maxIdle,
                                                                                              maxIdleUnit));
                 } else {
                     request = protocol::codec::MapSetCodec::encodeRequest(name, keyData, valueData,
-                                                                          getCurrentThreadId(),
+                                                                          util::getCurrentThreadId(),
                                                                           ttlMillis);
                 }
 
@@ -2427,7 +2427,7 @@ namespace hazelcast {
                     ReliableTopicExecutor::ReliableTopicExecutor(Ringbuffer<ReliableTopicMessage> &rb,
                                                                  util::ILogger &logger)
                             : ringbuffer(rb),
-                              runnerThread(std::shared_ptr<util::Runnable>(new Task(ringbuffer, q, shutdown)), logger),
+                              runnerThread([&]() { Task(ringbuffer, q, shutdown).run(); }),
                               q(10), shutdown(false) {
                     }
 
@@ -2436,7 +2436,6 @@ namespace hazelcast {
                     }
 
                     void ReliableTopicExecutor::start() {
-                        runnerThread.start();
                     }
 
                     void ReliableTopicExecutor::stop() {
@@ -2724,39 +2723,39 @@ namespace hazelcast {
             impl->destroy();
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::addAndGetAsync(int64_t delta) {
+        future<std::shared_ptr<int64_t>> IAtomicLong::addAndGetAsync(int64_t delta) {
             return impl->addAndGetAsync(delta);
         }
 
-        std::shared_ptr<ICompletableFuture<bool> > IAtomicLong::compareAndSetAsync(int64_t expect, int64_t update) {
+        future<std::shared_ptr<bool>> IAtomicLong::compareAndSetAsync(int64_t expect, int64_t update) {
             return impl->compareAndSetAsync(expect, update);
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::decrementAndGetAsync() {
+        future<std::shared_ptr<int64_t>> IAtomicLong::decrementAndGetAsync() {
             return impl->decrementAndGetAsync();
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::getAsync() {
+        future<std::shared_ptr<int64_t>> IAtomicLong::getAsync() {
             return impl->getAsync();
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::getAndAddAsync(int64_t delta) {
+        future<std::shared_ptr<int64_t>> IAtomicLong::getAndAddAsync(int64_t delta) {
             return impl->getAndAddAsync(delta);
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::getAndSetAsync(int64_t newValue) {
+        future<std::shared_ptr<int64_t>> IAtomicLong::getAndSetAsync(int64_t newValue) {
             return impl->getAndSetAsync(newValue);
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::incrementAndGetAsync() {
+        future<std::shared_ptr<int64_t>> IAtomicLong::incrementAndGetAsync() {
             return impl->incrementAndGetAsync();
         }
 
-        std::shared_ptr<ICompletableFuture<int64_t> > IAtomicLong::getAndIncrementAsync() {
+        future<std::shared_ptr<int64_t>> IAtomicLong::getAndIncrementAsync() {
             return impl->getAndIncrementAsync();
         }
 
-        std::shared_ptr<ICompletableFuture<void> > IAtomicLong::setAsync(int64_t newValue) {
+        future<std::shared_ptr<void>> IAtomicLong::setAsync(int64_t newValue) {
             return impl->setAsync(newValue);
         }
 

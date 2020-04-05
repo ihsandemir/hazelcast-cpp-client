@@ -103,10 +103,10 @@ namespace hazelcast {
                             options.getTimeout() * MILLISECOND_IN_A_SECOND, options.getDurability(),
                             options.getTransactionType(), threadId);
 
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(request);
+                    auto response = invoke(request);
 
                     protocol::codec::TransactionCreateCodec::ResponseParameters result =
-                            protocol::codec::TransactionCreateCodec::ResponseParameters::decode(*response);
+                            protocol::codec::TransactionCreateCodec::ResponseParameters::decode(response);
                     txnId = result.response;
                     state = TxnState::ACTIVE;
                 } catch (exception::IException &) {

@@ -261,7 +261,7 @@ namespace hazelcast {
                     throw;
                 }
 
-                mixedTypeSupportAdaptor = std::make_unique<mixedtype::impl::HazelcastClientImpl>(*this);
+                mixedTypeSupportAdaptor.reset(new mixedtype::impl::HazelcastClientImpl(*this));
             }
 
             void HazelcastClientInstanceImpl::startLogger() {
@@ -480,7 +480,8 @@ namespace hazelcast {
             }
 
             void HazelcastClientInstanceImpl::initalizeNearCacheManager() {
-                nearCacheManager.reset(new internal::nearcache::NearCacheManager(serializationService, *logger));
+                nearCacheManager.reset(
+                        new internal::nearcache::NearCacheManager(executionService, serializationService, *logger));
             }
 
             std::shared_ptr<IExecutorService>
@@ -674,6 +675,7 @@ namespace hazelcast {
             } catch (exception::IException &e) {
                 util::ExceptionUtil::rethrow(e);
             }
+            return std::pair<future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>();
         }
 
         std::pair<future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
@@ -685,6 +687,7 @@ namespace hazelcast {
             } catch (exception::IException &e) {
                 util::ExceptionUtil::rethrow(e);
             }
+            return std::pair<future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>();
         }
 
         bool IExecutorService::isSyncComputation(bool preventSync) {

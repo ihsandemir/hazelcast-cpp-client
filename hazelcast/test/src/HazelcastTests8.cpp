@@ -84,11 +84,10 @@
 #include "TestHelperFunctions.h"
 #include <cmath>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h>
-#include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
-#include <string>
+#include <std::string>
 #include "executor/tasks/SelectAllMembers.h"
 #include "executor/tasks/IdentifiedFactory.h"
 #include <hazelcast/client/serialization/ObjectDataOutput.h>
@@ -145,7 +144,6 @@
 #include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
@@ -155,7 +153,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
@@ -441,7 +438,7 @@ namespace hazelcast {
                 void populateNearCache() {
                     char buf[30];
                     for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                        std::shared_ptr<string> value = nearCachedMap->get(i);
+                        std::shared_ptr<std::string> value = nearCachedMap->get(i);
                         ASSERT_NOTNULL(value.get(), std::string);
                         hazelcast::util::hz_snprintf(buf, 30, "value-%d", i);
                         ASSERT_EQ(buf, *value);
@@ -1830,28 +1827,21 @@ namespace hazelcast {
                                                             << logger->getInstanceName()).build();
                         }
 
-                        hazelcast::util::Thread monitor(
-                                std::shared_ptr<hazelcast::util::Runnable>(new StatsPrinterTask(stats)),
-                                *logger);
+                        auto monitor = std::async([&]() {
+                            StatsPrinterTask(stats).run();
+                        });
 
                         HazelcastClient hazelcastClient(clientConfig);
 
                         IMap<int, std::vector<char> > map = hazelcastClient.getMap<int, std::vector<char> >(
                                 "cppDefault");
 
-                        std::vector<std::shared_ptr<hazelcast::util::Thread> > threads;
-
+                        std::vector<std::future<void>> futures;
                         for (int i = 0; i < THREAD_COUNT; i++) {
-                            std::shared_ptr<hazelcast::util::Thread> thread = std::shared_ptr<hazelcast::util::Thread>(
-                                    new hazelcast::util::Thread(
-                                            std::shared_ptr<hazelcast::util::Runnable>(new Task(stats, map, logger)),
-                                            *logger));
-                            thread->start();
-                            threads.push_back(thread);
+                            futures.push_back(std::async([&]() { Task(stats, map, logger).run(); }));
                         }
 
-                        monitor.start();
-                        monitor.join();
+                        monitor.wait();
                     }
                 };
 

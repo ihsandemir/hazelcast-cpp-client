@@ -742,7 +742,7 @@ namespace hazelcast {
                                trace.getDeclaringClass() << "." << trace.getMethodName();
                 }
 
-                Address AddressCodec::decode(ClientMessage &clientMessage) {
+                Address AddressCodec::decode(ClientMessage clientMessage) {
                     std::string host = clientMessage.getStringUtf8();
                     int32_t port = clientMessage.getInt32();
                     return Address(host, port);
@@ -757,7 +757,7 @@ namespace hazelcast {
                     return ClientMessage::calculateDataSize(address.getHost()) + ClientMessage::INT32_SIZE;
                 }
 
-                ErrorCodec ErrorCodec::decode(ClientMessage &clientMessage) {
+                ErrorCodec ErrorCodec::decode(ClientMessage clientMessage) {
                     return ErrorCodec(clientMessage);
                 }
 
@@ -806,7 +806,7 @@ namespace hazelcast {
                     }
                 }
 
-                Member MemberCodec::decode(ClientMessage &clientMessage) {
+                Member MemberCodec::decode(ClientMessage clientMessage) {
                     Address address = AddressCodec::decode(clientMessage);
                     std::string uuid = clientMessage.get<std::string>();
                     bool liteMember = clientMessage.get<bool>();
@@ -821,7 +821,7 @@ namespace hazelcast {
                     return Member(address, uuid, liteMember, attributes);
                 }
 
-                util::UUID UUIDCodec::decode(ClientMessage &clientMessage) {
+                util::UUID UUIDCodec::decode(ClientMessage clientMessage) {
                     return util::UUID(clientMessage.get<int64_t>(), clientMessage.get<int64_t>());
                 }
 
@@ -834,7 +834,7 @@ namespace hazelcast {
                     return UUID_DATA_SIZE;
                 }
 
-                StackTraceElement StackTraceElementCodec::decode(ClientMessage &clientMessage) {
+                StackTraceElement StackTraceElementCodec::decode(ClientMessage clientMessage) {
                     std::string className = clientMessage.getStringUtf8();
                     std::string methodName = clientMessage.getStringUtf8();
                     std::unique_ptr<std::string> fileName = clientMessage.getNullable<std::string>();
@@ -843,7 +843,7 @@ namespace hazelcast {
                     return StackTraceElement(className, methodName, fileName, lineNumber);
                 }
 
-                map::DataEntryView DataEntryViewCodec::decode(ClientMessage &clientMessage) {
+                map::DataEntryView DataEntryViewCodec::decode(ClientMessage clientMessage) {
                     serialization::pimpl::Data key = clientMessage.get<serialization::pimpl::Data>(); // key
                     serialization::pimpl::Data value = clientMessage.get<serialization::pimpl::Data>(); // value
                     int64_t cost = clientMessage.get<int64_t>(); // cost

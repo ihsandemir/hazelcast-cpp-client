@@ -84,7 +84,6 @@
 #include "TestHelperFunctions.h"
 #include <cmath>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h>
-#include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
@@ -145,7 +144,6 @@
 #include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
@@ -155,7 +153,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
@@ -3769,41 +3766,41 @@ namespace hazelcast {
             }
 
             TEST_F(IAtomicLongTest, testAsync) {
-                std::shared_ptr<ICompletableFuture<int64_t> > future = l->getAndAddAsync(10);
-                ASSERT_EQ(0, *future->get());
+                auto future = l->getAndAddAsync(10);
+                ASSERT_EQ(0, *future.get());
 
-                std::shared_ptr<ICompletableFuture<bool> > booleanFuture = l->compareAndSetAsync(10, 42);
+                std::shared_ptr<ICompletableFuture < bool> > booleanFuture = l->compareAndSetAsync(10, 42);
                 ASSERT_TRUE(booleanFuture->get());
 
                 future = l->getAsync();
-                ASSERT_EQ(42, *future->get());
+                ASSERT_EQ(42, *future.get());
 
                 future = l->incrementAndGetAsync();
-                ASSERT_EQ(43, *future->get());
+                ASSERT_EQ(43, *future.get());
 
                 future = l->addAndGetAsync(-13);
-                ASSERT_EQ(30, *future->get());
+                ASSERT_EQ(30, *future.get());
 
                 future = l->decrementAndGetAsync();
-                ASSERT_EQ(29, *future->get());
+                ASSERT_EQ(29, *future.get());
 
                 future = l->getAndSetAsync(15);
-                ASSERT_EQ(29, *future->get());
+                ASSERT_EQ(29, *future.get());
 
                 future = l->getAsync();
-                ASSERT_EQ(15, *future->get());
+                ASSERT_EQ(15, *future.get());
 
                 future = l->getAndIncrementAsync();
-                ASSERT_EQ(15, *future->get());
+                ASSERT_EQ(15, *future.get());
 
                 future = l->getAsync();
-                ASSERT_EQ(16, *future->get());
+                ASSERT_EQ(16, *future.get());
 
-                std::shared_ptr<ICompletableFuture<void> > voidFuture = l->setAsync(55);
+                std::shared_ptr<ICompletableFuture < void> > voidFuture = l->setAsync(55);
                 voidFuture->get();
 
                 future = l->getAsync();
-                ASSERT_EQ(55, *future->get());
+                ASSERT_EQ(55, *future.get());
             }
         }
     }

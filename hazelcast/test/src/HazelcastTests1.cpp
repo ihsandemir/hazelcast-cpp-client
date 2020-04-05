@@ -84,7 +84,6 @@
 #include "TestHelperFunctions.h"
 #include <cmath>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h>
-#include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
@@ -145,7 +144,6 @@
 #include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
@@ -712,10 +710,10 @@ namespace hazelcast {
                     class ReadOneWithLatchTask : public hazelcast::util::Runnable {
                     public:
                         ReadOneWithLatchTask(const std::shared_ptr<Ringbuffer<std::string> > &clientRingbuffer,
-                                             const std::shared_ptr<CountDownLatch> &latch) : clientRingbuffer(
+                                             const std::shared_ptr<util::CountDownLatch> &latch) : clientRingbuffer(
                                 clientRingbuffer), latch(latch) {}
 
-                        virtual const string getName() const {
+                        virtual const std::string getName() const {
                             return "ReadOneWithLatchTask";
                         }
 
@@ -843,9 +841,7 @@ namespace hazelcast {
                 TEST_F(RingbufferTest, readOne_whenHitsStale_shouldNotBeBlocked) {
                     std::shared_ptr<hazelcast::util::CountDownLatch> latch = std::make_shared<hazelcast::util::CountDownLatch>(
                             1);
-                    hazelcast::util::Thread consumer(std::make_shared<ReadOneWithLatchTask>(clientRingbuffer, latch),
-                                                     getLogger());
-                    consumer.start();
+                    std::thread consumer([=]() { (ReadOneWithLatchTask(clientRingbuffer, latch).run()); });
                     client2Ringbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
                     ASSERT_OPEN_EVENTUALLY(*latch);
                 }
@@ -1181,10 +1177,7 @@ namespace hazelcast {
                         "StartedThread::init") << "Could not start logger " << logger->getInstanceName()).build();
             }
 
-            thread.reset(
-                    new hazelcast::util::Thread(std::shared_ptr<hazelcast::util::Runnable>(new hazelcast::util::RunnableDelegator(*this)), *logger));
-            threadArgs.currentThread = thread.get();
-            thread->start();
+            thread = std::thread([=]() { func(threadArgs); });
         }
 
         void StartedThread::run() {
@@ -1196,14 +1189,14 @@ namespace hazelcast {
         }
 
         bool StartedThread::join() {
-            return thread->join();
+            if (!thread.joinable()) {
+                return false;
+            }
+            thread.join();
+            return true;
         }
 
         StartedThread::~StartedThread() {
-        }
-
-        void StartedThread::cancel() {
-            thread->cancel();
         }
 
     }
@@ -2000,34 +1993,6 @@ namespace hazelcast {
                         }
 
                     protected:
-                        class IncrementerTask : public hazelcast::util::Runnable {
-                        public:
-                            IncrementerTask(int loopsPerThread, std::atomic<int64_t> &finalValue,
-                                            const std::shared_ptr<client::crdt::pncounter::PNCounter> &counter1,
-                                            const std::shared_ptr<client::crdt::pncounter::PNCounter> &counter2)
-                                    : loopsPerThread(loopsPerThread), finalValue(finalValue), counter1(counter1),
-                                      counter2(counter2) {}
-
-                            virtual const string getName() const {
-                                return "IncrementerTask";
-                            }
-
-                            virtual void run() {
-                                for (int j = 0; j < loopsPerThread; j++) {
-                                    counter1->addAndGet(5);
-                                    finalValue += 5;
-                                    counter2->addAndGet(-2);
-                                    finalValue += -2;
-                                }
-                            }
-
-                        private:
-                            int loopsPerThread;
-                            std::atomic<int64_t> &finalValue;
-                            std::shared_ptr<client::crdt::pncounter::PNCounter> counter1;
-                            std::shared_ptr<client::crdt::pncounter::PNCounter> counter2;
-                        };
-
                         static HazelcastServer *instance;
                         static HazelcastClient *client;
                     };
@@ -2055,25 +2020,24 @@ namespace hazelcast {
                         int loopsPerThread = 100;
                         std::atomic<int64_t> finalValue(0);
 
-                        std::vector<std::shared_ptr<hazelcast::util::Thread> > futures;
+                        std::vector<std::future<void>> futures;
                         for (int i = 0; i < parallelism; i++) {
-                            std::shared_ptr<Thread> thread = std::shared_ptr<hazelcast::util::Thread>(
-                                    new hazelcast::util::Thread(std::shared_ptr<hazelcast::util::Runnable>(
-                                            new IncrementerTask(loopsPerThread, finalValue, counter1, counter2)),
-                                                                getLogger()));
-                            thread->start();
-                            futures.push_back(thread);
+                            futures.push_back(std::async([&]() {
+                                for (int j = 0; j < loopsPerThread; j++) {
+                                    counter1->addAndGet(5);
+                                    finalValue += 5;
+                                    counter2->addAndGet(-2);
+                                    finalValue += -2;
+                                }
+                            }));
                         }
 
-                        for (const std::shared_ptr<hazelcast::util::Thread> &future  : futures) {
-                            future->join();
-                        }
+                        boost::wait_for_all(futures.begin(), futures.end());
 
                         int64_t finalExpectedValue = 3 * (int64_t) loopsPerThread * parallelism;
                         ASSERT_EQ_EVENTUALLY(finalExpectedValue, counter1->get());
                         ASSERT_EQ_EVENTUALLY(finalExpectedValue, counter2->get());
                     }
-
                 }
             }
 
@@ -2458,43 +2422,34 @@ namespace hazelcast {
 
             TEST_F (FlakeIdGeneratorApiTest, testSmoke) {
                 hazelcast::util::CountDownLatch startLatch(1);
-                std::vector<std::shared_ptr<hazelcast::util::Thread> > threads(4);
-                hazelcast::util::Sync<std::shared_ptr<std::set<int64_t> > > ids[4];
+                std::array<std::future<std::set<int64_t>>, 4> futures;
+                constexpr size_t NUM_IDS_PER_THREAD = 100000;
+                constexpr int NUM_THREADS = 4;
 
-                for (int i = 0; i < 4; ++i) {
-                    ids[i] = std::shared_ptr<std::set<int64_t> >(new std::set<int64_t>());
-                    std::shared_ptr<hazelcast::util::Thread> t(
-                            new hazelcast::util::Thread(std::shared_ptr<hazelcast::util::Runnable>(
-                                    new SmokeRunner(flakeIdGenerator, startLatch, ids[i])), getLogger()));
-                    t->start();
-                    threads[i] = t;
-                }
+                for (int i = 0; i < NUM_THREADS; ++i) {
+                    futures[i] = std::async([&]() {
+                        std::set<int64_t> localIds;
+                        startLatch.await();
+                        for (int j = 0; j < NUM_IDS_PER_THREAD; ++j) {
+                            localIds.insert(flakeIdGenerator.newId());
+                        }
 
-                startLatch.countDown();
-
-                for (int i = 0; i < 4; ++i) {
-                    threads[i]->join();
+                        return localIds;
+                    });
                 }
 
                 std::set<int64_t> allIds;
-                for (int i = 0; i < 4; ++i) {
-                    std::shared_ptr<std::set<int64_t> > threadIdSet = ids[i];
-                    for (const int64_t &value : *threadIdSet) {
-                        allIds.insert(value);
-                    }
+                for (auto &f : futures) {
+                    auto ids = f.get();
+                    allIds.insert(ids.begin(), ids.end());
                 }
 
 // if there were duplicate IDs generated, there will be less items in the set than expected
-                        assertEquals(4 * 100000, (int) allIds.size());
+                        assertEquals(4 * NUM_IDS_PER_THREAD, allIds.size());
             }
         }
     }
 }
-
-//
-// Created by sancar koyunlu on 9/18/13.
-
-
 
 namespace hazelcast {
     namespace client {
@@ -3222,7 +3177,7 @@ namespace hazelcast {
                         latch.countDown();
                     }
 
-                    virtual const string getName() const {
+                    virtual const std::string getName() const {
                         return "PutGetRemoveTestTask";
                     }
 
@@ -3270,31 +3225,20 @@ namespace hazelcast {
             TEST_F(ClientTxnMultiMapTest, testPutGetRemove) {
                 MultiMap<std::string, std::string> mm = client.getMultiMap<std::string, std::string>(
                         "testPutGetRemove");
-                int n = 10;
+                constexpr int n = 10;
                 hazelcast::util::CountDownLatch latch(n);
 
-                std::vector<std::shared_ptr<hazelcast::util::Thread> > allThreads;
                 for (int i = 0; i < n; i++) {
-                    std::shared_ptr<hazelcast::util::Thread> t(
-                            new hazelcast::util::Thread(
-                                    std::shared_ptr<hazelcast::util::Runnable>(
-                                            new PutGetRemoveTestTask(client, mm, latch)),
-                                    getLogger()));
-                    t->start();
-                    allThreads.push_back(t);
+                    std::async([&]() {
+                        PutGetRemoveTestTask(client, mm, latch).run();
+                    });
                 }
+
                 ASSERT_OPEN_EVENTUALLY(latch);
             }
         }
     }
 }
-
-
-//
-// Created by sancar koyunlu on 9/18/13.
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -3373,144 +3317,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            namespace faulttolerance {
-                class LoadTest : public ClientTestSupport {
-                public:
-                    hazelcast::client::ClientConfig getLoadTestConfig() {
-                        ClientConfig config = ClientTestSupport::getConfig();
-                        config.setRedoOperation(true);
-                        config.setLogLevel(FINEST);
-                        return config;
-                    }
-
-                    class LoadClientTask : public hazelcast::util::Runnable {
-                    public:
-                        LoadClientTask(IMap<int, int> &map, int numberOfOps, hazelcast::util::CountDownLatch &latch)
-                                : map(map),
-                                  numberOfOps(
-                                          numberOfOps),
-                                  latch(latch) {}
-
-                        virtual void run() {
-                            latch.countDown();
-
-                            latch.await(20);
-
-                            for (int i = 0; i < numberOfOps; ++i) {
-                                int mod = rand() % 3;
-                                switch (mod) {
-                                    case 0:
-                                        ASSERT_NO_THROW(map.put(i, i));
-                                        break;
-                                    case 1:
-                                        ASSERT_NO_THROW(map.remove(i));
-                                    case 2: {
-                                        std::shared_ptr<int> val;
-                                        ASSERT_NO_THROW(val = map.get(i));
-                                        if ((int *) NULL != val.get()) {
-                                            ASSERT_EQ(*val, i);
-                                        }
-                                        break;
-                                    }
-                                    default:
-                                        abort();
-                                }
-                            }
-                        }
-
-                        virtual const string getName() const {
-                            return "LoadClientTask";
-                        }
-
-                    private:
-                        IMap<int, int> &map;
-                        int numberOfOps;
-                        hazelcast::util::CountDownLatch &latch;
-                    };
-
-                    void addThread(IMap<int, int> &map, int numberOfOps, hazelcast::util::CountDownLatch &latch) {
-                        std::shared_ptr<hazelcast::util::Runnable> task(new LoadClientTask(map, numberOfOps, latch));
-                        threads.push_back(std::shared_ptr<hazelcast::util::Thread>(new hazelcast::util::Thread(task, getLogger())));
-                    }
-
-                    void startThreads() {
-                        for (std::shared_ptr<hazelcast::util::Thread> &t : threads) {
-                            t->start();
-                        }
-                    }
-
-                    void waitForThreadsToFinish() {
-                        for (std::shared_ptr<hazelcast::util::Thread> &t : threads) {
-                            t->join();
-                        }
-                    }
-
-                protected:
-                    std::vector<std::shared_ptr<hazelcast::util::Thread> > threads;
-                };
-
-                void loadIntMapTestWithConfig(ClientConfig &config, LoadTest &test) {
-                    HazelcastServer instance1(*g_srvFactory);
-                    HazelcastServer instance2(*g_srvFactory);
-                    HazelcastServer instance3(*g_srvFactory);
-                    HazelcastServer instance4(*g_srvFactory);
-                    HazelcastClient client(config);
-                    IMap<int, int> imap = client.getMap<int, int>("loadtest");
-
-                    int numThreads = 40;
-                    int numOps = 5000;
-
-                    hazelcast::util::CountDownLatch startLatch(numThreads);
-
-                    for (int i = 0; i < numThreads; ++i) {
-                        test.addThread(imap, numOps, startLatch);
-                    }
-
-                    test.startThreads();
-
-                    startLatch.await(20);
-
-                    instance1.shutdown();
-                    instance2.shutdown();
-                    instance3.shutdown();
-
-                    HazelcastServer instance5(*g_srvFactory);
-
-                    /*Note: Could not shutdown instance 5 here, since there may be some incomplete synchronization
-                     * between instance 5 and instance 4. This caused problems in Linux environment. */
-
-                    test.waitForThreadsToFinish();
-
-                }
-
-                TEST_F(LoadTest, DISABLED_testIntMapSmartClientServerRestart) {
-                    ClientConfig config = getLoadTestConfig();
-                    config.setSmart(true);
-
-                    loadIntMapTestWithConfig(config, *this);
-                }
-
-                TEST_F(LoadTest, DISABLED_testIntMapDummyClientServerRestart) {
-                    ClientConfig config = getLoadTestConfig();
-                    config.setSmart(false);
-
-                    loadIntMapTestWithConfig(config, *this);
-                }
-            }
-        }
-    }
-}
-
-
 
 namespace hazelcast {
     namespace client {

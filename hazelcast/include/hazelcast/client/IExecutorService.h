@@ -34,7 +34,6 @@
 
 // CODECs
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -61,19 +60,22 @@ namespace hazelcast {
          */
         class HAZELCAST_API IExecutorService : public proxy::ProxyImpl {
             friend class executor::impl::ExecutorServiceProxyFactory;
-
         public:
             static const std::string SERVICE_NAME;
 
             template<typename T>
-            struct executor_promise {
-                promise<std::shared_ptr<T>> future;
-                UUID uuid;
-                int partitionId;
-                Address address;
+            class executor_promise {
+            public:
+                executor_promise(executor_promise &&rhs) : sharedFuture(rhs.sharedFuture),
+                                                           uuid(rhs.uuid),
+                                                           partitionId(rhs.partitionId),
+                                                           address(rhs.address),
+                                                           context(rhs.context),
+                                                           invocation(rhs.invocation),
+                                                           is_cancelled_(rhs.is_cancelled_) {}
 
                 bool cancel(bool mayInterruptIfRunning) {
-                    if (future.is_ready()) {
+                    if (is_cancelled_ || sharedFuture.is_ready()) {
                         return false;
                     }
 
@@ -84,15 +86,45 @@ namespace hazelcast {
                         invocation->getPromise().set_exception(
                                 exception::CancellationException("IExecutorService::cancel"));
 
+                        is_cancelled_.store(cancelSuccessful);
                         return cancelSuccessful;
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
                 }
 
+                shared_future<std::shared_ptr<T>> get_future() {
+                    return sharedFuture;
+                }
+
+                bool is_cancelled() const {
+                    return is_cancelled_;
+                }
+
             private:
+                shared_future<std::shared_ptr<T>> sharedFuture;
+                util::UUID uuid;
+                int partitionId;
+                Address address;
                 spi::ClientContext &context;
                 std::shared_ptr<spi::impl::ClientInvocation> invocation;
+                std::atomic_bool is_cancelled_;
+
+                executor_promise(future<std::shared_ptr<T>> future, const util::UUID &uuid, int partitionId,
+                                 const Address &address, spi::ClientContext &context,
+                                 const std::shared_ptr<spi::impl::ClientInvocation> &invocation) : sharedFuture(
+                        future.share()),
+                                                                                                   uuid(uuid),
+                                                                                                   partitionId(
+                                                                                                           partitionId),
+                                                                                                   address(address),
+                                                                                                   context(context),
+                                                                                                   invocation(
+                                                                                                           invocation),
+                                                                                                   is_cancelled_(
+                                                                                                           false) {}
+
+            private:
 
                 void waitForRequestToBeSend() {
                     invocation->getSendConnectionOrWait();
@@ -750,7 +782,7 @@ namespace hazelcast {
             future<shared_ptr<T>>
             retrieveResultSync(executor_promise<T> executorPromise) {
                 try {
-                    std::shared_ptr<T> response = retrieveResultFromMessage<T, DECODER>(executorPromise.future);
+                    std::shared_ptr<T> response = retrieveResultFromMessage<T, DECODER>(executorPromise.promise);
                     auto readyFuture = boost::make_ready_future<std::shared_ptr<T>>(response);
                     return executor_promise<T>{readyFuture, executorPromise.uuid, executorPromise.partitionId,
                                                executorPromise.address, getContext(),

@@ -32,6 +32,7 @@
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 
 #include "hazelcast/client/spi/EventHandler.h"
+#include "hazelcast/client/protocol/ClientMessage.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -52,10 +53,6 @@ namespace hazelcast {
             class Connection;
         }
 
-        namespace protocol {
-            class ClientMessage;
-        }
-
         namespace spi {
             class LifecycleService;
 
@@ -63,14 +60,16 @@ namespace hazelcast {
 
             class ClientContext;
 
+            class ClientClusterService;
+
             namespace impl {
                 class ClientClusterServiceImpl;
+
+                class ClientExecutionServiceImpl;
 
                 namespace sequence {
                     class CallIdSequence;
                 }
-
-                using namespace boost;
 
                 /**
                  * Handles the routing of a request from a Hazelcast client.
@@ -196,7 +195,7 @@ namespace hazelcast {
                     std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     std::atomic<int64_t> invokeCount;
                     promise<protocol::ClientMessage> invocationPromise;
-                    std::shared_ptr<protocol::ClientMessage> response;
+                    auto response;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);
 

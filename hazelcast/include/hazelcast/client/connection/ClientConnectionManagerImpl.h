@@ -32,14 +32,12 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/ConcurrentSet.h"
 #include "hazelcast/client/LifecycleEvent.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/client/Address.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/client/protocol/Principal.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/internal/socket/SocketFactory.h"
 #include "hazelcast/util/Sync.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/client/connection/AddressTranslator.h"
 #include "hazelcast/client/connection/ConnectionListenable.h"
 
@@ -62,8 +60,6 @@ namespace hazelcast {
         namespace spi {
             namespace impl {
                 class ClientExecutionServiceImpl;
-
-                class ClientInvocationFuture;
             }
         }
 
@@ -198,19 +194,17 @@ namespace hazelcast {
 
                 void shuffle(std::vector<Address> &memberAddresses) const;
 
-                class AuthCallback : public ExecutionCallback<protocol::ClientMessage> {
+                class AuthCallback {
                 public:
-                    AuthCallback(std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture,
-                                 const std::shared_ptr<Connection> &connection, bool asOwner, const Address &target,
+                    AuthCallback(const std::shared_ptr<Connection> &connection, bool asOwner, const Address &target,
                                  std::shared_ptr<AuthenticationFuture> &future,
                                  ClientConnectionManagerImpl &connectionManager);
 
-                    virtual void onResponse(const std::shared_ptr<protocol::ClientMessage> &response);
+                    virtual void onResponse(protocol::ClientMessage response);
 
                     virtual void onFailure(const std::shared_ptr<exception::IException> &e);
 
                 private:
-                    std::shared_ptr<spi::impl::ClientInvocationFuture> invocationFuture;
                     const std::shared_ptr<Connection> connection;
                     bool asOwner;
                     Address target;

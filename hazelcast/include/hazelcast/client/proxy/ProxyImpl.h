@@ -20,6 +20,7 @@
 #define HAZELCAST_ProxyImpl
 
 #include <memory>
+#include <hazelcast/util/ExceptionUtil.h>
 
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
@@ -197,7 +198,7 @@ namespace hazelcast {
                 template<typename T, typename CODEC>
                 T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request,
                                      const serialization::pimpl::Data &key) {
-                    std::shared_ptr<protocol::ClientMessage> response;
+                    auto response;
                     try {
                         return (T) CODEC::decode(invokeOnKeyOwner(request, key).get()).response;
                     } catch (exception::IException &e) {

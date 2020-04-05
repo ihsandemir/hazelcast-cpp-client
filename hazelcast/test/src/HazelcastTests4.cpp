@@ -33,6 +33,7 @@
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
 #include <hazelcast/client/protocol/Principal.h>
 #include <hazelcast/client/connection/Connection.h>
+#include <hazelcast/client/spi/impl/ClientInvocation.h>
 #include <ClientTestSupport.h>
 #include <memory>
 #include <hazelcast/client/proxy/ClientPNCounterProxy.h>
@@ -84,7 +85,6 @@
 #include "TestHelperFunctions.h"
 #include <cmath>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h>
-#include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
@@ -145,7 +145,6 @@
 #include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
@@ -155,7 +154,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
@@ -3382,17 +3380,14 @@ namespace hazelcast {
                     allFutures.push_back(employees->submitToKey<int, WaitMultiplierProcessor>(
                             99, processor));
 
-                    for (std::vector<hazelcast::client::Future<int> >::const_iterator it = allFutures.begin();
-                         it != allFutures.end(); ++it) {
-                        future_status status = (*it).wait_for(2 * waitTimeInMillis);
+                    for (auto &f : allFutures) {
+                        future_status status = f.wait_for(chrono::milliseconds(2 * waitTimeInMillis));
                         ASSERT_EQ(future_status::ready, status);
                     }
 
-                    for (std::vector<hazelcast::client::Future<int> >::iterator it = allFutures.begin();
-                         it != allFutures.end(); ++it) {
-                        std::unique_ptr<int> result = (*it).get();
+                    for (auto &f : allFutures) {
+                        auto result = f.get();
                         ASSERT_NE((int *) NULL, result.get());
-                        ASSERT_FALSE((*it).valid());
                     }
                 }
 

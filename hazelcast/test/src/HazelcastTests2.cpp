@@ -84,7 +84,6 @@
 #include "TestHelperFunctions.h"
 #include <cmath>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h>
-#include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
@@ -145,7 +144,6 @@
 #include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
@@ -935,145 +933,7 @@ namespace hazelcast {
         namespace test {
             class ClientUtilTest : public ClientTestSupport {
             protected:
-                class LatchExecutionCallback : public ExecutionCallback<int> {
-                public:
-                    LatchExecutionCallback(hazelcast::util::CountDownLatch &successLatch, hazelcast::util::CountDownLatch &failLatch)
-                            : successLatch(successLatch), failLatch(failLatch) {}
-
-                    virtual void onResponse(const std::shared_ptr<int> &response) {
-                        successLatch.countDown();
-                    }
-
-                    virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
-                        failLatch.countDown();
-                    }
-
-                private:
-                    hazelcast::util::CountDownLatch &successLatch;
-                    hazelcast::util::CountDownLatch &failLatch;
-                };
-
-                static void wakeTheConditionUp(hazelcast::util::ThreadArgs &args) {
-                    hazelcast::util::Mutex *mutex = (hazelcast::util::Mutex *) args.arg0;
-                    hazelcast::util::ConditionVariable *cv = (hazelcast::util::ConditionVariable *) args.arg1;
-                    int wakeUpTime = *(int *) args.arg2;
-                    hazelcast::util::sleep(wakeUpTime);
-
-                    hazelcast::util::LockGuard lockGuard(*mutex);
-                    cv->notify();
-                }
-
-                static void cancelJoinFromRunningThread(hazelcast::util::ThreadArgs &args) {
-                    hazelcast::util::Thread *currentThread = args.currentThread;
-                    hazelcast::util::CountDownLatch *latch = (hazelcast::util::CountDownLatch *) args.arg0;
-                    currentThread->cancel();
-                    ASSERT_FALSE(currentThread->join());
-                    latch->countDown();
-                }
-
-                static void notifyExitingThread(hazelcast::util::ThreadArgs &args) {
-                    hazelcast::util::CountDownLatch *latch = (hazelcast::util::CountDownLatch *) args.arg0;
-                    latch->countDown();
-                }
             };
-
-            TEST_F(ClientUtilTest, testConditionWaitTimeout) {
-                hazelcast::util::Mutex mutex;
-                hazelcast::util::ConditionVariable conditionVariable;
-                int wakeUpTime = 3;
-                hazelcast::util::StartedThread thread(wakeTheConditionUp, &mutex, &conditionVariable, &wakeUpTime);
-                int waitSeconds = 30;
-                {
-                    hazelcast::util::LockGuard lockGuard(mutex);
-                    time_t beg = time(NULL);
-                    time_t end = 0;
-                    bool wokenUpByInterruption = conditionVariable.waitFor(mutex, waitSeconds * 1000);
-                    if (wokenUpByInterruption) {
-                        end = time(NULL);
-                    }
-                    ASSERT_NEAR((double) (end - beg), (double) wakeUpTime, 1);
-                }
-
-            }
-
-            TEST_F(ClientUtilTest, testConditionWaitMillisTimeout) {
-                hazelcast::util::Mutex mutex;
-                hazelcast::util::ConditionVariable conditionVariable;
-                ASSERT_FALSE(conditionVariable.waitFor(mutex, 100));
-            }
-
-            TEST_F(ClientUtilTest, testConditionWaitNanosTimeout) {
-                hazelcast::util::Mutex mutex;
-                hazelcast::util::ConditionVariable conditionVariable;
-                ASSERT_FALSE(conditionVariable.waitNanos(mutex, 1000));
-            }
-
-            TEST_F(ClientUtilTest, testConditionVariableForEINVAL) {
-                hazelcast::util::Mutex mutex;
-                hazelcast::util::ConditionVariable conditionVariable;
-                int wakeUpTime = 1;
-                hazelcast::util::StartedThread thread(wakeTheConditionUp, &mutex, &conditionVariable, &wakeUpTime);
-                {
-                    hazelcast::util::LockGuard lockGuard(mutex);
-// the following call should not fail with assertion for EINVAL
-                    conditionVariable.waitFor(mutex, 19999);
-                }
-            }
-
-            TEST_F (ClientUtilTest, testThreadName) {
-                std::string threadName = "myThreadName";
-// We use latch so that we guarantee that the object instance thread is not destructed at the time when
-// StartedThread::run is being executed.
-                hazelcast::util::CountDownLatch latch(1);
-                hazelcast::util::StartedThread thread(threadName, notifyExitingThread, &latch);
-                ASSERT_EQ(threadName, thread.getName());
-                ASSERT_TRUE(latch.await(120));
-            }
-
-            TEST_F (ClientUtilTest, testThreadJoinAfterThreadExited) {
-                std::string threadName = "myThreadName";
-                hazelcast::util::CountDownLatch latch(1);
-                hazelcast::util::StartedThread thread(threadName, notifyExitingThread, &latch);
-                ASSERT_TRUE(latch.await(2));
-// guarantee that the thread exited
-                hazelcast::util::sleep(1);
-
-// call join after thread exit
-                thread.join();
-            }
-
-            TEST_F (ClientUtilTest, testCancelJoinItselfFromTheRunningThread) {
-                std::string threadName = "myThreadName";
-                hazelcast::util::CountDownLatch latch(1);
-                hazelcast::util::StartedThread thread(threadName, cancelJoinFromRunningThread, &latch);
-                ASSERT_TRUE(latch.await(1000));
-            }
-
-            void sleepyThread(hazelcast::util::ThreadArgs &args) {
-                int sleepTime = *(int *) args.arg0;
-                args.currentThread->interruptibleSleep(sleepTime);
-            }
-
-            TEST_F (ClientUtilTest, testThreadInterruptibleSleep) {
-                int sleepTime = 30;
-                int wakeUpTime = 3;
-                time_t beg = time(NULL);
-                hazelcast::util::StartedThread thread(sleepyThread, &sleepTime);
-                hazelcast::util::sleep(wakeUpTime);
-                thread.cancel();
-                thread.join();
-                ASSERT_NEAR((double) (time(NULL) - beg), (double) wakeUpTime, 1);
-            }
-
-            TEST_F (ClientUtilTest, testDateConversion) {
-                std::string date("2016-04-20");
-                hazelcast::util::gitDateToHazelcastLogDate(date);
-                ASSERT_EQ("20160420", date);
-
-                date = "NOT_FOUND";
-                hazelcast::util::gitDateToHazelcastLogDate(date);
-                ASSERT_EQ("NOT_FOUND", date);
-            }
 
             TEST_F (ClientUtilTest, testStrError) {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -1126,9 +986,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1417,8 +1274,6 @@ namespace hazelcast {
 
 
 
-
-using namespace std;
 
 namespace hazelcast {
     namespace client {

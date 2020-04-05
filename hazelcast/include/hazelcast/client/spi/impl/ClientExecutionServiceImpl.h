@@ -62,11 +62,18 @@ namespace hazelcast {
                                                 const std::chrono::steady_clock::duration &delay,
                                                 const std::chrono::steady_clock::duration &period) {
                         boost::asio::steady_timer timer(*internalExecutor);
-                        timer.expires_from_now(delay);
-                        timer.async_wait([=]() {
+                        if (delay.count() >= 0) {
+                            timer.expires_from_now(delay);
+                        } else {
+                            timer.expires_from_now(period);
+                        }
+                        timer.async_wait([=](boost::system::error_code ec) {
+                            if (ec) {
+                                return;
+                            }
                             token();
                             if (period.count()) {
-                                scheduleWithRepetition(token, delay, period);
+                                scheduleWithRepetition(token, std::chrono::seconds(-1), period);
                             }
                         });
                     }

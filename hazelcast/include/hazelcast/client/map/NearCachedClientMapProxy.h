@@ -30,6 +30,7 @@
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/EntryEvent.h"
+#include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -77,7 +78,7 @@ namespace hazelcast {
                             return invocationFuture.then([=](future <protocol::ClientMessage> f) {
                                 try {
                                     std::shared_ptr<V> value = ClientMapProxy<K, V>::GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(
-                                            f.get(), getSerializationService());
+                                            f.get(), ClientMapProxy<K, V>::getSerializationService());
                                     tryToPutNearCache(ncKey, value);
                                     return value;
                                 } catch (...) {
@@ -89,7 +90,7 @@ namespace hazelcast {
 
                         return invocationFuture.then([=](future <protocol::ClientMessage> f) {
                             ClientMapProxy<K, V>::GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(
-                                    f.get(), getSerializationService());
+                                    f.get(), ClientMapProxy<K, V>::getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         resetToUnmarkedState(ncKey);
@@ -357,7 +358,7 @@ namespace hazelcast {
                     }
                 }
 
-                virtual future<void>
+                virtual future <std::shared_ptr<void>>
                 setAsyncInternal(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
                                  const util::concurrent::TimeUnit &maxIdleUnit,
                                  const serialization::pimpl::Data &keyData, const V &value) {

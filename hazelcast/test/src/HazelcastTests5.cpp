@@ -84,7 +84,6 @@
 #include "TestHelperFunctions.h"
 #include <cmath>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithoutBackpressure.h>
-#include <hazelcast/util/Thread.h>
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
@@ -118,7 +117,9 @@
 #include <cassert>
 
 #ifdef HZ_BUILD_WITH_SSL
+
 #include <openssl/crypto.h>
+
 #endif
 
 #include "hazelcast/client/config/ClientAwsConfig.h"
@@ -145,7 +146,6 @@
 #include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/Thread.h"
 #include "hazelcast/util/ILogger.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
@@ -155,7 +155,6 @@
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/Future.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
@@ -663,36 +662,35 @@ namespace hazelcast {
 }
 
 
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
             namespace adaptor {
                 class RawPointerMultiMapTest : public ClientTestSupport {
                 protected:
-                    class MyMultiMapListener : public EntryAdapter<std::string, std::string>{
+                    class MyMultiMapListener : public EntryAdapter<std::string, std::string> {
                     public:
-                        MyMultiMapListener(hazelcast::util::CountDownLatch& addedLatch, hazelcast::util::CountDownLatch& removedLatch)
+                        MyMultiMapListener(hazelcast::util::CountDownLatch &addedLatch,
+                                           hazelcast::util::CountDownLatch &removedLatch)
                                 : addedLatch(addedLatch), removedLatch(removedLatch) {
                         }
 
-                        void entryAdded(const EntryEvent<std::string, std::string>& event) {
+                        void entryAdded(const EntryEvent<std::string, std::string> &event) {
                             addedLatch.countDown();
                         }
 
-                        void entryRemoved(const EntryEvent<std::string, std::string>& event) {
+                        void entryRemoved(const EntryEvent<std::string, std::string> &event) {
                             removedLatch.countDown();
                         }
 
                     private:
-                        hazelcast::util::CountDownLatch& addedLatch;
-                        hazelcast::util::CountDownLatch& removedLatch;
+                        hazelcast::util::CountDownLatch &addedLatch;
+                        hazelcast::util::CountDownLatch &removedLatch;
                     };
 
-                    static void lockTtlThread(hazelcast::util::ThreadArgs& args) {
-                        client::adaptor::RawPointerMultiMap<std::string, std::string> *map = (client::adaptor::RawPointerMultiMap<std::string, std::string> *)args.arg0;
-                        hazelcast::util::CountDownLatch *latch = (hazelcast::util::CountDownLatch *)args.arg1;
+                    static void lockTtlThread(hazelcast::util::ThreadArgs &args) {
+                        client::adaptor::RawPointerMultiMap<std::string, std::string> *map = (client::adaptor::RawPointerMultiMap<std::string, std::string> *) args.arg0;
+                        hazelcast::util::CountDownLatch *latch = (hazelcast::util::CountDownLatch *) args.arg1;
 
                         if (!map->tryLock("key1")) {
                             latch->countDown();
@@ -711,7 +709,8 @@ namespace hazelcast {
                     static void SetUpTestCase() {
                         instance = new HazelcastServer(*g_srvFactory);
                         client = new HazelcastClient;
-                        legacy = new MultiMap<std::string, std::string>(client->getMultiMap<std::string, std::string>("MyMultiMap"));
+                        legacy = new MultiMap<std::string, std::string>(
+                                client->getMultiMap<std::string, std::string>("MyMultiMap"));
                         mm = new client::adaptor::RawPointerMultiMap<std::string, std::string>(*legacy);
                     }
 
@@ -934,8 +933,6 @@ namespace hazelcast {
         }
     }
 }
-
-
 
 
 namespace hazelcast {
@@ -1293,8 +1290,6 @@ namespace hazelcast {
 }
 
 
-
-
 namespace hazelcast {
     namespace client {
 
@@ -1306,8 +1301,8 @@ namespace hazelcast {
                 void next(bool isUrgent) {
                     int64_t oldSequence = sequence.getLastCallId();
                     int64_t result = nextCallId(sequence, isUrgent);
-                    assertEquals(oldSequence + 1, result);
-                    assertEquals(oldSequence + 1, sequence.getLastCallId());
+                            assertEquals(oldSequence + 1, result);
+                            assertEquals(oldSequence + 1, sequence.getLastCallId());
                 }
 
                 int64_t nextCallId(spi::impl::sequence::CallIdSequence &seq, bool isUrgent) {
@@ -1341,7 +1336,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 
 namespace hazelcast {
@@ -1459,7 +1453,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 
 namespace hazelcast {
@@ -1610,12 +1603,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
-
-
-
 
 
 using namespace hazelcast::client::mixedtype;
@@ -1795,11 +1782,14 @@ namespace hazelcast {
                     virtual std::unique_ptr<serialization::IdentifiedDataSerializable> create(int32_t typeId) {
                         switch (typeId) {
                             case 10:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(new BaseDataSerializable);
+                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(
+                                        new BaseDataSerializable);
                             case 11:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(new Derived1DataSerializable);
+                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(
+                                        new Derived1DataSerializable);
                             case 12:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(new Derived2DataSerializable);
+                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(
+                                        new Derived2DataSerializable);
                             default:
                                 return std::unique_ptr<serialization::IdentifiedDataSerializable>();
                         }
@@ -1851,11 +1841,12 @@ namespace hazelcast {
 
                     client2 = new HazelcastClient(config);
                     imap = new IMap<int, BaseDataSerializable>(client2->getMap<int, BaseDataSerializable>("MyMap"));
-                    rawPointerMap = new hazelcast::client::adaptor::RawPointerMap<int, BaseDataSerializable> (*imap);
+                    rawPointerMap = new hazelcast::client::adaptor::RawPointerMap<int, BaseDataSerializable>(*imap);
                     imapPortable = new IMap<int, BasePortable>(client2->getMap<int, BasePortable>("MyMap"));
-                    rawPointerMapPortable = new hazelcast::client::adaptor::RawPointerMap<int, BasePortable> (*imapPortable);
+                    rawPointerMapPortable = new hazelcast::client::adaptor::RawPointerMap<int, BasePortable>(
+                            *imapPortable);
                     imapCustom = new IMap<int, BaseCustom>(client2->getMap<int, BaseCustom>("MyMap"));
-                    rawPointerMapCustom = new hazelcast::client::adaptor::RawPointerMap<int, BaseCustom> (*imapCustom);
+                    rawPointerMapCustom = new hazelcast::client::adaptor::RawPointerMap<int, BaseCustom>(*imapCustom);
                 }
 
                 static void TearDownTestCase() {
@@ -1902,11 +1893,11 @@ namespace hazelcast {
             HazelcastClient *MixedMapTest::client = NULL;
             mixedtype::IMap *MixedMapTest::mixedMap = NULL;
             HazelcastClient *MixedMapTest::client2 = NULL;
-            IMap<int, MixedMapTest::BaseDataSerializable> * MixedMapTest::imap = NULL;
+            IMap<int, MixedMapTest::BaseDataSerializable> *MixedMapTest::imap = NULL;
             hazelcast::client::adaptor::RawPointerMap<int, MixedMapTest::BaseDataSerializable> *MixedMapTest::rawPointerMap = NULL;
-            IMap<int, MixedMapTest::BasePortable> * MixedMapTest::imapPortable = NULL;
+            IMap<int, MixedMapTest::BasePortable> *MixedMapTest::imapPortable = NULL;
             hazelcast::client::adaptor::RawPointerMap<int, MixedMapTest::BasePortable> *MixedMapTest::rawPointerMapPortable = NULL;
-            IMap<int, BaseCustom> * MixedMapTest::imapCustom = NULL;
+            IMap<int, BaseCustom> *MixedMapTest::imapCustom = NULL;
             hazelcast::client::adaptor::RawPointerMap<int, BaseCustom> *MixedMapTest::rawPointerMapCustom = NULL;
 
             TEST_F(MixedMapTest, testPutDifferentTypes) {
@@ -2159,13 +2150,13 @@ namespace hazelcast {
 }
 
 
-
 namespace hazelcast {
     namespace client {
         namespace test {
             class MapGlobalSerializerTest : public ClientTestSupport {
             public:
-                class UnknownObject {};
+                class UnknownObject {
+                };
 
                 class WriteReadIntGlobalSerializer : public serialization::StreamSerializer {
                 public:
@@ -2180,6 +2171,7 @@ namespace hazelcast {
                         return new int(5);
                     }
                 };
+
             protected:
 
                 static void SetUpTestCase() {
@@ -2227,7 +2219,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 
 namespace hazelcast {
@@ -2359,7 +2350,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 
 namespace hazelcast {
@@ -2613,8 +2603,10 @@ namespace hazelcast {
                 template<typename K, typename V>
                 class CountdownListener : public EntryAdapter<K, V> {
                 public:
-                    CountdownListener(hazelcast::util::CountDownLatch &addLatch, hazelcast::util::CountDownLatch &removeLatch,
-                                      hazelcast::util::CountDownLatch &updateLatch, hazelcast::util::CountDownLatch &evictLatch)
+                    CountdownListener(hazelcast::util::CountDownLatch &addLatch,
+                                      hazelcast::util::CountDownLatch &removeLatch,
+                                      hazelcast::util::CountDownLatch &updateLatch,
+                                      hazelcast::util::CountDownLatch &evictLatch)
                             : addLatch(addLatch), removeLatch(removeLatch), updateLatch(updateLatch),
                               evictLatch(evictLatch) {
                     }
@@ -2693,7 +2685,8 @@ namespace hazelcast {
 
                 class SampleEntryListenerForPortableKey : public EntryAdapter<Employee, int> {
                 public:
-                    SampleEntryListenerForPortableKey(hazelcast::util::CountDownLatch &latch, hazelcast::util::AtomicInt &atomicInteger)
+                    SampleEntryListenerForPortableKey(hazelcast::util::CountDownLatch &latch,
+                                                      hazelcast::util::AtomicInt &atomicInteger)
                             : latch(latch), atomicInteger(atomicInteger) {
 
                     }
@@ -2808,18 +2801,17 @@ namespace hazelcast {
 
             TEST_P(ClientMapTest, testAsyncGet) {
                 fillMap();
-                std::shared_ptr<ICompletableFuture<std::string> > future = imap.getAsync(
-                        "key1");
-                std::shared_ptr<std::string> value = future->get();
+                auto future = imap.getAsync("key1");
+                std::shared_ptr<std::string> value = future.get();
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value1", *value);
             }
 
             TEST_P(ClientMapTest, testAsyncPut) {
                 fillMap();
-                std::shared_ptr<ICompletableFuture<std::string> > future = imap.putAsync(
+                auto future = imap.putAsync(
                         "key3", "value");
-                std::shared_ptr<std::string> value = future->get();
+                std::shared_ptr<std::string> value = future.get();
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value3", *value);
                 value = imap.get("key3");
@@ -2834,9 +2826,9 @@ namespace hazelcast {
                         evictLatch);
                 std::string listenerId = imap.addEntryListener(listener, true);
 
-                std::shared_ptr<ICompletableFuture<std::string> > future = imap.putAsync(
+                auto future = imap.putAsync(
                         "key", "value1", 3, hazelcast::util::concurrent::TimeUnit::SECONDS());
-                std::shared_ptr<std::string> value = future->get();
+                std::shared_ptr<std::string> value = future.get();
                 ASSERT_NULL("no value for key should exist", value.get(), std::string);
                 value = imap.get("key");
                 ASSERT_NOTNULL(value.get(), std::string);
@@ -2864,10 +2856,10 @@ namespace hazelcast {
                         evictLatch);
                 std::string listenerId = imap.addEntryListener(listener, true);
 
-                std::shared_ptr<ICompletableFuture<std::string> > future = imap.putAsync(
+                auto future = imap.putAsync(
                         "key", "value1", 0, hazelcast::util::concurrent::TimeUnit::SECONDS(), 3,
                         hazelcast::util::concurrent::TimeUnit::SECONDS());
-                std::shared_ptr<std::string> value = future->get();
+                std::shared_ptr<std::string> value = future.get();
                 ASSERT_NULL("no value for key should exist", value.get(), std::string);
                 value = imap.get("key");
                 ASSERT_NOTNULL(value.get(), std::string);
@@ -2890,9 +2882,8 @@ namespace hazelcast {
 
             TEST_P(ClientMapTest, testAsyncSet) {
                 fillMap();
-                std::shared_ptr<ICompletableFuture<void> > future = imap.setAsync("key3",
-                                                                                  "value");
-                future->get();
+                auto future = imap.setAsync("key3", "value");
+                future.get();
                 std::shared_ptr<std::string> value = imap.get("key3");
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value", *value);
@@ -2905,11 +2896,11 @@ namespace hazelcast {
                         evictLatch);
                 std::string listenerId = imap.addEntryListener(listener, true);
 
-                std::shared_ptr<ICompletableFuture<void> > future = imap.setAsync("key",
-                                                                                  "value1",
-                                                                                  3,
-                                                                                  hazelcast::util::concurrent::TimeUnit::SECONDS());
-                future->get();
+                auto future = imap.setAsync("key",
+                                            "value1",
+                                            3,
+                                            hazelcast::util::concurrent::TimeUnit::SECONDS());
+                future.get();
                 std::shared_ptr<std::string> value = imap.get("key");
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value1", *value);
@@ -2936,13 +2927,13 @@ namespace hazelcast {
                         evictLatch);
                 std::string listenerId = imap.addEntryListener(listener, true);
 
-                std::shared_ptr<ICompletableFuture<void> > future = imap.setAsync("key",
-                                                                                  "value1",
-                                                                                  0,
-                                                                                  hazelcast::util::concurrent::TimeUnit::SECONDS(),
-                                                                                  3,
-                                                                                  hazelcast::util::concurrent::TimeUnit::SECONDS());
-                future->get();
+                auto future = imap.setAsync("key",
+                                            "value1",
+                                            0,
+                                            hazelcast::util::concurrent::TimeUnit::SECONDS(),
+                                            3,
+                                            hazelcast::util::concurrent::TimeUnit::SECONDS());
+                future.get();
                 std::shared_ptr<std::string> value = imap.get("key");
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value1", *value);
@@ -2964,10 +2955,10 @@ namespace hazelcast {
 
             TEST_P(ClientMapTest, testAsyncRemove) {
                 fillMap();
-                std::shared_ptr<ICompletableFuture<string> > future = imap.removeAsync(
+                auto future = imap.removeAsync(
                         "key4");
-                future->get();
-                std::shared_ptr<std::string> value = future->get();
+                future.get();
+                std::shared_ptr<std::string> value = future.get();
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value4", *value);
             }
@@ -3079,7 +3070,7 @@ namespace hazelcast {
             TEST_P(ClientMapTest, testPutTtl) {
                 hazelcast::util::CountDownLatch dummy(10);
                 hazelcast::util::CountDownLatch evict(1);
-                CountdownListener<std::string, std::string> sampleEntryListener(
+                CountdownListener <std::string, std::string> sampleEntryListener(
                         dummy, dummy, dummy, evict);
                 std::string id = imap.addEntryListener(sampleEntryListener, false);
 
@@ -3120,7 +3111,7 @@ namespace hazelcast {
                         MapClientConfig::ONE_SECOND_MAP_NAME);
                 hazelcast::util::CountDownLatch dummy(10);
                 hazelcast::util::CountDownLatch evict(1);
-                CountdownListener<std::string, std::string> sampleEntryListener(
+                CountdownListener <std::string, std::string> sampleEntryListener(
                         dummy, dummy, dummy, evict);
                 std::string id = map.addEntryListener(sampleEntryListener, false);
 
@@ -3181,7 +3172,7 @@ namespace hazelcast {
             TEST_P(ClientMapTest, testSetTtl) {
                 hazelcast::util::CountDownLatch dummy(10);
                 hazelcast::util::CountDownLatch evict(1);
-                CountdownListener<std::string, std::string> sampleEntryListener(
+                CountdownListener <std::string, std::string> sampleEntryListener(
                         dummy, dummy, dummy, evict);
                 std::string id = imap.addEntryListener(sampleEntryListener, false);
 
@@ -3221,7 +3212,7 @@ namespace hazelcast {
                         MapClientConfig::ONE_SECOND_MAP_NAME);
                 hazelcast::util::CountDownLatch dummy(10);
                 hazelcast::util::CountDownLatch evict(1);
-                CountdownListener<std::string, std::string> sampleEntryListener(
+                CountdownListener <std::string, std::string> sampleEntryListener(
                         dummy, dummy, dummy, evict);
                 std::string id = map.addEntryListener(sampleEntryListener, false);
 
@@ -4616,9 +4607,9 @@ namespace hazelcast {
                 hazelcast::util::CountDownLatch latch2Add(1);
                 hazelcast::util::CountDownLatch latch2Remove(1);
 
-                CountdownListener<std::string, std::string> listener1(
+                CountdownListener <std::string, std::string> listener1(
                         latch1Add, latch1Remove, dummy, dummy);
-                CountdownListener<std::string, std::string> listener2(
+                CountdownListener <std::string, std::string> listener2(
                         latch2Add, latch2Remove, dummy, dummy);
 
                 std::string listener1ID = imap.addEntryListener(listener1, false);
@@ -4927,7 +4918,7 @@ namespace hazelcast {
                 hazelcast::util::CountDownLatch latchEvict(1);
                 hazelcast::util::CountDownLatch latchUpdate(1);
 
-                CountdownListener<std::string, std::string> listener(
+                CountdownListener <std::string, std::string> listener(
                         latchAdd, latchRemove, latchUpdate, latchEvict);
 
 // key matches any word containing ".*met.*"

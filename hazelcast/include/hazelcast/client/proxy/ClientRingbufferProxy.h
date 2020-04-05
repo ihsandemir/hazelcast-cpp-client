@@ -282,9 +282,9 @@ namespace hazelcast {
 
                 template<typename T, typename CODEC>
                 T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
-                    std::shared_ptr<protocol::ClientMessage> response = invoke(request, partitionId);
+                    auto response = invoke(request, partitionId);
 
-                    return (T) CODEC::decode(*response).response;
+                    return (T) CODEC::decode(response).response;
                 }
 
                 std::atomic<int64_t> bufferCapacity;

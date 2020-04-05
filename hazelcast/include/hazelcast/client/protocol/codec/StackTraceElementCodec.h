@@ -31,7 +31,7 @@ namespace hazelcast {
 
                 class HAZELCAST_API StackTraceElementCodec {
                 public:
-                    static StackTraceElement decode(ClientMessage &clientMessage);
+                    static StackTraceElement decode(ClientMessage clientMessage);
                 };
             }
         }
