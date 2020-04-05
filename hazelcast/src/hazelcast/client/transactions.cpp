@@ -207,7 +207,7 @@ namespace hazelcast {
                 value = values[i];
             }
 
-            std::shared_ptr<protocol::ClientMessage> TransactionProxy::invoke(
+            protocol::ClientMessage TransactionProxy::invoke(
                     std::unique_ptr<protocol::ClientMessage> &request) {
                 return ClientTransactionUtil::invoke(request, getTxnId(), clientContext, connection);
             }
@@ -219,7 +219,7 @@ namespace hazelcast {
             const std::shared_ptr<util::ExceptionUtil::RuntimeExceptionFactory> ClientTransactionUtil::exceptionFactory(
                     new TransactionExceptionFactory());
 
-            std::shared_ptr<protocol::ClientMessage>
+            protocol::ClientMessage
             ClientTransactionUtil::invoke(std::unique_ptr<protocol::ClientMessage> &request,
                                           const std::string &objectName,
                                           spi::ClientContext &client,
@@ -231,7 +231,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     TRANSACTION_EXCEPTION_FACTORY()->rethrow(e, "ClientTransactionUtil::invoke failed");
                 }
-                return std::shared_ptr<protocol::ClientMessage>();
+                return *protocol::ClientMessage::create(0);
             }
 
             const std::shared_ptr<util::ExceptionUtil::RuntimeExceptionFactory> &
@@ -242,8 +242,8 @@ namespace hazelcast {
             void
             ClientTransactionUtil::TransactionExceptionFactory::rethrow(const client::exception::IException &throwable,
                                                                         const std::string &message) {
-                throw TransactionException("TransactionExceptionFactory::create", message,
-                                           std::shared_ptr<IException>(throwable.clone()));
+                throw exception::TransactionException("TransactionExceptionFactory::create", message,
+                                                      std::shared_ptr<exception::IException>(throwable.clone()));
             }
         }
 

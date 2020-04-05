@@ -198,12 +198,12 @@ namespace hazelcast {
                 template<typename T, typename CODEC>
                 T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request,
                                      const serialization::pimpl::Data &key) {
-                    auto response;
                     try {
                         return (T) CODEC::decode(invokeOnKeyOwner(request, key).get()).response;
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return T();
                 }
 
                 std::shared_ptr<serialization::pimpl::Data> toShared(const serialization::pimpl::Data &data);

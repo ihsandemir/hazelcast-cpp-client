@@ -169,11 +169,9 @@ namespace hazelcast {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapExecuteOnAllKeysCodec::encodeRequest(
                             getName(), processor);
 
-                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > response =
-                            invokeAndGetResult<EntryVector, protocol::codec::MapExecuteOnAllKeysCodec::ResponseParameters>(
-                                    request);
+                    return invokeAndGetResult<EntryVector, protocol::codec::MapExecuteOnAllKeysCodec::ResponseParameters>(
+                            request);
 
-                    return response;
                 }
 
                 template<typename EntryProcessor>

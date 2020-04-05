@@ -40,7 +40,7 @@ namespace hazelcast {
                         public std::enable_shared_from_this<ClientExecutionServiceImpl> {
                 public:
                     ClientExecutionServiceImpl(const std::string &name, const ClientProperties &clientProperties,
-                                               int32_t poolSize, util::ILogger &logger);
+                                               int32_t poolSize);
 
                     void start();
 
@@ -81,7 +81,6 @@ namespace hazelcast {
                     const boost::asio::thread_pool &getUserExecutor() const;
 
                 private:
-                    util::ILogger &logger;
                     std::unique_ptr<boost::asio::thread_pool> internalExecutor;
                     std::unique_ptr<boost::asio::thread_pool> userExecutor;
                 };

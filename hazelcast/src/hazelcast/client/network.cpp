@@ -91,7 +91,7 @@ namespace hazelcast {
                       socketInterceptor(client.getClientConfig().getSocketInterceptor()),
                       executionService(client.getClientExecutionService()),
                       translator(addressTranslator), clusterConnectionExecutor(1), connectionIdGen(0),
-                      socketFactory(client, ioContext) {
+                      socketFactory(client, ioContext), heartbeat(client) {
                 config::ClientNetworkConfig &networkConfig = client.getClientConfig().getNetworkConfig();
 
                 int64_t connTimeout = networkConfig.getConnectionTimeout();
@@ -142,8 +142,7 @@ namespace hazelcast {
                     });
                 }
 
-                heartbeat.reset(new HeartbeatManager(client));
-                heartbeat->start();
+                heartbeat.start();
                 connectionStrategy->start();
 
                 return true;
@@ -158,7 +157,7 @@ namespace hazelcast {
 
                 ioContext.stop();
 
-                heartbeat->shutdown();
+                heartbeat.shutdown();
 
                 connectionStrategy->shutdown();
 
@@ -554,8 +553,7 @@ namespace hazelcast {
                     }
                     return false;
                 });
-                boost::asio::post(clusterConnectionExecutor, task);
-                return task.get_future();
+                return boost::asio::post(clusterConnectionExecutor, std::move(task));
             }
 
             void ClientConnectionManagerImpl::connectToClusterInternal() {
@@ -810,6 +808,9 @@ namespace hazelcast {
                 connectionManager.connectionsInProgress.remove(target);
             }
 
+            ClientConnectionManagerImpl::AuthCallback::~AuthCallback() {
+            }
+
             AuthenticationFuture::AuthenticationFuture(const Address &address,
                                                        util::SynchronizedMap<Address, FutureTuple> &connectionsInProgress)
                     : countDownLatch(new util::CountDownLatch(1)), address(address),
@@ -1061,7 +1062,7 @@ namespace hazelcast {
 
             std::ostream &operator<<(std::ostream &os, const Connection &connection) {
                 Connection &conn = const_cast<Connection &>(connection);
-                int64_t lastRead = conn.lastReadTime();
+                auto lastRead = conn.lastReadTime();
                 int64_t closedTime = conn.closedTimeMillis;
                 os << "ClientConnection{"
                    << "alive=" << conn.isAlive()
@@ -1072,7 +1073,7 @@ namespace hazelcast {
                 } else {
                     os << "null";
                 }
-                os << ", lastReadTime=" << util::StringUtil::timeToStringFriendly(lastRead)
+                os << ", lastReadTime=" << util::StringUtil::timeToStringFriendly(lastRead.time_since_epoch().count())
                    << ", closedTime=" << util::StringUtil::timeToStringFriendly(closedTime)
                    << ", connected server version=" << conn.connectedServerVersionString
                    << '}';

@@ -3229,9 +3229,9 @@ namespace hazelcast {
                 hazelcast::util::CountDownLatch latch(n);
 
                 for (int i = 0; i < n; i++) {
-                    std::async([&]() {
+                    std::thread([&]() {
                         PutGetRemoveTestTask(client, mm, latch).run();
-                    });
+                    }).detach();
                 }
 
                 ASSERT_OPEN_EVENTUALLY(latch);

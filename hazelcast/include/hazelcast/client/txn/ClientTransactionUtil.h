@@ -49,7 +49,7 @@ namespace hazelcast {
                  * More specifically IOException, because in case of a IO problem in ClientInvocation that send to a connection
                  * sends IOException to user. This wraps that exception into a TransactionException.
                  */
-                static std::shared_ptr<protocol::ClientMessage>
+                static protocol::ClientMessage
                 invoke(std::unique_ptr<protocol::ClientMessage> &request, const std::string &objectName,
                        spi::ClientContext &client, const std::shared_ptr<connection::Connection> &connection);
 

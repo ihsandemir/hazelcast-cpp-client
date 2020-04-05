@@ -941,7 +941,7 @@ namespace hazelcast {
                     return false;
                 }
                 if (n < parkThreshold) {
-                    Thread::yield();
+                    std::this_thread::yield();
                     return false;
                 }
                 int64_t time = parkTime(n);

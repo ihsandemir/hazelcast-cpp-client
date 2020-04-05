@@ -747,7 +747,7 @@ namespace hazelcast {
             }
 
 
-            std::shared_ptr<protocol::ClientMessage>
+            protocol::ClientMessage
             ClientPNCounterProxy::invokeAddInternal(int64_t delta, bool getBeforeUpdate,
                                                     std::shared_ptr<std::set<Address> > excludedAddresses,
                                                     const std::unique_ptr<exception::IException> &lastException,
@@ -1305,6 +1305,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
+                return *protocol::ClientMessage::create(0);
             }
 
             future<protocol::ClientMessage>
@@ -1316,6 +1317,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
+                return future<protocol::ClientMessage>();
             }
 
             future<protocol::ClientMessage>
@@ -1336,6 +1338,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
+                return *protocol::ClientMessage::create(0);
             }
 
             protocol::ClientMessage
@@ -1348,6 +1351,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     util::ExceptionUtil::rethrow(e);
                 }
+                return *protocol::ClientMessage::create(0);
             }
 
             std::vector<hazelcast::client::TypedData>

@@ -44,6 +44,7 @@ namespace hazelcast {
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<std::shared_ptr<V>>();
                 }
 
                 int partitionId;

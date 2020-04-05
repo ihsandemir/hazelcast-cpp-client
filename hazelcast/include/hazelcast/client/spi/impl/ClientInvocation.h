@@ -195,7 +195,6 @@ namespace hazelcast {
                     std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     std::atomic<int64_t> invokeCount;
                     promise<protocol::ClientMessage> invocationPromise;
-                    auto response;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);
 

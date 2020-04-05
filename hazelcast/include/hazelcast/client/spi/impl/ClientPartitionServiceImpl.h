@@ -57,13 +57,15 @@ namespace hazelcast {
 
                     void start();
 
+                    void refreshPartitions();
+
                     void stop();
 
                     void listenPartitionTable(const std::shared_ptr<connection::Connection> &ownerConnection);
 
                     virtual void
                     handlePartitionsEventV15(const std::vector<std::pair<Address, std::vector<int32_t> > > &partitions,
-                                     const int32_t &partitionStateVersion);
+                                             const int32_t &partitionStateVersion);
 
                     virtual void beforeListenerRegister();
 

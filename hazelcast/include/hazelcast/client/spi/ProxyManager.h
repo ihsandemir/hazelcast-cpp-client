@@ -18,6 +18,7 @@
 #define HAZELCAST_CLIENT_SPI_PROXYMANAGER_H_
 
 #include <string>
+#include <future>
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/spi/ObjectNamespace.h"
@@ -73,7 +74,7 @@ namespace hazelcast {
 
                 void initialize(const std::shared_ptr<ClientProxy> &clientProxy);
 
-                util::SynchronizedMap<DefaultObjectNamespace, promise<std::shared_ptr<ClientProxy>>> proxies;
+                util::SynchronizedMap<DefaultObjectNamespace, std::promise<std::shared_ptr<ClientProxy>>> proxies;
                 int64_t invocationTimeoutMillis;
                 int64_t invocationRetryPauseMillis;
                 ClientContext &client;

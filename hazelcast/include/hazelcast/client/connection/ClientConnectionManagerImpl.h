@@ -40,6 +40,7 @@
 #include "hazelcast/util/Sync.h"
 #include "hazelcast/client/connection/AddressTranslator.h"
 #include "hazelcast/client/connection/ConnectionListenable.h"
+#include "hazelcast/client/connection/HeartbeatManager.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -77,8 +78,6 @@ namespace hazelcast {
             class ClientConnectionStrategy;
 
             class AddressProvider;
-
-            class HeartbeatManager;
 
             /**
             * Responsible for managing {@link Connection} objects.
@@ -200,6 +199,8 @@ namespace hazelcast {
                                  std::shared_ptr<AuthenticationFuture> &future,
                                  ClientConnectionManagerImpl &connectionManager);
 
+                    virtual ~AuthCallback();
+
                     virtual void onResponse(protocol::ClientMessage response);
 
                     virtual void onFailure(const std::shared_ptr<exception::IException> &e);
@@ -258,7 +259,7 @@ namespace hazelcast {
                 internal::socket::SocketFactory socketFactory;
 
                 util::Mutex lock;
-                std::unique_ptr<HeartbeatManager> heartbeat;
+                HeartbeatManager heartbeat;
 
                 boost::asio::io_context ioContext;
                 std::vector<std::thread> ioThreads;
