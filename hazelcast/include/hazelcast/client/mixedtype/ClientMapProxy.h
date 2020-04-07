@@ -1089,7 +1089,7 @@ namespace hazelcast {
                     return clientInvocationFuture.then([=](boost::future<protocol::ClientMessage> f) {
                         auto message = f.get();
                         auto data = submitToKeyDecoder(message);
-                        return getSerializationService().toObject<ResultType>(data.get());
+                        return TypedData(data, getSerializationService());
                     });
                 }
 

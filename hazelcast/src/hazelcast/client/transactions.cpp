@@ -243,7 +243,7 @@ namespace hazelcast {
             ClientTransactionUtil::TransactionExceptionFactory::rethrow(const client::exception::IException &throwable,
                                                                         const std::string &message) {
                 throw exception::TransactionException("TransactionExceptionFactory::create", message,
-                                                      std::shared_ptr<exception::IException>(throwable.clone()));
+                                                      std::shared_ptr<exception::IException>(throwable.copy()));
             }
         }
 

@@ -3346,7 +3346,7 @@ namespace hazelcast {
 
                     auto future = employees->submitToKey<int, WaitMultiplierProcessor>(4, processor);
 
-                    std::unique_ptr<int> result = future.get();
+                    auto result = future.get();
                     ASSERT_NE((int *) NULL, result.get());
                     ASSERT_EQ(4 * processor.getMultiplier(), *result);
                     ASSERT_FALSE(future.valid());
@@ -3367,14 +3367,12 @@ namespace hazelcast {
                     std::vector<future<std::shared_ptr<int>>> allFutures;
 
 // test putting into a vector of futures
-                    auto future = employees->submitToKey<int, WaitMultiplierProcessor>(
-                            3, processor);
-                    allFutures.push_back(future);
+                    allFutures.push_back(employees->submitToKey<int, WaitMultiplierProcessor>(
+                            3, processor));
 
 // test re-assigning a future and putting into the vector
-                    future = employees->submitToKey<int, WaitMultiplierProcessor>(
-                            3, processor);
-                    allFutures.push_back(future);
+                    allFutures.push_back(employees->submitToKey<int, WaitMultiplierProcessor>(
+                            3, processor));
 
 // test submitting a non-existent key
                     allFutures.push_back(employees->submitToKey<int, WaitMultiplierProcessor>(

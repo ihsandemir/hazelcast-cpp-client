@@ -87,7 +87,7 @@
 #include <hazelcast/client/spi/impl/sequence/CallIdSequenceWithBackpressure.h>
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
-#include <std::string>
+#include <string>
 #include "executor/tasks/SelectAllMembers.h"
 #include "executor/tasks/IdentifiedFactory.h"
 #include <hazelcast/client/serialization/ObjectDataOutput.h>
@@ -2008,7 +2008,6 @@ namespace hazelcast {
 // 8. Verify that the 2nd entry is received by the listener
                 ASSERT_TRUE(latch.await(20, 0)); // timeout of 20 seconds
 
-                t.cancel();
                 t.join();
 
 // 9. Shut down the server
@@ -2158,9 +2157,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
 
 namespace hazelcast {
     namespace client {

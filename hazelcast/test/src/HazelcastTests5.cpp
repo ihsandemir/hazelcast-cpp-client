@@ -958,9 +958,10 @@ namespace hazelcast {
 
                     class GetRemoveTestTask : public hazelcast::util::Runnable {
                     public:
-                        GetRemoveTestTask(MultiMap<string, string> &mm, hazelcast::util::CountDownLatch &latch) : mm(
+                        GetRemoveTestTask(MultiMap<std::string, std::string> &mm,
+                                          hazelcast::util::CountDownLatch &latch) : mm(
                                 mm),
-                                                                                                                  latch(latch) {}
+                                                                                    latch(latch) {}
 
                         virtual void run() {
                             std::string key = hazelcast::util::IOUtil::to_string(hazelcast::util::getCurrentThreadId());
@@ -982,7 +983,7 @@ namespace hazelcast {
                             latch.countDown();
                         }
 
-                        virtual const string getName() const {
+                        virtual const std::string getName() const {
                             return "GetRemoveTestTask";
                         }
 
@@ -1003,17 +1004,12 @@ namespace hazelcast {
                 TEST_F(RawPointerTxnMultiMapTest, testPutGetRemove) {
                     MultiMap<std::string, std::string> mm = client->getMultiMap<std::string, std::string>(
                             "testPutGetRemove");
-                    int n = 10;
+                    constexpr int n = 10;
                     hazelcast::util::CountDownLatch latch(n);
 
-                    std::vector<std::shared_ptr<hazelcast::util::Thread> > allThreads;
+                    std::array<std::future<void>, n> allFutures;
                     for (int i = 0; i < n; i++) {
-                        std::shared_ptr<hazelcast::util::Thread> t(
-                                new hazelcast::util::Thread(
-                                        std::shared_ptr<hazelcast::util::Runnable>(new GetRemoveTestTask(mm, latch)),
-                                        getLogger()));
-                        t->start();
-                        allThreads.push_back(t);
+                        allFutures[i] = std::async([&]() { GetRemoveTestTask(mm, latch).run(); });
                     }
                     ASSERT_OPEN_EVENTUALLY(latch);
                 }
@@ -1355,7 +1351,6 @@ namespace hazelcast {
                                                                                                           nextCalledLatch(
                                                                                                                   nextCalledLatch) {}
 
-                private:
                     virtual const std::string getName() const {
                         return "ThreeSecondDelayCompleteOperation";
                     }
@@ -1402,9 +1397,7 @@ namespace hazelcast {
 
                 hazelcast::util::CountDownLatch nextCalledLatch(1);
 
-                hazelcast::util::Thread t(std::shared_ptr<hazelcast::util::Runnable>(
-                        new ThreeSecondDelayCompleteOperation(sequence, nextCalledLatch)), getLogger());
-                t.start();
+                std::thread t([&]() { ThreeSecondDelayCompleteOperation(sequence, nextCalledLatch).run(); });
 
                 ASSERT_OPEN_EVENTUALLY(nextCalledLatch);
 
@@ -2589,7 +2582,7 @@ namespace hazelcast {
                 template<typename K, typename V>
                 class EvictedEntryListener : public EntryAdapter<K, V> {
                 public:
-                    EvictedEntryListener(const std::shared_ptr<CountDownLatch> &evictLatch) : evictLatch(
+                    EvictedEntryListener(const std::shared_ptr<util::CountDownLatch> &evictLatch) : evictLatch(
                             evictLatch) {}
 
                     virtual void entryEvicted(const EntryEvent<K, V> &event) {
@@ -2896,10 +2889,7 @@ namespace hazelcast {
                         evictLatch);
                 std::string listenerId = imap.addEntryListener(listener, true);
 
-                auto future = imap.setAsync("key",
-                                            "value1",
-                                            3,
-                                            hazelcast::util::concurrent::TimeUnit::SECONDS());
+                auto future = imap.setAsync("key", "value1", 3, hazelcast::util::concurrent::TimeUnit::SECONDS());
                 future.get();
                 std::shared_ptr<std::string> value = imap.get("key");
                 ASSERT_NOTNULL(value.get(), std::string);
@@ -5197,13 +5187,11 @@ namespace hazelcast {
 
                 EntryMultiplier processor(4);
 
-                hazelcast::client::Future<int> future =
-                        employees.submitToKey<int, EntryMultiplier>(
-                                4, processor);
+                auto future = employees.submitToKey<int, EntryMultiplier>(4, processor);
 
-                future_status status = future.wait_for(2 * 1000);
+                future_status status = future.wait_for(chrono::seconds(2));
                 ASSERT_EQ(future_status::ready, status);
-                std::unique_ptr<int> result = future.get();
+                auto result = future.get();
                 ASSERT_NE((int *) NULL, result.get());
                 ASSERT_EQ(4 * processor.getMultiplier(), *result);
             }
@@ -5620,7 +5608,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testJsonPutGet) {
-                IMap<string, HazelcastJsonValue> map = client.getMap<std::string, HazelcastJsonValue>(
+                IMap<std::string, HazelcastJsonValue> map = client.getMap<std::string, HazelcastJsonValue>(
                         getTestName());
                 HazelcastJsonValue value("{ \"age\": 4 }");
                 map.put("item1", value);
@@ -5630,7 +5618,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testQueryOverJsonObject) {
-                IMap<string, HazelcastJsonValue> map = client.getMap<std::string, HazelcastJsonValue>(
+                IMap<std::string, HazelcastJsonValue> map = client.getMap<std::string, HazelcastJsonValue>(
                         getTestName());
                 HazelcastJsonValue young("{ \"age\": 4 }");
                 HazelcastJsonValue old("{ \"age\": 20 }");

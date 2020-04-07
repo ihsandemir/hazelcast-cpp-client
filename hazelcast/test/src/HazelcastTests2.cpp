@@ -225,7 +225,7 @@ namespace hazelcast {
 
             TEST_F(AddressHelperTest, testGetPossibleSocketAddresses) {
                 std::string address("10.2.3.1");
-                std::vector<Address> addresses = AddressHelper::getSocketAddresses(address, getLogger());
+                std::vector<Address> addresses = util::AddressHelper::getSocketAddresses(address, getLogger());
                 ASSERT_EQ(3U, addresses.size());
                 std::set<Address> socketAddresses;
                 socketAddresses.insert(addresses.begin(), addresses.end());
@@ -235,7 +235,7 @@ namespace hazelcast {
             }
 
             TEST_F(AddressHelperTest, testAddressHolder) {
-                AddressHolder holder("127.0.0.1", "en0", 8000);
+                util::AddressHolder holder("127.0.0.1", "en0", 8000);
                 ASSERT_EQ("127.0.0.1", holder.getAddress());
                 ASSERT_EQ(8000, holder.getPort());
                 ASSERT_EQ("en0", holder.getScopeId());
@@ -817,7 +817,6 @@ namespace hazelcast {
                                                                                                                    removalValue(
                                                                                                                            removalValue) {}
 
-                    private:
                         virtual void run() {
                             int numItems = 1000;
 
@@ -883,7 +882,7 @@ namespace hazelcast {
                 }
 
                 TEST_F(ConcurentQueueTest, testMultiThread) {
-                    int numThreads = 40;
+                    constexpr int numThreads = 40;
 
                     hazelcast::util::CountDownLatch startLatch(numThreads);
 
@@ -893,14 +892,11 @@ namespace hazelcast {
 
                     int removalValue = 10;
 
-                    std::vector<std::shared_ptr<hazelcast::util::Thread> > allThreads;
+                    std::array<std::future<void>, numThreads> allFutures;
                     for (int i = 0; i < numThreads; i++) {
-                        std::shared_ptr<hazelcast::util::Thread> t(
-                                new hazelcast::util::Thread(std::shared_ptr<hazelcast::util::Runnable>(
-                                        new ConcurrentQueueTask(q, startLatch, startRemoveLatch, removalValue)),
-                                                            getLogger()));
-                        t->start();
-                        allThreads.push_back(t);
+                        allFutures[i] = std::async([&]() {
+                            ConcurrentQueueTask(q, startLatch, startRemoveLatch, removalValue).run();
+                        });
                     }
 
                     // wait for the remove start
@@ -1310,7 +1306,7 @@ namespace hazelcast {
                         pipelining->add(map->getAsync(k));
                     }
 
-                    vector<std::shared_ptr<int> > results = pipelining->results();
+                    std::vector<std::shared_ptr<int> > results = pipelining->results();
                     ASSERT_EQ(expected->size(), results.size());
                     for (int k = 0; k < MAP_SIZE; ++k) {
                         ASSERT_EQ_PTR((*expected)[k], results[k].get(), int);
@@ -1332,8 +1328,8 @@ namespace hazelcast {
             std::vector<int> *PipeliningTest::expected = NULL;
 
             TEST_F(PipeliningTest, testConstructor_whenNegativeDepth) {
-                ASSERT_THROW(Pipelining<string>::create(0), exception::IllegalArgumentException);
-                ASSERT_THROW(Pipelining<string>::create(-1), exception::IllegalArgumentException);
+                ASSERT_THROW(Pipelining<std::string>::create(0), exception::IllegalArgumentException);
+                ASSERT_THROW(Pipelining<std::string>::create(-1), exception::IllegalArgumentException);
             }
 
             TEST_F(PipeliningTest, testPipeliningFunctionalityDepthOne) {
@@ -2887,8 +2883,8 @@ namespace hazelcast {
                 std::vector<double> dd(doubleArray, doubleArray + 3);
                 const std::string stringArray[] = {"ali", "veli", "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム"};
                 std::vector<std::string *> stringVector;
-                for (int i = 0; i < 3; ++i) {
-                    stringVector.push_back(new std::string(stringArray[i]));
+                for (int j = 0; j < 3; ++j) {
+                    stringVector.push_back(new std::string(stringArray[j]));
                 }
 
                 out.writeByte(by);

@@ -48,18 +48,20 @@ function(downloadboost BINARY-DIR)
 	endif()
 endfunction()
 
-function (find_boost BINARY_DIR)
-	# try finding the boost installation
-	find_package(Boost 1.69 QUIET)
-	if (NOT Boost_FOUND)
-		message(STATUS "Could not find an existing Boost installation (If you have a boost installation and you want to use it, please make sure that cmake find_package[https://cmake.org/cmake/help/latest/command/find_package.html] can find it. Also see [https://cmake.org/cmake/help/latest/module/FindBoost.html]). I will download the needed boost components now into ${BINARY_DIR}.")
-		downloadboost(${BINARY_DIR})
-		set(Boost_INCLUDE_DIRS "${BINARY_DIR}/boost_1_72_0" PARENT_SCOPE)
-	endif()
+function(find_boost BINARY_DIR)
+    set(DEPENDENT_BOOST_LIBRARIES thread chrono)
+    # try finding the boost installation
+    find_package(Boost 1.69 QUIET COMPONENTS ${DEPENDENT_BOOST_LIBRARIES})
+    if (NOT Boost_FOUND)
+        message(STATUS "Could not find an existing Boost installation (If you have a boost installation and you want to use it, please make sure that cmake find_package[https://cmake.org/cmake/help/latest/command/find_package.html] can find it. Also see [https://cmake.org/cmake/help/latest/module/FindBoost.html]). I will download the needed boost components now into ${BINARY_DIR}.")
+        downloadboost(${BINARY_DIR})
+        find_package(Boost 1.69 REQUIRED COMPONENTS ${DEPENDENT_BOOST_LIBRARIES})
+        set(Boost_INCLUDE_DIRS "${BINARY_DIR}/boost_1_72_0" PARENT_SCOPE)
+    endif ()
 
-	if (Boost_FOUND)
-		message(STATUS "Found an existing Boost installation.")
-	endif()
+    if (Boost_FOUND)
+        message(STATUS "Found an existing Boost installation.")
+    endif ()
 endfunction()
 
 project (HazelcastClient
@@ -139,6 +141,7 @@ include_directories(${PROJECT_SOURCE_DIR}/hazelcast/include ${PROJECT_SOURCE_DIR
 
 find_boost(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
+link_libraries(Boost::thread Boost::chrono)
 message(STATUS "Using Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 
 IF(NOT (${HZ_BIT} MATCHES "32") AND NOT (${HZ_BIT} MATCHES "64") )

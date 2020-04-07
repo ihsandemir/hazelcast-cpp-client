@@ -1225,11 +1225,13 @@ namespace hazelcast {
                                                                                       util::getCurrentThreadId());
                         auto future = invokeOnKeyOwner(request, keyData);
                         return future.then([=](boost::future<protocol::ClientMessage> f) {
-                            REMOVE_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(), getSerializationService());
+                            return REMOVE_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(),
+                                                                                        getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<std::shared_ptr<V>>();
                 }
 
                 virtual void removeAllInternal(const serialization::pimpl::Data &predicateData) {
@@ -1349,7 +1351,8 @@ namespace hazelcast {
 
                     auto future = invokeAndGetFuture(request, partitionId);
                     return future.then([=](boost::future<protocol::ClientMessage> f) {
-                        return getSerializationService().template toObject<ResultType>(f.get());
+                        auto data = protocol::codec::MapSubmitToKeyCodec::ResponseParameters::decode(f.get()).response;
+                        return getSerializationService().template toSharedObject<ResultType>(data);
                     });
                 }
 
@@ -1385,6 +1388,7 @@ namespace hazelcast {
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<protocol::ClientMessage>();
                 }
 
                 virtual future <protocol::ClientMessage>
@@ -1396,6 +1400,7 @@ namespace hazelcast {
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<protocol::ClientMessage>();
                 }
 
                 virtual future <std::shared_ptr<V>>
@@ -1407,26 +1412,27 @@ namespace hazelcast {
                         serialization::pimpl::Data valueData = toData<V>(value);
                         auto future = putAsyncInternalData(ttl, ttlUnit, maxIdle, maxIdleUnit, keyData, valueData);
                         return future.then([=](boost::future<protocol::ClientMessage> f) {
-                            PUT_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(), getSerializationService());
+                            return PUT_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(),
+                                                                                     getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<std::shared_ptr<V>>();
                 }
 
-                virtual future <std::shared_ptr<void>>
+                virtual future<void>
                 setAsyncInternal(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
                                  const util::concurrent::TimeUnit &maxIdleUnit,
                                  const serialization::pimpl::Data &keyData, const V &value) {
                     try {
                         serialization::pimpl::Data valueData = toData<V>(value);
-                        auto future = setAsyncInternalData(ttl, ttlUnit, maxIdle, maxIdleUnit, keyData, valueData);
-                        return future.then([=](boost::future<protocol::ClientMessage> f) {
-                            SET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(), getSerializationService());
-                        });
+                        return setAsyncInternalData(ttl, ttlUnit, maxIdle, maxIdleUnit, keyData, valueData).then(
+                                [](boost::future<protocol::ClientMessage> f) { f.get(); });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<void>();
                 }
 
             private:

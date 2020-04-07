@@ -741,7 +741,7 @@ namespace hazelcast {
                     }
                     excludedAddresses->insert(*target);
                     std::shared_ptr<Address> newTarget = getCRDTOperationTarget(*excludedAddresses);
-                    std::unique_ptr<exception::IException> exception = e.clone();
+                    std::unique_ptr<exception::IException> exception = e.copy();
                     return invokeGetInternal(excludedAddresses, exception, newTarget);
                 }
             }
@@ -775,7 +775,7 @@ namespace hazelcast {
                     }
                     excludedAddresses->insert(*target);
                     std::shared_ptr<Address> newTarget = getCRDTOperationTarget(*excludedAddresses);
-                    std::unique_ptr<exception::IException> exception = e.clone();
+                    std::unique_ptr<exception::IException> exception = e.copy();
                     return invokeAddInternal(delta, getBeforeUpdate, excludedAddresses, exception, newTarget);
                 }
             }
@@ -1507,11 +1507,12 @@ namespace hazelcast {
                                                        impl::PrimitiveMessageDecoder<protocol::codec::AtomicLongGetAndIncrementCodec, int64_t>::instance());
             }
 
-            future<std::shared_ptr<void>> ClientAtomicLongProxy::setAsync(int64_t newValue) {
+            future<void> ClientAtomicLongProxy::setAsync(int64_t newValue) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::AtomicLongSetCodec::encodeRequest(name, newValue);
 
-                return invokeOnPartitionAsync<void>(request, impl::VoidMessageDecoder::instance());
+                return invokeAndGetFuture(request, partitionId).then(
+                        [](boost::future<protocol::ClientMessage> f) { f.get(); });
             }
 
             IMapImpl::IMapImpl(const std::string &instanceName, spi::ClientContext *context)
@@ -2480,7 +2481,7 @@ namespace hazelcast {
                                     }
                                 } while (!shutdown);
                             } catch (exception::IException &e) {
-                                m.callback->onFailure(std::shared_ptr<exception::IException>(e.clone()));
+                                m.callback->onFailure(std::shared_ptr<exception::IException>(e.copy()));
                             }
                         }
                     }
@@ -2759,7 +2760,7 @@ namespace hazelcast {
             return impl->getAndIncrementAsync();
         }
 
-        future<std::shared_ptr<void>> IAtomicLong::setAsync(int64_t newValue) {
+        future<void> IAtomicLong::setAsync(int64_t newValue) {
             return impl->setAsync(newValue);
         }
 

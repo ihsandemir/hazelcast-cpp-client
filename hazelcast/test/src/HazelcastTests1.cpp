@@ -900,7 +900,7 @@ namespace hazelcast {
                     items.push_back("foo");
                     items.push_back("bar");
                     auto f = clientRingbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
-                    auto result = f->get();
+                    auto result = f.get();
 
                     ASSERT_EQ_PTR(client2Ringbuffer->tailSequence(), result.get(), int64_t);
                     ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne(0).get(), std::string);
@@ -941,7 +941,7 @@ namespace hazelcast {
                     auto rs = f.get();
 
                     ASSERT_EQ(3, rs->readCount());
-                    DataArray<string> &items1 = rs->getItems();
+                    DataArray <std::string> &items1 = rs->getItems();
                     ASSERT_EQ_PTR("1", items1.get(0), std::string);
                     ASSERT_EQ_PTR("2", items1.get(1), std::string);
                     ASSERT_EQ_PTR("3", items1.get(2), std::string);
@@ -961,7 +961,7 @@ namespace hazelcast {
                     auto rs = f.get();
 
                     ASSERT_EQ(5, rs->readCount());
-                    DataArray<string> &items = rs->getItems();
+                    DataArray <std::string> &items = rs->getItems();
                     ASSERT_EQ_PTR("good1", items.get(0), std::string);
                     ASSERT_EQ_PTR("good2", items.get(1), std::string);
                     ASSERT_EQ_PTR("good3", items.get(2), std::string);
@@ -2374,33 +2374,6 @@ namespace hazelcast {
                 }
 
             protected:
-                class SmokeRunner : public hazelcast::util::Runnable {
-                public:
-                    SmokeRunner(FlakeIdGenerator &flakeIdGenerator,
-                                hazelcast::util::CountDownLatch &startLatch,
-                                hazelcast::util::Sync<std::shared_ptr<set<int64_t> > > &ids)
-                            : flakeIdGenerator(flakeIdGenerator), startLatch(startLatch), ids(ids) {}
-
-                    virtual const string getName() const {
-                        return "SmokeRunner";
-                    }
-
-                    virtual void run() {
-                        std::shared_ptr<std::set<int64_t> > localIds = ids;
-                        startLatch.await();
-                        for (int j = 0; j < 100000; ++j) {
-                            localIds->insert(flakeIdGenerator.newId());
-                        }
-
-                        ids = localIds;
-                    }
-
-                private:
-                    FlakeIdGenerator &flakeIdGenerator;
-                    hazelcast::util::CountDownLatch &startLatch;
-                    hazelcast::util::Sync<std::shared_ptr<std::set<int64_t> > > &ids;
-                };
-
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
 
@@ -2948,13 +2921,13 @@ namespace hazelcast {
                 TransactionContext context = client->newTransactionContext();
                 context.beginTransaction();
                 ASSERT_FALSE(context.getTxnId().empty());
-                TransactionalQueue<std::string> queue = context.getQueue<std::string>(queueName);
-                string value = randomString();
+                TransactionalQueue <std::string> queue = context.getQueue<std::string>(queueName);
+                std::string value = randomString();
                 queue.offer(value);
 
                 context.commitTransaction();
 
-                IQueue<string> q = client->getQueue<std::string>(queueName);
+                IQueue<std::string> q = client->getQueue<std::string>(queueName);
                 std::shared_ptr<std::string> retrievedElement = q.poll();
                 ASSERT_NOTNULL(retrievedElement.get(), std::string);
                 ASSERT_EQ(value, *retrievedElement);
@@ -2969,13 +2942,13 @@ namespace hazelcast {
                 TransactionContext context = uniSocketClient.newTransactionContext();
                 context.beginTransaction();
                 ASSERT_FALSE(context.getTxnId().empty());
-                TransactionalQueue<std::string> queue = context.getQueue<std::string>(queueName);
-                string value = randomString();
+                TransactionalQueue <std::string> queue = context.getQueue<std::string>(queueName);
+                std::string value = randomString();
                 queue.offer(value);
 
                 context.commitTransaction();
 
-                IQueue<string> q = uniSocketClient.getQueue<std::string>(queueName);
+                IQueue<std::string> q = uniSocketClient.getQueue<std::string>(queueName);
                 std::shared_ptr<std::string> retrievedElement = q.poll();
                 ASSERT_NOTNULL(retrievedElement.get(), std::string);
                 ASSERT_EQ(value, *retrievedElement);
@@ -2991,13 +2964,13 @@ namespace hazelcast {
 
                 context.beginTransaction();
                 ASSERT_FALSE(context.getTxnId().empty());
-                TransactionalQueue<std::string> queue = context.getQueue<std::string>(queueName);
-                string value = randomString();
+                TransactionalQueue <std::string> queue = context.getQueue<std::string>(queueName);
+                std::string value = randomString();
                 queue.offer(value);
 
                 context.commitTransaction();
 
-                IQueue<string> q = client->getQueue<std::string>(queueName);
+                IQueue<std::string> q = client->getQueue<std::string>(queueName);
                 std::shared_ptr<std::string> retrievedElement = q.poll();
                 ASSERT_NOTNULL(retrievedElement.get(), std::string);
                 ASSERT_EQ(value, *retrievedElement);
@@ -3007,8 +2980,8 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = client->newTransactionContext();
                 context.beginTransaction();
-                TransactionalQueue<std::string> queue = context.getQueue<std::string>(queueName);
-                string value = randomString();
+                TransactionalQueue <std::string> queue = context.getQueue<std::string>(queueName);
+                std::string value = randomString();
                 queue.offer(value);
 
                 client->shutdown();
@@ -3043,7 +3016,7 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(txnRollbackLatch);
                 ASSERT_OPEN_EVENTUALLY(memberRemovedLatch);
 
-                IQueue<string> q = client->getQueue<std::string>(queueName);
+                IQueue<std::string> q = client->getQueue<std::string>(queueName);
                 ASSERT_NULL("Poll result should be null since it is rolled back", q.poll().get(), std::string);
                 ASSERT_EQ(0, q.size());
             }
@@ -3166,7 +3139,7 @@ namespace hazelcast {
                         ASSERT_TRUE(multiMap.put(key2, "value22"));
                         ASSERT_EQ(3, (int) multiMap.get(key).size());
                         ASSERT_EQ(3, (int) multiMap.valueCount(key));
-                        vector<std::string> removedValues = multiMap.remove(key2);
+                        std::vector<std::string> removedValues = multiMap.remove(key2);
                         ASSERT_EQ(2U, removedValues.size())  ;
                         ASSERT_TRUE((removedValues[0] == "value21" && removedValues[1] == "value22") ||
                                     (removedValues[1] == "value21" && removedValues[0] == "value22"));
@@ -3534,28 +3507,28 @@ namespace hazelcast {
             };
 
             TEST_F(AddressUtilTest, testParsingHostAndPort) {
-                AddressHolder addressHolder = AddressUtil::getAddressHolder(
+                hazelcast::util::AddressHolder addressHolder = hazelcast::util::AddressUtil::getAddressHolder(
                         "[fe80::62c5:*:fe05:480a%en0]:8080");
                 ASSERT_EQ("fe80::62c5:*:fe05:480a", addressHolder.getAddress());
                 ASSERT_EQ(8080, addressHolder.getPort());
                 ASSERT_EQ("en0", addressHolder.getScopeId());
 
-                addressHolder = AddressUtil::getAddressHolder("[::ffff:192.0.2.128]:5700");
+                addressHolder = hazelcast::util::AddressUtil::getAddressHolder("[::ffff:192.0.2.128]:5700");
                 ASSERT_EQ("::ffff:192.0.2.128", addressHolder.getAddress());
                 ASSERT_EQ(5700, addressHolder.getPort());
 
-                addressHolder = AddressUtil::getAddressHolder("192.168.1.1:5700");
+                addressHolder = hazelcast::util::AddressUtil::getAddressHolder("192.168.1.1:5700");
                 ASSERT_EQ("192.168.1.1", addressHolder.getAddress());
                 ASSERT_EQ(5700, addressHolder.getPort());
 
-                addressHolder = AddressUtil::getAddressHolder("hazelcast.com:80");
+                addressHolder = hazelcast::util::AddressUtil::getAddressHolder("hazelcast.com:80");
                 ASSERT_EQ("hazelcast.com", addressHolder.getAddress());
                 ASSERT_EQ(80, addressHolder.getPort());
             }
 
             TEST_F(AddressUtilTest, testGetByNameIpV4) {
                 std::string addrString("127.0.0.1");
-                boost::asio::ip::address address = AddressUtil::getByName(addrString);
+                boost::asio::ip::address address = hazelcast::util::AddressUtil::getByName(addrString);
                 ASSERT_TRUE(address.is_v4());
                 ASSERT_FALSE(address.is_v6());
                 ASSERT_EQ(addrString, address.to_string());

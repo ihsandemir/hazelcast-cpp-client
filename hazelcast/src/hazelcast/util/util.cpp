@@ -81,7 +81,6 @@
 #include "hazelcast/client/exception/IOException.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
-#include "hazelcast/util/concurrent/ConcurrencyUtil.h"
 #include "hazelcast/util/concurrent/BackoffIdleStrategy.h"
 #include "hazelcast/util/concurrent/CancellationException.h"
 #include "hazelcast/client/exception/IllegalArgumentException.h"
@@ -896,27 +895,6 @@ namespace hazelcast {
     }
 }
 
-
-
-namespace hazelcast {
-    namespace util {
-        namespace concurrent {
-            const std::shared_ptr<util::Executor> ConcurrencyUtil::callerRunsExecutor(
-                    new ConcurrencyUtil::CallerThreadExecutor);
-
-            const std::shared_ptr<util::Executor> &ConcurrencyUtil::CALLER_RUNS() {
-                return callerRunsExecutor;
-            }
-
-            void ConcurrencyUtil::CallerThreadExecutor::execute(const std::shared_ptr<Runnable> &command) {
-                command->run();
-            }
-        }
-    }
-}
-
-
-
 namespace hazelcast {
     namespace util {
         namespace concurrent {
@@ -1538,7 +1516,7 @@ namespace hazelcast {
                 const client::exception::IException &throwable, const std::string &message) {
             throw client::exception::HazelcastException("HazelcastExceptionFactory::create", message,
                                                         std::shared_ptr<client::exception::IException>(
-                                                                throwable.clone()));
+                                                                throwable.copy()));
         }
     }
 }

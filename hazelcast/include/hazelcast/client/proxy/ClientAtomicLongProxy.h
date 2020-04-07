@@ -78,7 +78,7 @@ namespace hazelcast {
 
                 virtual future<std::shared_ptr<int64_t>> getAndIncrementAsync();
 
-                virtual future<std::shared_ptr<void>> setAsync(int64_t newValue);
+                virtual future<void> setAsync(int64_t newValue);
             };
         }
     }

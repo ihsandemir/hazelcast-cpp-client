@@ -248,7 +248,7 @@ namespace hazelcast {
              * @return an {@link ICompletableFuture}
              * @since cluster version 3.7
              */
-            future<std::shared_ptr<void>> setAsync(int64_t newValue);
+            future<void> setAsync(int64_t newValue);
 
         private:
             IAtomicLong(const std::shared_ptr<impl::AtomicLongInterface> &impl);

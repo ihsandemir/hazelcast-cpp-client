@@ -1841,7 +1841,7 @@ namespace hazelcast {
 
                 class MultiExecutionCompletionCallback : public MultiExecutionCallback<std::string> {
                 public:
-                    MultiExecutionCompletionCallback(const string &msg,
+                    MultiExecutionCompletionCallback(const std::string &msg,
                                                      const std::shared_ptr<hazelcast::util::CountDownLatch> &responseLatch,
                                                      const std::shared_ptr<hazelcast::util::CountDownLatch> &completeLatch)
                             : msg(
@@ -1858,11 +1858,11 @@ namespace hazelcast {
                     }
 
                     virtual void
-                    onFailure(const Member &member, std::exception_ptr exception) {
+                    onFailure(const Member &member, const std::shared_ptr<exception::IException> &exception) {
                     }
 
-                    virtual void onComplete(const std::map<Member, std::shared_ptr<std::string> > &values,
-                                            const std::map<Member, std::exception_ptr> &exceptions) {
+                    virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<std::string> > &values,
+                                            const std::unordered_map<Member, std::shared_ptr<exception::IException>> &exceptions) {
                         typedef std::map<Member, std::shared_ptr<std::string> > VALUE_MAP;
                         std::string expectedValue(msg + executor::tasks::AppendCallable::APPENDAGE);
                         for (const VALUE_MAP::value_type &entry  : values) {
@@ -1891,11 +1891,11 @@ namespace hazelcast {
                     }
 
                     virtual void
-                    onFailure(const Member &member, std::exception_ptr exception) {
+                    onFailure(const Member &member, const std::shared_ptr<exception::IException> &exception) {
                     }
 
-                    virtual void onComplete(const std::map<Member, std::shared_ptr<std::string> > &values,
-                                            const std::map<Member, std::exception_ptr> &exceptions) {
+                    virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<std::string> > &values,
+                                            const std::unordered_map<Member, std::shared_ptr<exception::IException>> &exceptions) {
                         typedef std::map<Member, std::shared_ptr<std::string> > VALUE_MAP;
                         for (const VALUE_MAP::value_type &entry  : values) {
                             if (entry.second.get() == NULL) {
@@ -1969,7 +1969,6 @@ namespace hazelcast {
                 ASSERT_EQ(future_status::timeout, future.wait_for(chrono::seconds(1)));
 
                 ASSERT_FALSE(future.is_ready());
-                ASSERT_FALSE(promise.is_cancelled());
             }
 
             TEST_F(ClientExecutorServiceTest, testGetFutureAfterCancel) {
@@ -2132,7 +2131,9 @@ namespace hazelcast {
 
                 for (const Member &member : members) {
                     ASSERT_EQ(1U, futuresMap.count(member));
-                    std::shared_ptr<std::string> uuid = futuresMap[member].get_future().get();
+                    auto it = futuresMap.find(member);
+                    ASSERT_NE(futuresMap.end(), it);
+                    std::shared_ptr<std::string> uuid = (*it).second.get_future().get();
                     ASSERT_NOTNULL(uuid.get(), std::string);
                     ASSERT_EQ(member.getUuid(), *uuid);
                 }
@@ -2965,9 +2966,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
 
 namespace hazelcast {
     namespace client {

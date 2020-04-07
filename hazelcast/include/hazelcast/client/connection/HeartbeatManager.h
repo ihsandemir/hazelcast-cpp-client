@@ -38,15 +38,11 @@ namespace hazelcast {
              */
             class HeartbeatManager {
             public:
-                HeartbeatManager(spi::ClientContext &client);
+                explicit HeartbeatManager(spi::ClientContext &client);
 
                 void start();
 
                 void shutdown();
-
-                virtual void run();
-
-                virtual const std::string getName() const;
 
             private:
                 spi::ClientContext &client;
@@ -57,7 +53,8 @@ namespace hazelcast {
 
                 void checkConnection(const std::shared_ptr<Connection> &connection);
 
-                void onHeartbeatStopped(const std::shared_ptr<Connection> &connection, const std::string &reason);
+                static void
+                onHeartbeatStopped(const std::shared_ptr<Connection> &connection, const std::string &reason);
             };
         }
     }

@@ -17,7 +17,6 @@
 #ifndef HAZELCAST_CLIENT_CONNECTION_DEFAULTCLIENTCONNECTIONSTRATEGY_H_
 #define HAZELCAST_CLIENT_CONNECTION_DEFAULTCLIENTCONNECTIONSTRATEGY_H_
 
-#include "hazelcast/util/ConcurrentQueue.h"
 #include "hazelcast/util/SynchronizedQueue.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/client/config/ClientConnectionStrategyConfig.h"

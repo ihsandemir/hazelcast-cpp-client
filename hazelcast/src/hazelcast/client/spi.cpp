@@ -1388,7 +1388,7 @@ namespace hazelcast {
                     } catch (exception::HazelcastOverloadException &) {
                         throw;
                     } catch (exception::IException &e) {
-                        invocation->notifyException(std::shared_ptr<exception::IException>(e.clone()));
+                        invocation->notifyException(std::shared_ptr<exception::IException>(e.copy()));
                     }
                 }
 
@@ -1641,6 +1641,14 @@ namespace hazelcast {
                     return invocationPromise;
                 }
 
+                const std::shared_ptr<protocol::ClientMessage> &ClientInvocation::getResponse() const {
+                    return response;
+                }
+
+                void ClientInvocation::setResponse(const std::shared_ptr<protocol::ClientMessage> &response) {
+                    ClientInvocation::response = response;
+                }
+
                 ClientContext &impl::ClientTransactionManagerServiceImpl::getClient() const {
                     return client;
                 }
@@ -1752,7 +1760,7 @@ namespace hazelcast {
                             << (util::currentTimeMillis() - startTimeMillis) << " ms. ";
                     return exception::OperationTimeoutException(
                             "ClientTransactionManagerServiceImpl::newOperationTimeoutException", sb.str(),
-                            std::shared_ptr<exception::IException>(throwable.clone()));
+                            std::shared_ptr<exception::IException>(throwable.copy()));
 
                 }
 
@@ -1889,7 +1897,6 @@ namespace hazelcast {
                                         std::string("Error while fetching cluster partition table! ") + e.what());
                             }
                         }
-
                     });
                 }
 
@@ -2492,7 +2499,7 @@ namespace hazelcast {
                                     clientConnectionManager.getOrConnect(member.getAddress());
                                 } catch (exception::IException &e) {
                                     lastFailedMember = member;
-                                    lastException = e.clone();
+                                    lastException = e.copy();
                                 }
                             }
 

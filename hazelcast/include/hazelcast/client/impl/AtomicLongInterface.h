@@ -214,7 +214,7 @@ namespace hazelcast {
                  * @return an {@link future}
                  * @since cluster version 3.7
                  */
-                virtual future<std::shared_ptr<void>> setAsync(int64_t newValue) = 0;
+                virtual future<void> setAsync(int64_t newValue) = 0;
             };
         }
     }

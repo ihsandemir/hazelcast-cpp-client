@@ -215,7 +215,7 @@ namespace hazelcast {
                     if (NULL != connection.get()) {
                         std::ostringstream reason;
                         reason << "Could not connect to " << address << " as owner";
-                        connection->close(reason.str().c_str(), std::shared_ptr<exception::IException>(e.clone()));
+                        connection->close(reason.str().c_str(), std::shared_ptr<exception::IException>(e.copy()));
                     }
                     return std::shared_ptr<Connection>();
                 }
@@ -362,7 +362,7 @@ namespace hazelcast {
                     try {
                         authCallback->onResponse(f.get());
                     } catch (exception::IException &e) {
-                        authCallback->onFailure(std::shared_ptr<exception::IException>(e.clone()));
+                        authCallback->onFailure(std::shared_ptr<exception::IException>(e.copy()));
                     }
                 });
             }
@@ -738,7 +738,7 @@ namespace hazelcast {
                     result.reset(new protocol::codec::ClientAuthenticationCodec::ResponseParameters(
                             protocol::codec::ClientAuthenticationCodec::ResponseParameters::decode(response)));
                 } catch (exception::IException &e) {
-                    handleAuthenticationException(std::shared_ptr<exception::IException>(e.clone()));
+                    handleAuthenticationException(std::shared_ptr<exception::IException>(e.copy()));
                     return;
                 }
                 protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) result->status;

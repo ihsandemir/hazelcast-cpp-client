@@ -52,8 +52,13 @@ namespace hazelcast {
              */
             class HAZELCAST_API IException : public std::exception {
             public:
+                IException();
+
+                IException(const IException &rhs);
+
                 IException(const std::string &exceptionName, const std::string &source, const std::string &message,
-                           const std::string &details, int32_t errorNo, int32_t causeCode, bool isRuntime, bool retryable = false);
+                           const std::string &details, int32_t errorNo, int32_t causeCode, bool isRuntime,
+                           bool retryable = false);
 
                 IException(const std::string &exceptionName, const std::string &source, const std::string &message,
                            int32_t errorNo, int32_t causeCode, bool isRuntime, bool retryable = false);
@@ -84,7 +89,7 @@ namespace hazelcast {
                  * Exception throwing internals works by making a temporary copy of the exception.
                  * @return The copy of this exception
                  */
-                virtual std::unique_ptr<IException> clone() const;
+                virtual std::unique_ptr<IException> copy() const;
 
                 const std::string &getDetails() const;
 

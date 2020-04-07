@@ -26,7 +26,6 @@
 
 #include "hazelcast/util/Preconditions.h"
 #include "hazelcast/util/ConditionVariable.h"
-#include "hazelcast/util/concurrent/ConcurrencyUtil.h"
 
 namespace hazelcast {
     namespace client {
@@ -133,12 +132,14 @@ namespace hazelcast {
             add(future<std::shared_ptr<E>> future) {
                 down();
 
-                auto new_future = future.then([=]() {
+                auto new_future = future.then([=](boost::future<std::shared_ptr<E>> f) {
                     up();
+                    return f.get();
                 });
 
-                futures.push_back(new_future.share());
-                return new_future.share();
+                auto sharedFuture = new_future.share();
+                futures.push_back(sharedFuture);
+                return sharedFuture;
             }
 
         private:

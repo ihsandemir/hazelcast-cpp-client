@@ -999,7 +999,7 @@ namespace hazelcast {
                 return cause;
             }
 
-            std::unique_ptr<IException> IException::clone() const {
+            std::unique_ptr<IException> IException::copy() const {
                 return std::unique_ptr<IException>(new IException(*this));
             }
 
@@ -1022,6 +1022,13 @@ namespace hazelcast {
             bool IException::isRetryable() const {
                 return retryable;
             }
+
+            IException::IException(const IException &rhs)
+                    : src(rhs.src), msg(rhs.msg), details(rhs.details), report(rhs.report), errorCode(rhs.errorCode),
+                      causeErrorCode(rhs.causeErrorCode), cause(rhs.cause), runtimeException(rhs.runtimeException),
+                      retryable(rhs.retryable) {}
+
+            IException::IException() {}
         }
 
         namespace executor {
@@ -1063,7 +1070,7 @@ namespace hazelcast {
             UndefinedErrorCodeException::~UndefinedErrorCodeException() throw() {
             }
 
-            std::unique_ptr<IException> UndefinedErrorCodeException::clone() const {
+            std::unique_ptr<IException> UndefinedErrorCodeException::copy() const {
                 return std::unique_ptr<IException>(new UndefinedErrorCodeException(*this));
             }
 
@@ -1128,7 +1135,7 @@ namespace hazelcast {
                 throw *this;
             }
 
-            std::unique_ptr<IException> MemberLeftException::clone() const {
+            std::unique_ptr<IException> MemberLeftException::copy() const {
                 return std::unique_ptr<IException>(new MemberLeftException(*this));
             }
         }

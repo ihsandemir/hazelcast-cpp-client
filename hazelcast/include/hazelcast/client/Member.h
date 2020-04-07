@@ -122,6 +122,16 @@ namespace hazelcast {
     }
 }
 
+namespace std {
+    template<>
+    struct hash<hazelcast::client::Member> {
+        std::size_t operator()(const hazelcast::client::Member &k) const {
+            return std::hash<std::string>()(k.getUuid());
+        }
+    };
+
+}
+
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif

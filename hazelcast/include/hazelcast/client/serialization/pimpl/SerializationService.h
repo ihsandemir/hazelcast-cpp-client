@@ -152,6 +152,11 @@ namespace hazelcast {
                     }
 
                     template<typename T>
+                    inline const std::shared_ptr<T> toSharedObject(const std::unique_ptr<Data> &data) {
+                        return std::shared_ptr<T>(toObject<T>(data.get()));
+                    }
+
+                    template<typename T>
                     inline const std::shared_ptr<T> toSharedObject(const std::shared_ptr<T> &obj) {
                         return obj;
                     }

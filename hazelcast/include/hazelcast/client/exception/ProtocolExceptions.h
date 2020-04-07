@@ -36,6 +36,7 @@ namespace hazelcast {
             class HAZELCAST_API ClassName : public virtual IException {\
             public:\
                 static const int32_t ERROR_CODE = errorNo;\
+                ClassName(const ClassName &rhs) : IException(rhs) {}\
                 ClassName(const std::string& source, const std::string& message, const std::string& details, \
                         int32_t causeCode) \
                     : IException(#ClassName, source, message, details, ERROR_CODE, causeCode, runtime) {\
@@ -52,8 +53,8 @@ namespace hazelcast {
                             const std::shared_ptr<IException> &cause) \
                             : IException(#ClassName, source, message, ERROR_CODE, cause, runtime) {}\
                 ClassName(const std::string &source, const std::string &message, const IException &cause) \
-                            : IException(#ClassName, source, message, ERROR_CODE, std::shared_ptr<IException>(cause.clone()), runtime) {}\
-                virtual std::unique_ptr<IException> clone() const {\
+                            : IException(#ClassName, source, message, ERROR_CODE, std::shared_ptr<IException>(cause.copy()), runtime) {}\
+                virtual std::unique_ptr<IException> copy() const {\
                     return std::unique_ptr<IException>(new ClassName(*this));\
                 } \
                 virtual void raise() const { throw *this; } \
@@ -179,8 +180,8 @@ namespace hazelcast {
                 }\
                 ClassName(const std::string &source, const std::string &message, \
                             const std::shared_ptr<IException> &cause) \
-                            : IException(#ClassName, source, message, ERROR_CODE, std::shared_ptr<IException>(cause->clone()), true, true), RetryableHazelcastException(source, message, cause) {}\
-                virtual std::unique_ptr<IException> clone() const {\
+                            : IException(#ClassName, source, message, ERROR_CODE, std::shared_ptr<IException>(cause->copy()), true, true), RetryableHazelcastException(source, message, cause) {}\
+                virtual std::unique_ptr<IException> copy() const {\
                     return std::unique_ptr<IException>(new ClassName(*this));\
                 } \
                 virtual void raise() const { throw *this; } \
@@ -206,7 +207,7 @@ namespace hazelcast {
 
                 virtual void raise() const;
 
-                virtual std::unique_ptr<IException> clone() const;
+                virtual std::unique_ptr<IException> copy() const;
 
             };
 
@@ -232,7 +233,7 @@ namespace hazelcast {
 
                 const std::string &getDetailedErrorMessage() const;
 
-                virtual std::unique_ptr<IException> clone() const;
+                virtual std::unique_ptr<IException> copy() const;
 
                 virtual void raise() const;
 

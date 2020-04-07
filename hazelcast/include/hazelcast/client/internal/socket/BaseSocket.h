@@ -98,36 +98,45 @@ namespace hazelcast {
                     void asyncWrite(const std::shared_ptr<connection::Connection> &connection,
                                     const std::shared_ptr<spi::impl::ClientInvocation> &invocation) override {
                         auto message = invocation->getClientMessage();
-                        boost::asio::async_write(*socket_,
-                                                 boost::asio::buffer(message->getBuffer()->data(),
-                                                                     message->getFrameLength()),
-                                                 [=](const boost::system::error_code &ec, std::size_t bytesWritten) {
-                                                     auto correlationId = message->getCorrelationId();
-                                                     auto result = connection->invocations.insert(
-                                                             {correlationId, invocation});
-                                                     if (!result.second) {
-                                                         auto existingEntry = *result.first;
-                                                         invocation->notifyException(
-                                                                 std::make_shared<exception::IllegalStateException>(
-                                                                         "Connection::write", (boost::format(
-                                                                                 "There is already an existing invocation with the same correlation id: %1%. Existing: %2% New invocation:%3%") %
-                                                                                               correlationId %
-                                                                                               (*existingEntry.second) %
-                                                                                               *invocation).str()));
-                                                         return;
-                                                     }
+                        boost::asio::post(socket_->get_executor(), [=]() {
+                            auto correlationId = message->getCorrelationId();
+                            auto result = connection->invocations.insert({correlationId, invocation});
+                            if (!result.second) {
+                                auto existingEntry = *result.first;
+                                invocation->notifyException(
+                                        std::make_shared<exception::IllegalStateException>(
+                                                "Connection::write", (boost::format(
+                                                        "There is already an existing invocation with the same correlation id: %1%. Existing: %2% New invocation:%3%") %
+                                                                      correlationId %
+                                                                      (*existingEntry.second) %
+                                                                      *invocation).str()));
+                                return;
+                            }
 
-                                                     if (ec) {
-                                                         auto message = (boost::format{
-                                                                 "Error %1% during invocation write for %2% on connection %3%"} %
-                                                                         ec % *invocation % *connection).str();
-                                                         invocation->notifyException(
-                                                                 std::make_shared<exception::IOException>(
-                                                                         "Connection::write", message));
+                            boost::asio::async_write(*socket_,
+                                                     boost::asio::buffer(message->getBuffer()->data(),
+                                                                         message->getFrameLength()),
+                                                     [=](const boost::system::error_code &ec,
+                                                         std::size_t bytesWritten) {
+                                                         if (ec) {
+                                                             auto invocationIt = connection->invocations.find(
+                                                                     correlationId);
+                                                             // TODO
+/*                                                             if (invocationIt == connection->invocations.end()) {
+                                                                 connection->getLogger().warning("async_write could not find invocation for correlation id: ", correlationId);
+                                                             }*/
+                                                             auto message = (boost::format{
+                                                                     "Error %1% during invocation write for %2% on connection %3%"} %
+                                                                             ec % *invocation % *connection).str();
+                                                             invocationIt->second->notifyException(
+                                                                     std::make_shared<exception::IOException>(
+                                                                             "Connection::write", message));
 
-                                                         connection->close(message);
-                                                     }
-                                                 });
+                                                             connection->close(message);
+                                                             connection->invocations.erase(invocationIt);
+                                                         }
+                                                     });
+                        });
                     }
 
                     void close() override {

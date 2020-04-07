@@ -160,12 +160,13 @@ namespace hazelcast {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
                         return invocationFuture.then([=](future<protocol::ClientMessage> f) {
-                            impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddCodec, int64_t>::instance()->decodeClientMessage(
+                            return impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddCodec, int64_t>::instance()->decodeClientMessage(
                                     f.get(), getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<std::shared_ptr<int64_t>>();
                 }
 
                 virtual future<std::shared_ptr<int64_t>>
@@ -181,12 +182,13 @@ namespace hazelcast {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
                         return invocationFuture.then([=](future<protocol::ClientMessage> f) {
-                            impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddAllCodec, int64_t>::instance()->decodeClientMessage(
+                            return impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddAllCodec, int64_t>::instance()->decodeClientMessage(
                                     f.get(), getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<std::shared_ptr<int64_t>>();
                 }
 
                 /***************** RingBuffer<E> interface implementation ends here ***********************************/
@@ -209,6 +211,7 @@ namespace hazelcast {
                     } catch (const exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return *protocol::ClientMessage::create(0);
                 }
 
                 future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>
@@ -244,11 +247,13 @@ namespace hazelcast {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
                         return invocationFuture.then([=](future<protocol::ClientMessage> f) {
-                            READ_MANY_ASYNC_RESPONSE_DECODER->decodeClientMessage(f.get(), getSerializationService());
+                            return READ_MANY_ASYNC_RESPONSE_DECODER->decodeClientMessage(f.get(),
+                                                                                         getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(e);
                     }
+                    return future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>();
                 }
 
                 virtual SerializationService &getSerializationService() {
