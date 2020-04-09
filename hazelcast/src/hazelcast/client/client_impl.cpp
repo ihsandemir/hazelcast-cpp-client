@@ -38,6 +38,7 @@
 
 #include <vector>
 #include <easylogging++.h>
+#include <boost/format.hpp>
 
 #include "hazelcast/client/impl/BuildInfo.h"
 #include "hazelcast/util/Util.h"
@@ -55,6 +56,8 @@
 #include "hazelcast/client/LifecycleListener.h"
 #include <hazelcast/client/executor/impl/ExecutorServiceProxyFactory.h>
 #include <hazelcast/client/cluster/impl/ClusterDataSerializerHook.h>
+#include <hazelcast/client/exception/ProtocolExceptions.h>
+
 #include "hazelcast/client/crdt/pncounter/impl/PNCounterProxyFactory.h"
 #include "hazelcast/client/proxy/ClientPNCounterProxy.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
@@ -510,8 +513,8 @@ namespace hazelcast {
 
             BaseEventHandler::BaseEventHandler() : logger(NULL) {}
 
-            void BaseEventHandler::setLogger(util::ILogger *logger) {
-                BaseEventHandler::logger = logger;
+            void BaseEventHandler::setLogger(util::ILogger *iLogger) {
+                BaseEventHandler::logger = iLogger;
             }
 
             util::ILogger *BaseEventHandler::getLogger() const {
@@ -672,7 +675,7 @@ namespace hazelcast {
                         getContext(), request, getName(), target);
                 return std::make_pair(clientInvocation->invoke(), clientInvocation);
             } catch (exception::IException &e) {
-                util::ExceptionUtil::rethrow(e);
+                util::ExceptionUtil::rethrow(std::current_exception());
             }
             return std::pair<future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>();
         }
@@ -684,7 +687,7 @@ namespace hazelcast {
                         getContext(), request, getName(), partitionId);
                 return std::make_pair(clientInvocation->invoke(), clientInvocation);
             } catch (exception::IException &e) {
-                util::ExceptionUtil::rethrow(e);
+                util::ExceptionUtil::rethrow(std::current_exception());
             }
             return std::pair<future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>();
         }
@@ -914,68 +917,19 @@ namespace hazelcast {
 
         namespace exception {
             IException::IException(const std::string &exceptionName, const std::string &source,
-                                   const std::string &message, const std::string &details,
-                                   int32_t errorNo, int32_t causeCode, bool isRuntime, bool retryable) : src(source),
-                                                                                                         msg(message),
-                                                                                                         details(details),
-                                                                                                         errorCode(
-                                                                                                                 errorNo),
-                                                                                                         causeErrorCode(
-                                                                                                                 causeCode),
-                                                                                                         runtimeException(
-                                                                                                                 isRuntime),
-                                                                                                         retryable(
-                                                                                                                 retryable) {
-                std::ostringstream out;
-                out << exceptionName << " {" << message << ". Details:" << details << " Error code:" << errorNo
-                    << ", Cause error code:" << causeCode << "} at " + source;
-                report = out.str();
+                                   const std::string &message, const std::string &details, int32_t errorNo,
+                                   bool isRuntime, bool retryable)
+                    : src(source), msg(message), details(details), errorCode(errorNo), runtimeException(isRuntime),
+                      retryable(retryable),
+                      report{"%1% {%2%. Error code:%3%, Details:%4%.} at %5%."} {
+                report % exceptionName % message % errorNo % details % source;
             }
 
-            IException::IException(const std::string &exceptionName, const std::string &source,
-                                   const std::string &message, int32_t errorNo,
-                                   int32_t causeCode, bool isRuntime, bool retryable) : src(source), msg(message),
-                                                                                        errorCode(errorNo),
-                                                                                        causeErrorCode(causeCode),
-                                                                                        runtimeException(isRuntime),
-                                                                                        retryable(retryable) {
-                std::ostringstream out;
-                out << exceptionName << " {" << message << " Error code:" << errorNo << ", Cause error code:"
-                    << causeCode << "} at " + source;
-                report = out.str();
+            IException::~IException() noexcept {
             }
 
-            IException::IException(const std::string &exceptionName, const std::string &source,
-                                   const std::string &message, int32_t errorNo, bool isRuntime, bool retryable) : src(
-                    source), msg(message), errorCode(errorNo), runtimeException(isRuntime), retryable(retryable) {
-                std::ostringstream out;
-                out << exceptionName << " {" << message << " Error code:" << errorNo << "} at " + source;
-                report = out.str();
-            }
-
-            IException::IException(const std::string &exceptionName, const std::string &source,
-                                   const std::string &message, int32_t errorNo,
-                                   const std::shared_ptr<IException> &cause, bool isRuntime, bool retryable) : src(
-                    source), msg(message),
-                                                                                                               errorCode(
-                                                                                                                       errorNo),
-                                                                                                               cause(cause),
-                                                                                                               runtimeException(
-                                                                                                                       isRuntime),
-                                                                                                               retryable(
-                                                                                                                       retryable) {
-                std::ostringstream out;
-                out << exceptionName << " {" << message << " Error code:" << errorNo << ", Caused by:" << *cause
-                    << "} at " + source;
-                report = out.str();
-
-            }
-
-            IException::~IException() throw() {
-            }
-
-            char const *IException::what() const throw() {
-                return report.c_str();
+            char const *IException::what() const noexcept {
+                return report.str().c_str();
             }
 
             const std::string &IException::getSource() const {
@@ -986,21 +940,9 @@ namespace hazelcast {
                 return msg;
             }
 
-            void IException::raise() const {
-                throw *this;
-            }
-
             std::ostream &operator<<(std::ostream &os, const IException &exception) {
                 os << exception.what();
                 return os;
-            }
-
-            const std::shared_ptr<IException> &IException::getCause() const {
-                return cause;
-            }
-
-            std::unique_ptr<IException> IException::copy() const {
-                return std::unique_ptr<IException>(new IException(*this));
             }
 
             const std::string &IException::getDetails() const {
@@ -1011,10 +953,6 @@ namespace hazelcast {
                 return errorCode;
             }
 
-            int32_t IException::getCauseErrorCode() const {
-                return causeErrorCode;
-            }
-
             bool IException::isRuntimeException() const {
                 return runtimeException;
             }
@@ -1023,12 +961,31 @@ namespace hazelcast {
                 return retryable;
             }
 
-            IException::IException(const IException &rhs)
-                    : src(rhs.src), msg(rhs.msg), details(rhs.details), report(rhs.report), errorCode(rhs.errorCode),
-                      causeErrorCode(rhs.causeErrorCode), cause(rhs.cause), runtimeException(rhs.runtimeException),
-                      retryable(rhs.retryable) {}
-
             IException::IException() {}
+
+            RetryableHazelcastException::RetryableHazelcastException(const std::string &source,
+                                                                     const std::string &message,
+                                                                     const std::string &details)
+                    : RetryableHazelcastException(
+                    "RetryableHazelcastException", protocol::RETRYABLE_HAZELCAST, source, message, details, true,
+                    true) {}
+
+            RetryableHazelcastException::RetryableHazelcastException(const std::string &errorName, int32_t errorCode,
+                                                                     const std::string &source,
+                                                                     const std::string &message,
+                                                                     const std::string &details, bool runtime,
+                                                                     bool retryable) : HazelcastException(errorName,
+                                                                                                          errorCode,
+                                                                                                          source,
+                                                                                                          message,
+                                                                                                          details,
+                                                                                                          runtime,
+                                                                                                          retryable) {}
+
+            MemberLeftException::MemberLeftException(const std::string &source, const std::string &message,
+                                                     const std::string &details)
+                    : ExecutionException("MemberLeftException", protocol::MEMBER_LEFT, source, message, details, false,
+                                         true) {}
         }
 
         namespace executor {
@@ -1041,102 +998,6 @@ namespace hazelcast {
                     return std::shared_ptr<spi::ClientProxy>(
                             new IExecutorService(id, clientContext));
                 }
-            }
-        }
-
-        namespace exception {
-            UndefinedErrorCodeException::UndefinedErrorCodeException(const std::string &source,
-                                                                     const std::string &message,
-                                                                     int32_t errorCode, int64_t correlationId,
-                                                                     std::string details)
-                    : IException("UndefinedErrorCodeException", source, message, protocol::UNDEFINED, true),
-                      error(errorCode),
-                      messageCallId(correlationId),
-                      detailedErrorMessage(details) {
-            }
-
-            int32_t UndefinedErrorCodeException::getUndefinedErrorCode() const {
-                return error;
-            }
-
-            int64_t UndefinedErrorCodeException::getMessageCallId() const {
-                return messageCallId;
-            }
-
-            const std::string &UndefinedErrorCodeException::getDetailedErrorMessage() const {
-                return detailedErrorMessage;
-            }
-
-            UndefinedErrorCodeException::~UndefinedErrorCodeException() throw() {
-            }
-
-            std::unique_ptr<IException> UndefinedErrorCodeException::copy() const {
-                return std::unique_ptr<IException>(new UndefinedErrorCodeException(*this));
-            }
-
-            void UndefinedErrorCodeException::raise() const {
-                throw *this;
-            }
-
-            RetryableHazelcastException::RetryableHazelcastException(const std::string &source,
-                                                                     const std::string &message,
-                                                                     const std::string &details, int32_t causeCode)
-                    : IException("RetryableHazelcastException", source, message, details, protocol::RETRYABLE_HAZELCAST,
-                                 causeCode, true, true), HazelcastException(source, message, details, causeCode) {
-            }
-
-            RetryableHazelcastException::RetryableHazelcastException(const std::string &source,
-                                                                     const std::string &message)
-                    : IException("RetryableHazelcastException", source, message, protocol::RETRYABLE_HAZELCAST, true,
-                                 true),
-                      HazelcastException(source, message) {
-            }
-
-            RetryableHazelcastException::RetryableHazelcastException(const std::string &source,
-                                                                     const std::string &message,
-                                                                     int32_t causeCode) : IException(
-                    "RetryableHazelcastException", source, message, protocol::RETRYABLE_HAZELCAST, causeCode, true,
-                    true),
-                                                                                          HazelcastException(source,
-                                                                                                             message,
-                                                                                                             causeCode) {}
-
-            RetryableHazelcastException::RetryableHazelcastException(const std::string &source,
-                                                                     const std::string &message,
-                                                                     const std::shared_ptr<IException> &cause)
-                    : IException("RetryableHazelcastException", source, message, protocol::RETRYABLE_HAZELCAST, cause,
-                                 true, true),
-                      HazelcastException(source, message, cause) {}
-
-            MemberLeftException::MemberLeftException(const std::string &source, const std::string &message,
-                                                     const std::string &details, int32_t causeCode)
-                    : IException("MemberLeftException", source, message, details, protocol::MEMBER_LEFT, causeCode,
-                                 true),
-                      ExecutionException(source, message, details, causeCode),
-                      RetryableHazelcastException(source, message, details, causeCode) {
-            }
-
-            MemberLeftException::MemberLeftException(const std::string &source, const std::string &message,
-                                                     int32_t causeCode) : IException("MemberLeftException", source,
-                                                                                     message, protocol::MEMBER_LEFT,
-                                                                                     causeCode, true, true),
-                                                                          ExecutionException(source, message,
-                                                                                             causeCode),
-                                                                          RetryableHazelcastException(source, message,
-                                                                                                      causeCode) {
-            }
-
-            MemberLeftException::MemberLeftException(const std::string &source, const std::string &message)
-                    : IException("MemberLeftException", source, message, protocol::MEMBER_LEFT, true, true),
-                      ExecutionException(source, message), RetryableHazelcastException(source, message) {
-            }
-
-            void MemberLeftException::raise() const {
-                throw *this;
-            }
-
-            std::unique_ptr<IException> MemberLeftException::copy() const {
-                return std::unique_ptr<IException>(new MemberLeftException(*this));
             }
         }
     }

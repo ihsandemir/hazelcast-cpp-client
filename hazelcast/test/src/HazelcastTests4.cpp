@@ -218,33 +218,6 @@
 #pragma warning(disable: 4996) //for unsafe getenv
 #endif
 
-#ifndef HAZELCAST_CLIENT_TEST_PROTOCOL_PROTOCOLEXCEPTIONTEST_H
-#define HAZELCAST_CLIENT_TEST_PROTOCOL_PROTOCOLEXCEPTIONTEST_H
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            namespace protocol {
-                TEST(ProtocolExceptionTest, testUndefinedErrorCodeException) {
-                    int32_t undefinedError = client::protocol::SERVICE_NOT_FOUND + 1;
-                    int64_t callId = 0x1122334455667788LL;
-                    const std::string details = "This is the detail about the exception";
-                    client::exception::UndefinedErrorCodeException exception("testUndefinedErrorCodeException",
-                                                                             "this is a test", undefinedError, callId,
-                                                                             details);
-                    ASSERT_EQ(undefinedError, exception.getUndefinedErrorCode());
-                    ASSERT_EQ(callId, exception.getMessageCallId());
-                    ASSERT_EQ(details, exception.getDetailedErrorMessage());
-                }
-            }
-        }
-    }
-}
-
-#endif //HAZELCAST_CLIENT_TEST_PROTOCOL_PROTOCOLEXCEPTIONTEST_H
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {

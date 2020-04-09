@@ -720,10 +720,10 @@ namespace hazelcast {
                         virtual void run() {
                             try {
                                 clientRingbuffer->readOne(0);
-                            } catch (exception::InterruptedException &e) {
-                                std::cerr << e;
                             } catch (exception::StaleSequenceException &) {
                                 latch->countDown();
+                            } catch (std::exception &e) {
+                                std::cerr << e.what();
                             }
                         }
 
@@ -779,6 +779,11 @@ namespace hazelcast {
                     ASSERT_EQ(0, rb->size());
                     ASSERT_EQ(CAPACITY, rb->remainingCapacity());
                     ASSERT_THROW(rb->readOne(-1), exception::IllegalArgumentException);
+                    try {
+                        rb->readOne(1);
+                    } catch (std::exception &e) {
+                        std::cout << e.what() << std::endl;
+                    }
                     ASSERT_THROW(rb->readOne(1), exception::IllegalArgumentException);
 
                     Employee employee1("First", 10);
@@ -829,21 +834,17 @@ namespace hazelcast {
                 TEST_F(RingbufferTest, readManyAsync_whenHitsStale_shouldNotBeBlocked) {
                     auto f = clientRingbuffer->readManyAsync<void>(0, 1, 10, NULL);
                     client2Ringbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
-                    try {
-                        f.get();
-                    } catch (exception::ExecutionException &e) {
-                        std::shared_ptr<exception::IException> cause = e.getCause();
-                        ASSERT_NOTNULL(cause.get(), exception::IException);
-                        ASSERT_THROW(cause->raise(), exception::StaleSequenceException);
-                    }
+                    ASSERT_THROW(f.get(), exception::StaleSequenceException);
                 }
 
                 TEST_F(RingbufferTest, readOne_whenHitsStale_shouldNotBeBlocked) {
                     std::shared_ptr<hazelcast::util::CountDownLatch> latch = std::make_shared<hazelcast::util::CountDownLatch>(
                             1);
-                    std::thread consumer([=]() { (ReadOneWithLatchTask(clientRingbuffer, latch).run()); });
+                    std::thread t(std::packaged_task<void()>([ =]()
+                    { (ReadOneWithLatchTask(clientRingbuffer, latch).run()); }));
                     client2Ringbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
                     ASSERT_OPEN_EVENTUALLY(*latch);
+                    t.join();
                 }
 
                 TEST_F(RingbufferTest, headSequence) {

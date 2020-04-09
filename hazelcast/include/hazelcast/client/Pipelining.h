@@ -18,10 +18,6 @@
 
 #include <vector>
 
-#define BOOST_THREAD_PROVIDES_FUTURE
-#define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
-#define BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
-
 #include <boost/thread/future.hpp>
 
 #include "hazelcast/util/Preconditions.h"
@@ -132,7 +128,7 @@ namespace hazelcast {
             add(future<std::shared_ptr<E>> future) {
                 down();
 
-                auto new_future = future.then([=](boost::future<std::shared_ptr<E>> f) {
+                auto new_future = future.then(launch::sync, [=](boost::future<std::shared_ptr<E>> f) {
                     up();
                     return f.get();
                 });
@@ -151,7 +147,7 @@ namespace hazelcast {
                     pipelining->up();
                 }
 
-                virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
+                virtual void onFailure(std::exception_ptr e) {
                     pipelining->up();
                 }
 

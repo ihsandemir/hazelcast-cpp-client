@@ -1784,23 +1784,24 @@ namespace hazelcast {
 
                 class FailingExecutionCallback : public ExecutionCallback<std::string> {
                 public:
-                    FailingExecutionCallback(const std::shared_ptr<hazelcast::util::CountDownLatch> &latch) : latch(latch) {}
+                    FailingExecutionCallback(const std::shared_ptr<hazelcast::util::CountDownLatch> &latch) : latch(
+                            latch) {}
 
                     virtual void onResponse(const std::shared_ptr<std::string> &response) {
                     }
 
-                    virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
+                    virtual void onFailure(std::exception_ptr e) {
                         latch->countDown();
                         exception = e;
                     }
 
-                    std::shared_ptr<exception::IException> getException() {
-                        return exception.get();
+                    std::exception_ptr getException() {
+                        return exception;
                     }
 
                 private:
                     const std::shared_ptr<hazelcast::util::CountDownLatch> latch;
-                    hazelcast::util::Sync<std::shared_ptr<exception::IException> > exception;
+                    hazelcast::util::Sync<std::exception_ptr> exception;
                 };
 
                 class SuccessfullExecutionCallback : public ExecutionCallback<std::string> {
@@ -1811,7 +1812,7 @@ namespace hazelcast {
                         latch->countDown();
                     }
 
-                    virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
+                    virtual void onFailure(std::exception_ptr e) {
                     }
 
                 private:
@@ -1827,7 +1828,7 @@ namespace hazelcast {
                         latch->countDown();
                     }
 
-                    virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
+                    virtual void onFailure(std::exception_ptr e) {
                     }
 
                     std::shared_ptr<std::string> getResult() {
@@ -1858,11 +1859,11 @@ namespace hazelcast {
                     }
 
                     virtual void
-                    onFailure(const Member &member, const std::shared_ptr<exception::IException> &exception) {
+                    onFailure(const Member &member, std::exception_ptr exception) {
                     }
 
                     virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<std::string> > &values,
-                                            const std::unordered_map<Member, std::shared_ptr<exception::IException>> &exceptions) {
+                                            const std::unordered_map<Member, std::exception_ptr> &exceptions) {
                         typedef std::map<Member, std::shared_ptr<std::string> > VALUE_MAP;
                         std::string expectedValue(msg + executor::tasks::AppendCallable::APPENDAGE);
                         for (const VALUE_MAP::value_type &entry  : values) {
@@ -1891,11 +1892,11 @@ namespace hazelcast {
                     }
 
                     virtual void
-                    onFailure(const Member &member, const std::shared_ptr<exception::IException> &exception) {
+                    onFailure(const Member &member, std::exception_ptr exception) {
                     }
 
                     virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<std::string> > &values,
-                                            const std::unordered_map<Member, std::shared_ptr<exception::IException>> &exceptions) {
+                                            const std::unordered_map<Member, std::exception_ptr> &exceptions) {
                         typedef std::map<Member, std::shared_ptr<std::string> > VALUE_MAP;
                         for (const VALUE_MAP::value_type &entry  : values) {
                             if (entry.second.get() == NULL) {
@@ -2018,7 +2019,7 @@ namespace hazelcast {
                 try {
                     failingFuture.get();
                 } catch (exception::ExecutionException &e) {
-                    ASSERT_THROW(e.getCause()->raise(), exception::IllegalStateException);
+                    ASSERT_THROW(std::rethrow_if_nested(std::current_exception()), exception::IllegalStateException);
                 }
             }
 
@@ -2077,7 +2078,8 @@ namespace hazelcast {
                 try {
                     future.get();
                 } catch (exception::ExecutionException &e) {
-                    ASSERT_THROW(e.getCause()->raise(), exception::HazelcastSerializationException);
+                    ASSERT_THROW(std::rethrow_if_nested(std::current_exception()),
+                                 exception::HazelcastSerializationException);
                 }
             }
 
@@ -2097,9 +2099,9 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(*latch);
 
-                std::shared_ptr<exception::IException> exception = callback->getException();
-                ASSERT_NOTNULL(exception.get(), exception::IException);
-                ASSERT_THROW(exception->raise(), exception::HazelcastSerializationException);
+                auto exception = callback->getException();
+                ASSERT_NE(nullptr, exception);
+                ASSERT_THROW(std::rethrow_exception(exception), exception::HazelcastSerializationException);
             }
 
             TEST_F(ClientExecutorServiceTest, testSubmitCallableToMember) {

@@ -60,25 +60,26 @@ namespace hazelcast {
                         void shutdown();
 
                         void addEventHandler(int64_t callId,
-                                             const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
+                                             const std::shared_ptr<EventHandler<protocol::ClientMessage>> &handler);
 
-                        void handleClientMessage(const std::shared_ptr<ClientInvocation> &invocation,
-                                                 const std::shared_ptr<connection::Connection> &connection);
+                        void handleClientMessage(const std::shared_ptr<ClientInvocation> invocation,
+                                                 const std::shared_ptr<protocol::ClientMessage> response);
 
                         virtual std::string
-                        registerListener(const std::shared_ptr<impl::ListenerMessageCodec> &listenerMessageCodec,
-                                         const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
+                        registerListener(const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
+                                         const std::shared_ptr<EventHandler<protocol::ClientMessage> > handler);
 
-                        virtual bool deregisterListener(const std::string &registrationId);
+                        virtual bool deregisterListener(const std::string registrationId);
 
-                        virtual void connectionAdded(const std::shared_ptr<connection::Connection> &connection);
+                        virtual void connectionAdded(const std::shared_ptr<connection::Connection> connection);
 
-                        virtual void connectionRemoved(const std::shared_ptr<connection::Connection> &connection);
+                        virtual void connectionRemoved(const std::shared_ptr<connection::Connection> connection);
 
                     protected:
                         AbstractClientListenerService(ClientContext &clientContext, int32_t eventThreadCount);
 
-                        void processEventMessage(const std::shared_ptr<ClientInvocation> &invocation);
+                        void processEventMessage(const std::shared_ptr<ClientInvocation> invocation,
+                                                 const std::shared_ptr<protocol::ClientMessage> response);
 
                         virtual bool registersLocalOnly() const = 0;
 

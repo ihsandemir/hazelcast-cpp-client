@@ -1052,8 +1052,8 @@ namespace hazelcast {
                         uint64_t sevenBytesFactor = ONE << 56;
 
                         byte buf[TEST_DATA_SIZE] = {0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B};
-                        buffer->resize(LARGE_BUFFER_SIZE);
-                        memcpy(&(*buffer)[START_BYTE_NUMBER], buf, TEST_DATA_SIZE);
+                        buffer.resize(LARGE_BUFFER_SIZE);
+                        memcpy(&buffer[START_BYTE_NUMBER], buf, TEST_DATA_SIZE);
 
                         // ----- Test unsigned get starts ---------------------------------
                         // NOTE: When the first bit of the highest byte is equal to 1, than the number is negative,
@@ -1132,8 +1132,8 @@ namespace hazelcast {
                                             firstChar, firstChar + 1, firstChar + 2,
                                             firstChar + 3}; // This is string BCDE
 
-                        buffer->clear();
-                        buffer->insert(buffer->begin(), strBytes, strBytes + 8);
+                        buffer.clear();
+                        buffer.insert(buffer.begin(), strBytes, strBytes + 8);
                         {
                             wrapForRead(8, 0);
                             ASSERT_EQ("BCDE", getStringUtf8());
@@ -1149,8 +1149,8 @@ namespace hazelcast {
                                                         firstChar, firstChar + 1, firstChar + 2, firstChar + 3,
                                                         0x8A, 0x01, 0x00, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B};
 
-                            buffer->clear();
-                            buffer->insert(buffer->begin(), continousBuffer, continousBuffer + 45);
+                            buffer.clear();
+                            buffer.insert(buffer.begin(), continousBuffer, continousBuffer + 45);
 
                             wrapForRead(8 * 10, 0);
 
@@ -1236,48 +1236,48 @@ namespace hazelcast {
 // ---- Test consecutive gets ends ---------------------------
 
 // ---- Write related tests starts --------------------------
-                        buffer->clear();
-                        buffer->resize(30, 0);
+                        buffer.clear();
+                        buffer.resize(30, 0);
                         wrapForWrite(30, 0);
 
                         set((uint8_t) 0x8A);
-                        ASSERT_EQ(0x8A, (*buffer)[0]);
+                        ASSERT_EQ(0x8A, buffer[0]);
 
                         set(true);
-                        ASSERT_EQ(0x01, (*buffer)[1]);
+                        ASSERT_EQ(0x01, buffer[1]);
 
                         set(false);
-                        ASSERT_EQ(0x00, (*buffer)[2]);
+                        ASSERT_EQ(0x00, buffer[2]);
 
                         set('C');
-                        ASSERT_EQ('C', (*buffer)[3]);
+                        ASSERT_EQ('C', buffer[3]);
 
                         int16_t int16Val = 0x7BCD;
                         set(int16Val);
-                        ASSERT_EQ(0xCD, (*buffer)[4]);
-                        ASSERT_EQ(0x7B, (*buffer)[5]);
+                        ASSERT_EQ(0xCD, buffer[4]);
+                        ASSERT_EQ(0x7B, buffer[5]);
 
                         uint16_t uInt16Val = 0xABCD;
                         set(uInt16Val);
-                        ASSERT_EQ(0xCD, (*buffer)[6]);
-                        ASSERT_EQ(0xAB, (*buffer)[7]);
+                        ASSERT_EQ(0xCD, buffer[6]);
+                        ASSERT_EQ(0xAB, buffer[7]);
 
                         int32_t int32Val = 0xAEBCEEFF;
                         set(int32Val);
-                        ASSERT_EQ(0xFF, (*buffer)[8]);
-                        ASSERT_EQ(0xEE, (*buffer)[9]);
-                        ASSERT_EQ(0xBC, (*buffer)[10]);
-                        ASSERT_EQ(0xAE, (*buffer)[11]);
+                        ASSERT_EQ(0xFF, buffer[8]);
+                        ASSERT_EQ(0xEE, buffer[9]);
+                        ASSERT_EQ(0xBC, buffer[10]);
+                        ASSERT_EQ(0xAE, buffer[11]);
 
 
                         set(std::string("Test Data"));
-                        ASSERT_EQ(0x09, (int) (*buffer)[12]);
-                        ASSERT_EQ(0x0, (*buffer)[13]);
-                        ASSERT_EQ(0x0, (*buffer)[14]);
-                        ASSERT_EQ(0x0, (*buffer)[15]);
-                        ASSERT_EQ('T', (*buffer)[16]);
-                        ASSERT_EQ('e', (*buffer)[17]);
-                        ASSERT_EQ('a', (*buffer)[24]);
+                        ASSERT_EQ(0x09, (int) buffer[12]);
+                        ASSERT_EQ(0x0, buffer[13]);
+                        ASSERT_EQ(0x0, buffer[14]);
+                        ASSERT_EQ(0x0, buffer[15]);
+                        ASSERT_EQ('T', buffer[16]);
+                        ASSERT_EQ('e', buffer[17]);
+                        ASSERT_EQ('a', buffer[24]);
                     }
                 }
             }
@@ -1297,8 +1297,8 @@ namespace hazelcast {
                 void next(bool isUrgent) {
                     int64_t oldSequence = sequence.getLastCallId();
                     int64_t result = nextCallId(sequence, isUrgent);
-                            assertEquals(oldSequence + 1, result);
-                            assertEquals(oldSequence + 1, sequence.getLastCallId());
+                    ASSERT_EQ(oldSequence + 1, result);
+                    ASSERT_EQ(oldSequence + 1, sequence.getLastCallId());
                 }
 
                 int64_t nextCallId(spi::impl::sequence::CallIdSequence &seq, bool isUrgent) {
@@ -1307,8 +1307,8 @@ namespace hazelcast {
             };
 
             TEST_F(CallIdSequenceWithoutBackpressureTest, testInit) {
-                        assertEquals(0, sequence.getLastCallId());
-                        assertEquals(INT32_MAX, sequence.getMaxConcurrentInvocations());
+                ASSERT_EQ(0, sequence.getLastCallId());
+                ASSERT_EQ(INT32_MAX, sequence.getMaxConcurrentInvocations());
             }
 
             TEST_F(CallIdSequenceWithoutBackpressureTest, testNext) {
@@ -1319,7 +1319,7 @@ namespace hazelcast {
 
             TEST_F(CallIdSequenceWithoutBackpressureTest, whenNextRepeated_thenKeepSucceeding) {
                 for (int64_t k = 1; k < 10000; k++) {
-                            assertEquals(k, nextCallId(sequence, false));
+                    ASSERT_EQ(k, nextCallId(sequence, false));
                 }
             }
 
@@ -1327,7 +1327,7 @@ namespace hazelcast {
                 nextCallId(sequence, false);
                 int64_t oldSequence = sequence.getLastCallId();
                 sequence.complete();
-                        assertEquals(oldSequence, sequence.getLastCallId());
+                ASSERT_EQ(oldSequence, sequence.getLastCallId());
             }
         }
     }
@@ -1374,21 +1374,21 @@ namespace hazelcast {
 
             TEST_F(CallIdSequenceWithBackpressureTest, testInit) {
                 spi::impl::sequence::CallIdSequenceWithBackpressure sequence(100, 60000);
-                        assertEquals(0, sequence.getLastCallId());
-                        assertEquals(100, sequence.getMaxConcurrentInvocations());
+                ASSERT_EQ(0, sequence.getLastCallId());
+                ASSERT_EQ(100, sequence.getMaxConcurrentInvocations());
             }
 
             TEST_F(CallIdSequenceWithBackpressureTest, whenNext_thenSequenceIncrements) {
                 spi::impl::sequence::CallIdSequenceWithBackpressure sequence(100, 60000);
                 int64_t oldSequence = sequence.getLastCallId();
                 int64_t result = sequence.next();
-                        assertEquals(oldSequence + 1, result);
-                        assertEquals(oldSequence + 1, sequence.getLastCallId());
+                ASSERT_EQ(oldSequence + 1, result);
+                ASSERT_EQ(oldSequence + 1, sequence.getLastCallId());
 
                 oldSequence = sequence.getLastCallId();
                 result = sequence.forceNext();
-                        assertEquals(oldSequence + 1, result);
-                        assertEquals(oldSequence + 1, sequence.getLastCallId());
+                ASSERT_EQ(oldSequence + 1, result);
+                ASSERT_EQ(oldSequence + 1, sequence.getLastCallId());
             }
 
             TEST_F(CallIdSequenceWithBackpressureTest, next_whenNoCapacity_thenBlockTillCapacity) {
@@ -1397,13 +1397,15 @@ namespace hazelcast {
 
                 hazelcast::util::CountDownLatch nextCalledLatch(1);
 
-                std::thread t([&]() { ThreeSecondDelayCompleteOperation(sequence, nextCalledLatch).run(); });
+                autu f = std::async(std::packaged_task<void()>(
+                        [&]() { ThreeSecondDelayCompleteOperation(sequence, nextCalledLatch).run(); }));
 
                 ASSERT_OPEN_EVENTUALLY(nextCalledLatch);
 
                 int64_t result = sequence.next();
-                        assertEquals(oldLastCallId + 2, result);
-                        assertEquals(oldLastCallId + 2, sequence.getLastCallId());
+                ASSERT_EQ(oldLastCallId + 2, result);
+                ASSERT_EQ(oldLastCallId + 2, sequence.getLastCallId());
+                f.get();
             }
 
             TEST_F(CallIdSequenceWithBackpressureTest, next_whenNoCapacity_thenBlockTillTimeout) {
@@ -1414,7 +1416,7 @@ namespace hazelcast {
                 int64_t oldLastCallId = sequence.getLastCallId();
                 ASSERT_THROW(sequence.next(), exception::HazelcastOverloadException);
 
-                        assertEquals(oldLastCallId, sequence.getLastCallId());
+                ASSERT_EQ(oldLastCallId, sequence.getLastCallId());
             }
 
             TEST_F(CallIdSequenceWithBackpressureTest, when_overCapacityButPriorityItem_then_noBackpressure) {
@@ -1426,8 +1428,8 @@ namespace hazelcast {
                 int64_t oldLastCallId = sequence.getLastCallId();
 
                 int64_t result = nextCallId(sequence, true);
-                        assertEquals(oldLastCallId + 1, result);
-                        assertEquals(oldLastCallId + 1, sequence.getLastCallId());
+                ASSERT_EQ(oldLastCallId + 1, result);
+                ASSERT_EQ(oldLastCallId + 1, sequence.getLastCallId());
             }
 
             TEST_F(CallIdSequenceWithBackpressureTest, whenComplete_thenTailIncrements) {
@@ -1439,8 +1441,8 @@ namespace hazelcast {
                 int64_t oldTail = sequence.getTail();
                 sequence.complete();
 
-                        assertEquals(oldSequence, sequence.getLastCallId());
-                        assertEquals(oldTail + 1, sequence.getTail());
+                ASSERT_EQ(oldSequence, sequence.getLastCallId());
+                ASSERT_EQ(oldTail + 1, sequence.getTail());
             }
 
         }

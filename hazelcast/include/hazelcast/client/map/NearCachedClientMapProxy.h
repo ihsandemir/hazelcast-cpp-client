@@ -75,7 +75,7 @@ namespace hazelcast {
                             std::shared_ptr<ExecutionCallback<protocol::ClientMessage> > callback(
                                     new GetAsyncExecutionCallback(ncKey,
                                                                   std::enable_shared_from_this<NearCachedClientMapProxy<K, V> >::shared_from_this()));
-                            return invocationFuture.then([=](future <protocol::ClientMessage> f) {
+                            return invocationFuture.then(launch::sync, [=](future <protocol::ClientMessage> f) {
                                 try {
                                     std::shared_ptr<V> value = ClientMapProxy<K, V>::GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(
                                             f.get(), ClientMapProxy<K, V>::getSerializationService());
@@ -88,13 +88,13 @@ namespace hazelcast {
                             });
                         }
 
-                        return invocationFuture.then([=](future <protocol::ClientMessage> f) {
+                        return invocationFuture.then(launch::sync, [=](future <protocol::ClientMessage> f) {
                             return ClientMapProxy<K, V>::GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(
                                     f.get(), ClientMapProxy<K, V>::getSerializationService());
                         });
                     } catch (exception::IException &e) {
                         resetToUnmarkedState(ncKey);
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<V>>();
                 }
@@ -515,7 +515,7 @@ namespace hazelcast {
                         proxy->tryToPutNearCache(ncKey, value);
                     }
 
-                    virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
+                    virtual void onFailure(std::exception_ptr e) {
                         proxy->resetToUnmarkedState(ncKey);
                     }
 

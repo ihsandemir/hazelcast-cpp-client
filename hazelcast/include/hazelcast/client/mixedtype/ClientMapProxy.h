@@ -1086,7 +1086,7 @@ namespace hazelcast {
                                                                                 util::getCurrentThreadId());
 
                     auto clientInvocationFuture = invokeAndGetFuture(request, partitionId);
-                    return clientInvocationFuture.then([=](boost::future<protocol::ClientMessage> f) {
+                    return clientInvocationFuture.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                         auto message = f.get();
                         auto data = submitToKeyDecoder(message);
                         return TypedData(data, getSerializationService());

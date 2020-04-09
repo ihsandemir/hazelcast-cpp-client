@@ -33,7 +33,7 @@ namespace hazelcast {
             namespace codec {
                 class HAZELCAST_API DataEntryViewCodec {
                 public:
-                    static map::DataEntryView decode(ClientMessage clientMessage);
+                    static map::DataEntryView decode(ClientMessage &clientMessage);
 
                     static void encode(const map::DataEntryView &view, ClientMessage &clientMessage);
 

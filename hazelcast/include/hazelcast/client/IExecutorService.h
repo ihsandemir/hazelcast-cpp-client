@@ -86,7 +86,7 @@ namespace hazelcast {
 
                         return cancelSuccessful;
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return false;
                 }
@@ -532,53 +532,40 @@ namespace hazelcast {
             public:
                 virtual void onResponse(const Member &member, const std::shared_ptr<T> &value) {
                     multiExecutionCallback->onResponse(member, value);
-                    values.put(member, value);
 
+                    std::lock_guard<std::mutex> guard(lock);
+                    values[member] = value;
                     int waitingResponse = --members;
                     if (waitingResponse == 0) {
-                        complete();
+                        onComplete(values, exceptions);
                     }
                 }
 
                 virtual void
-                onFailure(const Member &member, const std::shared_ptr<exception::IException> &exception) {
+                onFailure(const Member &member, std::exception_ptr exception) {
                     multiExecutionCallback->onFailure(member, exception);
-                    exceptions.put(member, exception);
 
+                    std::lock_guard<std::mutex> guard(lock);
+                    exceptions[member] = exception;
                     int waitingResponse = --members;
                     if (waitingResponse == 0) {
-                        complete();
+                        onComplete(values, exceptions);
                     }
                 }
 
                 virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<T> > &vals,
-                                        const std::unordered_map<Member, std::shared_ptr<exception::IException>> &excs) {
+                                        const std::unordered_map<Member, std::exception_ptr> &excs) {
                     multiExecutionCallback->onComplete(vals, excs);
                 }
 
             private:
-                void complete() {
-                    std::unordered_map<Member, std::shared_ptr<T> > completedValues;
-                    typedef std::vector<std::pair<Member, std::shared_ptr<T> > > ENTRYVECTOR;
-                    ENTRYVECTOR entries = values.entrySet();
-                    for (typename ENTRYVECTOR::const_iterator it = entries.begin();
-                         it != entries.end(); ++it) {
-                        completedValues[it->first] = it->second;
-                    }
-
-                    std::unordered_map<Member, std::shared_ptr<exception::IException> > completedExceptions;
-                    for (auto &e : exceptions.entrySet()) {
-                        completedExceptions[e.first] = e.second;
-                    }
-
-                    onComplete(completedValues, completedExceptions);
-                }
 
                 const std::shared_ptr<MultiExecutionCallback<T> > multiExecutionCallback;
                 // TODO: We may not need thread safe structures here if being used from the same thread
-                util::SynchronizedMap<Member, T> values;
-                util::SynchronizedMap<Member, exception::IException> exceptions;
-                util::AtomicInt members;
+                std::unordered_map<Member, std::shared_ptr<T>> values;
+                std::unordered_map<Member, std::exception_ptr> exceptions;
+                int members;
+                std::mutex lock;
             };
 
             template<typename T>
@@ -593,7 +580,7 @@ namespace hazelcast {
                     multiExecutionCallbackWrapper->onResponse(member, response);
                 }
 
-                virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
+                virtual void onFailure(std::exception_ptr e) {
                     multiExecutionCallbackWrapper->onFailure(member, e);
                 }
 
@@ -622,13 +609,13 @@ namespace hazelcast {
 
                 auto messageFuture = invokeOnPartitionInternal(taskData, partitionId, uuid);
 
-                messageFuture.first.then([=](boost::future<protocol::ClientMessage> f) {
+                messageFuture.first.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                     try {
                         auto result = SUBMIT_TO_PARTITION_DECODER<T>()->decodeClientMessage(f.get(),
                                                                                             getSerializationService());
                         callback->onResponse(result);
                     } catch (exception::IException &e) {
-                        callback->onFailure(std::shared_ptr<exception::IException>(e.copy()));
+                        callback->onFailure(std::current_exception());
                     }
                 });
             }
@@ -701,13 +688,13 @@ namespace hazelcast {
 
                 auto messageFuture = invokeOnAddressInternal<HazelcastSerializable>(task, address, uuid);
 
-                messageFuture.first.then([=](boost::future<protocol::ClientMessage> f) {
+                messageFuture.first.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                     try {
                         auto result = SUBMIT_TO_ADDRESS_DECODER<T>()->decodeClientMessage(f.get(),
                                                                                           getSerializationService());
                         callback->onResponse(result);
                     } catch (exception::IException &e) {
-                        callback->onFailure(std::shared_ptr<exception::IException>(e.copy()));
+                        callback->onFailure(std::current_exception());
                     }
                 });
             }
@@ -765,7 +752,7 @@ namespace hazelcast {
                 if (sync) {
                     objectFuture = retrieveResultSync<T, DECODER>(futurePair.first);
                 } else {
-                    objectFuture = futurePair.first.then([=](boost::future<protocol::ClientMessage> f) {
+                    objectFuture = futurePair.first.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                         return impl::DataMessageDecoder<DECODER, T>::instance()->decodeClientMessage(f.get(),
                                                                                                      getSerializationService());
                     });

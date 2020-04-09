@@ -35,6 +35,7 @@
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -84,7 +85,7 @@ namespace hazelcast {
 
                 void close(const std::string &reason);
 
-                void close(const std::string &reason, const std::shared_ptr<exception::IException> &cause);
+                void close(const std::string &reason, std::exception_ptr cause);
 
                 void write(const std::shared_ptr<spi::impl::ClientInvocation> &clientInvocation);
 
@@ -128,6 +129,8 @@ namespace hazelcast {
 
                 void reAuthenticateAsOwner();
 
+                void setAuthenticationInvocationFuture(future<void> authenticationInvocationFuture);
+
                 friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
 
                 ReadHandler readHandler;
@@ -143,11 +146,12 @@ namespace hazelcast {
                 protocol::IMessageHandler &invocationService;
                 std::unique_ptr<Socket> socket;
                 std::shared_ptr<AuthenticationFuture> authFuture;
+                future<void> authenticationInvocationFuture;
                 util::AtomicBoolean authenticatedAsOwner;
 
                 int connectionId;
                 std::string closeReason;
-                std::shared_ptr<exception::IException> closeCause;
+                std::exception_ptr closeCause;
 
                 std::string connectedServerVersionString;
                 int connectedServerVersion;

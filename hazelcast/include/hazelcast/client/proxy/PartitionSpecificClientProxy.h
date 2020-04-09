@@ -38,11 +38,11 @@ namespace hazelcast {
                                        const std::shared_ptr<impl::ClientMessageDecoder<V> > &clientMessageDecoder) {
                     try {
                         auto future = invokeAndGetFuture(request, partitionId);
-                        return future.then([=](boost::future<protocol::ClientMessage> f) {
+                        return future.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                             return clientMessageDecoder->decodeClientMessage(f.get(), getSerializationService());
                         });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<V>>();
                 }

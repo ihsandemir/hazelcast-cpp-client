@@ -115,9 +115,6 @@ endif ()
 message(STATUS "HAZELCAST_GIT_COMMIT_ID = ${HAZELCAST_GIT_COMMIT_ID}" )
 add_definitions(-DHAZELCAST_GIT_COMMIT_ID=${HAZELCAST_GIT_COMMIT_ID})
 
-# Disable any boost lib linking
-add_definitions("-DBOOST_ALL_NO_LIB -DBOOST_ERROR_CODE_HEADER_ONLY")
-
 message(STATUS "Preparing hazelcast client ..... ")
 
 #detect endianness
@@ -142,6 +139,7 @@ include_directories(${PROJECT_SOURCE_DIR}/hazelcast/include ${PROJECT_SOURCE_DIR
 find_boost(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 link_libraries(Boost::thread Boost::chrono)
+add_definitions("-DBOOST_THREAD_VERSION=5 -DBOOST_THREAD_USES_MOVE -DBOOST_THREAD_PROVIDES_FUTURE -DBOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY -DBOOST_THREAD_PROVIDES_FUTURE_CONTINUATION -DBOOST_THREAD_PROVIDES_EXECUTORS")
 message(STATUS "Using Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 
 IF(NOT (${HZ_BIT} MATCHES "32") AND NOT (${HZ_BIT} MATCHES "64") )

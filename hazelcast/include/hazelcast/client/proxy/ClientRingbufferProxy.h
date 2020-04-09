@@ -159,12 +159,12 @@ namespace hazelcast {
                     try {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
-                        return invocationFuture.then([=](future<protocol::ClientMessage> f) {
+                        return invocationFuture.then(launch::sync, [=](future<protocol::ClientMessage> f) {
                             return impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddCodec, int64_t>::instance()->decodeClientMessage(
                                     f.get(), getSerializationService());
                         });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<int64_t>>();
                 }
@@ -181,12 +181,12 @@ namespace hazelcast {
                     try {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
-                        return invocationFuture.then([=](future<protocol::ClientMessage> f) {
+                        return invocationFuture.then(launch::sync, [=](future<protocol::ClientMessage> f) {
                             return impl::PrimitiveMessageDecoder<protocol::codec::RingbufferAddAllCodec, int64_t>::instance()->decodeClientMessage(
                                     f.get(), getSerializationService());
                         });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<int64_t>>();
                 }
@@ -198,18 +198,16 @@ namespace hazelcast {
                     try {
                         return invokeOnPartition(clientMessage, partitionId);
                     } catch (exception::ExecutionException &e) {
-                        std::shared_ptr<exception::IException> cause = e.getCause();
-                        if (cause->getErrorCode() == exception::StaleSequenceException::ERROR_CODE) {
-                            // can not use static_pointer_cast
-                            std::shared_ptr<exception::StaleSequenceException> se = std::dynamic_pointer_cast<exception::StaleSequenceException>(
-                                    cause);
+                        try {
+                            std::rethrow_if_nested(e);
+                            util::ExceptionUtil::rethrow(std::current_exception());
+                        } catch (exception::StaleSequenceException &se) {
                             int64_t l = headSequence();
-                            throw (exception::ExceptionBuilder<exception::StaleSequenceException>(se->getSource())
-                                    << se->getMessage() << ", head sequence:" << l).build();
+                            throw (exception::ExceptionBuilder<exception::StaleSequenceException>(se.getSource())
+                                    << se.getMessage() << ", head sequence:" << l).build();
                         }
-                        util::ExceptionUtil::rethrow(e);
                     } catch (const exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return *protocol::ClientMessage::create(0);
                 }
@@ -226,10 +224,13 @@ namespace hazelcast {
                         capacity();
                     } catch (exception::IException &e) {
                         //in case of exception return the exception via future to behave consistently to member
-                        return make_exceptional_future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>(
-                                exception::ExecutionException("ClientRingbufferProxy::readManyAsync",
-                                                              "capacity() method failed", e));
-
+                        try {
+                            std::throw_with_nested(exception::ExecutionException("ClientRingbufferProxy::readManyAsync",
+                                                                                 "capacity() method failed"));
+                        } catch (...) {
+                            return make_exceptional_future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>(
+                                    std::current_exception());
+                        }
                     }
 
                     util::Preconditions::checkTrue(maxCount <= bufferCapacity,
@@ -246,12 +247,12 @@ namespace hazelcast {
                     try {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
                                                                                     partitionId)->invoke();
-                        return invocationFuture.then([=](future<protocol::ClientMessage> f) {
+                        return invocationFuture.then(launch::sync, [=](future<protocol::ClientMessage> f) {
                             return READ_MANY_ASYNC_RESPONSE_DECODER->decodeClientMessage(f.get(),
                                                                                          getSerializationService());
                         });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>();
                 }

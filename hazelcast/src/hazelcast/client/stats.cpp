@@ -93,7 +93,7 @@ namespace hazelcast {
                 }
 
                 void Statistics::schedulePeriodicStatisticsSendTask(int64_t periodSeconds) {
-                    clientContext.getClientExecutionService().scheduleWithRepetition([&]() {
+                    clientContext.getClientExecutionService().scheduleWithRepetition([=]() {
                         if (!clientContext.getLifecycleService().isRunning()) {
                             return;
                         }

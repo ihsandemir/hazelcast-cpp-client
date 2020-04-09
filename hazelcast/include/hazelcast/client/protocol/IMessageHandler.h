@@ -38,8 +38,8 @@ namespace hazelcast {
             public:
                 virtual ~IMessageHandler() {}
 
-                virtual void handleClientMessage(const std::shared_ptr<spi::impl::ClientInvocation> &invocation,
-                                                 const std::shared_ptr<connection::Connection> &connection) = 0;
+                virtual void handleClientMessage(const std::shared_ptr<spi::impl::ClientInvocation> invocation,
+                                                 const std::shared_ptr<ClientMessage> response) = 0;
             };
         }
     }

@@ -27,7 +27,7 @@ namespace hazelcast {
             namespace codec {
                 class UUIDCodec {
                 public:
-                    static util::UUID decode(ClientMessage clientMessage);
+                    static util::UUID decode(ClientMessage &clientMessage);
 
                     static void encode(const util::UUID &address, ClientMessage &clientMessage);
 

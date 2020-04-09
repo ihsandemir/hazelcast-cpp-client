@@ -945,12 +945,8 @@ namespace hazelcast {
     namespace util {
         namespace concurrent {
             CancellationException::CancellationException(const std::string &source, const std::string &message)
-                    : IException("CancellationException", source, message, client::protocol::CANCELLATION, true),
-                      IllegalStateException(source, message) {}
-
-            void CancellationException::raise() const {
-                throw *this;
-            }
+                    : IllegalStateException("CancellationException", client::protocol::CANCELLATION, source, message,
+                                            "", true) {}
         }
     }
 }
@@ -1484,25 +1480,30 @@ namespace hazelcast {
         const std::shared_ptr<ExceptionUtil::RuntimeExceptionFactory> ExceptionUtil::hazelcastExceptionFactory(
                 new HazelcastExceptionFactory());
 
-        void ExceptionUtil::rethrow(const client::exception::IException &e) {
+        void ExceptionUtil::rethrow(std::exception_ptr e) {
             return rethrow(e, HAZELCAST_EXCEPTION_FACTORY());
         }
 
-        void ExceptionUtil::rethrow(const client::exception::IException &e,
+        void ExceptionUtil::rethrow(std::exception_ptr e,
                                     const std::shared_ptr<ExceptionUtil::RuntimeExceptionFactory> &runtimeExceptionFactory) {
-            if (e.isRuntimeException()) {
-                e.raise();
-            }
-
-            int32_t errorCode = e.getErrorCode();
-            if (errorCode == client::exception::ExecutionException::ERROR_CODE) {
-                std::shared_ptr<client::exception::IException> cause = e.getCause();
-                if (cause.get() != NULL) {
-                    return rethrow(*cause, runtimeExceptionFactory);
+            try {
+                std::rethrow_exception(e);
+            } catch (client::exception::IException &ie) {
+                if (ie.isRuntimeException()) {
+                    std::rethrow_exception(e);
                 }
-            }
 
-            runtimeExceptionFactory->rethrow(e, "");
+                int32_t errorCode = ie.getErrorCode();
+                if (errorCode == client::protocol::EXECUTION) {
+                    try {
+                        std::rethrow_if_nested(std::current_exception());
+                    } catch (...) {
+                        rethrow(std::current_exception(), runtimeExceptionFactory);
+                    }
+                }
+
+                runtimeExceptionFactory->rethrow(e, "");
+            }
         }
 
         const std::shared_ptr<ExceptionUtil::RuntimeExceptionFactory> &ExceptionUtil::HAZELCAST_EXCEPTION_FACTORY() {
@@ -1513,10 +1514,13 @@ namespace hazelcast {
         }
 
         void ExceptionUtil::HazelcastExceptionFactory::rethrow(
-                const client::exception::IException &throwable, const std::string &message) {
-            throw client::exception::HazelcastException("HazelcastExceptionFactory::create", message,
-                                                        std::shared_ptr<client::exception::IException>(
-                                                                throwable.copy()));
+                std::exception_ptr throwable, const std::string &message) {
+            try {
+                std::rethrow_exception(throwable);
+            } catch (...) {
+                std::throw_with_nested(
+                        client::exception::HazelcastException("HazelcastExceptionFactory::create", message));
+            }
         }
     }
 }

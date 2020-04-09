@@ -31,7 +31,7 @@ namespace hazelcast {
             namespace codec {
                 class HAZELCAST_API MemberCodec {
                 public:
-                    static Member decode(ClientMessage clientMessage);
+                    static Member decode(ClientMessage &clientMessage);
                     };
             }
         }

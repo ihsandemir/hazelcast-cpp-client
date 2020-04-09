@@ -31,7 +31,7 @@ namespace hazelcast {
             namespace codec {
                 class HAZELCAST_API AddressCodec {
                 public:
-                    static Address decode(ClientMessage clientMessage);
+                    static Address decode(ClientMessage &clientMessage);
 
                     static void encode(const Address &address, ClientMessage &clientMessage);
 

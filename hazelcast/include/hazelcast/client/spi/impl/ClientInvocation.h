@@ -21,10 +21,6 @@
 #include <memory>
 #include <atomic>
 
-#define BOOST_THREAD_PROVIDES_FUTURE
-#define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
-#define BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
-
 #include <boost/thread/future.hpp>
 #include <boost/asio/thread_pool.hpp>
 
@@ -112,7 +108,7 @@ namespace hazelcast {
 
                     void notify(const std::shared_ptr<protocol::ClientMessage> &clientMessage);
 
-                    void notifyException(const std::shared_ptr<exception::IException> &exception);
+                    void notifyException(std::exception_ptr exception);
 
                     std::shared_ptr<connection::Connection> getSendConnection();
 
@@ -134,10 +130,6 @@ namespace hazelcast {
                     const boost::asio::thread_pool &getUserExecutor() const;
 
                     promise<protocol::ClientMessage> &getPromise();
-
-                    const std::shared_ptr<protocol::ClientMessage> &getResponse() const;
-
-                    void setResponse(const std::shared_ptr<protocol::ClientMessage> &response);
 
                 private:
                     /**
@@ -195,11 +187,10 @@ namespace hazelcast {
                     std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
                     std::atomic<int64_t> invokeCount;
                     promise<protocol::ClientMessage> invocationPromise;
-                    std::shared_ptr<protocol::ClientMessage> response;
 
                     bool isNotAllowedToRetryOnSelection(exception::IException &exception);
 
-                    exception::OperationTimeoutException newOperationTimeoutException(exception::IException &exception);
+                    std::exception_ptr newOperationTimeoutException(std::exception_ptr exception);
 
                     void execute();
 

@@ -54,8 +54,8 @@ namespace hazelcast {
 
                     bool isRedoOperation();
 
-                    void handleClientMessage(const std::shared_ptr<ClientInvocation> &invocation,
-                                             const std::shared_ptr<connection::Connection> &connection);
+                    void handleClientMessage(const std::shared_ptr<ClientInvocation> invocation,
+                                             const std::shared_ptr<protocol::ClientMessage> response);
 
                 protected:
 
@@ -71,13 +71,16 @@ namespace hazelcast {
 
                         void start();
 
-                        void process(const std::shared_ptr<ClientInvocation> &invocation);
+                        void process(const std::shared_ptr<ClientInvocation> invocation,
+                                     const std::shared_ptr<protocol::ClientMessage> response);
+
                     private:
                         util::ILogger &invocationLogger;
                         ClientContext &client;
                         std::unique_ptr<boost::asio::thread_pool> pool;
 
-                        void processInternal(const std::shared_ptr<ClientInvocation> &invocation);
+                        void processInternal(const std::shared_ptr<ClientInvocation> invocation,
+                                             const std::shared_ptr<protocol::ClientMessage> response);
                     };
 
                     const ClientProperty &CLEAN_RESOURCES_MILLIS;

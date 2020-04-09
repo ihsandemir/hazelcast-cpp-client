@@ -100,7 +100,6 @@ namespace hazelcast {
                             int32_t partitionStateVersion, bool partitionStateVersionExist);
 
                     ClientContext &client;
-                    util::ILogger &logger;
                     ClientExecutionServiceImpl &clientExecutionService;
 
                     util::SynchronizedMap<int, Address> partitions;

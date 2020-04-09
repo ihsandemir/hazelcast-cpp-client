@@ -135,7 +135,7 @@ namespace hazelcast {
                 socketInterceptor = client.getClientConfig().getSocketInterceptor();
 
                 for (int j = 0; j < ioThreadCount; ++j) {
-                    ioThreads.emplace_back([&]() {
+                    ioThreads.emplace_back([=]() {
                         boost::asio::executor_work_guard<decltype(ioContext.get_executor())> work{
                                 ioContext.get_executor()};
                         ioContext.run();
@@ -165,8 +165,9 @@ namespace hazelcast {
                 for (auto &authFutureTuple : connectionsInProgress.values()) {
                     auto &authFuture = std::get<0>(*authFutureTuple);
                     authFuture->onFailure(
-                            std::make_shared<exception::IllegalStateException>("ClientConnectionManagerImpl::shutdown",
-                                                                               "Client is shutting down"));
+                            std::make_exception_ptr(
+                                    exception::IllegalStateException("ClientConnectionManagerImpl::shutdown",
+                                                                     "Client is shutting down")));
                     std::get<1>(*authFutureTuple)->close();
                 }
 
@@ -215,7 +216,7 @@ namespace hazelcast {
                     if (NULL != connection.get()) {
                         std::ostringstream reason;
                         reason << "Could not connect to " << address << " as owner";
-                        connection->close(reason.str().c_str(), std::shared_ptr<exception::IException>(e.copy()));
+                        connection->close(reason.str().c_str(), std::current_exception());
                     }
                     return std::shared_ptr<Connection>();
                 }
@@ -325,9 +326,9 @@ namespace hazelcast {
                     if (!alive) {
                         std::get<1>(*firstCallbackTuple)->close("Client is being shutdown.");
                         firstCallback->onFailure(
-                                std::make_shared<exception::IllegalStateException>(
+                                std::make_exception_ptr(exception::IllegalStateException(
                                         "ClientConnectionManagerImpl::getOrConnect",
-                                        "Client is being shutdown."));
+                                        "Client is being shutdown.")));
                         return nullptr;
                     }
                     connection = firstCallback->get();
@@ -349,22 +350,25 @@ namespace hazelcast {
             void
             ClientConnectionManagerImpl::authenticate(const Address &target, std::shared_ptr<Connection> &connection,
                                                       bool asOwner, std::shared_ptr<AuthenticationFuture> &future) {
-                std::shared_ptr<protocol::Principal> principal = getPrincipal();
+                std::shared_ptr<protocol::Principal> clientPrincipal = getPrincipal();
                 std::unique_ptr<protocol::ClientMessage> clientMessage = encodeAuthenticationRequest(asOwner,
                                                                                                      client.getSerializationService(),
-                                                                                                     principal.get());
+                                                                                                     clientPrincipal.get());
                 std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         client, clientMessage, "", connection);
                 auto invocationFuture = clientInvocation->invokeUrgent();
 
                 auto authCallback = std::make_shared<AuthCallback>(connection, asOwner, target, future, *this);
-                invocationFuture.then([=](boost::future<protocol::ClientMessage> f) {
-                    try {
-                        authCallback->onResponse(f.get());
-                    } catch (exception::IException &e) {
-                        authCallback->onFailure(std::shared_ptr<exception::IException>(e.copy()));
-                    }
-                });
+                // TODO: Get rid of AuthenticationFuture completely
+                // we need to set this so that the invocation is not destructed
+                connection->setAuthenticationInvocationFuture(
+                        invocationFuture.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
+                            try {
+                                authCallback->onResponse(f.get());
+                            } catch (exception::IException &e) {
+                                authCallback->onFailure(std::current_exception());
+                            }
+                        }));
             }
 
             void
@@ -503,7 +507,7 @@ namespace hazelcast {
                 connectionStrategy->onDisconnect(connection);
             }
 
-            void ClientConnectionManagerImpl::disconnectFromCluster(const std::shared_ptr<Connection> &connection) {
+            void ClientConnectionManagerImpl::disconnectFromCluster(const std::shared_ptr<Connection> connection) {
                 boost::asio::post(clusterConnectionExecutor, [=]() {
                     std::shared_ptr<Address> endpoint = connection->getRemoteEndpoint();
                     // it may be possible that while waiting on executor queue, the client got connected (another connection),
@@ -514,10 +518,15 @@ namespace hazelcast {
                     }
 
                     setOwnerConnectionAddress(std::shared_ptr<Address>());
-                    connectionStrategy->onDisconnectFromCluster();
 
-                    if (client.getLifecycleService().isRunning()) {
-                        fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
+                    try {
+                        connectionStrategy->onDisconnectFromCluster();
+
+                        if (client.getLifecycleService().isRunning()) {
+                            fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
+                        }
+                    } catch (exception::IException &e) {
+                        logger.info("ClientConnectionManagerImpl::disconnectFromCluster Exception occured: ", e.what());
                     }
                 });
             }
@@ -547,9 +556,6 @@ namespace hazelcast {
 
                         static_cast<DefaultClientConnectionStrategy &>(*connectionStrategy).shutdownWithExternalThread(
                                 client.getHazelcastClientImplementation());
-                        throw;
-                    } catch (...) {
-                        throw;
                     }
                     return false;
                 });
@@ -722,11 +728,11 @@ namespace hazelcast {
                         return;
                     }
 
-                    future->onFailure((exception::ExceptionBuilder<exception::TimeoutException>(
+                    future->onFailure(std::make_exception_ptr((exception::ExceptionBuilder<exception::TimeoutException>(
                             "ClientConnectionManagerImpl::authenticate")
                             << "Authentication response did not come back in "
                             << connectionManager.connectionTimeoutMillis
-                            << " millis").buildShared());
+                            << " millis").build()));
                 });
             }
 
@@ -738,7 +744,7 @@ namespace hazelcast {
                     result.reset(new protocol::codec::ClientAuthenticationCodec::ResponseParameters(
                             protocol::codec::ClientAuthenticationCodec::ResponseParameters::decode(response)));
                 } catch (exception::IException &e) {
-                    handleAuthenticationException(std::shared_ptr<exception::IException>(e.copy()));
+                    handleAuthenticationException(std::current_exception());
                     return;
                 }
                 protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) result->status;
@@ -763,49 +769,53 @@ namespace hazelcast {
                     }
                     case protocol::CREDENTIALS_FAILED: {
                         std::shared_ptr<protocol::Principal> p = connectionManager.principal;
-                        std::shared_ptr<exception::AuthenticationException> exception;
                         if (p.get()) {
-                            exception = (exception::ExceptionBuilder<exception::AuthenticationException>(
-                                    "ConnectionManager::AuthCallback::onResponse") << "Invalid credentials! Principal: "
-                                                                                   << *p).buildShared();
+                            handleAuthenticationException(std::make_exception_ptr(
+                                    (exception::ExceptionBuilder<exception::AuthenticationException>(
+                                            "ConnectionManager::AuthCallback::onResponse")
+                                            << "Invalid credentials! Principal: "
+                                            << *p).build()));
                         } else {
-                            exception.reset(new exception::AuthenticationException(
+                            handleAuthenticationException(std::make_exception_ptr(exception::AuthenticationException(
                                     "ConnectionManager::AuthCallback::onResponse",
-                                    "Invalid credentials! No principal."));
+                                    "Invalid credentials! No principal.")));
                         }
-                        handleAuthenticationException(exception);
                         break;
                     }
                     default: {
-                        handleAuthenticationException((exception::ExceptionBuilder<exception::AuthenticationException>(
-                                "ConnectionManager::AuthCallback::onResponse")
-                                << "Authentication status code not supported. status: "
-                                << authenticationStatus).buildShared());
+                        handleAuthenticationException(std::make_exception_ptr(
+                                (exception::ExceptionBuilder<exception::AuthenticationException>(
+                                        "ConnectionManager::AuthCallback::onResponse")
+                                        << "Authentication status code not supported. status: "
+                                        << authenticationStatus).build()));
                     }
                 }
             }
 
             void
-            ClientConnectionManagerImpl::AuthCallback::onFailure(const std::shared_ptr<exception::IException> &e) {
+            ClientConnectionManagerImpl::AuthCallback::onFailure(std::exception_ptr e) {
                 cancelTimeoutTask();
-
                 handleAuthenticationException(e);
             }
 
             void ClientConnectionManagerImpl::AuthCallback::handleAuthenticationException(
-                    const std::shared_ptr<exception::IException> &e) {
+                    std::exception_ptr e) {
                 this->onAuthenticationFailed(this->target, this->connection, e);
                 this->future->onFailure(e);
             }
 
             void ClientConnectionManagerImpl::AuthCallback::onAuthenticationFailed(const Address &target,
                                                                                    const std::shared_ptr<Connection> &connection,
-                                                                                   const std::shared_ptr<exception::IException> &cause) {
-                if (connectionManager.logger.isFinestEnabled()) {
-                    connectionManager.logger.finest("Authentication of ", connection, " failed.", cause);
+                                                                                   std::exception_ptr cause) {
+                try {
+                    std::rethrow_exception(cause);
+                } catch (exception::IException &ie) {
+                    if (connectionManager.logger.isFinestEnabled()) {
+                        connectionManager.logger.finest("Authentication of ", connection, " failed.", ie);
+                    }
+                    connection->close("", std::current_exception());
+                    connectionManager.connectionsInProgress.remove(target);
                 }
-                connection->close("", cause);
-                connectionManager.connectionsInProgress.remove(target);
             }
 
             ClientConnectionManagerImpl::AuthCallback::~AuthCallback() {
@@ -826,7 +836,7 @@ namespace hazelcast {
                 countDownLatch->countDown();
             }
 
-            void AuthenticationFuture::onFailure(const std::shared_ptr<exception::IException> &throwable) {
+            void AuthenticationFuture::onFailure(std::exception_ptr throwable) {
                 bool expected = false;
                 if (!isSet.compare_exchange_strong(expected, true)) {
                     return;
@@ -844,9 +854,13 @@ namespace hazelcast {
                 }
 
                 auto exceptionPtr = throwable.get();
-                assert(exceptionPtr.get() != NULL);
-                throw exception::ExecutionException("AuthenticationFuture::get", "Could not be authenticated.",
-                                                    exceptionPtr);
+                assert(exceptionPtr);
+                try {
+                    std::rethrow_exception(exceptionPtr);
+                } catch (exception::IException &ie) {
+                    std::throw_with_nested(
+                            exception::ExecutionException("AuthenticationFuture::get", "Could not be authenticated."));
+                }
             }
 
             ReadHandler::ReadHandler(Connection &connection, size_t bufferSize)
@@ -923,10 +937,10 @@ namespace hazelcast {
             }
 
             void Connection::close(const std::string &reason) {
-                close(reason, std::shared_ptr<exception::IException>());
+                close(reason, nullptr);
             }
 
-            void Connection::close(const std::string &reason, const std::shared_ptr<exception::IException> &cause) {
+            void Connection::close(const std::string &reason, std::exception_ptr cause) {
                 int64_t expected = 0;
                 if (!closedTimeMillis.compare_exchange_strong(expected, util::currentTimeMillis())) {
                     return;
@@ -966,13 +980,16 @@ namespace hazelcast {
                     return;
                 }
                 auto invocation = invocationIterator->second;
-                invocation->setResponse(message);
+                if (!invocation->getEventHandler()) {
+                    // erase only for non-event messages
+                    invocations.erase(invocationIterator);
+                }
                 if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
                     spi::impl::listener::AbstractClientListenerService &listenerService =
                             (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();
-                    listenerService.handleClientMessage(invocation, shared_from_this());
+                    listenerService.handleClientMessage(invocation, message);
                 } else {
-                    invocationService.handleClientMessage(invocation, shared_from_this());
+                    invocationService.handleClientMessage(invocation, message);
                 }
             }
 
@@ -993,24 +1010,38 @@ namespace hazelcast {
                 message << *this << " closed. Reason: ";
                 if (!closeReason.empty()) {
                     message << closeReason;
-                } else if (closeCause.get() != NULL) {
-                    message << closeCause->getSource() << "[" + closeCause->getMessage() << "]";
+                } else if (closeCause) {
+                    try {
+                        std::rethrow_exception(closeCause);
+                    } catch (exception::IException &ie) {
+                        message << ie.getSource() << "[" + ie.getMessage() << "]";
+                    }
                 } else {
                     message << "Socket explicitly closed";
                 }
 
                 util::ILogger &logger = clientContext.getLogger();
                 if (clientContext.getLifecycleService().isRunning()) {
-                    if (!closeCause.get()) {
+                    if (!closeCause) {
                         logger.info(message.str());
                     } else {
-                        logger.warning(message.str(), *closeCause);
+                        try {
+                            std::rethrow_exception(closeCause);
+                        } catch (exception::IException &ie) {
+                            logger.warning(message.str(), ie);
+                        }
                     }
                 } else {
-                    if (closeCause.get() == NULL) {
-                        logger.finest(message.str());
-                    } else {
-                        logger.finest(message.str(), *closeCause);
+                    if (logger.isFinestEnabled()) {
+                        if (!closeCause) {
+                            logger.finest(message.str());
+                        } else {
+                            try {
+                                std::rethrow_exception(closeCause);
+                            } catch (exception::IException &ie) {
+                                logger.finest(message.str(), ie);
+                            }
+                        }
                     }
                 }
             }
@@ -1093,6 +1124,10 @@ namespace hazelcast {
                 return *socket;
             }
 
+            void Connection::setAuthenticationInvocationFuture(future<void> authenticationInvocationFuture) {
+                Connection::authenticationInvocationFuture = std::move(authenticationInvocationFuture);
+            }
+
             ClientConnectionStrategy::ClientConnectionStrategy(spi::ClientContext &clientContext, util::ILogger &logger,
                                                                const config::ClientConnectionStrategyConfig &clientConnectionStrategyConfig)
                     : clientContext(clientContext), logger(logger),
@@ -1154,9 +1189,10 @@ namespace hazelcast {
             void
             HeartbeatManager::onHeartbeatStopped(const std::shared_ptr<Connection> &connection,
                                                  const std::string &reason) {
-                connection->close(reason.c_str(), (exception::ExceptionBuilder<exception::TargetDisconnectedException>(
-                        "HeartbeatManager::onHeartbeatStopped") << "Heartbeat timed out to connection "
-                                                                << *connection).buildShared());
+                connection->close(reason.c_str(), std::make_exception_ptr(
+                        (exception::ExceptionBuilder<exception::TargetDisconnectedException>(
+                                "HeartbeatManager::onHeartbeatStopped") << "Heartbeat timed out to connection "
+                                                                        << *connection).build()));
             }
 
             void HeartbeatManager::shutdown() {
@@ -1374,15 +1410,17 @@ namespace hazelcast {
                     return supportedCiphers;
                 }
 
-                void SSLSocket::async_handle_connect(const std::shared_ptr<connection::Connection> &connection,
-                                                     const std::shared_ptr<connection::AuthenticationFuture> &authFuture) {
+                void SSLSocket::async_handle_connect(const std::shared_ptr<connection::Connection> connection,
+                                                     const std::shared_ptr<connection::AuthenticationFuture> authFuture) {
                     socket_->async_handshake(boost::asio::ssl::stream_base::client,
                                              [=](const boost::system::error_code &ec) {
                                                  if (ec) {
-                                                     authFuture->onFailure(std::make_shared<exception::IOException>(
-                                                             "Connection::do_connect", (boost::format(
-                                                                     "Handshake with server %1% failed. %2%") %
-                                                                                        remoteEndpoint % ec).str()));
+                                                     authFuture->onFailure(
+                                                             std::make_exception_ptr(exception::IOException(
+                                                                     "Connection::do_connect", (boost::format(
+                                                                             "Handshake with server %1% failed. %2%") %
+                                                                                                remoteEndpoint %
+                                                                                                ec).str())));
                                                      return;
                                                  }
 

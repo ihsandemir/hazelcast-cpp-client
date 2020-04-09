@@ -134,7 +134,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     state = TxnState::COMMIT_FAILED;
                     TRANSACTION_EXISTS.store(false);
-                    util::ExceptionUtil::rethrow(e);
+                    util::ExceptionUtil::rethrow(std::current_exception());
                 }
             }
 
@@ -229,7 +229,8 @@ namespace hazelcast {
                             client, request, objectName, connection);
                     return clientInvocation->invoke().get();
                 } catch (exception::IException &e) {
-                    TRANSACTION_EXCEPTION_FACTORY()->rethrow(e, "ClientTransactionUtil::invoke failed");
+                    TRANSACTION_EXCEPTION_FACTORY()->rethrow(std::current_exception(),
+                                                             "ClientTransactionUtil::invoke failed");
                 }
                 return *protocol::ClientMessage::create(0);
             }
@@ -240,10 +241,14 @@ namespace hazelcast {
             }
 
             void
-            ClientTransactionUtil::TransactionExceptionFactory::rethrow(const client::exception::IException &throwable,
+            ClientTransactionUtil::TransactionExceptionFactory::rethrow(std::exception_ptr throwable,
                                                                         const std::string &message) {
-                throw exception::TransactionException("TransactionExceptionFactory::create", message,
-                                                      std::shared_ptr<exception::IException>(throwable.copy()));
+                try {
+                    std::rethrow_exception(throwable);
+                } catch (...) {
+                    std::throw_with_nested(
+                            exception::TransactionException("TransactionExceptionFactory::create", message));
+                }
             }
         }
 

@@ -56,7 +56,7 @@ namespace hazelcast {
             private:
                 class TransactionExceptionFactory : public util::ExceptionUtil::RuntimeExceptionFactory {
                 public:
-                    virtual void rethrow(const client::exception::IException &throwable, const std::string &message);
+                    virtual void rethrow(std::exception_ptr throwable, const std::string &message);
                 };
 
                 static const std::shared_ptr<util::ExceptionUtil::RuntimeExceptionFactory> &

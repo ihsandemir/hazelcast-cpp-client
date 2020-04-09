@@ -201,7 +201,7 @@ namespace hazelcast {
                     try {
                         return (T) CODEC::decode(invokeOnKeyOwner(request, key).get()).response;
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return T();
                 }

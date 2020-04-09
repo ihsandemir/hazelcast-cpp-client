@@ -180,7 +180,7 @@ namespace hazelcast {
 
                 void fireConnectionRemovedEvent(const std::shared_ptr<Connection> &connection);
 
-                void disconnectFromCluster(const std::shared_ptr<Connection> &connection);
+                void disconnectFromCluster(const std::shared_ptr<Connection> connection);
 
                 void fireConnectionEvent(const hazelcast::client::LifecycleEvent::LifeCycleState &state);
 
@@ -202,7 +202,7 @@ namespace hazelcast {
 
                     virtual void onResponse(protocol::ClientMessage response);
 
-                    virtual void onFailure(const std::shared_ptr<exception::IException> &e);
+                    virtual void onFailure(std::exception_ptr e);
 
                 private:
                     const std::shared_ptr<Connection> connection;
@@ -216,9 +216,9 @@ namespace hazelcast {
                     bool cancelled;
 
                     void onAuthenticationFailed(const Address &target, const std::shared_ptr<Connection> &connection,
-                                                const std::shared_ptr<exception::IException> &cause);
+                                                std::exception_ptr cause);
 
-                    virtual void handleAuthenticationException(const std::shared_ptr<exception::IException> &e);
+                    virtual void handleAuthenticationException(std::exception_ptr e);
 
                     void cancelTimeoutTask();
 

@@ -197,65 +197,77 @@ namespace hazelcast {
                 }
 
                 // This method is called from the provided executor.
-                void onFailure(const std::shared_ptr<exception::IException> &throwable) {
+                void onFailure(std::exception_ptr throwable) {
                     if (cancelled) {
                         return;
                     }
 
-                    int32_t err = throwable->getErrorCode();
-                    if (protocol::TIMEOUT == err) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("MessageListener ", listener, " on topic: ", name, " timed out. ",
-                                          "Continuing from last known sequence: ", sequence);
+                    try {
+                        std::rethrow_exception(throwable);
+                    } catch (exception::IException &ie) {
+                        int32_t err = ie.getErrorCode();
+                        int32_t causeErrorCode = protocol::UNDEFINED;
+                        try {
+                            std::rethrow_if_nested(std::current_exception());
+                        } catch (exception::IException &causeException) {
+                            causeErrorCode = causeException.getErrorCode();
                         }
-                        next();
-                        return;
-                    } else if (protocol::EXECUTION == err &&
-                               protocol::STALE_SEQUENCE == throwable->getCauseErrorCode()) {
-                        // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
-                        int64_t remoteHeadSeq = ringbuffer->headSequence();
-
-                        if (listener->isLossTolerant()) {
+                        if (protocol::TIMEOUT == err) {
                             if (logger.isFinestEnabled()) {
-                                std::ostringstream out;
-                                out << "MessageListener " << id << " on topic: " << name
-                                    << " ran into a stale sequence. "
-                                    << "Jumping from oldSequence: " << sequence << " to sequence: " << remoteHeadSeq;
-                                logger.finest(out.str());
+                                logger.finest("MessageListener ", listener, " on topic: ", name, " timed out. ",
+                                              "Continuing from last known sequence: ", sequence);
                             }
-                            sequence = remoteHeadSeq;
                             next();
                             return;
-                        }
+                        } else if (protocol::EXECUTION == err &&
+                                   protocol::STALE_SEQUENCE == causeErrorCode) {
+                            // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
+                            int64_t remoteHeadSeq = ringbuffer->headSequence();
 
-                        std::ostringstream out;
-                        out << "Terminating MessageListener:" << id << " on topic: " << name << "Reason: The listener "
-                                                                                                "was too slow or the retention period of the message has been violated. "
-                            << "head: "
-                            << remoteHeadSeq << " sequence:" << sequence;
-                        logger.warning(out.str());
-                    } else if (protocol::HAZELCAST_INSTANCE_NOT_ACTIVE == err) {
-                        if (logger.isFinestEnabled()) {
+                            if (listener->isLossTolerant()) {
+                                if (logger.isFinestEnabled()) {
+                                    std::ostringstream out;
+                                    out << "MessageListener " << id << " on topic: " << name
+                                        << " ran into a stale sequence. "
+                                        << "Jumping from oldSequence: " << sequence << " to sequence: "
+                                        << remoteHeadSeq;
+                                    logger.finest(out.str());
+                                }
+                                sequence = remoteHeadSeq;
+                                next();
+                                return;
+                            }
+
+                            std::ostringstream out;
+                            out << "Terminating MessageListener:" << id << " on topic: " << name
+                                << "Reason: The listener "
+                                   "was too slow or the retention period of the message has been violated. "
+                                << "head: "
+                                << remoteHeadSeq << " sequence:" << sequence;
+                            logger.warning(out.str());
+                        } else if (protocol::HAZELCAST_INSTANCE_NOT_ACTIVE == err) {
+                            if (logger.isFinestEnabled()) {
+                                std::ostringstream out;
+                                out << "Terminating MessageListener " << id << " on topic: " << name << ". "
+                                    << " Reason: HazelcastInstance is shutting down";
+                                logger.finest(out.str());
+                            }
+                        } else if (protocol::DISTRIBUTED_OBJECT_DESTROYED == err) {
+                            if (logger.isFinestEnabled()) {
+                                std::ostringstream out;
+                                out << "Terminating MessageListener " << id << " on topic: " << name
+                                    << " Reason: Topic is destroyed";
+                                logger.finest(out.str());
+                            }
+                        } else {
                             std::ostringstream out;
                             out << "Terminating MessageListener " << id << " on topic: " << name << ". "
-                                << " Reason: HazelcastInstance is shutting down";
-                            logger.finest(out.str());
+                                << " Reason: Unhandled exception, details:" << ie.what();
+                            logger.warning(out.str());
                         }
-                    } else if (protocol::DISTRIBUTED_OBJECT_DESTROYED == err) {
-                        if (logger.isFinestEnabled()) {
-                            std::ostringstream out;
-                            out << "Terminating MessageListener " << id << " on topic: " << name
-                                << " Reason: Topic is destroyed";
-                            logger.finest(out.str());
-                        }
-                    } else {
-                        std::ostringstream out;
-                        out << "Terminating MessageListener " << id << " on topic: " << name << ". "
-                            << " Reason: Unhandled exception, details:" << throwable->what();
-                        logger.warning(out.str());
-                    }
 
-                    cancel();
+                        cancel();
+                    }
                 }
 
                 void cancel() {

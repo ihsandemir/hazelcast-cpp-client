@@ -1129,7 +1129,7 @@ namespace hazelcast {
 
                 virtual future <std::shared_ptr<V>> getAsync(const K &key) {
                     auto future = getAsyncInternal(key);
-                    return future.then([=](boost::future<protocol::ClientMessage> f) {
+                    return future.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                         return GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(), getSerializationService());
                     });
                 }
@@ -1224,12 +1224,12 @@ namespace hazelcast {
                         auto request = protocol::codec::MapRemoveCodec::encodeRequest(name, keyData,
                                                                                       util::getCurrentThreadId());
                         auto future = invokeOnKeyOwner(request, keyData);
-                        return future.then([=](boost::future<protocol::ClientMessage> f) {
+                        return future.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                             return REMOVE_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(),
                                                                                         getSerializationService());
                         });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<V>>();
                 }
@@ -1350,7 +1350,7 @@ namespace hazelcast {
                                                                                 util::getCurrentThreadId());
 
                     auto future = invokeAndGetFuture(request, partitionId);
-                    return future.then([=](boost::future<protocol::ClientMessage> f) {
+                    return future.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                         auto data = protocol::codec::MapSubmitToKeyCodec::ResponseParameters::decode(f.get()).response;
                         return getSerializationService().template toSharedObject<ResultType>(data);
                     });
@@ -1386,7 +1386,7 @@ namespace hazelcast {
                         serialization::pimpl::Data keyData = toData<K>(key);
                         return getAsyncInternal(keyData);
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<protocol::ClientMessage>();
                 }
@@ -1398,7 +1398,7 @@ namespace hazelcast {
                                 name, keyData, util::getCurrentThreadId());
                         return invokeOnKeyOwner(request, keyData);
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<protocol::ClientMessage>();
                 }
@@ -1411,12 +1411,12 @@ namespace hazelcast {
                     try {
                         serialization::pimpl::Data valueData = toData<V>(value);
                         auto future = putAsyncInternalData(ttl, ttlUnit, maxIdle, maxIdleUnit, keyData, valueData);
-                        return future.then([=](boost::future<protocol::ClientMessage> f) {
+                        return future.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                             return PUT_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(),
                                                                                      getSerializationService());
                         });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<std::shared_ptr<V>>();
                 }
@@ -1428,9 +1428,10 @@ namespace hazelcast {
                     try {
                         serialization::pimpl::Data valueData = toData<V>(value);
                         return setAsyncInternalData(ttl, ttlUnit, maxIdle, maxIdleUnit, keyData, valueData).then(
+                                launch::sync,
                                 [](boost::future<protocol::ClientMessage> f) { f.get(); });
                     } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(e);
+                        util::ExceptionUtil::rethrow(std::current_exception());
                     }
                     return future<void>();
                 }
