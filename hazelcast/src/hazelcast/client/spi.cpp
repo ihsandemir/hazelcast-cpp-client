@@ -102,8 +102,10 @@ namespace hazelcast {
             }
 
             void ProxyManager::destroy() {
-                for (auto &p : proxies.values()) {
-                    p->get_future().get()->onShutdown();
+                std::lock_guard<std::mutex> guard(lock);
+                for (auto &p : proxies) {
+                    auto proxy = p.second.get();
+                    p.second.get()->onShutdown();
                 }
                 proxies.clear();
             }
@@ -111,27 +113,32 @@ namespace hazelcast {
             std::shared_ptr<ClientProxy> ProxyManager::getOrCreateProxy(
                     const std::string &service, const std::string &id, ClientProxyFactory &factory) {
                 DefaultObjectNamespace ns(service, id);
-                auto proxyFuture = proxies.get(ns);
-                if (proxyFuture.get() != NULL) {
-                    return proxyFuture->get_future().get();
+
+                std::shared_future<std::shared_ptr<ClientProxy>> proxyFuture;
+                std::promise<std::shared_ptr<ClientProxy>> promise;
+                {
+                    std::lock_guard<std::mutex> guard(lock);
+                    auto it = proxies.find(ns);
+                    if (it != proxies.end()) {
+                        proxyFuture = it->second;
+                    } else {
+                        proxies.insert({ns, promise.get_future().share()});
+                    }
                 }
 
-                proxyFuture.reset(new std::promise<std::shared_ptr<ClientProxy>>());
-                auto current = proxies.putIfAbsent(ns, proxyFuture);
-                if (current.get()) {
-                    return current->get_future().get();
+                if (proxyFuture.valid()) {
+                    return proxyFuture.get();
                 }
 
                 try {
                     std::shared_ptr<ClientProxy> clientProxy = factory.create(id);
                     initializeWithRetry(clientProxy);
-                    proxyFuture->set_value(clientProxy);
+                    promise.set_value(clientProxy);
                     return clientProxy;
                 } catch (exception::IException &e) {
-                    proxies.remove(ns);
-                    proxyFuture->set_exception(std::current_exception());
                     throw;
                 }
+                return nullptr;
             }
 
             void ProxyManager::initializeWithRetry(const std::shared_ptr<ClientProxy> &clientProxy) {
@@ -172,8 +179,8 @@ namespace hazelcast {
             void ProxyManager::initialize(const std::shared_ptr<ClientProxy> &clientProxy) {
                 std::shared_ptr<Address> initializationTarget = findNextAddressToSendCreateRequest();
                 if (initializationTarget.get() == NULL) {
-                    throw exception::IOException("ProxyManager::initialize",
-                                                 "Not able to find a member to create proxy on!");
+                    BOOST_THROW_EXCEPTION(exception::IOException("ProxyManager::initialize",
+                                                                 "Not able to find a member to create proxy on!"));
                 }
                 std::unique_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientCreateProxyCodec::encodeRequest(
                         clientProxy->getName(),
@@ -186,8 +193,9 @@ namespace hazelcast {
             std::shared_ptr<Address> ProxyManager::findNextAddressToSendCreateRequest() {
                 int clusterSize = client.getClientClusterService().getSize();
                 if (clusterSize == 0) {
-                    throw exception::HazelcastClientOfflineException("ProxyManager::findNextAddressToSendCreateRequest",
-                                                                     "Client connecting to cluster");
+                    BOOST_THROW_EXCEPTION(exception::HazelcastClientOfflineException(
+                            "ProxyManager::findNextAddressToSendCreateRequest",
+                            "Client connecting to cluster"));
                 }
                 std::shared_ptr<Member> liteMember;
 
@@ -221,40 +229,26 @@ namespace hazelcast {
 
             void ProxyManager::destroyProxy(ClientProxy &proxy) {
                 DefaultObjectNamespace objectNamespace(proxy.getServiceName(), proxy.getName());
-                auto registeredProxyFuture = proxies.remove(objectNamespace);
-                std::shared_ptr<ClientProxy> registeredProxy;
-                if (registeredProxyFuture.get()) {
-                    registeredProxy = registeredProxyFuture->get_future().get();
+                std::lock_guard<std::mutex> guard(lock);
+                auto it = proxies.find(objectNamespace);
+                if (it == proxies.end()) {
+                    return;
                 }
+
+                auto clientProxy = it->second.get();
 
                 try {
-                    if (registeredProxy.get() != NULL) {
-                        try {
-                            registeredProxy->destroyLocally();
-                            registeredProxy->destroyRemotely();
-                        } catch (exception::IException &e) {
-                            registeredProxy->destroyRemotely();
-                            std::rethrow_exception(std::current_exception());
-                        }
-                    }
-                    if (&proxy != registeredProxy.get()) {
-                        // The given proxy is stale and was already destroyed, but the caller
-                        // may have allocated local resources in the context of this stale proxy
-                        // instance after it was destroyed, so we have to cleanup it locally one
-                        // more time to make sure there are no leaking local resources.
-                        proxy.destroyLocally();
+                    try {
+                        clientProxy->destroyLocally();
+                        clientProxy->destroyRemotely();
+                    } catch (exception::IException &e) {
+                        clientProxy->destroyRemotely();
+                        throw;
                     }
                 } catch (exception::IException &e) {
-                    if (&proxy != registeredProxy.get()) {
-                        // The given proxy is stale and was already destroyed, but the caller
-                        // may have allocated local resources in the context of this stale proxy
-                        // instance after it was destroyed, so we have to cleanup it locally one
-                        // more time to make sure there are no leaking local resources.
-                        proxy.destroyLocally();
-                    }
-                    std::rethrow_exception(std::current_exception());
+                    clientProxy->destroyLocally();
+                    throw;
                 }
-
             }
 
             ClientContext::ClientContext(const client::HazelcastClient &hazelcastClient) : hazelcastClient(
@@ -481,6 +475,10 @@ namespace hazelcast {
                 return objectName;
             }
 
+            bool DefaultObjectNamespace::operator==(const DefaultObjectNamespace &rhs) const {
+                return serviceName == rhs.serviceName && objectName == rhs.objectName;
+            }
+
             ClientProxy::ClientProxy(const std::string &name, const std::string &serviceName, ClientContext &context)
                     : name(name), serviceName(serviceName), context(context) {}
 
@@ -512,7 +510,7 @@ namespace hazelcast {
                         postDestroy();
                     } catch (exception::IException &e) {
                         postDestroy();
-                        std::rethrow_exception(std::current_exception());
+                        throw;
                     }
                 }
             }
@@ -673,8 +671,9 @@ namespace hazelcast {
                 void AbstractClientInvocationService::send(std::shared_ptr<impl::ClientInvocation> invocation,
                                                            std::shared_ptr<connection::Connection> connection) {
                     if (isShutdown) {
-                        throw exception::HazelcastClientNotActiveException("AbstractClientInvocationService::send",
-                                                                           "Client is shut down");
+                        BOOST_THROW_EXCEPTION(
+                                exception::HazelcastClientNotActiveException("AbstractClientInvocationService::send",
+                                                                             "Client is shut down"));
                     }
 
                     writeToConnection(*connection, invocation);
@@ -732,6 +731,7 @@ namespace hazelcast {
                 void AbstractClientInvocationService::ResponseProcessor::shutdown() {
                     if (pool) {
                         pool->stop();
+                        pool->join();
                     }
                 }
 
@@ -790,14 +790,16 @@ namespace hazelcast {
                 std::shared_ptr<connection::Connection> NonSmartClientInvocationService::getOwnerConnection() {
                     std::shared_ptr<Address> ownerConnectionAddress = connectionManager->getOwnerConnectionAddress();
                     if (ownerConnectionAddress.get() == NULL) {
-                        throw exception::IOException("NonSmartClientInvocationService::getOwnerConnection",
-                                                     "Owner connection address is not available.");
+                        BOOST_THROW_EXCEPTION(
+                                exception::IOException("NonSmartClientInvocationService::getOwnerConnection",
+                                                       "Owner connection address is not available."));
                     }
                     std::shared_ptr<connection::Connection> ownerConnection = connectionManager->getActiveConnection(
                             *ownerConnectionAddress);
                     if (ownerConnection.get() == NULL) {
-                        throw exception::IOException("NonSmartClientInvocationService::getOwnerConnection",
-                                                     "Owner connection is not available.");
+                        BOOST_THROW_EXCEPTION(
+                                exception::IOException("NonSmartClientInvocationService::getOwnerConnection",
+                                                       "Owner connection is not available."));
                     }
                     return ownerConnection;
                 }
@@ -942,8 +944,9 @@ namespace hazelcast {
                 std::string
                 ClientClusterServiceImpl::addMembershipListener(const std::shared_ptr<MembershipListener> &listener) {
                     if (listener.get() == NULL) {
-                        throw exception::NullPointerException("ClientClusterServiceImpl::addMembershipListener",
-                                                              "listener can't be null");
+                        BOOST_THROW_EXCEPTION(
+                                exception::NullPointerException("ClientClusterServiceImpl::addMembershipListener",
+                                                                "listener can't be null"));
                     }
 
                     util::LockGuard guard(initialMembershipListenerMutex);
@@ -1034,7 +1037,6 @@ namespace hazelcast {
                     }
                     std::shared_ptr<connection::Connection> connection = getOrTriggerConnect(target);
                     invokeOnConnection(invocation, connection);
-
                 }
 
                 bool SmartClientInvocationService::isMember(const Address &target) const {
@@ -1049,7 +1051,7 @@ namespace hazelcast {
                     if (connection.get() == NULL) {
                         throw (exception::ExceptionBuilder<exception::IOException>(
                                 "SmartClientInvocationService::getOrTriggerConnect")
-                                << "No available connection to address " << target).build();
+                                << "No available connection to address " << *target).build();
                     }
                     return connection;
                 }
@@ -1284,6 +1286,8 @@ namespace hazelcast {
                 void ClientExecutionServiceImpl::shutdown() {
                     userExecutor->stop();
                     internalExecutor->stop();
+                    userExecutor->join();
+                    internalExecutor->join();
                 }
 
                 const boost::asio::thread_pool &ClientExecutionServiceImpl::getUserExecutor() const {
@@ -1291,74 +1295,24 @@ namespace hazelcast {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
-                                                   std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                   const std::string &objectName,
-                                                   int partitionId) :
+                                                   std::unique_ptr<protocol::ClientMessage> &message,
+                                                   const std::string &name,
+                                                   int partition,
+                                                   const std::shared_ptr<connection::Connection> &conn,
+                                                   const std::shared_ptr<Address> serverAddress) :
                         logger(clientContext.getLogger()),
                         lifecycleService(clientContext.getLifecycleService()),
                         clientClusterService(clientContext.getClientClusterService()),
                         invocationService(clientContext.getInvocationService()),
                         executionService(clientContext.getClientExecutionService().shared_from_this()),
-                        clientMessage(std::shared_ptr<protocol::ClientMessage>(std::move(clientMessage))),
+                        clientMessage(std::move(message)),
                         callIdSequence(clientContext.getCallIdSequence()),
-                        partitionId(partitionId),
+                        address(serverAddress),
+                        partitionId(partition),
                         startTimeMillis(util::currentTimeMillis()),
                         retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
-                        objectName(objectName),
-                        invokeCount(0) {
-                }
-
-                ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
-                                                   std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                   const std::string &objectName,
-                                                   const std::shared_ptr<connection::Connection> &connection) :
-                        logger(clientContext.getLogger()),
-                        lifecycleService(clientContext.getLifecycleService()),
-                        clientClusterService(clientContext.getClientClusterService()),
-                        invocationService(clientContext.getInvocationService()),
-                        executionService(clientContext.getClientExecutionService().shared_from_this()),
-                        clientMessage(std::shared_ptr<protocol::ClientMessage>(std::move(clientMessage))),
-                        callIdSequence(clientContext.getCallIdSequence()),
-                        partitionId(UNASSIGNED_PARTITION),
-                        startTimeMillis(util::currentTimeMillis()),
-                        retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
-                        objectName(objectName),
-                        connection(connection),
-                        invokeCount(0) {
-                }
-
-                ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
-                                                   std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                   const std::string &objectName) :
-                        logger(clientContext.getLogger()),
-                        lifecycleService(clientContext.getLifecycleService()),
-                        clientClusterService(clientContext.getClientClusterService()),
-                        invocationService(clientContext.getInvocationService()),
-                        executionService(clientContext.getClientExecutionService().shared_from_this()),
-                        clientMessage(std::shared_ptr<protocol::ClientMessage>(std::move(clientMessage))),
-                        callIdSequence(clientContext.getCallIdSequence()),
-                        partitionId(UNASSIGNED_PARTITION),
-                        startTimeMillis(util::currentTimeMillis()),
-                        retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
-                        objectName(objectName),
-                        invokeCount(0) {
-                }
-
-                ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
-                                                   std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                   const std::string &objectName, const Address &address) :
-                        logger(clientContext.getLogger()),
-                        lifecycleService(clientContext.getLifecycleService()),
-                        clientClusterService(clientContext.getClientClusterService()),
-                        invocationService(clientContext.getInvocationService()),
-                        executionService(clientContext.getClientExecutionService().shared_from_this()),
-                        clientMessage(std::shared_ptr<protocol::ClientMessage>(std::move(clientMessage))),
-                        callIdSequence(clientContext.getCallIdSequence()),
-                        address(new Address(address)),
-                        partitionId(UNASSIGNED_PARTITION),
-                        startTimeMillis(util::currentTimeMillis()),
-                        retryPauseMillis(invocationService.getInvocationRetryPauseMillis()),
-                        objectName(objectName),
+                        objectName(name),
+                        connection(conn),
                         invokeCount(0) {
                 }
 
@@ -1430,8 +1384,9 @@ namespace hazelcast {
                     } catch (exception::IException &iex) {
                         if (!lifecycleService.isRunning()) {
                             try {
-                                std::throw_with_nested(exception::HazelcastClientNotActiveException(iex.getSource(),
-                                                                                                    "Client is shutting down"));
+                                std::throw_with_nested(boost::enable_current_exception(
+                                        exception::HazelcastClientNotActiveException(iex.getSource(),
+                                                                                     "Client is shutting down")));
                             } catch (...) {
                                 invocationPromise.set_exception(current_exception());
                             }
@@ -1461,8 +1416,7 @@ namespace hazelcast {
                                 logger.finest(out.str());
                             }
 
-                            invocationPromise.set_exception(
-                                    make_exception_ptr(newOperationTimeoutException(exception)));
+                            invocationPromise.set_exception(newOperationTimeoutException(exception));
                             return;
                         }
 
@@ -1471,6 +1425,8 @@ namespace hazelcast {
                         } catch (...) {
                             invocationPromise.set_exception(current_exception());
                         }
+                    } catch (std::exception &se) {
+                        assert(false);
                     }
                 }
 
@@ -1533,7 +1489,7 @@ namespace hazelcast {
                     os << "ClientInvocation{" << "requestMessage = " << *nonConstInvocation.clientMessage.get()
                        << ", objectName = "
                        << invocation.objectName << ", target = " << target.str() << ", sendConnection = ";
-                    std::shared_ptr<connection::Connection> sendConnection = nonConstInvocation.sendConnection.get();
+                    std::shared_ptr<connection::Connection> sendConnection = nonConstInvocation.getSendConnection();
                     if (sendConnection.get()) {
                         os << *sendConnection;
                     } else {
@@ -1557,7 +1513,8 @@ namespace hazelcast {
                                                                            const std::string &objectName,
                                                                            const std::shared_ptr<connection::Connection> &connection) {
                     return std::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, clientMessage, objectName, connection));
+                            new ClientInvocation(clientContext, clientMessage, objectName, UNASSIGNED_PARTITION,
+                                                 connection));
                 }
 
 
@@ -1566,25 +1523,11 @@ namespace hazelcast {
                                                                            const std::string &objectName,
                                                                            const Address &address) {
                     return std::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, clientMessage, objectName, address));
-                }
-
-                std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
-                                                                           std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                                           const std::string &objectName) {
-                    return std::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, clientMessage, objectName));
+                            new ClientInvocation(clientContext, clientMessage, objectName, UNASSIGNED_PARTITION,
+                                                 nullptr, std::make_shared<Address>(address)));
                 }
 
                 std::shared_ptr<connection::Connection> ClientInvocation::getSendConnection() {
-                    return sendConnection;
-                }
-
-                std::shared_ptr<connection::Connection> ClientInvocation::getSendConnectionOrWait() {
-                    while (sendConnection.get().get() == NULL && !invocationPromise.get_future().is_ready()) {
-                        // TODO: Make sleep interruptible
-                        util::sleepmillis(retryPauseMillis);
-                    }
                     return sendConnection;
                 }
 
@@ -1595,7 +1538,7 @@ namespace hazelcast {
 
                 void ClientInvocation::notify(const std::shared_ptr<protocol::ClientMessage> &clientMessage) {
                     if (clientMessage.get() == NULL) {
-                        throw exception::IllegalArgumentException("response can't be null");
+                        BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("response can't be null"));
                     }
                     invocationPromise.set_value(*clientMessage);
                 }
@@ -1679,8 +1622,9 @@ namespace hazelcast {
                         }
                         util::sleepmillis(invocationService.getInvocationRetryPauseMillis());
                     }
-                    throw exception::HazelcastClientNotActiveException("ClientTransactionManagerServiceImpl::connect",
-                                                                       "Client is shutdown");
+                    BOOST_THROW_EXCEPTION(
+                            exception::HazelcastClientNotActiveException("ClientTransactionManagerServiceImpl::connect",
+                                                                         "Client is shutdown"));
                 }
 
                 std::shared_ptr<connection::Connection> ClientTransactionManagerServiceImpl::tryConnectSmart() {
@@ -1714,8 +1658,8 @@ namespace hazelcast {
                     const config::ClientConnectionStrategyConfig &connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
                     config::ClientConnectionStrategyConfig::ReconnectMode reconnectMode = connectionStrategyConfig.getReconnectMode();
                     if (reconnectMode == config::ClientConnectionStrategyConfig::ASYNC) {
-                        throw exception::HazelcastClientOfflineException(
-                                "ClientTransactionManagerServiceImpl::throwException", "Hazelcast client is offline");
+                        BOOST_THROW_EXCEPTION(exception::HazelcastClientOfflineException(
+                                                      "ClientTransactionManagerServiceImpl::throwException", "Hazelcast client is offline"));
                     }
                     if (smartRouting) {
                         std::vector<Member> members = client.getCluster().getMembers();
@@ -1739,11 +1683,13 @@ namespace hazelcast {
                             }
                             msg << "}";
                         }
-                        throw exception::IllegalStateException("ClientTransactionManagerServiceImpl::throwException",
-                                                               msg.str());
+                        BOOST_THROW_EXCEPTION(
+                                exception::IllegalStateException("ClientTransactionManagerServiceImpl::throwException",
+                                                                 msg.str()));
                     }
-                    throw exception::IllegalStateException("ClientTransactionManagerServiceImpl::throwException",
-                                                           "No active connection is found");
+                    BOOST_THROW_EXCEPTION(
+                            exception::IllegalStateException("ClientTransactionManagerServiceImpl::throwException",
+                                                             "No active connection is found"));
                 }
 
                 std::exception_ptr
@@ -1761,8 +1707,8 @@ namespace hazelcast {
                         std::rethrow_exception(cause);
                     } catch (...) {
                         try {
-                            std::throw_with_nested(exception::OperationTimeoutException(
-                                    "ClientTransactionManagerServiceImpl::newOperationTimeoutException", sb.str()));
+                            std::throw_with_nested(boost::enable_current_exception(exception::OperationTimeoutException(
+                                    "ClientTransactionManagerServiceImpl::newOperationTimeoutException", sb.str())));
                         } catch (...) {
                             return std::current_exception();
                         }
@@ -1945,9 +1891,9 @@ namespace hazelcast {
                 void ClientPartitionServiceImpl::waitForPartitionsFetchedOnce() {
                     while (partitionCount == 0 && client.getConnectionManager().isAlive()) {
                         if (isClusterFormedByOnlyLiteMembers()) {
-                            throw exception::NoDataMemberInClusterException(
-                                    "ClientPartitionServiceImpl::waitForPartitionsFetchedOnce",
-                                    "Partitions can't be assigned since all nodes in the cluster are lite members");
+                            BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException(
+                                                          "ClientPartitionServiceImpl::waitForPartitionsFetchedOnce",
+                                                                  "Partitions can't be assigned since all nodes in the cluster are lite members"));
                         }
                         std::unique_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::encodeRequest();
                         std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client,
@@ -2230,6 +2176,8 @@ namespace hazelcast {
                     void AbstractClientListenerService::shutdown() {
                         eventExecutor.stop();
                         registrationExecutor.stop();
+                        eventExecutor.join();
+                        registrationExecutor.join();
                     }
 
                     void AbstractClientListenerService::start() {
@@ -2468,9 +2416,9 @@ namespace hazelcast {
                     }
 
                     void SmartClientListenerService::scheduleConnectToAllMembers() {
-                        asio::steady_timer timer(registrationExecutor);
-                        timer.expires_from_now(std::chrono::seconds(1));
-                        timer.async_wait([=](system::error_code ec) {
+                        auto timer = std::make_shared<asio::steady_timer>(registrationExecutor);
+                        timer->expires_from_now(std::chrono::seconds(1));
+                        timer->async_wait([this, timer](system::error_code ec) {
                             if (ec) {
                                 logger.warning("Error during connecting to all members. ", ec);
                                 return;
@@ -2544,14 +2492,15 @@ namespace hazelcast {
                         try {
                             std::rethrow_exception(lastException);
                         } catch (...) {
-                            std::throw_with_nested((exception::ExceptionBuilder<exception::OperationTimeoutException>(
-                                    "SmartClientListenerService::throwOperationTimeoutException")
-                                    << "Registering listeners is timed out."
-                                    << " Last failed member : " << lastFailedMember << ", "
-                                    << " Current time: " << util::StringUtil::timeToString(nowInMillis) << ", "
-                                    << " Start time : " << util::StringUtil::timeToString(startMillis) << ", "
-                                    << " Client invocation timeout : " << invocationTimeoutMillis << " ms, "
-                                    << " Elapsed time : " << elapsedMillis << " ms. ").build());
+                            std::throw_with_nested(boost::enable_current_exception(
+                                    ((exception::ExceptionBuilder<exception::OperationTimeoutException>(
+                                            "SmartClientListenerService::throwOperationTimeoutException")
+                                            << "Registering listeners is timed out."
+                                            << " Last failed member : " << lastFailedMember << ", "
+                                            << " Current time: " << util::StringUtil::timeToString(nowInMillis) << ", "
+                                            << " Start time : " << util::StringUtil::timeToString(startMillis) << ", "
+                                            << " Client invocation timeout : " << invocationTimeoutMillis << " ms, "
+                                            << " Elapsed time : " << elapsedMillis << " ms. ").build())));
                         }
                     }
 
@@ -2636,5 +2585,29 @@ namespace hazelcast {
         }
     }
 }
+
+namespace std {
+    bool less<hazelcast::client::spi::DefaultObjectNamespace>::operator()(
+            const hazelcast::client::spi::DefaultObjectNamespace &lhs,
+            const hazelcast::client::spi::DefaultObjectNamespace &rhs) const {
+        int result = lhs.getServiceName().compare(rhs.getServiceName());
+        if (result < 0) {
+            return true;
+        }
+
+        if (result > 0) {
+            return false;
+        }
+
+        return lhs.getObjectName().compare(rhs.getObjectName()) < 0;
+    }
+
+    std::size_t
+    hash<hazelcast::client::spi::DefaultObjectNamespace>::operator()(
+            const hazelcast::client::spi::DefaultObjectNamespace &k) const {
+        return std::hash<std::string>()(k.getServiceName() + k.getObjectName());
+    }
+}
+
 
 

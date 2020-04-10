@@ -61,13 +61,14 @@ namespace hazelcast {
                     void scheduleWithRepetition(BOOST_ASIO_MOVE_ARG(CompletionToken)token,
                                                 const std::chrono::steady_clock::duration &delay,
                                                 const std::chrono::steady_clock::duration &period) {
-                        boost::asio::steady_timer timer(*internalExecutor);
+                        // TODO: Look at boost thread scheduler for this implementation
+                        auto timer = std::make_shared<boost::asio::steady_timer>(*internalExecutor);
                         if (delay.count() >= 0) {
-                            timer.expires_from_now(delay);
+                            timer->expires_from_now(delay);
                         } else {
-                            timer.expires_from_now(period);
+                            timer->expires_from_now(period);
                         }
-                        timer.async_wait([=](boost::system::error_code ec) {
+                        timer->async_wait([this, token, period, timer](boost::system::error_code ec) {
                             if (ec) {
                                 return;
                             }

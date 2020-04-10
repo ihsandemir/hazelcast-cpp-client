@@ -3352,7 +3352,8 @@ namespace hazelcast {
                                 default:
                                     std::ostringstream out;
                                     out << "Unsupported in-memory format: " << inMemoryFormat;
-                                    throw exception::IllegalArgumentException("NearCacheRecordStoreTest", out.str());
+                                    BOOST_THROW_EXCEPTION(
+                                            exception::IllegalArgumentException("NearCacheRecordStoreTest", out.str()));
                             }
                             recordStore->initialize();
 

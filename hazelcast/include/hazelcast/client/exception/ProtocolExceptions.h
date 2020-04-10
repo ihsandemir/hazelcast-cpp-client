@@ -183,9 +183,15 @@ namespace hazelcast {
 
             // -----------------    ONLY Client side exceptions start here ----------------------------------------
             // -----------------    Client side runtime exceptions start here --------------------------------
+            class ConsistencyLostException : public HazelcastException {
+            public:
+                ConsistencyLostException(const std::string &source = "", const std::string &message = "",
+                                         const std::string &details = "");
+            };
+
             DEFINE_EXCEPTION_CLASS(HazelcastClientNotActiveException, protocol::HAZELCAST_INSTANCE_NOT_ACTIVE, true);
+
             DEFINE_EXCEPTION_CLASS(HazelcastClientOfflineException, protocol::HAZELCAST_CLIENT_OFFLINE, true);
-            DEFINE_EXCEPTION_CLASS(ConsistencyLostException, protocol::CONSISTENCY_LOST, true);
 
             // -----------------    Client side runtime exceptions finish here --------------------------------
 

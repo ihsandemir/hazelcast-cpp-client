@@ -1397,7 +1397,7 @@ namespace hazelcast {
 
                 hazelcast::util::CountDownLatch nextCalledLatch(1);
 
-                autu f = std::async(std::packaged_task<void()>(
+                auto f = std::async(std::packaged_task<void()>(
                         [&]() { ThreeSecondDelayCompleteOperation(sequence, nextCalledLatch).run(); }));
 
                 ASSERT_OPEN_EVENTUALLY(nextCalledLatch);
@@ -1583,7 +1583,8 @@ namespace hazelcast {
                 if (!xmlFile) {
                     std::ostringstream out;
                     out << "Failed to read from xml file to at " << xmlFilePath;
-                    throw exception::IllegalStateException("HazelcastServerFactory::readFromXmlFile", out.str());
+                    BOOST_THROW_EXCEPTION(
+                            exception::IllegalStateException("HazelcastServerFactory::readFromXmlFile", out.str()));
                 }
 
                 std::ostringstream buffer;

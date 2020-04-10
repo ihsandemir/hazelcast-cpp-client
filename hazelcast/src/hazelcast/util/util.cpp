@@ -1518,8 +1518,8 @@ namespace hazelcast {
             try {
                 std::rethrow_exception(throwable);
             } catch (...) {
-                std::throw_with_nested(
-                        client::exception::HazelcastException("HazelcastExceptionFactory::create", message));
+                std::throw_with_nested(boost::enable_current_exception(
+                        client::exception::HazelcastException("HazelcastExceptionFactory::create", message)));
             }
         }
     }

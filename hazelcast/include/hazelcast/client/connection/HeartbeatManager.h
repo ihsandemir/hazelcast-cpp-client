@@ -38,7 +38,7 @@ namespace hazelcast {
              */
             class HeartbeatManager {
             public:
-                explicit HeartbeatManager(spi::ClientContext &client);
+                explicit HeartbeatManager(spi::ClientContext &client, ClientConnectionManagerImpl &connectionManager);
 
                 void start();
 

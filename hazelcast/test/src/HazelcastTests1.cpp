@@ -779,11 +779,6 @@ namespace hazelcast {
                     ASSERT_EQ(0, rb->size());
                     ASSERT_EQ(CAPACITY, rb->remainingCapacity());
                     ASSERT_THROW(rb->readOne(-1), exception::IllegalArgumentException);
-                    try {
-                        rb->readOne(1);
-                    } catch (std::exception &e) {
-                        std::cout << e.what() << std::endl;
-                    }
                     ASSERT_THROW(rb->readOne(1), exception::IllegalArgumentException);
 
                     Employee employee1("First", 10);
@@ -1198,6 +1193,7 @@ namespace hazelcast {
         }
 
         StartedThread::~StartedThread() {
+            join();
         }
 
     }
@@ -2412,6 +2408,8 @@ namespace hazelcast {
                     });
                 }
 
+                startLatch.countDown();
+
                 std::set<int64_t> allIds;
                 for (auto &f : futures) {
                     auto ids = f.get();
@@ -2419,7 +2417,7 @@ namespace hazelcast {
                 }
 
 // if there were duplicate IDs generated, there will be less items in the set than expected
-                        assertEquals(4 * NUM_IDS_PER_THREAD, allIds.size());
+                ASSERT_EQ(4 * NUM_IDS_PER_THREAD, allIds.size());
             }
         }
     }
@@ -2850,7 +2848,8 @@ namespace hazelcast {
                     std::vector<Member> members = getMembers();
                     size_t len = members.size();
                     if (len == 0) {
-                        throw exception::IOException("const Member& RoundRobinLB::next()", "No member in member list!!");
+                        BOOST_THROW_EXCEPTION(exception::IOException("const Member& RoundRobinLB::next()",
+                                                                     "No member in member list!!"));
                     }
                     for (size_t i = 0; i < len; i++) {
                         if (members[i].getAddress().getPort() == 5701) {
@@ -3202,10 +3201,11 @@ namespace hazelcast {
                 constexpr int n = 10;
                 hazelcast::util::CountDownLatch latch(n);
 
+                std::array<std::future<void>, n> allFutures;
                 for (int i = 0; i < n; i++) {
-                    std::thread([&]() {
+                    allFutures[i] = std::async(std::packaged_task<void()>([&]() {
                         PutGetRemoveTestTask(client, mm, latch).run();
-                    }).detach();
+                    }));
                 }
 
                 ASSERT_OPEN_EVENTUALLY(latch);

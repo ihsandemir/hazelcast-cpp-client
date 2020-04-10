@@ -155,7 +155,7 @@ namespace hazelcast {
                                 default:
                                     std::ostringstream out;
                                     out << "Invalid in memory format: " << (int) inMemoryFormat;
-                                    throw exception::IllegalArgumentException(out.str());
+                                    BOOST_THROW_EXCEPTION(exception::IllegalArgumentException(out.str()));
                             }
                         }
 

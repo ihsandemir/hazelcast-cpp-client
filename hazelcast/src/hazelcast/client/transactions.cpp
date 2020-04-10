@@ -85,17 +85,17 @@ namespace hazelcast {
             void TransactionProxy::begin() {
                 try {
                     if (clientContext.getConnectionManager().getOwnerConnection().get() == NULL) {
-                        throw exception::TransactionException("TransactionProxy::begin()",
-                                                              "Owner connection needs to be present to begin a transaction");
+                        BOOST_THROW_EXCEPTION(exception::TransactionException("TransactionProxy::begin()",
+                                                                              "Owner connection needs to be present to begin a transaction"));
                     }
                     if (state == TxnState::ACTIVE) {
-                        throw exception::IllegalStateException("TransactionProxy::begin()",
-                                                               "Transaction is already active");
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionProxy::begin()",
+                                                                               "Transaction is already active"));
                     }
                     checkThread();
                     if (TRANSACTION_EXISTS) {
-                        throw exception::IllegalStateException("TransactionProxy::begin()",
-                                                               "Nested transactions are not allowed!");
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionProxy::begin()",
+                                                                               "Nested transactions are not allowed!"));
                     }
                     TRANSACTION_EXISTS.store(true);
                     startTime = util::currentTimeMillis();
@@ -118,8 +118,8 @@ namespace hazelcast {
             void TransactionProxy::commit() {
                 try {
                     if (state != TxnState::ACTIVE) {
-                        throw exception::IllegalStateException("TransactionProxy::commit()",
-                                                               "Transaction is not active");
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionProxy::commit()",
+                                                                               "Transaction is not active"));
                     }
                     state = TxnState::COMMITTING;
                     checkThread();
@@ -141,8 +141,8 @@ namespace hazelcast {
             void TransactionProxy::rollback() {
                 try {
                     if (state == TxnState::NO_TXN || state == TxnState::ROLLED_BACK) {
-                        throw exception::IllegalStateException("TransactionProxy::rollback()",
-                                                               "Transaction is not active");
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionProxy::rollback()",
+                                                                               "Transaction is not active"));
                     }
                     state = TxnState::ROLLING_BACK;
                     checkThread();
@@ -173,15 +173,15 @@ namespace hazelcast {
 
             void TransactionProxy::checkThread() {
                 if (threadId != util::getCurrentThreadId()) {
-                    throw exception::IllegalStateException("TransactionProxy::checkThread()",
-                                                           "Transaction cannot span multiple threads!");
+                    BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionProxy::checkThread()",
+                                                                           "Transaction cannot span multiple threads!"));
                 }
             }
 
             void TransactionProxy::checkTimeout() {
                 if (startTime + options.getTimeoutMillis() < util::currentTimeMillis()) {
-                    throw exception::TransactionException("TransactionProxy::checkTimeout()",
-                                                          "Transaction is timed-out!");
+                    BOOST_THROW_EXCEPTION(exception::TransactionException("TransactionProxy::checkTimeout()",
+                                                                          "Transaction is timed-out!"));
                 }
             }
 
@@ -247,7 +247,8 @@ namespace hazelcast {
                     std::rethrow_exception(throwable);
                 } catch (...) {
                     std::throw_with_nested(
-                            exception::TransactionException("TransactionExceptionFactory::create", message));
+                            boost::enable_current_exception(
+                                    exception::TransactionException("TransactionExceptionFactory::create", message)));
                 }
             }
         }
@@ -646,7 +647,8 @@ namespace hazelcast {
 
         TransactionOptions &TransactionOptions::setTimeout(int timeoutInSeconds) {
             if (timeoutInSeconds <= 0) {
-                throw exception::IllegalStateException("TransactionOptions::setTimeout", "Timeout must be positive!");
+                BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionOptions::setTimeout",
+                                                                       "Timeout must be positive!"));
             }
             this->timeoutSeconds = timeoutInSeconds;
             return *this;
@@ -658,8 +660,8 @@ namespace hazelcast {
 
         TransactionOptions &TransactionOptions::setDurability(int durability) {
             if (durability < 0) {
-                throw exception::IllegalStateException("TransactionOptions::setDurability",
-                                                       "Durability cannot be negative!");
+                BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionOptions::setDurability",
+                                                                       "Durability cannot be negative!"));
             }
             this->durability = durability;
             return *this;

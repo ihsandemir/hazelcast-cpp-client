@@ -111,8 +111,8 @@ namespace hazelcast {
                  *
                  * @return The constructed exception.
                  */
-                EXCEPTIONCLASS build() {
-                    return EXCEPTIONCLASS(source, msg.str());
+                exception_detail::clone_impl<EXCEPTIONCLASS> build() {
+                    return boost::enable_current_exception(EXCEPTIONCLASS(source, msg.str()));
                 }
             private:
                 std::string source;

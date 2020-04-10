@@ -81,8 +81,8 @@ namespace hazelcast {
                     try {
                         cancelSuccessful = invokeCancelRequest(mayInterruptIfRunning);
 
-                        invocation->getPromise().set_exception(
-                                exception::CancellationException("IExecutorService::cancel"));
+                        invocation->getPromise().set_exception(boost::enable_current_exception(
+                                exception::CancellationException("IExecutorService::cancel")));
 
                         return cancelSuccessful;
                     } catch (exception::IException &e) {
@@ -103,12 +103,12 @@ namespace hazelcast {
                 spi::ClientContext &context;
                 std::shared_ptr<spi::impl::ClientInvocation> invocation;
 
-                void waitForRequestToBeSend() {
-                    invocation->getSendConnectionOrWait();
-                }
-
                 bool invokeCancelRequest(bool mayInterruptIfRunning) {
-                    waitForRequestToBeSend();
+                    sharedFuture.wait();
+
+                    if (sharedFuture.has_exception()) {
+                        return false;
+                    }
 
                     if (partitionId > -1) {
                         auto request = protocol::codec::ExecutorServiceCancelOnPartitionCodec::encodeRequest(uuid,

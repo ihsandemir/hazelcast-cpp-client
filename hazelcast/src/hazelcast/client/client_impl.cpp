@@ -251,8 +251,8 @@ namespace hazelcast {
                             logger->info("Lifecycle service start failed. Exception during shutdown: ", e.what());
                             // ignore
                         }
-                        throw exception::IllegalStateException("HazelcastClient",
-                                                               "HazelcastClient could not be started!");
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException("HazelcastClient",
+                                                                               "HazelcastClient could not be started!"));
                     }
                 } catch (exception::IException &) {
                     try {
@@ -275,7 +275,8 @@ namespace hazelcast {
                                 << "Could not start logger for instance " << instanceName).build();
                     }
                 } catch (std::invalid_argument &ia) {
-                    throw exception::IllegalStateException("HazelcastClientInstanceImpl::initLogger", ia.what());
+                    BOOST_THROW_EXCEPTION(
+                            exception::IllegalStateException("HazelcastClientInstanceImpl::initLogger", ia.what()));
                 }
             }
 
@@ -986,6 +987,12 @@ namespace hazelcast {
                                                      const std::string &details)
                     : ExecutionException("MemberLeftException", protocol::MEMBER_LEFT, source, message, details, false,
                                          true) {}
+
+            ConsistencyLostException::ConsistencyLostException(const std::string &source, const std::string &message,
+                                                               const std::string &details)
+                    : HazelcastException("ConsistencyLostException", protocol::CONSISTENCY_LOST, source, message,
+                                         details, true,
+                                         false) {}
         }
 
         namespace executor {

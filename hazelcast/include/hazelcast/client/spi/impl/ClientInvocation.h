@@ -86,18 +86,13 @@ namespace hazelcast {
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                     std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                                      const std::string &objectName,
-                                                                      const std::shared_ptr<connection::Connection> &connection);
+                                                                    const std::string &objectName,
+                                                                    const std::shared_ptr<connection::Connection> &connection = nullptr);
 
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                       std::unique_ptr<protocol::ClientMessage> &clientMessage,
                                                                       const std::string &objectName, const Address &address);
-
-                    static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
-                                                                      std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                                                      const std::string &objectName);
-
                     future<protocol::ClientMessage> invoke();
 
                     future<protocol::ClientMessage> invokeUrgent();
@@ -111,8 +106,6 @@ namespace hazelcast {
                     void notifyException(std::exception_ptr exception);
 
                     std::shared_ptr<connection::Connection> getSendConnection();
-
-                    std::shared_ptr<connection::Connection> getSendConnectionOrWait();
 
                     void
                     setSendConnection(const std::shared_ptr<connection::Connection> &sendConnection);
@@ -132,34 +125,11 @@ namespace hazelcast {
                     promise<protocol::ClientMessage> &getPromise();
 
                 private:
-                    /**
-                     * Create an invocation that will be executed on owner of {@code partitionId}.
-                     */
                     ClientInvocation(spi::ClientContext &clientContext,
-                                     std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                     const std::string &objectName, int partitionId);
-
-                    /**
-                     * Create an invocation that will be executed on given {@code connection}.
-                     */
-                    ClientInvocation(spi::ClientContext &clientContext,
-                                     std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                     const std::string &objectName,
-                                     const std::shared_ptr<connection::Connection> &connection);
-
-                    /**
-                     * Create an invocation that will be executed on random member.
-                     */
-                    ClientInvocation(spi::ClientContext &clientContext,
-                                     std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                     const std::string &objectName);
-
-                    /**
-                     * Create an invocation that will be executed on member with given {@code address}.
-                     */
-                    ClientInvocation(spi::ClientContext &clientContext,
-                                     std::unique_ptr<protocol::ClientMessage> &clientMessage,
-                                     const std::string &objectName, const Address &address);
+                                     std::unique_ptr<protocol::ClientMessage> &message,
+                                     const std::string &name, int partition = UNASSIGNED_PARTITION,
+                                     const std::shared_ptr<connection::Connection> &conn = nullptr,
+                                     const std::shared_ptr<Address> serverAddress = nullptr);
 
                     static void invokeOnSelection(const std::shared_ptr<ClientInvocation> &invocation);
 

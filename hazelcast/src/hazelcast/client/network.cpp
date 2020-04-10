@@ -91,7 +91,7 @@ namespace hazelcast {
                       socketInterceptor(client.getClientConfig().getSocketInterceptor()),
                       executionService(client.getClientExecutionService()),
                       translator(addressTranslator), clusterConnectionExecutor(1), connectionIdGen(0),
-                      socketFactory(client, ioContext), heartbeat(client) {
+                      socketFactory(client, ioContext), heartbeat(client, *this) {
                 config::ClientNetworkConfig &networkConfig = client.getClientConfig().getNetworkConfig();
 
                 int64_t connTimeout = networkConfig.getConnectionTimeout();
@@ -178,6 +178,7 @@ namespace hazelcast {
                 }
 
                 clusterConnectionExecutor.stop();
+                clusterConnectionExecutor.join();
 
                 connectionListeners.clear();
                 activeConnections.clear();
@@ -243,8 +244,8 @@ namespace hazelcast {
                     connectionStrategy->beforeGetConnection(target);
                 }
                 if (!asOwner && getOwnerConnection().get() == NULL) {
-                    throw exception::IOException("ConnectionManager::getConnection",
-                                                 "Owner connection is not available!");
+                    BOOST_THROW_EXCEPTION(exception::IOException("ConnectionManager::getConnection",
+                                                                 "Owner connection is not available!"));
                 }
 
                 std::shared_ptr<Connection> connection = activeConnections.get(target);
@@ -277,8 +278,8 @@ namespace hazelcast {
                     connectionStrategy->beforeOpenConnection(target);
                 }
                 if (!alive) {
-                    throw exception::HazelcastException("ConnectionManager::triggerConnect",
-                                                        "ConnectionManager is not active!");
+                    BOOST_THROW_EXCEPTION(exception::HazelcastException("ConnectionManager::triggerConnect",
+                                                                        "ConnectionManager is not active!"));
                 }
 
                 Address address = translator->translate(target);
@@ -556,6 +557,8 @@ namespace hazelcast {
 
                         static_cast<DefaultClientConnectionStrategy &>(*connectionStrategy).shutdownWithExternalThread(
                                 client.getHazelcastClientImplementation());
+
+                        throw;
                     }
                     return false;
                 });
@@ -573,9 +576,9 @@ namespace hazelcast {
                     std::set<Address> addresses = getPossibleMemberAddresses();
                     for (const Address &address : addresses) {
                         if (!client.getLifecycleService().isRunning()) {
-                            throw exception::IllegalStateException(
-                                    "ConnectionManager::connectToClusterInternal",
-                                    "Giving up on retrying to connect to cluster since client is shutdown.");
+                            BOOST_THROW_EXCEPTION(exception::IllegalStateException(
+                                                          "ConnectionManager::connectToClusterInternal",
+                                                                  "Giving up on retrying to connect to cluster since client is shutdown."));
                         }
                         triedAddresses.insert(address);
                         if (connectAsOwner(address).get() != NULL) {
@@ -586,7 +589,7 @@ namespace hazelcast {
                     // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
                     // and the lifecycle check is missing, hence we need to repeat the same check at this point.
                     if (!client.getLifecycleService().isRunning()) {
-                        throw exception::IllegalStateException("Client is being shutdown.");
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException("Client is being shutdown."));
                     }
 
                     if (attempt < connectionAttemptLimit) {
@@ -610,7 +613,8 @@ namespace hazelcast {
                     out << address << " , ";
                 }
                 out << "}";
-                throw exception::IllegalStateException("ConnectionManager::connectToClusterInternal", out.str());
+                BOOST_THROW_EXCEPTION(
+                        exception::IllegalStateException("ConnectionManager::connectToClusterInternal", out.str()));
             }
 
             std::set<Address> ClientConnectionManagerImpl::getPossibleMemberAddresses() {
@@ -859,7 +863,8 @@ namespace hazelcast {
                     std::rethrow_exception(exceptionPtr);
                 } catch (exception::IException &ie) {
                     std::throw_with_nested(
-                            exception::ExecutionException("AuthenticationFuture::get", "Could not be authenticated."));
+                            boost::enable_current_exception(exception::ExecutionException("AuthenticationFuture::get",
+                                                                                          "Could not be authenticated.")));
                 }
             }
 
@@ -1137,8 +1142,9 @@ namespace hazelcast {
             ClientConnectionStrategy::~ClientConnectionStrategy() {
             }
 
-            HeartbeatManager::HeartbeatManager(spi::ClientContext &client) : client(client), clientConnectionManager(
-                    client.getConnectionManager()), logger(client.getLogger()) {
+            HeartbeatManager::HeartbeatManager(spi::ClientContext &client,
+                                               ClientConnectionManagerImpl &connectionManager)
+                    : client(client), clientConnectionManager(connectionManager), logger(client.getLogger()) {
                 ClientProperties &clientProperties = client.getClientProperties();
                 int timeoutSeconds = clientProperties.getInteger(clientProperties.getHeartbeatTimeout());
                 heartbeatTimeoutSeconds = std::chrono::seconds(
@@ -1222,12 +1228,12 @@ namespace hazelcast {
                     return;
                 }
                 if (clientStartAsync && !disconnectedFromCluster) {
-                    throw exception::HazelcastClientOfflineException(
-                            "DefaultClientConnectionStrategy::beforeGetConnection", "Client is connecting to cluster.");
+                    BOOST_THROW_EXCEPTION(exception::HazelcastClientOfflineException(
+                                                  "DefaultClientConnectionStrategy::beforeGetConnection", "Client is connecting to cluster."));
                 }
                 if (reconnectMode == config::ClientConnectionStrategyConfig::ASYNC && disconnectedFromCluster) {
-                    throw exception::HazelcastClientOfflineException(
-                            "DefaultClientConnectionStrategy::beforeGetConnection", "Client is offline.");
+                    BOOST_THROW_EXCEPTION(exception::HazelcastClientOfflineException(
+                                                  "DefaultClientConnectionStrategy::beforeGetConnection", "Client is offline."));
                 }
             }
 
@@ -1238,8 +1244,8 @@ namespace hazelcast {
                     return;
                 }
                 if (reconnectMode == config::ClientConnectionStrategyConfig::ASYNC && disconnectedFromCluster) {
-                    throw exception::HazelcastClientOfflineException(
-                            "DefaultClientConnectionStrategy::beforeGetConnection", "Client is offline");
+                    BOOST_THROW_EXCEPTION(exception::HazelcastClientOfflineException(
+                                                  "DefaultClientConnectionStrategy::beforeGetConnection", "Client is offline"));
                 }
             }
 
@@ -1306,7 +1312,7 @@ namespace hazelcast {
 
             void DefaultClientConnectionStrategy::checkShutdown(const std::string &methodName) {
                 if (isShutdown) {
-                    throw exception::IllegalStateException(methodName, "Client is shutdown.");
+                    BOOST_THROW_EXCEPTION(exception::IllegalStateException(methodName, "Client is shutdown."));
                 }
             }
 

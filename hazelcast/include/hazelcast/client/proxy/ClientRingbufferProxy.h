@@ -225,8 +225,9 @@ namespace hazelcast {
                     } catch (exception::IException &e) {
                         //in case of exception return the exception via future to behave consistently to member
                         try {
-                            std::throw_with_nested(exception::ExecutionException("ClientRingbufferProxy::readManyAsync",
-                                                                                 "capacity() method failed"));
+                            std::throw_with_nested(boost::enable_current_exception(
+                                    exception::ExecutionException("ClientRingbufferProxy::readManyAsync",
+                                                                  "capacity() method failed")));
                         } catch (...) {
                             return make_exceptional_future<std::shared_ptr<ringbuffer::ReadResultSet<E>>>(
                                     std::current_exception());

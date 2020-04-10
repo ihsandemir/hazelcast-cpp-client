@@ -557,7 +557,8 @@ namespace hazelcast {
                 if (errorCodeToFactory.end() != it) {
                     char msg[100];
                     util::hz_snprintf(msg, 100, "Error code %d was already registered!!!", errorCode);
-                    throw exception::IllegalStateException("ClientExceptionFactory::registerException", msg);
+                    BOOST_THROW_EXCEPTION(
+                            exception::IllegalStateException("ClientExceptionFactory::registerException", msg));
                 }
 
                 errorCodeToFactory[errorCode] = factory;

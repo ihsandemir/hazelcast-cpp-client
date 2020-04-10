@@ -512,8 +512,8 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::get() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
+                                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeGetInternal(EMPTY_ADDRESS_LIST,
                                                   nullptr,
@@ -527,8 +527,8 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::getAndAdd(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
+                                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(delta, true, EMPTY_ADDRESS_LIST,
                                                   nullptr,
@@ -543,8 +543,8 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::addAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
+                                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(delta, false,
                                                   EMPTY_ADDRESS_LIST,
@@ -560,8 +560,9 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::getAndSubtract(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndSubtract",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(
+                            exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndSubtract",
+                                                                      "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(-delta, true,
                                                   EMPTY_ADDRESS_LIST,
@@ -577,8 +578,9 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::subtractAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::subtractAndGet",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(
+                            exception::NoDataMemberInClusterException("ClientPNCounterProxy::subtractAndGet",
+                                                                      "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(-delta, false,
                                                   EMPTY_ADDRESS_LIST,
@@ -594,8 +596,9 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::decrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::decrementAndGet",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(
+                            exception::NoDataMemberInClusterException("ClientPNCounterProxy::decrementAndGet",
+                                                                      "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(-1, false, EMPTY_ADDRESS_LIST,
                                                   nullptr,
@@ -610,8 +613,9 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::incrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::incrementAndGet",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(
+                            exception::NoDataMemberInClusterException("ClientPNCounterProxy::incrementAndGet",
+                                                                      "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(1, false, EMPTY_ADDRESS_LIST,
                                                   nullptr,
@@ -626,8 +630,9 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::getAndDecrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndDecrement",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(
+                            exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndDecrement",
+                                                                      "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(-1, true, EMPTY_ADDRESS_LIST,
                                                   nullptr,
@@ -642,8 +647,9 @@ namespace hazelcast {
             int64_t ClientPNCounterProxy::getAndIncrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
-                    throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndIncrement",
-                                                                    "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                    BOOST_THROW_EXCEPTION(
+                            exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndIncrement",
+                                                                      "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
                 auto response = invokeAddInternal(1, true, EMPTY_ADDRESS_LIST,
                                                   nullptr,
@@ -723,8 +729,9 @@ namespace hazelcast {
                     if (lastException) {
                         std::rethrow_exception(lastException);
                     } else {
-                        throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::invokeGetInternal",
-                                                                        "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                        BOOST_THROW_EXCEPTION(
+                                exception::NoDataMemberInClusterException("ClientPNCounterProxy::invokeGetInternal",
+                                                                          "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                     }
                 }
                 try {
@@ -754,8 +761,9 @@ namespace hazelcast {
                     if (lastException) {
                         std::rethrow_exception(lastException);
                     } else {
-                        throw exception::NoDataMemberInClusterException("ClientPNCounterProxy::invokeGetInternal",
-                                                                        "Cannot invoke operations on a CRDT because the cluster does not contain any data members");
+                        BOOST_THROW_EXCEPTION(
+                                exception::NoDataMemberInClusterException("ClientPNCounterProxy::invokeGetInternal",
+                                                                          "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                     }
                 }
 
@@ -2956,7 +2964,8 @@ namespace hazelcast {
 
         void ISemaphore::checkNegative(int32_t permits) const {
             if (permits < 0) {
-                throw exception::IllegalArgumentException("ISemaphore::checkNegative", "Permits cannot be negative!");
+                BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("ISemaphore::checkNegative",
+                                                                          "Permits cannot be negative!"));
             }
         }
 
