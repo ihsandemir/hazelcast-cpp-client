@@ -262,6 +262,8 @@ namespace hazelcast {
                         // ignore
                     }
                     throw;
+                } catch (std::exception &se) {
+                    std::cout << se.what() << std::endl;
                 }
 
                 mixedTypeSupportAdaptor.reset(new mixedtype::impl::HazelcastClientImpl(*this));

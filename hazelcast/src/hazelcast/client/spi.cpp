@@ -104,8 +104,16 @@ namespace hazelcast {
             void ProxyManager::destroy() {
                 std::lock_guard<std::mutex> guard(lock);
                 for (auto &p : proxies) {
-                    auto proxy = p.second.get();
-                    p.second.get()->onShutdown();
+                    try {
+                        auto proxy = p.second.get();
+                        p.second.get()->onShutdown();
+                    } catch (std::exception &se) {
+                        auto &logger = client.getLogger();
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Proxy was not created, hence onShutdown can be called. Exception:",
+                                          se.what());
+                        }
+                    }
                 }
                 proxies.clear();
             }
@@ -136,6 +144,7 @@ namespace hazelcast {
                     promise.set_value(clientProxy);
                     return clientProxy;
                 } catch (exception::IException &e) {
+                    promise.set_exception(std::current_exception());
                     throw;
                 }
                 return nullptr;
@@ -2523,6 +2532,8 @@ namespace hazelcast {
                                 clientContext.getConnectionManager().getOrTriggerConnect(
                                         member.getAddress());
                             } catch (exception::IOException &) {
+                                return;
+                            } catch (exception::HazelcastClientOfflineException &) {
                                 return;
                             }
                         }

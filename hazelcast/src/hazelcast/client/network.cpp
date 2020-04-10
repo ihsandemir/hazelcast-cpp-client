@@ -527,7 +527,8 @@ namespace hazelcast {
                             fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
                         }
                     } catch (exception::IException &e) {
-                        logger.info("ClientConnectionManagerImpl::disconnectFromCluster Exception occured: ", e.what());
+                        logger.info("ClientConnectionManagerImpl::disconnectFromCluster. Exception occured: ",
+                                    e.what());
                     }
                 });
             }
