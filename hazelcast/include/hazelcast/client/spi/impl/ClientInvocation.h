@@ -107,14 +107,20 @@ namespace hazelcast {
 
                     std::shared_ptr<connection::Connection> getSendConnection();
 
+                    std::shared_ptr<connection::Connection> getSendConnectionOrWait();
+
                     void
                     setSendConnection(const std::shared_ptr<connection::Connection> &sendConnection);
 
                     const std::shared_ptr<protocol::ClientMessage> getClientMessage();
 
-                    const std::shared_ptr<EventHandler<protocol::ClientMessage> > &getEventHandler() const;
+                    const std::shared_ptr<EventHandler < protocol::ClientMessage> > &
 
-                    void setEventHandler(const std::shared_ptr<EventHandler<protocol::ClientMessage> > &eventHandler);
+                    getEventHandler() const;
+
+                    void setEventHandler(const std::shared_ptr<EventHandler < protocol::ClientMessage>
+
+                    > &eventHandler);
 
                     friend std::ostream &operator<<(std::ostream &os, const ClientInvocation &invocation);
 
@@ -169,6 +175,8 @@ namespace hazelcast {
                     void operator=(const ClientInvocation &rhs);
 
                     std::shared_ptr<protocol::ClientMessage> copyMessage();
+
+                    void setException(const exception::IException &e, exception_ptr exceptionPtr);
                 };
             }
         }

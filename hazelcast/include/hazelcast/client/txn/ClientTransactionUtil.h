@@ -53,14 +53,14 @@ namespace hazelcast {
                 invoke(std::unique_ptr<protocol::ClientMessage> &request, const std::string &objectName,
                        spi::ClientContext &client, const std::shared_ptr<connection::Connection> &connection);
 
+                static const std::shared_ptr<util::ExceptionUtil::RuntimeExceptionFactory> &
+                TRANSACTION_EXCEPTION_FACTORY();
+
             private:
                 class TransactionExceptionFactory : public util::ExceptionUtil::RuntimeExceptionFactory {
                 public:
                     virtual void rethrow(std::exception_ptr throwable, const std::string &message);
                 };
-
-                static const std::shared_ptr<util::ExceptionUtil::RuntimeExceptionFactory> &
-                TRANSACTION_EXCEPTION_FACTORY();
 
                 static const std::shared_ptr<util::ExceptionUtil::RuntimeExceptionFactory> exceptionFactory;
             };

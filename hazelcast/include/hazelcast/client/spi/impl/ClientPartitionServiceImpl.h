@@ -107,6 +107,8 @@ namespace hazelcast {
                     std::atomic<int32_t> lastPartitionStateVersion;
                     util::Mutex lock;
 
+                    std::future<void> refreshPartitionsFuture;
+
                     void waitForPartitionsFetchedOnce();
 
                     bool isClusterFormedByOnlyLiteMembers();

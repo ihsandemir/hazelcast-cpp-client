@@ -407,7 +407,7 @@ namespace hazelcast {
                                                                                clientConfig.getExecutorPoolSize());
             }
 
-            std::unique_ptr<connection::ClientConnectionManagerImpl>
+            std::shared_ptr<connection::ClientConnectionManagerImpl>
             HazelcastClientInstanceImpl::initConnectionManagerService(
                     const std::vector<std::shared_ptr<connection::AddressProvider>> &addressProviders) {
                 config::ClientAwsConfig &awsConfig = clientConfig.getNetworkConfig().getAwsConfig();
@@ -422,9 +422,8 @@ namespace hazelcast {
                 } else {
                     addressTranslator.reset(new spi::impl::DefaultAddressTranslator());
                 }
-                return std::unique_ptr<connection::ClientConnectionManagerImpl>(
-                        new connection::ClientConnectionManagerImpl(
-                                clientContext, addressTranslator, addressProviders));
+                return std::make_shared<connection::ClientConnectionManagerImpl>(
+                        clientContext, addressTranslator, addressProviders);
 
             }
 
@@ -923,16 +922,16 @@ namespace hazelcast {
                                    const std::string &message, const std::string &details, int32_t errorNo,
                                    bool isRuntime, bool retryable)
                     : src(source), msg(message), details(details), errorCode(errorNo), runtimeException(isRuntime),
-                      retryable(retryable),
-                      report{"%1% {%2%. Error code:%3%, Details:%4%.} at %5%."} {
-                report % exceptionName % message % errorNo % details % source;
+                      retryable(retryable), report((boost::format(
+                            "%1% {%2%. Error code:%3%, Details:%4%.} at %5%.") % exceptionName % message % errorNo %
+                                                    details % source).str()) {
             }
 
             IException::~IException() noexcept {
             }
 
             char const *IException::what() const noexcept {
-                return report.str().c_str();
+                return report.c_str();
             }
 
             const std::string &IException::getSource() const {

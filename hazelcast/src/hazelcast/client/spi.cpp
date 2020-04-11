@@ -124,13 +124,16 @@ namespace hazelcast {
 
                 std::shared_future<std::shared_ptr<ClientProxy>> proxyFuture;
                 std::promise<std::shared_ptr<ClientProxy>> promise;
+                typedef std::unordered_map<DefaultObjectNamespace, std::shared_future<std::shared_ptr<ClientProxy>>> proxy_map;
+                std::pair<proxy_map::iterator, bool> insertedEntry;
                 {
                     std::lock_guard<std::mutex> guard(lock);
                     auto it = proxies.find(ns);
                     if (it != proxies.end()) {
                         proxyFuture = it->second;
                     } else {
-                        proxies.insert({ns, promise.get_future().share()});
+                        insertedEntry = proxies.insert({ns, promise.get_future().share()});
+                        assert(insertedEntry.second);
                     }
                 }
 
@@ -145,6 +148,9 @@ namespace hazelcast {
                     return clientProxy;
                 } catch (exception::IException &e) {
                     promise.set_exception(std::current_exception());
+
+                    std::lock_guard<std::mutex> guard(lock);
+                    proxies.erase(insertedEntry.first);
                     throw;
                 }
                 return nullptr;
@@ -1383,7 +1389,17 @@ namespace hazelcast {
                     try {
                         invokeOnSelection(shared_from_this());
                     } catch (exception::IException &e) {
-                        invocationPromise.set_exception(current_exception());
+                        setException(e, current_exception());
+                    }
+                }
+
+                void ClientInvocation::setException(const exception::IException &e,
+                                                    exception_ptr exceptionPtr) {
+                    try {
+                        invocationPromise.set_exception(exceptionPtr);
+                    } catch (std::exception &pe) {
+                        logger.warning("Failed to set the exception for invocation. ", pe.what(), ", ", *this,
+                                       " Exception to be set: ", e);
                     }
                 }
 
@@ -1396,14 +1412,14 @@ namespace hazelcast {
                                 std::throw_with_nested(boost::enable_current_exception(
                                         exception::HazelcastClientNotActiveException(iex.getSource(),
                                                                                      "Client is shutting down")));
-                            } catch (...) {
-                                invocationPromise.set_exception(current_exception());
+                            } catch (exception::IException &e) {
+                                setException(e, current_exception());
                             }
                             return;
                         }
 
                         if (isNotAllowedToRetryOnSelection(iex)) {
-                            invocationPromise.set_exception(current_exception());
+                            setException(iex, current_exception());
                             return;
                         }
 
@@ -1413,7 +1429,7 @@ namespace hazelcast {
                                          clientMessage.get()->isRetryable());
 
                         if (!retry) {
-                            invocationPromise.set_exception(current_exception());
+                            setException(iex, current_exception());
                             return;
                         }
 
@@ -1425,14 +1441,34 @@ namespace hazelcast {
                                 logger.finest(out.str());
                             }
 
-                            invocationPromise.set_exception(newOperationTimeoutException(exception));
+                            int64_t nowInMillis = util::currentTimeMillis();
+                            auto timeoutException = (exception::ExceptionBuilder<exception::OperationTimeoutException>(
+                                    "ClientInvocation::newOperationTimeoutException") << *this
+                                                                                      << " timed out because exception occurred after client invocation timeout "
+                                                                                      << "Current time :"
+                                                                                      << invocationService.getInvocationTimeoutMillis()
+                                                                                      << util::StringUtil::timeToString(
+                                                                                              nowInMillis) << ". "
+                                                                                      << "Start time: "
+                                                                                      << util::StringUtil::timeToString(
+                                                                                              startTimeMillis)
+                                                                                      << ". Total elapsed time: "
+                                                                                      << (nowInMillis - startTimeMillis)
+                                                                                      << " ms. ").build();
+
+                            try {
+                                BOOST_THROW_EXCEPTION(timeoutException);
+                            } catch (...) {
+                                setException(timeoutException, current_exception());
+                            }
+
                             return;
                         }
 
                         try {
                             execute();
-                        } catch (...) {
-                            invocationPromise.set_exception(current_exception());
+                        } catch (exception::IException &e) {
+                            setException(e, current_exception());
                         }
                     } catch (std::exception &se) {
                         assert(false);
@@ -1540,6 +1576,16 @@ namespace hazelcast {
                     return sendConnection;
                 }
 
+                std::shared_ptr<connection::Connection> ClientInvocation::getSendConnectionOrWait() {
+                    while (sendConnection.get().get() == NULL && lifecycleService.isRunning()) {
+                        std::this_thread::yield();
+                    }
+                    if (!lifecycleService.isRunning()) {
+                        BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("Client is being shut down!"));
+                    }
+                    return sendConnection;
+                }
+
                 void
                 ClientInvocation::setSendConnection(const std::shared_ptr<connection::Connection> &sendConnection) {
                     ClientInvocation::sendConnection = sendConnection;
@@ -1549,7 +1595,13 @@ namespace hazelcast {
                     if (clientMessage.get() == NULL) {
                         BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("response can't be null"));
                     }
-                    invocationPromise.set_value(*clientMessage);
+                    try {
+                        invocationPromise.set_value(*clientMessage);
+                    } catch (std::exception &e) {
+                        logger.warning("Failed to set the response for invocation. Dropping the response. ", e.what(),
+                                       ", ",
+                                       *this, " Response: ", *clientMessage);
+                    }
                 }
 
                 const std::shared_ptr<protocol::ClientMessage> ClientInvocation::getClientMessage() {
@@ -1822,10 +1874,11 @@ namespace hazelcast {
                 }
 
                 void ClientPartitionServiceImpl::refreshPartitions() {
-                    clientExecutionService.execute([&]() {
+                    clientExecutionService.execute([=]() {
                         if (!client.getLifecycleService().isRunning()) {
                             return;
                         }
+
 
                         try {
                             connection::ClientConnectionManagerImpl &connectionManager = client.getConnectionManager();

@@ -77,14 +77,8 @@ namespace hazelcast {
                         return false;
                     }
 
-                    bool cancelSuccessful = false;
                     try {
-                        cancelSuccessful = invokeCancelRequest(mayInterruptIfRunning);
-
-                        invocation->getPromise().set_exception(boost::enable_current_exception(
-                                exception::CancellationException("IExecutorService::cancel")));
-
-                        return cancelSuccessful;
+                        return invokeCancelRequest(mayInterruptIfRunning);
                     } catch (exception::IException &e) {
                         util::ExceptionUtil::rethrow(std::current_exception());
                     }
@@ -104,11 +98,7 @@ namespace hazelcast {
                 std::shared_ptr<spi::impl::ClientInvocation> invocation;
 
                 bool invokeCancelRequest(bool mayInterruptIfRunning) {
-                    sharedFuture.wait();
-
-                    if (sharedFuture.has_exception()) {
-                        return false;
-                    }
+                    invocation->getSendConnectionOrWait();
 
                     if (partitionId > -1) {
                         auto request = protocol::codec::ExecutorServiceCancelOnPartitionCodec::encodeRequest(uuid,
@@ -613,9 +603,10 @@ namespace hazelcast {
                     try {
                         auto result = SUBMIT_TO_PARTITION_DECODER<T>()->decodeClientMessage(f.get(),
                                                                                             getSerializationService());
-                        callback->onResponse(result);
+                        getContext().getClientExecutionService().execute([=]() { callback->onResponse(result); });
                     } catch (exception::IException &e) {
-                        callback->onFailure(std::current_exception());
+                        getContext().getClientExecutionService().execute(
+                                [=]() { callback->onFailure(std::current_exception()); });
                     }
                 });
             }

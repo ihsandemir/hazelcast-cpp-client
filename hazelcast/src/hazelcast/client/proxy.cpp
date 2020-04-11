@@ -2483,6 +2483,7 @@ namespace hazelcast {
                                                 ringbufferProxy.getReadManyAsyncResponseObject(future.get()));
 
                                         m.callback->onResponse(allMessages);
+                                        break;
                                     }
                                 } while (!shutdown);
                             } catch (exception::IException &e) {

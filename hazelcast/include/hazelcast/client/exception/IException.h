@@ -91,7 +91,7 @@ namespace hazelcast {
                 int32_t errorCode;
                 bool runtimeException;
                 bool retryable;
-                boost::format report;
+                std::string report;
             };
 
             std::ostream HAZELCAST_API &operator<<(std::ostream &os, const IException &exception);

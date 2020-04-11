@@ -1994,7 +1994,7 @@ namespace hazelcast {
 
                 auto future = service->submit<executor::tasks::FailingCallable, std::string>(task).get_future();
 
-                ASSERT_THROW(future.get(), exception::ExecutionException);
+                ASSERT_THROW(future.get(), exception::IllegalStateException);
             }
 
             TEST_F(ClientExecutorServiceTest, testSubmitFailingCallableException_withExecutionCallback) {
@@ -2016,11 +2016,7 @@ namespace hazelcast {
                 auto failingFuture = service->submit<executor::tasks::FailingCallable, std::string>(
                         executor::tasks::FailingCallable()).get_future();
 
-                try {
-                    failingFuture.get();
-                } catch (exception::ExecutionException &e) {
-                    ASSERT_THROW(std::rethrow_if_nested(std::current_exception()), exception::IllegalStateException);
-                }
+                ASSERT_THROW(failingFuture.get(), exception::IllegalStateException);
             }
 
             TEST_F(ClientExecutorServiceTest, testExecute_withNoMemberSelected) {
@@ -2075,12 +2071,7 @@ namespace hazelcast {
                 auto future = service->submit<executor::tasks::TaskWithUnserializableResponse, bool>(
                         taskWithUnserializableResponse).get_future();
 
-                try {
-                    future.get();
-                } catch (exception::ExecutionException &e) {
-                    ASSERT_THROW(std::rethrow_if_nested(std::current_exception()),
-                                 exception::HazelcastSerializationException);
-                }
+                ASSERT_THROW(future.get(), exception::HazelcastSerializationException);
             }
 
             TEST_F(ClientExecutorServiceTest, testUnserializableResponse_exceptionPropagatesToClientCallback) {

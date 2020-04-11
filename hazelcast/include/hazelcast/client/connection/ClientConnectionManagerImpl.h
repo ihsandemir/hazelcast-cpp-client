@@ -81,7 +81,8 @@ namespace hazelcast {
             /**
             * Responsible for managing {@link Connection} objects.
             */
-            class HAZELCAST_API ClientConnectionManagerImpl : public ConnectionListenable {
+            class HAZELCAST_API ClientConnectionManagerImpl
+                    : public ConnectionListenable, public std::enable_shared_from_this<ClientConnectionManagerImpl> {
             public:
                 typedef std::tuple<std::shared_ptr<AuthenticationFuture>, std::shared_ptr<Connection>> FutureTuple;
 
@@ -209,7 +210,7 @@ namespace hazelcast {
                     bool asOwner;
                     Address target;
                     std::shared_ptr<AuthenticationFuture> future;
-                    ClientConnectionManagerImpl &connectionManager;
+                    std::shared_ptr<ClientConnectionManagerImpl> connectionManager;
                     std::future<void> timeoutTaskFuture;
                     std::mutex timeoutMutex;
                     std::condition_variable timeoutCondition;

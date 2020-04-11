@@ -134,7 +134,8 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     state = TxnState::COMMIT_FAILED;
                     TRANSACTION_EXISTS.store(false);
-                    util::ExceptionUtil::rethrow(std::current_exception());
+                    ClientTransactionUtil::TRANSACTION_EXCEPTION_FACTORY()->rethrow(std::current_exception(),
+                                                                                    "TransactionProxy::commit() failed");
                 }
             }
 

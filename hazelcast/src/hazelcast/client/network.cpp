@@ -360,16 +360,13 @@ namespace hazelcast {
                 auto invocationFuture = clientInvocation->invokeUrgent();
 
                 auto authCallback = std::make_shared<AuthCallback>(connection, asOwner, target, future, *this);
-                // TODO: Get rid of AuthenticationFuture completely
-                // we need to set this so that the invocation is not destructed
-                connection->setAuthenticationInvocationFuture(
-                        invocationFuture.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
-                            try {
-                                authCallback->onResponse(f.get());
-                            } catch (exception::IException &e) {
-                                authCallback->onFailure(std::current_exception());
-                            }
-                        }));
+                invocationFuture.then(launch::sync, [=](boost::future<protocol::ClientMessage> f) {
+                    try {
+                        authCallback->onResponse(f.get());
+                    } catch (exception::IException &e) {
+                        authCallback->onFailure(std::current_exception());
+                    }
+                });
             }
 
             void
@@ -706,7 +703,7 @@ namespace hazelcast {
                                                                     ClientConnectionManagerImpl &connectionManager)
                     : connection(connection), asOwner(asOwner),
                       target(target), future(future),
-                      connectionManager(connectionManager),
+                      connectionManager(connectionManager.shared_from_this()),
                       cancelled(false) {
                 scheduleTimeoutTask();
             }
@@ -721,14 +718,14 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::AuthCallback::scheduleTimeoutTask() {
-                timeoutTaskFuture = std::async([&] {
+                timeoutTaskFuture = std::async([=] {
                     std::unique_lock<std::mutex> uniqueLock(timeoutMutex);
                     if (cancelled) {
                         return;
                     }
 
                     if (timeoutCondition.wait_for(uniqueLock,
-                                                  std::chrono::milliseconds(connectionManager.connectionTimeoutMillis),
+                                                  std::chrono::milliseconds(connectionManager->connectionTimeoutMillis),
                                                   [&] { return cancelled; })) {
                         return;
                     }
@@ -736,7 +733,7 @@ namespace hazelcast {
                     future->onFailure(std::make_exception_ptr((exception::ExceptionBuilder<exception::TimeoutException>(
                             "ClientConnectionManagerImpl::authenticate")
                             << "Authentication response did not come back in "
-                            << connectionManager.connectionTimeoutMillis
+                            << connectionManager->connectionTimeoutMillis
                             << " millis").build()));
                 });
             }
@@ -761,19 +758,19 @@ namespace hazelcast {
                             connection->setIsAuthenticatedAsOwner();
                             std::shared_ptr<protocol::Principal> principal(
                                     new protocol::Principal(result->uuid, result->ownerUuid));
-                            connectionManager.setPrincipal(principal);
+                            connectionManager->setPrincipal(principal);
                             //setting owner connection is moved to here(before onAuthenticated/before connected event)
                             //so that invocations that requires owner connection on this connection go through
-                            connectionManager.setOwnerConnectionAddress(connection->getRemoteEndpoint());
-                            connectionManager.logger.info("Setting ", *connection, " as owner with principal ",
-                                                          *principal);
+                            connectionManager->setOwnerConnectionAddress(connection->getRemoteEndpoint());
+                            connectionManager->logger.info("Setting ", *connection, " as owner with principal ",
+                                                           *principal);
                         }
-                        connectionManager.onAuthenticated(target, connection);
+                        connectionManager->onAuthenticated(target, connection);
                         future->onSuccess(connection);
                         break;
                     }
                     case protocol::CREDENTIALS_FAILED: {
-                        std::shared_ptr<protocol::Principal> p = connectionManager.principal;
+                        std::shared_ptr<protocol::Principal> p = connectionManager->principal;
                         if (p.get()) {
                             handleAuthenticationException(std::make_exception_ptr(
                                     (exception::ExceptionBuilder<exception::AuthenticationException>(
@@ -815,11 +812,11 @@ namespace hazelcast {
                 try {
                     std::rethrow_exception(cause);
                 } catch (exception::IException &ie) {
-                    if (connectionManager.logger.isFinestEnabled()) {
-                        connectionManager.logger.finest("Authentication of ", connection, " failed.", ie);
+                    if (connectionManager->logger.isFinestEnabled()) {
+                        connectionManager->logger.finest("Authentication of ", connection, " failed.", ie);
                     }
                     connection->close("", std::current_exception());
-                    connectionManager.connectionsInProgress.remove(target);
+                    connectionManager->connectionsInProgress.remove(target);
                 }
             }
 
@@ -1128,10 +1125,6 @@ namespace hazelcast {
 
             const Socket &Connection::getSocket() const {
                 return *socket;
-            }
-
-            void Connection::setAuthenticationInvocationFuture(future<void> authenticationInvocationFuture) {
-                Connection::authenticationInvocationFuture = std::move(authenticationInvocationFuture);
             }
 
             ClientConnectionStrategy::ClientConnectionStrategy(spi::ClientContext &clientContext, util::ILogger &logger,

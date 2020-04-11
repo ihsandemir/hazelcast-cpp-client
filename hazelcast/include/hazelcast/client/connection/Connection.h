@@ -129,8 +129,6 @@ namespace hazelcast {
 
                 void reAuthenticateAsOwner();
 
-                void setAuthenticationInvocationFuture(future<void> authenticationInvocationFuture);
-
                 friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
 
                 ReadHandler readHandler;
@@ -146,7 +144,6 @@ namespace hazelcast {
                 protocol::IMessageHandler &invocationService;
                 std::unique_ptr<Socket> socket;
                 std::shared_ptr<AuthenticationFuture> authFuture;
-                future<void> authenticationInvocationFuture;
                 util::AtomicBoolean authenticatedAsOwner;
 
                 int connectionId;

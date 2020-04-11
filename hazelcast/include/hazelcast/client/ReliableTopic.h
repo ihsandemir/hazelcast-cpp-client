@@ -49,7 +49,6 @@ namespace hazelcast {
             friend class impl::HazelcastClientInstanceImpl;
 
         public:
-            static const std::string NULL_MESSAGE_IS_NOT_ALLOWED;
             static const std::string NULL_LISTENER_IS_NOT_ALLOWED;
 
             /**
@@ -61,8 +60,6 @@ namespace hazelcast {
             * @param message The message to be published
             */
             void publish(const E *message) {
-                util::Preconditions::checkNotNull<E>(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-
                 serialization::pimpl::Data data = getContext().getSerializationService().template toData<E>(message);
                 proxy::ReliableTopicImpl::publish(data);
             }
@@ -341,8 +338,6 @@ namespace hazelcast {
             util::AtomicInt runnerCounter;
         };
 
-        template<typename T>
-        const std::string ReliableTopic<T>::NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
         template<typename T>
         const std::string ReliableTopic<T>::NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     }
