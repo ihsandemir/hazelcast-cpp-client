@@ -157,8 +157,6 @@ namespace hazelcast {
 
                 heartbeat.shutdown();
 
-                connectionStrategy->shutdown();
-
                 // let the waiting authentication futures not block anymore
                 for (auto &authFutureTuple : connectionsInProgress.values()) {
                     auto &authFuture = std::get<0>(*authFutureTuple);
@@ -180,6 +178,8 @@ namespace hazelcast {
 
                 ioContext.stop();
                 std::for_each(ioThreads.begin(), ioThreads.end(), [](std::thread &t) { t.join(); });
+
+                connectionStrategy->shutdown();
 
                 connectionListeners.clear();
                 activeConnections.clear();
@@ -911,7 +911,7 @@ namespace hazelcast {
                       connectionId(connectionId),
                       connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION),
                       logger(clientContext.getLogger()), asOwner(asOwner),
-                      connectionManager(clientConnectionManager) {
+                      connectionManager(clientConnectionManager), io(ioContext) {
                 socket = socketFactory.create(address, connectTimeoutInMillis);
             }
 

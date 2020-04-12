@@ -158,6 +158,7 @@ namespace hazelcast {
                 util::ILogger &logger;
                 bool asOwner;
                 ClientConnectionManagerImpl &connectionManager;
+                boost::asio::io_context &io;
             };
         }
     }

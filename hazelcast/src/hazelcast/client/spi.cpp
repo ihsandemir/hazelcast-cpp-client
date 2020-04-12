@@ -1349,8 +1349,10 @@ namespace hazelcast {
                     invokeOnSelection();
                     return invocationPromise.get_future().then(launch::sync,
                                                                [=](boost::future<protocol::ClientMessage> f) {
-                                                                   invocationService.removeRetriedInvocation(
-                                                                           clientMessage.get()->getCorrelationId());
+                                                                   if (invokeCount > 1) {
+                                                                       invocationService.removeRetriedInvocation(
+                                                                               clientMessage.get()->getCorrelationId());
+                                                                   }
                                                                    return f.get();
                                                                });
                 }
