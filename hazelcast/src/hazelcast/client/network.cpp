@@ -155,8 +155,6 @@ namespace hazelcast {
                 }
                 alive.store(false);
 
-                ioContext.stop();
-
                 heartbeat.shutdown();
 
                 connectionStrategy->shutdown();
@@ -180,10 +178,11 @@ namespace hazelcast {
                 clusterConnectionExecutor.stop();
                 clusterConnectionExecutor.join();
 
+                ioContext.stop();
+                std::for_each(ioThreads.begin(), ioThreads.end(), [](std::thread &t) { t.join(); });
+
                 connectionListeners.clear();
                 activeConnections.clear();
-
-                std::for_each(ioThreads.begin(), ioThreads.end(), [](std::thread &t) { t.join(); });
             }
 
             std::shared_ptr<Connection>
@@ -944,23 +943,33 @@ namespace hazelcast {
             }
 
             void Connection::close(const std::string &reason, std::exception_ptr cause) {
-                int64_t expected = 0;
-                if (!closedTimeMillis.compare_exchange_strong(expected, util::currentTimeMillis())) {
-                    return;
-                }
+                boost::asio::post(io, [=]() {
+                    int64_t expected = 0;
+                    if (!closedTimeMillis.compare_exchange_strong(expected, util::currentTimeMillis())) {
+                        return;
+                    }
 
-                closeCause = cause;
-                closeReason = reason;
+                    closeCause = cause;
+                    closeReason = reason;
 
-                logClose();
+                    logClose();
 
-                try {
-                    innerClose();
-                } catch (exception::IException &e) {
-                    clientContext.getLogger().warning("Exception while closing connection", e.getMessage());
-                }
+                    try {
+                        innerClose();
+                    } catch (exception::IException &e) {
+                        clientContext.getLogger().warning("Exception while closing connection", e.getMessage());
+                    }
 
-                clientContext.getConnectionManager().onClose(*this);
+                    auto thisConnection = shared_from_this();
+
+                    clientContext.getConnectionManager().onClose(*this);
+
+                    auto ioEx = std::make_exception_ptr(boost::enable_current_exception(
+                            exception::TargetDisconnectedException("Connection::close", reason)));
+                    for (auto &invocationEntry : invocations) {
+                        invocationEntry.second->notifyException(ioEx);
+                    }
+                });
             }
 
             void Connection::write(const std::shared_ptr<spi::impl::ClientInvocation> &clientInvocation) {

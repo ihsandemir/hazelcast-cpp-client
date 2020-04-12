@@ -610,6 +610,7 @@ namespace hazelcast {
 
                     responseThread.start();
 
+/*
                     int64_t cleanResourcesMillis = client.getClientProperties().getLong(CLEAN_RESOURCES_MILLIS);
                     if (cleanResourcesMillis <= 0) {
                         cleanResourcesMillis = util::IOUtil::to_value<int64_t>(
@@ -642,6 +643,7 @@ namespace hazelcast {
                             invocations.remove(invocationId);
                         }
                     }, duration, duration);
+*/
 
                     return true;
                 }
@@ -651,9 +653,7 @@ namespace hazelcast {
 
                     responseThread.shutdown();
 
-                    typedef std::vector<std::pair<int64_t, std::shared_ptr<ClientInvocation> > > InvocationEntriesVector;
-                    InvocationEntriesVector allEntries = invocations.clear();
-                    for (InvocationEntriesVector::value_type &entry : allEntries) {
+                    for (auto &entry : invocations.clear()) {
                         entry.second->notifyException(
                                 std::make_exception_ptr(exception::HazelcastClientNotActiveException(
                                         "AbstractClientInvocationService::shutdown",
@@ -663,6 +663,15 @@ namespace hazelcast {
 
                 int64_t AbstractClientInvocationService::getInvocationTimeoutMillis() const {
                     return invocationTimeoutMillis;
+                }
+
+                void AbstractClientInvocationService::registerRetriedInvocation(int64_t callId,
+                                                                                const std::shared_ptr<ClientInvocation> invocation) {
+                    invocations.put(callId, invocation);
+                }
+
+                void AbstractClientInvocationService::removeRetriedInvocation(int64_t callId) {
+                    invocations.remove(callId);
                 }
 
                 int64_t AbstractClientInvocationService::getInvocationRetryPauseMillis() const {
@@ -1337,33 +1346,38 @@ namespace hazelcast {
                 future<protocol::ClientMessage> ClientInvocation::invoke() {
                     assert (clientMessage.get() != NULL);
                     clientMessage.get()->setCorrelationId(callIdSequence->next());
-                    invokeOnSelection(shared_from_this());
-                    return invocationPromise.get_future();
+                    invokeOnSelection();
+                    return invocationPromise.get_future().then(launch::sync,
+                                                               [=](boost::future<protocol::ClientMessage> f) {
+                                                                   invocationService.removeRetriedInvocation(
+                                                                           clientMessage.get()->getCorrelationId());
+                                                                   return f.get();
+                                                               });
                 }
 
                 future<protocol::ClientMessage> ClientInvocation::invokeUrgent() {
                     assert (clientMessage.get() != NULL);
                     clientMessage.get()->setCorrelationId(callIdSequence->forceNext());
-                    invokeOnSelection(shared_from_this());
+                    invokeOnSelection();
                     return invocationPromise.get_future();
                 }
 
-                void ClientInvocation::invokeOnSelection(const std::shared_ptr<ClientInvocation> &invocation) {
-                    invocation->invokeCount++;
+                void ClientInvocation::invokeOnSelection() {
+                    invokeCount++;
                     try {
-                        if (invocation->isBindToSingleConnection()) {
-                            invocation->invocationService.invokeOnConnection(invocation, invocation->connection);
-                        } else if (invocation->partitionId != UNASSIGNED_PARTITION) {
-                            invocation->invocationService.invokeOnPartitionOwner(invocation, invocation->partitionId);
-                        } else if (invocation->address.get() != NULL) {
-                            invocation->invocationService.invokeOnTarget(invocation, invocation->address);
+                        if (isBindToSingleConnection()) {
+                            invocationService.invokeOnConnection(shared_from_this(), connection);
+                        } else if (partitionId != UNASSIGNED_PARTITION) {
+                            invocationService.invokeOnPartitionOwner(shared_from_this(), partitionId);
+                        } else if (address.get() != NULL) {
+                            invocationService.invokeOnTarget(shared_from_this(), address);
                         } else {
-                            invocation->invocationService.invokeOnRandomTarget(invocation);
+                            invocationService.invokeOnRandomTarget(shared_from_this());
                         }
                     } catch (exception::HazelcastOverloadException &) {
                         throw;
                     } catch (exception::IException &e) {
-                        invocation->notifyException(std::current_exception());
+                        notifyException(std::current_exception());
                     }
                 }
 
@@ -1379,27 +1393,22 @@ namespace hazelcast {
                     // retry modifies the client message and should not reuse the client message.
                     // It could be the case that it is in write queue of the connection.
                     clientMessage = copyMessage();
-                    // first we force a new invocation slot because we are going to return our old invocation slot immediately after
-                    // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
-                    // through that takes our slot!
-                    clientMessage.get()->setCorrelationId(callIdSequence->forceNext());
-                    //we release the old slot
-                    callIdSequence->complete();
 
                     try {
-                        invokeOnSelection(shared_from_this());
+                        invokeOnSelection();
                     } catch (exception::IException &e) {
                         setException(e, current_exception());
                     }
                 }
 
-                void ClientInvocation::setException(const exception::IException &e,
-                                                    exception_ptr exceptionPtr) {
+                void ClientInvocation::setException(const exception::IException &e, exception_ptr exceptionPtr) {
                     try {
                         invocationPromise.set_exception(exceptionPtr);
-                    } catch (std::exception &pe) {
-                        logger.warning("Failed to set the exception for invocation. ", pe.what(), ", ", *this,
-                                       " Exception to be set: ", e);
+                    } catch (promise_already_satisfied &se) {
+                        if (!eventHandler) {
+                            logger.warning("Failed to set the exception for invocation. ", se.what(), ", ", *this,
+                                           " Exception to be set: ", e);
+                        }
                     }
                 }
 
@@ -1623,6 +1632,20 @@ namespace hazelcast {
                     auto command = [=]() {
                         this_invocation->run();
                     };
+
+                    // first we force a new invocation slot because we are going to return our old invocation slot immediately after
+                    // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
+                    // through that takes our slot!
+                    int64_t callId = callIdSequence->forceNext();
+                    clientMessage.get()->setCorrelationId(callId);
+
+                    if (invokeCount == 1) {
+                        invocationService.registerRetriedInvocation(callId, this_invocation);
+                    }
+
+                    //we release the old slot
+                    callIdSequence->complete();
+
                     if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                         // fast retry for the first few invocations
                         executionService->execute(command);

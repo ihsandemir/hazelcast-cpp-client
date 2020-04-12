@@ -103,16 +103,25 @@ namespace hazelcast {
                                     const std::shared_ptr<spi::impl::ClientInvocation> invocation) override {
                         auto message = invocation->getClientMessage();
                         boost::asio::post(socket_->get_executor(), [=]() {
+                            if (!socket_->lowest_layer().is_open()) {
+                                invocation->notifyException(
+                                        std::make_exception_ptr(boost::enable_current_exception(exception::IOException(
+                                                "Connection::write", (boost::format{
+                                                        "Socket closed. Invocation write for %1% on connection %2% failed"} %
+                                                                      *invocation % *connection).str()))));
+                                return;
+                            }
                             auto correlationId = message->getCorrelationId();
                             auto result = connection->invocations.insert({correlationId, invocation});
                             if (!result.second) {
                                 auto existingEntry = *result.first;
                                 invocation->notifyException(std::make_exception_ptr(
-                                        exception::IllegalStateException("Connection::write", (boost::format(
-                                                "There is already an existing invocation with the same correlation id: %1%. Existing: %2% New invocation:%3%") %
-                                                                                               correlationId %
-                                                                                               (*existingEntry.second) %
-                                                                                               *invocation).str())));
+                                        boost::enable_current_exception(
+                                                exception::IllegalStateException("Connection::write", (boost::format(
+                                                        "There is already an existing invocation with the same correlation id: %1%. Existing: %2% New invocation:%3%") %
+                                                                                                       correlationId %
+                                                                                                       (*existingEntry.second) %
+                                                                                                       *invocation).str()))));
                                 return;
                             }
 
@@ -124,7 +133,7 @@ namespace hazelcast {
                                                          if (ec) {
                                                              auto invocationIt = connection->invocations.find(
                                                                      correlationId);
-                                                             // TODO
+                                                             //TODO
 /*                                                             if (invocationIt == connection->invocations.end()) {
                                                                  connection->getLogger().warning("async_write could not find invocation for correlation id: ", correlationId);
                                                              }*/
@@ -132,8 +141,11 @@ namespace hazelcast {
                                                                      "Error %1% during invocation write for %2% on connection %3%"} %
                                                                              ec % *invocation % *connection).str();
                                                              invocationIt->second->notifyException(
-                                                                     std::make_exception_ptr(exception::IOException(
-                                                                             "Connection::write", message)));
+                                                                     boost::enable_current_exception(
+                                                                             std::make_exception_ptr(
+                                                                                     exception::IOException(
+                                                                                             "Connection::write",
+                                                                                             message))));
 
                                                              connection->close(message);
                                                              connection->invocations.erase(invocationIt);

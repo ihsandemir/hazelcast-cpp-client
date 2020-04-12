@@ -118,9 +118,9 @@ namespace hazelcast {
 
                     getEventHandler() const;
 
-                    void setEventHandler(const std::shared_ptr<EventHandler < protocol::ClientMessage>
+                    void setEventHandler(const std::shared_ptr<EventHandler < protocol::ClientMessage>>
 
-                    > &eventHandler);
+                    &eventHandler);
 
                     friend std::ostream &operator<<(std::ostream &os, const ClientInvocation &invocation);
 
@@ -137,7 +137,7 @@ namespace hazelcast {
                                      const std::shared_ptr<connection::Connection> &conn = nullptr,
                                      const std::shared_ptr<Address> serverAddress = nullptr);
 
-                    static void invokeOnSelection(const std::shared_ptr<ClientInvocation> &invocation);
+                    void invokeOnSelection();
 
                     bool isBindToSingleConnection() const;
 
@@ -151,7 +151,7 @@ namespace hazelcast {
                     ClientClusterService &clientClusterService;
                     ClientInvocationService &invocationService;
                     std::shared_ptr<ClientExecutionServiceImpl> executionService;
-                    util::Sync<std::shared_ptr<protocol::ClientMessage> > clientMessage;
+                    util::Sync<std::shared_ptr<protocol::ClientMessage>> clientMessage;
                     std::shared_ptr<sequence::CallIdSequence> callIdSequence;
                     std::shared_ptr<Address> address;
                     int partitionId;
@@ -159,8 +159,8 @@ namespace hazelcast {
                     int64_t retryPauseMillis;
                     std::string objectName;
                     std::shared_ptr<connection::Connection> connection;
-                    util::Sync<std::shared_ptr<connection::Connection> > sendConnection;
-                    std::shared_ptr<EventHandler<protocol::ClientMessage> > eventHandler;
+                    util::Sync<std::shared_ptr<connection::Connection>> sendConnection;
+                    std::shared_ptr<EventHandler < protocol::ClientMessage>> eventHandler;
                     std::atomic<int64_t> invokeCount;
                     promise<protocol::ClientMessage> invocationPromise;
 
