@@ -964,10 +964,9 @@ namespace hazelcast {
 
                     clientContext.getConnectionManager().onClose(*this);
 
-                    auto ioEx = std::make_exception_ptr(boost::enable_current_exception(
-                            exception::TargetDisconnectedException("Connection::close", reason)));
                     for (auto &invocationEntry : invocations) {
-                        invocationEntry.second->notifyException(ioEx);
+                        invocationEntry.second->notifyException(std::make_exception_ptr(boost::enable_current_exception(
+                                exception::TargetDisconnectedException("Connection::close", reason))));
                     }
                 });
             }

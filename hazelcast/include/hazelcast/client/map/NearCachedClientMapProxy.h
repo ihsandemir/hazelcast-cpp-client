@@ -83,7 +83,7 @@ namespace hazelcast {
                                     return value;
                                 } catch (...) {
                                     resetToUnmarkedState(ncKey);
-                                    rethrow_exception(current_exception());
+                                    throw;
                                 }
                             });
                         }

@@ -166,7 +166,7 @@ namespace hazelcast {
                         bool retryable = isRetryable(e);
                         if (!retryable) {
                             try {
-                                std::rethrow_exception(std::current_exception());
+                                throw;
                             } catch (exception::ExecutionException &) {
                                 try {
                                     std::rethrow_if_nested(std::current_exception());
@@ -179,7 +179,7 @@ namespace hazelcast {
                         if (retryable) {
                             sleepForProxyInitRetry();
                         } else {
-                            std::rethrow_exception(std::current_exception());
+                            throw;
                         }
                     }
                 }
