@@ -2948,9 +2948,7 @@ namespace hazelcast {
 
             TEST_P(ClientMapTest, testAsyncRemove) {
                 fillMap();
-                auto future = imap.removeAsync(
-                        "key4");
-                future.get();
+                auto future = imap.removeAsync("key4");
                 std::shared_ptr<std::string> value = future.get();
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ("value4", *value);
