@@ -19,6 +19,7 @@
 
 #include <string>
 #include <memory>
+#include <boost/thread/executors/basic_thread_pool.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/DistributedObject.h"
@@ -67,7 +68,7 @@ namespace hazelcast {
 
                 virtual const std::string &getServiceName() const;
 
-                ClientContext &getContext();
+                ClientContext &getContext() const;
 
                 virtual void destroy();
 
@@ -112,6 +113,8 @@ namespace hazelcast {
                 * @param registrationId The registration id for the listener to be unregistered.
                 */
                 bool deregisterListener(const std::string &registrationId);
+
+                boost::executors::basic_thread_pool &get_user_executor() const;
             protected:
                 /**
                  * Called before proxy is destroyed and determines whether destroy should be done.

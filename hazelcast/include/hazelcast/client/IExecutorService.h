@@ -593,14 +593,13 @@ namespace hazelcast {
 
                 auto messageFuture = invokeOnPartitionInternal(taskData, partitionId, uuid);
 
-                messageFuture.first.then(boost::launch::sync, [=](boost::future<protocol::ClientMessage> f) {
+                messageFuture.first.then(get_user_executor(), [=](boost::future<protocol::ClientMessage> f) {
                     try {
                         auto result = SUBMIT_TO_PARTITION_DECODER<T>()->decodeClientMessage(f.get(),
                                                                                             getSerializationService());
-                        getContext().getClientExecutionService().execute([=]() { callback->onResponse(result); });
+                        callback->onResponse(result);
                     } catch (exception::IException &e) {
-                        auto exception = std::current_exception();
-                        getContext().getClientExecutionService().execute([=]() { callback->onFailure(exception); });
+                        callback->onFailure(std::current_exception());
                     }
                 });
             }
@@ -673,7 +672,7 @@ namespace hazelcast {
 
                 auto messageFuture = invokeOnAddressInternal<HazelcastSerializable>(task, address, uuid);
 
-                messageFuture.first.then(boost::launch::sync, [=](boost::future<protocol::ClientMessage> f) {
+                messageFuture.first.then(get_user_executor(), [=](boost::future<protocol::ClientMessage> f) {
                     try {
                         auto result = SUBMIT_TO_ADDRESS_DECODER<T>()->decodeClientMessage(f.get(),
                                                                                           getSerializationService());
@@ -737,7 +736,7 @@ namespace hazelcast {
                 if (sync) {
                     objectFuture = retrieveResultSync<T, DECODER>(futurePair.first);
                 } else {
-                    objectFuture = futurePair.first.then(boost::launch::sync,
+                    objectFuture = futurePair.first.then(boost::launch::deferred,
                                                          [=](boost::future<protocol::ClientMessage> f) {
                                                              return impl::DataMessageDecoder<DECODER, T>::instance()->decodeClientMessage(
                                                                      f.get(),

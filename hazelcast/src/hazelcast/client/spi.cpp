@@ -518,7 +518,7 @@ namespace hazelcast {
                 return serviceName;
             }
 
-            ClientContext &ClientProxy::getContext() {
+            ClientContext &ClientProxy::getContext() const {
                 return context;
             }
 
@@ -600,6 +600,9 @@ namespace hazelcast {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
+            boost::executors::basic_thread_pool &ClientProxy::get_user_executor() const {
+                return getContext().getClientExecutionService().getUserExecutor();
+            }
 
             namespace impl {
                 AbstractClientInvocationService::AbstractClientInvocationService(ClientContext &client)
@@ -1237,16 +1240,19 @@ namespace hazelcast {
                     }
 
                     internalExecutor.reset(new hazelcast::util::hz_thread_pool(internalPoolSize));
-                    userExecutor.reset(new hazelcast::util::hz_thread_pool(userExecutorPoolSize));
+                    userExecutor.reset(new boost::executors::basic_thread_pool(userExecutorPoolSize));
                 }
 
                 void ClientExecutionServiceImpl::shutdown() {
-                    shutdownThreadPool(userExecutor.get());
+                    if (userExecutor) {
+                        userExecutor.reset();
+                    }
                     shutdownThreadPool(internalExecutor.get());
                 }
 
-                boost::asio::thread_pool::executor_type ClientExecutionServiceImpl::getUserExecutor() const {
-                    return userExecutor->get_executor();
+                boost::executors::basic_thread_pool &ClientExecutionServiceImpl::getUserExecutor() const {
+                    assert(userExecutor);
+                    return *userExecutor;
                 }
 
                 void ClientExecutionServiceImpl::shutdownThreadPool(hazelcast::util::hz_thread_pool *pool) {

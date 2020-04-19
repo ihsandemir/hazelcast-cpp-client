@@ -20,6 +20,7 @@
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/post.hpp>
+#include <boost/thread/executors/basic_thread_pool.hpp>
 
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
@@ -70,12 +71,12 @@ namespace hazelcast {
                         return scheduleWithRepetitionInternal(token, delay, period, timer);
                     }
 
-                    boost::asio::thread_pool::executor_type getUserExecutor() const;
+                    boost::executors::basic_thread_pool &getUserExecutor() const;
 
                     static void shutdownThreadPool(hazelcast::util::hz_thread_pool *pool);
                 private:
                     std::unique_ptr<hazelcast::util::hz_thread_pool> internalExecutor;
-                    std::unique_ptr<hazelcast::util::hz_thread_pool> userExecutor;
+                    std::unique_ptr<boost::executors::basic_thread_pool> userExecutor;
                     spi::LifecycleService &lifecycleService;
                     const ClientProperties &clientProperties;
                     int userExecutorPoolSize;
