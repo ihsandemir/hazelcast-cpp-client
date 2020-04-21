@@ -1242,8 +1242,13 @@ namespace hazelcast {
                 }
 
                 void ClientExecutionServiceImpl::shutdown() {
-                    internalExecutor.reset();
-                    userExecutor.reset();
+                    if (internalExecutor) {
+                        internalExecutor->close();
+                    }
+                    if (userExecutor) {
+                        userExecutor->close();
+                        userExecutor>join();
+                    }
                 }
 
                 boost::basic_thread_pool &ClientExecutionServiceImpl::getUserExecutor() const {
@@ -2214,13 +2219,14 @@ namespace hazelcast {
                             e->close();
                         }
 
-                        registrationExecutor.reset();
+                        if (registrationExecutor) {
+                            registrationExecutor->close();
+                        }
 
                         if (eventExecutor) {
                             eventExecutor->close();
                             eventExecutor->join();
                         }
-                        serialEventExecutors.clear();
                     }
 
                     void AbstractClientListenerService::start() {
