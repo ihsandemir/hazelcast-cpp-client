@@ -17,8 +17,9 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_LISTENER_ABSTRACTCLIENTLISTERNERSERVICE_H_
 #define HAZELCAST_CLIENT_SPI_IMPL_LISTENER_ABSTRACTCLIENTLISTERNERSERVICE_H_
 
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio/strand.hpp>
+#include <boost/thread/executors/basic_thread_pool.hpp>
+#include <boost/thread/executors/scheduled_thread_pool.hpp>
+#include <boost/thread/executors/serial_executor.hpp>
 
 #include <stdint.h>
 #include "hazelcast/client/connection/ConnectionListener.h"
@@ -96,13 +97,6 @@ namespace hazelcast {
 
                         virtual bool deregisterListenerInternal(const std::string &userRegistrationId);
 
-                        virtual void
-                        connectionAddedInternal(const std::shared_ptr<connection::Connection> &connection);
-
-                        virtual void
-                        connectionRemovedInternal(const std::shared_ptr<connection::Connection> &connection);
-
-
                         void invoke(const ClientRegistrationKey &registrationKey,
                                     const std::shared_ptr<connection::Connection> &connection);
 
@@ -110,9 +104,9 @@ namespace hazelcast {
                         serialization::pimpl::SerializationService &serializationService;
                         util::ILogger &logger;
                         connection::ClientConnectionManagerImpl &clientConnectionManager;
-                        std::unique_ptr<hazelcast::util::hz_thread_pool> eventExecutor;
-                        std::vector<boost::asio::thread_pool::executor_type> eventStrands;
-                        std::unique_ptr<hazelcast::util::hz_thread_pool> registrationExecutor;
+                        std::unique_ptr<boost::basic_thread_pool> eventExecutor;
+                        std::vector<std::unique_ptr<boost::serial_executor>> serialEventExecutors;
+                        std::unique_ptr<boost::scheduled_thread_pool> registrationExecutor;
                         std::chrono::steady_clock::duration invocationTimeout;
                         std::chrono::steady_clock::duration invocationRetryPause;
                         RegistrationsMap registrations;

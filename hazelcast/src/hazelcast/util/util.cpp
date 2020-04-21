@@ -51,7 +51,6 @@
 #include "hazelcast/util/Preconditions.h"
 #include "hazelcast/util/SyncHttpsClient.h"
 #include "hazelcast/util/Clearable.h"
-#include "hazelcast/util/hz_thread_pool.h"
 #include <mutex>
 
 #include "hazelcast/util/Destroyable.h"
@@ -1568,22 +1567,6 @@ namespace hazelcast {
             memcpy(target, ix(), numBytesToCopy);
             pos += numBytesToCopy;
             return numBytesToCopy;
-        }
-
-        hz_thread_pool::hz_thread_pool(size_t numThreads) : pool_(new boost::asio::thread_pool(numThreads)) {}
-
-        void hz_thread_pool::shutdown_gracefully() {
-            pool_->join();
-
-#if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
-            // needed due to bug https://github.com/chriskohlhoff/asio/issues/431
-            boost::asio::use_service<boost::asio::detail::win_iocp_io_context>(*pool_).stop();
-#endif
-            pool_.reset();
-        }
-
-        boost::asio::thread_pool::executor_type hz_thread_pool::get_executor() const {
-            return pool_->get_executor();
         }
     }
 }

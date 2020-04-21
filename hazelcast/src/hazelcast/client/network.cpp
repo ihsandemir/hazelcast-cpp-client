@@ -144,7 +144,7 @@ namespace hazelcast {
                     ioThreads.emplace_back([=]() { ioContext->run(); });
                 }
 
-                clusterConnectionExecutor.reset(new hazelcast::util::hz_thread_pool(1));
+                clusterConnectionExecutor.reset(new boost::basic_thread_pool(1));
 
                 heartbeat.start();
                 connectionStrategy->start();
@@ -160,7 +160,6 @@ namespace hazelcast {
                 alive.store(false);
 
                 connectionStrategy->shutdown();
-                heartbeat.shutdown();
 
                 // let the waiting authentication futures not block anymore
                 for (auto &authFutureTuple : connectionsInProgress.values()) {
@@ -179,7 +178,10 @@ namespace hazelcast {
                     util::IOUtil::closeResource(connection.get(), "Hazelcast client is shutting down");
                 }
 
-                spi::impl::ClientExecutionServiceImpl::shutdownThreadPool(clusterConnectionExecutor.get());
+                if (clusterConnectionExecutor) {
+                    clusterConnectionExecutor->close();
+                    clusterConnectionExecutor->join();
+                }
 
                 ioGuard.reset();
                 ioResolver.reset();
@@ -369,7 +371,7 @@ namespace hazelcast {
                 invocationFuture.then(boost::launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                     try {
                         authCallback->onResponse(f.get());
-                    } catch (exception::IException &e) {
+                    } catch (std::exception &) {
                         authCallback->onFailure(std::current_exception());
                     }
                 });
@@ -512,28 +514,33 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::disconnectFromCluster(const std::shared_ptr<Connection> connection) {
-                boost::asio::post(clusterConnectionExecutor->get_executor(), [=]() {
-                    std::shared_ptr<Address> endpoint = connection->getRemoteEndpoint();
-                    // it may be possible that while waiting on executor queue, the client got connected (another connection),
-                    // then we do not need to do anything for cluster disconnect.
-                    std::shared_ptr<Address> ownerAddress = ownerConnectionAddress;
-                    if (ownerAddress.get() && (endpoint.get() && *endpoint != *ownerAddress)) {
-                        return;
-                    }
-
-                    setOwnerConnectionAddress(std::shared_ptr<Address>());
-
-                    try {
-                        connectionStrategy->onDisconnectFromCluster();
-
-                        if (client.getLifecycleService().isRunning()) {
-                            fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
+                assert(clusterConnectionExecutor);
+                try {
+                    clusterConnectionExecutor->submit([=]() {
+                        std::shared_ptr<Address> endpoint = connection->getRemoteEndpoint();
+                        // it may be possible that while waiting on executor queue, the client got connected (another connection),
+                        // then we do not need to do anything for cluster disconnect.
+                        std::shared_ptr<Address> ownerAddress = ownerConnectionAddress;
+                        if (ownerAddress.get() && (endpoint.get() && *endpoint != *ownerAddress)) {
+                            return;
                         }
-                    } catch (exception::IException &e) {
-                        logger.info("ClientConnectionManagerImpl::disconnectFromCluster. Exception occured: ",
-                                    e.what());
-                    }
-                });
+
+                        setOwnerConnectionAddress(std::shared_ptr<Address>());
+
+                        try {
+                            connectionStrategy->onDisconnectFromCluster();
+
+                            if (client.getLifecycleService().isRunning()) {
+                                fireConnectionEvent(LifecycleEvent::CLIENT_DISCONNECTED);
+                            }
+                        } catch (std::exception &e) {
+                            logger.info("ClientConnectionManagerImpl::disconnectFromCluster. Exception occured: ",
+                                        e.what());
+                        }
+                    });
+                } catch (std::exception &e) {
+                    logger.info("ClientConnectionManagerImpl::disconnectFromCluster. ", e.what());
+                }
             }
 
             void
@@ -549,8 +556,9 @@ namespace hazelcast {
                 lifecycleService.fireLifecycleEvent(state);
             }
 
-            std::future<bool> ClientConnectionManagerImpl::connectToClusterAsync() {
-                std::packaged_task<bool()> task([=]() {
+            boost::future<bool> ClientConnectionManagerImpl::connectToClusterAsync() {
+                assert(clusterConnectionExecutor);
+                auto task([=]() {
                     try {
                         connectToClusterInternal();
                         return true;
@@ -565,7 +573,7 @@ namespace hazelcast {
                     }
                     return false;
                 });
-                return boost::asio::post(clusterConnectionExecutor->get_executor(), std::move(task));
+                return boost::async(*clusterConnectionExecutor, std::move(task));
             }
 
             void ClientConnectionManagerImpl::connectToClusterInternal() {
@@ -1149,12 +1157,12 @@ namespace hazelcast {
                     : client(client), clientConnectionManager(connectionManager), logger(client.getLogger()) {
                 ClientProperties &clientProperties = client.getClientProperties();
                 int timeoutSeconds = clientProperties.getInteger(clientProperties.getHeartbeatTimeout());
-                heartbeatTimeoutSeconds = std::chrono::seconds(
+                heartbeatTimeoutSeconds = boost::chrono::seconds(
                         timeoutSeconds > 0 ? timeoutSeconds : util::IOUtil::to_value<int>(
                                 (std::string) ClientProperties::PROP_HEARTBEAT_TIMEOUT_DEFAULT));
 
                 int intervalSeconds = clientProperties.getInteger(clientProperties.getHeartbeatInterval());
-                heartbeatIntervalSeconds = std::chrono::seconds(
+                heartbeatIntervalSeconds = boost::chrono::seconds(
                         intervalSeconds > 0 ? intervalSeconds : util::IOUtil::to_value<int>(
                                 (std::string) ClientProperties::PROP_HEARTBEAT_INTERVAL_DEFAULT));
             }
@@ -1162,7 +1170,7 @@ namespace hazelcast {
             void HeartbeatManager::start() {
                 spi::impl::ClientExecutionServiceImpl &clientExecutionService = client.getClientExecutionService();
 
-                timer = clientExecutionService.scheduleWithRepetition([=]() {
+                clientExecutionService.scheduleWithRepetition([=]() {
                     if (!clientConnectionManager.isAlive()) {
                         return;
                     }
@@ -1179,14 +1187,16 @@ namespace hazelcast {
                 }
 
                 auto now = std::chrono::steady_clock::now();
-                if (now - connection->lastReadTime() > heartbeatTimeoutSeconds) {
+                if (std::chrono::duration_cast<std::chrono::nanoseconds>(now - connection->lastReadTime()).count() >
+                    boost::chrono::duration_cast<boost::chrono::nanoseconds>(heartbeatTimeoutSeconds).count()) {
                     if (connection->isAlive()) {
                         logger.warning("Heartbeat failed over the connection: ", *connection);
                         onHeartbeatStopped(connection, "Heartbeat timed out");
                     }
                 }
 
-                if (now - connection->lastReadTime() > heartbeatIntervalSeconds) {
+                if (std::chrono::duration_cast<std::chrono::nanoseconds>(now - connection->lastReadTime()).count() >
+                    boost::chrono::duration_cast<boost::chrono::nanoseconds>(heartbeatIntervalSeconds).count()) {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ClientPingCodec::encodeRequest();
                     std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                             client, request, "", connection);
@@ -1201,13 +1211,6 @@ namespace hazelcast {
                         (exception::ExceptionBuilder<exception::TargetDisconnectedException>(
                                 "HeartbeatManager::onHeartbeatStopped") << "Heartbeat timed out to connection "
                                                                         << *connection).build()));
-            }
-
-            void HeartbeatManager::shutdown() {
-                if (timer) {
-                    boost::system::error_code ignored;
-                    timer->cancel(ignored);
-                }
             }
 
             DefaultClientConnectionStrategy::DefaultClientConnectionStrategy(spi::ClientContext &clientContext,
@@ -1272,7 +1275,8 @@ namespace hazelcast {
                 if (clientContext.getLifecycleService().isRunning()) {
                     try {
                         clientContext.getConnectionManager().connectToClusterAsync();
-                    } catch (exception::RejectedExecutionException &) {
+                    } catch (std::exception &e) {
+                        logger.info("DefaultClientConnectionStrategy::onDisconnectFromCluster", " Failed to connect to cluster. ", e.what());
                         shutdownWithExternalThread(clientContext.getHazelcastClientImplementation());
                     }
                 }
@@ -1297,7 +1301,6 @@ namespace hazelcast {
             void
             DefaultClientConnectionStrategy::shutdownWithExternalThread(
                     std::weak_ptr<client::impl::HazelcastClientInstanceImpl> clientImpl) {
-
                 std::thread([=] {
                     std::shared_ptr<client::impl::HazelcastClientInstanceImpl> clientInstance = clientImpl.lock();
                     if (!clientInstance.get() || !clientInstance->getLifecycleService().isRunning()) {

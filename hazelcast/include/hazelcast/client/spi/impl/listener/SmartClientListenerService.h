@@ -35,8 +35,6 @@ namespace hazelcast {
 
                         void start() override;
 
-                        void shutdown() override;
-
                         std::string
                         registerListener(const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
                                          const std::shared_ptr<EventHandler < protocol::ClientMessage>> handler) override;
@@ -44,8 +42,6 @@ namespace hazelcast {
                         void asyncConnectToAllMembersInternal();
 
                     private:
-                        std::shared_ptr<boost::asio::steady_timer> timer;
-
                         bool registersLocalOnly() const override;
 
                         void trySyncConnectToAllMembers();

@@ -27,6 +27,7 @@
 #include <future>
 #include <vector>
 #include <boost/asio.hpp>
+#include <boost/thread/executors/basic_thread_pool.hpp>
 
 #include "hazelcast/client/serialization/pimpl/SerializationService.h"
 #include "hazelcast/util/ConcurrentSet.h"
@@ -146,7 +147,7 @@ namespace hazelcast {
 
                 void connectToCluster();
 
-                std::future<bool> connectToClusterAsync();
+                boost::future<bool> connectToClusterAsync();
 
                 bool isAlive();
 
@@ -245,7 +246,7 @@ namespace hazelcast {
                 util::Sync<std::shared_ptr<Address> > previousOwnerConnectionAddress;
                 util::Sync<std::shared_ptr<protocol::Principal> > principal;
                 std::unique_ptr<ClientConnectionStrategy> connectionStrategy;
-                std::unique_ptr<hazelcast::util::hz_thread_pool> clusterConnectionExecutor;
+                std::unique_ptr<boost::basic_thread_pool> clusterConnectionExecutor;
                 int32_t connectionAttemptPeriod;
                 int32_t connectionAttemptLimit;
                 int32_t ioThreadCount;

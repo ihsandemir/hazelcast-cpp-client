@@ -91,15 +91,8 @@ namespace hazelcast {
                     logger.info("Client statistics is enabled with period ", periodSeconds, " seconds.");
                 }
 
-                void Statistics::shutdown() {
-                    if (sendTaskTimer) {
-                        boost::system::error_code ignored;
-                        sendTaskTimer->cancel(ignored);
-                    }
-                }
-
                 void Statistics::schedulePeriodicStatisticsSendTask(int64_t periodSeconds) {
-                    sendTaskTimer = clientContext.getClientExecutionService().scheduleWithRepetition([=]() {
+                    clientContext.getClientExecutionService().scheduleWithRepetition([=]() {
                         if (!clientContext.getLifecycleService().isRunning()) {
                             return;
                         }
@@ -117,7 +110,7 @@ namespace hazelcast {
                         periodicStats.addNearCacheStats(stats);
 
                         sendStats(stats.str(), ownerConnection);
-                    }, std::chrono::seconds(0), std::chrono::seconds(periodSeconds));
+                    }, boost::chrono::seconds(0), boost::chrono::seconds(periodSeconds));
                 }
 
                 std::shared_ptr<connection::Connection> Statistics::getOwnerConnection() {

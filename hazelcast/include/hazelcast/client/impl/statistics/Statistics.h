@@ -52,9 +52,6 @@ namespace hazelcast {
                      * Registers all client statistics and schedules periodic collection of stats.
                      */
                     void start();
-
-                    void shutdown();
-
                 private:
                     static const std::string NEAR_CACHE_CATEGORY_PREFIX;
                     static const std::string FEATURE_SUPPORTED_SINCE_VERSION_STRING;
@@ -110,7 +107,6 @@ namespace hazelcast {
                     bool enabled;
                     PeriodicStatistics periodicStats;
                     util::Sync<std::shared_ptr<Address> > cachedOwnerAddress;
-                    std::shared_ptr<boost::asio::steady_timer> sendTaskTimer;
                 };
 
                 template<>
