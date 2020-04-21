@@ -1247,7 +1247,7 @@ namespace hazelcast {
                     }
                     if (userExecutor) {
                         userExecutor->close();
-                        userExecutor>join();
+                        userExecutor->join();
                     }
                 }
 
