@@ -13,21 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-//  PortableSerializer.h
-//  Server
-//
-//  Created by sancar koyunlu on 1/10/13.
-//  Copyright (c) 2013 sancar koyunlu. All rights reserved.
-//
-
-#ifndef HAZELCAST_PORTABLE_SERIALIZER
-#define HAZELCAST_PORTABLE_SERIALIZER
+#pragma once
 
 #include <memory>
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -50,7 +41,7 @@ namespace hazelcast {
 
                 class PortableContext;
 
-                class HAZELCAST_API PortableSerializer : public StreamSerializer {
+                class HAZELCAST_API PortableSerializer {
                 public:
 
                     PortableSerializer(PortableContext& portableContext);

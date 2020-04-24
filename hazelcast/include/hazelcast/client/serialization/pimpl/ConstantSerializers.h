@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 
 namespace hazelcast {
     namespace client {
@@ -33,6 +33,33 @@ namespace hazelcast {
             class ObjectDataOutput;
 
             class ObjectDataInput;
+
+            map.put<KeyPortable, ValPortable>(key, value) {
+                serializer<KeyPortable>::write();
+            }
+            vector<TypedData> vals = map.getAll();
+            optional<TypedData> = map.get<int, TypedData>();
+
+            template <>
+            struct serializer<TypedData> {
+            };
+
+            template <>
+            struct serializer<KeyPortable, 2> {
+                static int32_t get_type_id();
+                static KeyPortable read(ObjectDataInput &in);
+                static void write(ObjectDataOutput &out, byte value) {
+                    write_portable(out, value);
+                }
+
+                static write_portable() {
+                    writePortable();
+                }
+
+                writePortable(PortableWriter out, KeyPortable val) {
+                    out.writeInt(val.getAge());
+                }
+            };
 
             namespace pimpl {
                 class HAZELCAST_API NullSerializer : public StreamSerializer {

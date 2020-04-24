@@ -24,7 +24,7 @@
 #include <stdint.h>
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
 #include "hazelcast/client/serialization/DataSerializableFactory.h"
 #include "hazelcast/client/SerializationConfig.h"

@@ -21,7 +21,7 @@
 #define HAZELCAST_TestCustomSerializableWithBase
 
 
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "customSerialization/TestCustomXSerializable.h"
 
 namespace hazelcast {

@@ -18,6 +18,7 @@
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/client/serialization/serializer.h"
 
 #include <string>
 #include <sstream>
@@ -33,7 +34,8 @@ namespace hazelcast {
         /**
          * IP Address
          */
-        class HAZELCAST_API Address : public serialization::IdentifiedDataSerializable {
+        class HAZELCAST_API Address {
+            friend serialization::serializer<Address>;
         public:
             Address(const std::string &hostname, int port, unsigned long scopeId);
 
@@ -77,17 +79,6 @@ namespace hazelcast {
              */
             const std::string& getHost() const;
 
-            /***** serialization::IdentifiedDataSerializable interface implementation starts here *********************/
-            virtual int getFactoryId() const;
-
-            virtual int getClassId() const;
-
-            virtual void writeData(serialization::ObjectDataOutput &writer) const;
-
-            virtual void readData(serialization::ObjectDataInput &reader);
-
-            /***** serialization::IdentifiedDataSerializable interface implementation end here ************************/
-
             unsigned long getScopeId() const;
 
             bool operator<(const Address &rhs) const;
@@ -107,6 +98,18 @@ namespace hazelcast {
 
         std::ostream HAZELCAST_API &operator << (std::ostream &stream, const Address &address);
 
+        namespace serialization {
+            template<>
+            struct serializer<Address> : public identified_serializer<Address> {
+                static int getFactoryId();
+
+                static int getClassId();
+
+                static void writeData(ObjectDataOutput &out, const Address &add);
+
+                static Address readData(ObjectDataInput &in);
+            };
+        }
     }
 };
 

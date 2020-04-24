@@ -496,34 +496,6 @@ namespace hazelcast {
             return host;
         }
 
-        int Address::getFactoryId() const {
-            return cluster::impl::F_ID;
-        }
-
-        int Address::getClassId() const {
-            return ID;
-        }
-
-        void Address::writeData(serialization::ObjectDataOutput &out) const {
-            out.writeInt(port);
-            out.writeByte(type);
-            int len = (int) host.size();
-            out.writeInt(len);
-            out.writeBytes((const byte *) host.c_str(), len);
-        }
-
-        void Address::readData(serialization::ObjectDataInput &in) {
-            port = in.readInt();
-            type = in.readByte();
-            int len = in.readInt();
-            if (len > 0) {
-                std::vector<byte> bytes;
-                in.readFully(bytes);
-                host.clear();
-                host.append(bytes.begin(), bytes.end());
-            }
-        }
-
         bool Address::operator<(const Address &rhs) const {
             if (host < rhs.host) {
                 return true;
@@ -556,6 +528,37 @@ namespace hazelcast {
 
         std::ostream &operator<<(std::ostream &stream, const Address &address) {
             return stream << address.toString();
+        }
+
+        namespace serialization {
+            int serializer<Address>::getFactoryId() {
+                return cluster::impl::F_ID;
+            }
+
+            int serializer<Address>::getClassId() {
+                return Address::ID;
+            }
+
+            void serializer<Address>::writeData(ObjectDataOutput &out, const Address &add) {
+                out.writeInt(add.port);
+                out.writeByte(add.type);
+                int len = (int) add.host.size();
+                out.writeInt(len);
+                out.writeBytes((const byte *) add.host.c_str(), len);
+            }
+
+            Address serializer<Address>::readData(ObjectDataInput &in) {
+                auto port = in.readInt();
+                auto type = in.readByte();
+                auto len = in.readInt();
+                std::string host;
+                if (len > 0) {
+                    std::vector<byte> bytes;
+                    in.readFully(bytes);
+                    host.append(bytes.begin(), bytes.end());
+                }
+                return Address(host, port, type);
+            }
         }
 
         LifecycleListener::~LifecycleListener() {

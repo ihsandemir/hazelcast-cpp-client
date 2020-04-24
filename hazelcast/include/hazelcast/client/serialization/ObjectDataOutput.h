@@ -25,7 +25,7 @@
 #include "hazelcast/client/serialization/pimpl/PortableContext.h"
 #include "hazelcast/client/serialization/pimpl/DataSerializer.h"
 #include "hazelcast/client/serialization/pimpl/PortableSerializer.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "hazelcast/util/IOUtil.h"
 #include "hazelcast/client/serialization/TypeIDS.h"
 

@@ -31,6 +31,8 @@
  */
 
 #include <boost/concept_check.hpp>
+#include <hazelcast/client/serialization/pimpl/ConstantSerializers.h>
+
 
 #include "hazelcast/client/serialization/VersionedPortable.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
@@ -725,12 +727,6 @@ namespace hazelcast {
                 return os;
             }
 
-            SerializerBase::~SerializerBase() {
-            }
-
-            void SerializerBase::destroy() {
-            }
-
             ObjectDataOutput::ObjectDataOutput(pimpl::DataOutput &dataOutput, pimpl::SerializerHolder *serializerHolder)
                     : dataOutput(&dataOutput), serializerHolder(serializerHolder), isEmpty(false) {
 
@@ -1133,6 +1129,18 @@ namespace hazelcast {
                 }
                 os << "} }";
                 return os;
+            }
+
+            byte serializer<byte>::read(ObjectDataInput &in) {
+                return in.readByte();
+            }
+
+            void serializer<byte>::write(ObjectDataOutput &out, byte value) {
+                out.writeByte(value);
+            }
+
+            int32_t serializer<byte>::get_type_id() {
+                return pimpl::SerializationConstants::CONSTANT_TYPE_BYTE;
             }
 
             namespace pimpl {

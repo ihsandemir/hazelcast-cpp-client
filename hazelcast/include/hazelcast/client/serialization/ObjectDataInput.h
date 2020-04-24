@@ -25,7 +25,7 @@
 #define HAZELCAST_DATA_INPUT
 
 #include "hazelcast/client/exception/IOException.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "hazelcast/client/serialization/pimpl/DataSerializer.h"
 #include "hazelcast/client/serialization/pimpl/PortableSerializer.h"
 #include "hazelcast/client/serialization/pimpl/ConstantSerializers.h"
@@ -214,17 +214,9 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                std::unique_ptr<T> readObject(int32_t typeId) {
-                    std::shared_ptr<SerializerBase> serializer = serializerHolder.serializerFor(typeId);
-                    if (NULL == serializer.get()) {
-                        const std::string message = "No serializer found for serializerId :" +
-                                                    util::IOUtil::to_string(typeId) + ", typename :" +
-                                                    typeid(T).name();
-                        BOOST_THROW_EXCEPTION(
-                                exception::HazelcastSerializationException("ObjectDataInput::readInternal", message));
-                    }
+                boost::optional<T> readObject(int32_t typeId) {
 
-                    return readObjectInternal<T>(typeId, serializer);
+                    return
                 }
 
                 /**

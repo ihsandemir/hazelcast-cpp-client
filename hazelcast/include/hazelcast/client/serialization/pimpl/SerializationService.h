@@ -31,7 +31,7 @@
 #include "hazelcast/client/serialization/pimpl/DataSerializer.h"
 #include "hazelcast/client/serialization/Portable.h"
 #include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/client/serialization/ObjectDataInput.h"
 #include "hazelcast/client/serialization/ObjectDataOutput.h"
@@ -105,6 +105,7 @@ namespace hazelcast {
 
                         writeHash<T>(object, output);
 
+                        serializer<T>::write(dataOutput);
                         dataOutput.writeObject<T>(object);
 
                         Data data(output.toByteArray());
@@ -128,20 +129,36 @@ namespace hazelcast {
                     }
 
                     template<typename T>
-                    inline std::unique_ptr<T> toObject(const Data &data) {
+                    inline boost::optional<T> toObject(const Data &data) {
                         if (isNullData(data)) {
-                            return std::unique_ptr<T>();
+                            return boost::optional<T>();
                         }
 
                         int32_t typeId = data.getType();
-                        
+                        if (typeId != serializer<T>::get_type_id()) {
+                            throw exception::HazelcastSerializationException("toObject", (boost::format(
+                                    "Received data type id %1% does not match requested object type id %2%") % typeId %
+                                                                                          serializer<T>::get_type_id()).str());
+                        }
+
                         // Constant 8 is Data::DATA_OFFSET. Windows DLL export does not
                         // let usage of static member.
                         DataInput dataInput(data.toByteArray(), 8);
 
                         SerializerHolder &serializerHolder = getSerializerHolder();
                         ObjectDataInput objectDataInput(dataInput, serializerHolder);
-                        return objectDataInput.readObject<T>(typeId);
+
+                        typedef typename std::enable_if<std::is_base_of<portable_serializer<T>, serializer<T>>::value, portable_serializer<T>>::type serializer_type;
+                        typedef typename std::enable_if<std::is_base_of<identified_serializer<T>, serializer<T>>::value, identified_serializer<T>>::type serializer_type;
+                        typedef typename std::enable_if<!(std::is_base_of<portable_serializer<T>, serializer<T>>{} || std::is_base_of<identified_serializer<T>, serializer<T>>{}), serializer<T>>::type serializer_type;
+
+                        if (typeId != serializer<T>::get_type_id()) {
+                            throw exception::HazelcastSerializationException("ObjectDataInput::readObject", (boost::format(
+                                    "Received data type id %1% does not match requested object type id %2%") % typeId %
+                                                                                                             serializer<T>::get_type_id()).str());
+                        }
+
+                        return boost::optional<T>(serializer_type::read(objectDataInput));
                     }
 
                     template<typename T>

@@ -31,7 +31,7 @@
  */
 
 #include "hazelcast/client/ClientConfig.h"
-#include "hazelcast/client/serialization/Serializer.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/client/config/SSLConfig.h"
 #include "hazelcast/util/Preconditions.h"
