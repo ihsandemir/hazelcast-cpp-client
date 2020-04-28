@@ -28,11 +28,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template <typename E>
-            class RawPointerList;
-        }
-
         /**
         * Concurrent, distributed , client implementation of std::list
         *
@@ -41,8 +36,6 @@ namespace hazelcast {
         template<typename E>
         class IList : public proxy::IListImpl {
             friend class impl::HazelcastClientInstanceImpl;
-            friend class adaptor::RawPointerList<E>;
-
         public:
             /**
             *

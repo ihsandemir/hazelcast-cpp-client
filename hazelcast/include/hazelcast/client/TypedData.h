@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_TYPEDDATA_H_
-#define HAZELCAST_CLIENT_TYPEDDATA_H_
+#pragma once
 
 #include <memory>
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -65,7 +64,7 @@ namespace hazelcast {
              * @return The object instance of type T.
              */
             template <typename T>
-            std::unique_ptr<T> get() const {
+            boost::optional<T> get() const {
                 return ss->toObject<T>(data.get());
             }
 
@@ -87,6 +86,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HAZELCAST_CLIENT_TYPEDDATA_H_
 

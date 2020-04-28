@@ -24,7 +24,7 @@
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/spi/impl/ListenerMessageCodec.h"
 #include "hazelcast/client/spi/EventHandler.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

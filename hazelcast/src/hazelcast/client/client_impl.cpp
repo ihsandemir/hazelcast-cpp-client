@@ -64,7 +64,6 @@
 #include "hazelcast/client/spi/impl/DefaultAddressTranslator.h"
 #include "hazelcast/client/LoadBalancer.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/mixedtype/impl/HazelcastClientImpl.h"
 #include "hazelcast/client/flakeidgen/impl/FlakeIdGeneratorProxyFactory.h"
 #include "hazelcast/client/proxy/ClientFlakeIdGeneratorProxy.h"
 
@@ -123,10 +122,6 @@ namespace hazelcast {
 
         void HazelcastClient::shutdown() {
             clientImpl->shutdown();
-        }
-
-        mixedtype::HazelcastClient &HazelcastClient::toMixedType() const {
-            return clientImpl->toMixedType();
         }
 
         spi::LifecycleService &HazelcastClient::getLifecycleService() {
@@ -215,8 +210,6 @@ namespace hazelcast {
                     lifecycleService.shutdown();
                     throw;
                 }
-
-                mixedTypeSupportAdaptor.reset(new mixedtype::impl::HazelcastClientImpl(*this));
             }
 
             void HazelcastClientInstanceImpl::startLogger() {
@@ -282,10 +275,6 @@ namespace hazelcast {
                     const std::string &name,
                     spi::ClientProxyFactory &factory) {
                 return proxyManager.getOrCreateProxy(serviceName, name, factory);
-            }
-
-            mixedtype::HazelcastClient &HazelcastClientInstanceImpl::toMixedType() const {
-                return *mixedTypeSupportAdaptor;
             }
 
             const protocol::ClientExceptionFactory &HazelcastClientInstanceImpl::getExceptionFactory() const {

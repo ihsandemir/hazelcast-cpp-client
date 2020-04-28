@@ -20,7 +20,7 @@
 #define HAZELCAST_CLIENT_DATAARRAY_H_
 
 #include "hazelcast/client/exception/IllegalArgumentException.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 namespace hazelcast {
     namespace client {

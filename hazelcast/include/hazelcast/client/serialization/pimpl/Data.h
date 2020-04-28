@@ -27,9 +27,8 @@
 #include <vector>
 #include <memory>
 #include <stdint.h>
-#include "hazelcast/client/serialization/ClassDefinition.h"
-#include "hazelcast/client/serialization/pimpl/PortableContext.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/AtomicBoolean.h"

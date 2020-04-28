@@ -59,7 +59,7 @@
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
 #include "hazelcast/client/impl/ClientMessageDecoder.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 namespace hazelcast {
     namespace client {

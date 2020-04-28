@@ -17,7 +17,7 @@
 #define HAZELCAST_CLIENT_QUERY_PREDICATE_H_
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

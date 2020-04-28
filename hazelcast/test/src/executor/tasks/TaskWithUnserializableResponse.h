@@ -17,7 +17,7 @@
 #ifndef HAZELCAST_CLIENT_TEST_EXECUTOR_TASKS_TASKWITHUNSERIALIZABLERESPONSE_H
 #define HAZELCAST_CLIENT_TEST_EXECUTOR_TASKS_TASKWITHUNSERIALIZABLERESPONSE_H
 
-#include <hazelcast/client/serialization/IdentifiedDataSerializable.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/client/cluster/memberselector/MemberSelectors.h>
 
 namespace hazelcast {

@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include <hazelcast/client/serialization/IdentifiedDataSerializable.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/client/PartitionAware.h>
 
 namespace hazelcast {

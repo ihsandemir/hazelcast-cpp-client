@@ -21,14 +21,14 @@
 #define HAZELCAST_TestCustomSerializableWithBase
 
 
-#include "hazelcast/client/serialization/Serializer.h"
+
 #include "customSerialization/TestCustomXSerializable.h"
 
 namespace hazelcast {
     namespace client {
         namespace test {
 
-            class TestCustomPersonSerializer : public serialization::Serializer<TestCustomPerson> {
+            class TestCustomPersonSerializer : public serialization::hz_serializer<TestCustomPerson> {
             public:
 
                 void write(serialization::ObjectDataOutput & out, const TestCustomPerson& object);

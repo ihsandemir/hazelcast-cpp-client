@@ -26,9 +26,9 @@
 #include <map>
 
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/serialization/Serializer.h"
-#include "hazelcast/client/serialization/DataSerializableFactory.h"
-#include "hazelcast/client/serialization/PortableFactory.h"
+
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -69,76 +69,8 @@ namespace hazelcast {
              * @return itself SerializationConfig
              */
             SerializationConfig& setPortableVersion(int portableVersion);
-
-            /**
-             *
-             * @return vector of registered custom serializers
-             */
-            std::vector<std::shared_ptr<serialization::SerializerBase> > const &getSerializers() const;
-
-            /**
-             * @deprecated Please use registerSerializer(std::shared_ptr<serialization::StreamSerializer> serializer)
-             *
-             * One can implement custom serializers other than Portable and IdentifiedDataSerializable
-             * to be used in serialization of user objects. For details @see Serializer
-             *
-             * @param serializer custom serializer to be registered
-             */
-            SerializationConfig& registerSerializer(std::shared_ptr<serialization::SerializerBase> serializer);
-
-
-            /**
-             * One can implement custom serializers other than Portable and IdentifiedDataSerializable
-             * to be used in serialization of user objects. For details @see Serializer
-             *
-             * @param serializer custom serializer to be registered
-             */
-            SerializationConfig& registerSerializer(std::shared_ptr<serialization::StreamSerializer> serializer);
-
-            /**
-             * @param factoryId               factory ID of DataSerializableFactory to be registered
-             * @param dataSerializableFactory DataSerializableFactory object to be registered
-             * @return configured {@link SerializerConfig} for chaining
-             * @see DataSerializableFactory
-             */
-            SerializationConfig &addDataSerializableFactory(int32_t factoryId,
-                                                            std::shared_ptr<serialization::DataSerializableFactory> dataSerializableFactory);
-
-            /**
-             * @param factoryId       factory ID of portableFactory to be registered
-             * @param portableFactory portableFactory object to be registered
-             * @return configured {@link SerializerConfig} for chaining
-             * @see PortableFactory
-             */
-            SerializationConfig &
-            addPortableFactory(int32_t factoryId, std::shared_ptr<serialization::PortableFactory> portableFactory);
-
-            const std::map<int32_t, std::shared_ptr<serialization::DataSerializableFactory> > &
-            getDataSerializableFactories() const;
-
-            const std::map<int32_t, std::shared_ptr<serialization::PortableFactory> > &getPortableFactories() const;
-
-            /**
-             * If no other serializer exists for a received binary data type id, then this registered serializer will
-             * be utilized.
-             * @param serializer The global serializer that needs to be registered.
-             * @return The serialization configuration reference.
-             */
-            SerializationConfig &
-            setGlobalSerializer(const std::shared_ptr<serialization::StreamSerializer> &serializer);
-
-            /**
-             *
-             * @return The configured global serializer.
-             */
-            const std::shared_ptr<serialization::StreamSerializer> &getGlobalSerializer() const;
-
         private:
             int version;
-            std::vector<std::shared_ptr<serialization::SerializerBase> > serializers;
-            std::map<int32_t, std::shared_ptr<serialization::DataSerializableFactory> > dataSerializableFactories;
-            std::map<int32_t, std::shared_ptr<serialization::PortableFactory> > portableFactories;
-            std::shared_ptr<serialization::StreamSerializer> globalSerializer;
         };
     }
 }

@@ -32,15 +32,12 @@
 
 #include <boost/concept_check.hpp>
 
-#include "hazelcast/client/serialization/VersionedPortable.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
 #include "hazelcast/client/TypedData.h"
-#include "hazelcast/client/serialization/Portable.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
-#include "hazelcast/client/serialization/PortableReader.h"
-#include "hazelcast/client/serialization/pimpl/SerializerHolder.h"
-#include "hazelcast/client/serialization/pimpl/ClassDefinitionContext.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/Util.h"
+#include "hazelcast/util/IOUtil.h"
 #include "hazelcast/util/Bits.h"
 #include "hazelcast/util/MurmurHash3.h"
 
@@ -231,98 +228,6 @@ namespace hazelcast {
                 if (isDefaultWriter)
                     return defaultPortableWriter->getRawDataOutput();
                 return classDefinitionWriter->getRawDataOutput();
-            }
-
-            int32_t getHazelcastTypeId(const Portable *portable) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE;
-            }
-
-            int32_t getHazelcastTypeId(const IdentifiedDataSerializable *identifiedDataSerializable) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_DATA;
-            }
-
-            int32_t getHazelcastTypeId(const char *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_CHAR;
-            }
-
-            int32_t getHazelcastTypeId(const bool *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_BOOLEAN;
-            }
-
-            int32_t getHazelcastTypeId(const byte *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_BYTE;
-            }
-
-            int32_t getHazelcastTypeId(const int16_t *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_SHORT;
-            }
-
-            int32_t getHazelcastTypeId(const int32_t *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_INTEGER;
-            }
-
-            int32_t getHazelcastTypeId(const int64_t *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_LONG;
-            }
-
-            int32_t getHazelcastTypeId(const float *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_FLOAT;
-            }
-
-            int32_t getHazelcastTypeId(const double *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_DOUBLE;
-            }
-
-            int32_t getHazelcastTypeId(const std::string *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_STRING;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<char> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_CHAR_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<bool> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_BOOLEAN_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<byte> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_BYTE_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<int16_t> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_SHORT_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<int32_t> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_INTEGER_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<int64_t> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_LONG_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<float> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_FLOAT_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<double> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_DOUBLE_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<std::string *> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_STRING_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const std::vector<std::string> *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_STRING_ARRAY;
-            }
-
-            int32_t getHazelcastTypeId(const void *object) {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_VOID_POINTER;
-            }
-
-            int32_t getHazelcastTypeId(const HazelcastJsonValue *object) {
-                return pimpl::SerializationConstants::JAVASCRIPT_JSON_SERIALIZATION_TYPE;
             }
 
             ClassDefinitionBuilder::ClassDefinitionBuilder(int factoryId, int classId, int version)
@@ -564,8 +469,9 @@ namespace hazelcast {
                 return os;
             }
 
-            ObjectDataInput::ObjectDataInput(pimpl::DataInput &dataInput, pimpl::SerializerHolder &serializerHolder)
-                    : dataInput(dataInput), serializerHolder(serializerHolder) {
+            ObjectDataInput::ObjectDataInput(pimpl::DataInput &dataInput, pimpl::PortableSerializer &portableSer,
+                                             pimpl::DataSerializer &dataSer)
+                    : dataInput(dataInput), portableSerializer(portableSer), dataSerializer(dataSer) {
             }
 
             void ObjectDataInput::readFully(std::vector<byte> &bytes) {
@@ -681,17 +587,6 @@ namespace hazelcast {
                 return result.release();
             }
 
-            template<>
-            std::unique_ptr<HazelcastJsonValue>
-            ObjectDataInput::readObjectInternal(int32_t typeId, const std::shared_ptr<SerializerBase> &serializer) {
-                std::shared_ptr<StreamSerializer> streamSerializer = std::static_pointer_cast<StreamSerializer>(
-                        serializer);
-
-                return std::unique_ptr<HazelcastJsonValue>(
-                        getBackwardCompatiblePointer<HazelcastJsonValue>(streamSerializer->read(*this),
-                                                                         (HazelcastJsonValue *) NULL));
-            }
-
             FieldType::FieldType() : id(0) {
             }
 
@@ -725,15 +620,9 @@ namespace hazelcast {
                 return os;
             }
 
-            SerializerBase::~SerializerBase() {
-            }
-
-            void SerializerBase::destroy() {
-            }
-
-            ObjectDataOutput::ObjectDataOutput(pimpl::DataOutput &dataOutput, pimpl::SerializerHolder *serializerHolder)
-                    : dataOutput(&dataOutput), serializerHolder(serializerHolder), isEmpty(false) {
-
+            ObjectDataOutput::ObjectDataOutput(pimpl::DataOutput &dataOutput, pimpl::PortableSerializer &portableSer,
+                                               pimpl::DataSerializer &dataSer)
+                    : dataOutput(&dataOutput), portableSerializer(portableSer), dataSerializer(dataSer), isEmpty(false) {
             }
 
             ObjectDataOutput::ObjectDataOutput()
@@ -881,25 +770,13 @@ namespace hazelcast {
                 return dataOutput;
             }
 
-            template<>
-            void ObjectDataOutput::writeInternal(const std::vector<std::string> *object,
-                                                 std::shared_ptr<StreamSerializer> &streamSerializer) {
-                std::vector<std::string> *stringVector = const_cast<std::vector<std::string> *>(object);
-                std::unique_ptr<std::vector<std::string *> > result(new std::vector<std::string *>());
-                for (std::vector<std::string>::iterator it = stringVector->begin(); it != stringVector->end(); ++it) {
-                    result->push_back(&(*it));
-                }
-
-                streamSerializer->write(*this, result.get());
-            }
-
-            PortableReader::PortableReader(pimpl::PortableContext &context, ObjectDataInput &input,
+            PortableReader::PortableReader(pimpl::PortableSerializer &portableSer, ObjectDataInput &input,
                                            std::shared_ptr<ClassDefinition> cd, bool isDefaultReader)
                     : isDefaultReader(isDefaultReader) {
                 if (isDefaultReader) {
-                    defaultPortableReader.reset(new pimpl::DefaultPortableReader(context, input, cd));
+                    defaultPortableReader.reset(new pimpl::DefaultPortableReader(portableSer, input, cd));
                 } else {
-                    morphingPortableReader.reset(new pimpl::MorphingPortableReader(context, input, cd));
+                    morphingPortableReader.reset(new pimpl::MorphingPortableReader(portableSer, input, cd));
                 }
             }
 
@@ -1225,7 +1102,7 @@ namespace hazelcast {
 
                 }
 
-                std::shared_ptr<ClassDefinition> ClassDefinitionWriter::createNestedClassDef(const Portable &portable) {
+                std::shared_ptr<ClassDefinition> ClassDefinitionWriter::createNestedClassDef<(const Portable &portable) {
                     int version = pimpl::PortableVersionHelper::getVersion(&portable, context.getVersion());
                     ClassDefinitionBuilder definitionBuilder(portable.getFactoryId(), portable.getClassId(), version);
 
@@ -1473,34 +1350,8 @@ namespace hazelcast {
                 DataSerializer::~DataSerializer() {
                 }
 
-                void DataSerializer::checkIfIdentifiedDataSerializable(ObjectDataInput &in) const {
-                    bool identified = in.readBoolean();
-                    if (!identified) {
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("void DataSerializer::read",
-                                                                                         " DataSerializable is not identified"));
-                    }
-                }
-
                 int32_t DataSerializer::getHazelcastTypeId() const {
                     return SerializationConstants::CONSTANT_TYPE_DATA;
-                }
-
-                void DataSerializer::write(ObjectDataOutput &out, const IdentifiedDataSerializable *dataSerializable) {
-                    out.writeBoolean(true);
-                    out.writeInt(dataSerializable->getFactoryId());
-                    out.writeInt(dataSerializable->getClassId());
-                    dataSerializable->writeData(out);
-                }
-
-                void DataSerializer::write(ObjectDataOutput &out, const void *object) {
-                    // should not be called
-                    assert(0);
-                }
-
-                void *DataSerializer::read(ObjectDataInput &in) {
-                    // should not be called
-                    assert(0);
-                    return NULL;
                 }
 
                 int32_t DataSerializer::readInt(ObjectDataInput &in) const {
@@ -1596,29 +1447,8 @@ namespace hazelcast {
                     return getClassDefinitionContext(cd->getFactoryId()).registerClassDefinition(cd);
                 }
 
-                std::shared_ptr<ClassDefinition>
-                PortableContext::lookupOrRegisterClassDefinition(const Portable &portable) {
-                    int portableVersion = PortableVersionHelper::getVersion(&portable,
-                                                                            serializationConfig.getPortableVersion());
-                    std::shared_ptr<ClassDefinition> cd = lookupClassDefinition(portable.getFactoryId(),
-                                                                                portable.getClassId(), portableVersion);
-                    if (cd.get() == NULL) {
-                        ClassDefinitionBuilder classDefinitionBuilder(portable.getFactoryId(), portable.getClassId(),
-                                                                      portableVersion);
-                        ClassDefinitionWriter cdw(*this, classDefinitionBuilder);
-                        PortableWriter portableWriter(&cdw);
-                        portable.writePortable(portableWriter);
-                        cd = cdw.registerAndGet();
-                    }
-                    return cd;
-                }
-
                 int PortableContext::getVersion() {
                     return serializationConfig.getPortableVersion();
-                }
-
-                SerializerHolder &PortableContext::getSerializerHolder() {
-                    return serializerHolder;
                 }
 
                 ClassDefinitionContext &PortableContext::getClassDefinitionContext(int factoryId) {
@@ -1639,8 +1469,9 @@ namespace hazelcast {
                 }
 
                 SerializationService::SerializationService(const SerializationConfig &serializationConfig)
-                        : portableContext(serializationConfig),
-                          serializationConfig(serializationConfig) {
+                        : portableContext(serializationConfig), serializationConfig(serializationConfig),
+                          portableSerializer(portableContext), dataSerializer(serializationConfig) {
+/*
                     registerConstantSerializers();
 
                     std::vector<std::shared_ptr<SerializerBase> > const &serializers = serializationConfig.getSerializers();
@@ -1648,18 +1479,14 @@ namespace hazelcast {
                          it < serializers.end(); ++it) {
                         registerSerializer(std::static_pointer_cast<StreamSerializer>(*it));
                     }
+*/
                 }
 
-                SerializerHolder &SerializationService::getSerializerHolder() {
-                    return portableContext.getSerializerHolder();
-                }
-
-                DefaultPortableWriter::DefaultPortableWriter(PortableContext &portableContext,
+                DefaultPortableWriter::DefaultPortableWriter(PortableSerializer &portableSer,
                                                              std::shared_ptr<ClassDefinition> cd,
                                                              ObjectDataOutput &output)
-                        : raw(false), serializerHolder(portableContext.getSerializerHolder()),
-                          dataOutput(*output.getDataOutput()), objectDataOutput(output), begin(dataOutput.position()),
-                          cd(cd) {
+                        : raw(false), portableSerializer(portableSer), dataOutput(*output.getDataOutput()),
+                        objectDataOutput(output), begin(dataOutput.position()), cd(cd) {
                     // room for final offset
                     dataOutput.writeZeroBytes(4);
 
@@ -1839,10 +1666,6 @@ namespace hazelcast {
                     }
                 }
 
-                bool SerializationService::registerSerializer(std::shared_ptr<StreamSerializer> serializer) {
-                    return getSerializerHolder().registerSerializer(serializer);
-                }
-
                 bool SerializationService::isNullData(const Data &data) {
                     return data.dataSize() == 0 && data.getType() == SerializationConstants::CONSTANT_TYPE_NULL;
                 }
@@ -1888,6 +1711,7 @@ namespace hazelcast {
                     return type;
                 }
 
+/*
                 void SerializationService::registerConstantSerializers() {
                     registerSerializer(std::shared_ptr<StreamSerializer>(new NullSerializer));
                     registerSerializer(std::shared_ptr<StreamSerializer>(new DataSerializer(serializationConfig)));
@@ -1914,9 +1738,9 @@ namespace hazelcast {
                     registerSerializer(std::shared_ptr<StreamSerializer>(new DoubleArraySerializer()));
                     registerSerializer(std::shared_ptr<StreamSerializer>(new StringArraySerializer()));
                 }
+*/
 
                 void SerializationService::dispose() {
-                    getSerializerHolder().dispose();
                 }
 
                 template<>
@@ -2343,16 +2167,14 @@ namespace hazelcast {
                     return ((int64_t) x) << 32 | (((int64_t) y) & 0xFFFFFFFL);
                 }
 
-                DefaultPortableReader::DefaultPortableReader(PortableContext &portableContext,
+                DefaultPortableReader::DefaultPortableReader(PortableSerializer &portableSer,
                                                              ObjectDataInput &input,
                                                              std::shared_ptr<ClassDefinition> cd)
-                        : PortableReaderBase(portableContext, input, cd) {
-                }
+                        : PortableReaderBase(portableSer, input, cd) {}
 
-                PortableReaderBase::PortableReaderBase(PortableContext &portableContext, ObjectDataInput &input,
+                PortableReaderBase::PortableReaderBase(PortableSerializer &portableSer, ObjectDataInput &input,
                                                        std::shared_ptr<ClassDefinition> cd)
-                        : cd(cd), dataInput(input), serializerHolder(portableContext.getSerializerHolder()),
-                          raw(false) {
+                        : cd(cd), dataInput(input), portableSerializer(portableSer), raw(false) {
                     int fieldCount;
                     try {
                         // final position after portable is read
@@ -2770,10 +2592,9 @@ namespace hazelcast {
                     return new HazelcastJsonValue(*in.readUTF());
                 }
 
-                MorphingPortableReader::MorphingPortableReader(PortableContext &portableContext, ObjectDataInput &input,
+                MorphingPortableReader::MorphingPortableReader(PortableSerializer &portableSer, ObjectDataInput &input,
                                                                std::shared_ptr<ClassDefinition> cd)
-                        : PortableReaderBase(portableContext, input, cd) {
-                }
+                        : PortableReaderBase(portableSer, input, cd) {}
 
                 int32_t MorphingPortableReader::readInt(char const *fieldName) {
                     if (!cd->hasField(fieldName)) {
@@ -2976,17 +2797,6 @@ namespace hazelcast {
                         : context(portableContext) {
                 }
 
-                void
-                PortableSerializer::read(ObjectDataInput &in, Portable &portable, int32_t factoryId, int32_t classId) {
-                    int version = in.readInt();
-
-                    int portableVersion = findPortableVersion(factoryId, classId, portable);
-
-                    PortableReader reader = createReader(in, factoryId, classId, version, portableVersion);
-                    portable.readPortable(reader);
-                    reader.end();
-                }
-
                 PortableReader
                 PortableSerializer::createReader(ObjectDataInput &input, int factoryId, int classId, int version,
                                                  int portableVersion) const {
@@ -3005,127 +2815,16 @@ namespace hazelcast {
                     }
 
                     if (portableVersion == effectiveVersion) {
-                        PortableReader reader(context, input, cd, true);
+                        PortableReader reader(*this, input, cd, true);
                         return reader;
                     } else {
-                        PortableReader reader(context, input, cd, false);
+                        PortableReader reader(*this, input, cd, false);
                         return reader;
                     }
-                }
-
-                int
-                PortableSerializer::findPortableVersion(int factoryId, int classId, const Portable &portable) const {
-                    int currentVersion = context.getClassVersion(factoryId, classId);
-                    if (currentVersion < 0) {
-                        currentVersion = PortableVersionHelper::getVersion(&portable, context.getVersion());
-                        if (currentVersion > 0) {
-                            context.setClassVersion(factoryId, classId, currentVersion);
-                        }
-                    }
-                    return currentVersion;
-                }
-
-                std::unique_ptr<Portable>
-                PortableSerializer::createNewPortableInstance(int32_t factoryId, int32_t classId) {
-                    const std::map<int32_t, std::shared_ptr<PortableFactory> > &portableFactories =
-                            context.getSerializationConfig().getPortableFactories();
-                    std::map<int, std::shared_ptr<hazelcast::client::serialization::PortableFactory> >::const_iterator factoryIt =
-                            portableFactories.find(factoryId);
-
-                    if (portableFactories.end() == factoryIt) {
-                        return std::unique_ptr<Portable>();
-                    }
-
-                    return factoryIt->second->create(classId);
-                }
-
-                int32_t PortableSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_PORTABLE;
-                }
-
-                void PortableSerializer::write(ObjectDataOutput &out, const void *object) {
-                    const Portable *p = static_cast<const Portable *>(object);
-
-                    if (p->getClassId() == 0) {
-                        BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("Portable class ID cannot be zero!"));
-                    }
-
-                    out.writeInt(p->getFactoryId());
-                    out.writeInt(p->getClassId());
-
-                    writeInternal(out, p);
-                }
-
-                void PortableSerializer::writeInternal(ObjectDataOutput &out, const Portable *p) const {
-                    std::shared_ptr<ClassDefinition> cd = context.lookupOrRegisterClassDefinition(*p);
-                    out.writeInt(cd->getVersion());
-
-                    DefaultPortableWriter dpw(context, cd, out);
-                    PortableWriter portableWriter(&dpw);
-                    p->writePortable(portableWriter);
-                    portableWriter.end();
-                }
-
-                void *PortableSerializer::read(ObjectDataInput &in) {
-                    // should not be called
-                    assert(0);
-                    return NULL;
                 }
 
                 int32_t PortableSerializer::readInt(ObjectDataInput &in) const {
                     return in.readInt();
-                }
-
-                SerializerHolder::SerializerHolder(const std::shared_ptr<StreamSerializer> &globalSerializer)
-                        : active(true), globalSerializer(globalSerializer) {
-                }
-
-                bool SerializerHolder::registerSerializer(const std::shared_ptr<StreamSerializer> &serializer) {
-                    std::shared_ptr<SerializerBase> available = serializers.putIfAbsent(
-                            serializer->getHazelcastTypeId(), serializer);
-                    return available.get() == NULL;
-                }
-
-                std::shared_ptr<StreamSerializer> SerializerHolder::serializerFor(int typeId) {
-                    std::shared_ptr<StreamSerializer> serializer = serializers.get(typeId);
-
-                    if (serializer.get()) {
-                        return serializer;
-                    }
-
-                    serializer = lookupGlobalSerializer(typeId);
-
-                    if (!serializer.get()) {
-                        if (active) {
-                            std::ostringstream out;
-                            out << "There is no suitable serializer for " << typeId;
-                            BOOST_THROW_EXCEPTION(
-                                    exception::HazelcastSerializationException("SerializerHolder::registerSerializer",
-                                                                               out.str()));
-                        }
-                        BOOST_THROW_EXCEPTION(
-                                exception::HazelcastClientNotActiveException("SerializerHolder::registerSerializer"));
-                    }
-                    return serializer;
-                }
-
-                void SerializerHolder::dispose() {
-                    active.store(false);
-
-                    for (std::shared_ptr<StreamSerializer> serializer : serializers.values()) {
-                        serializer->destroy();
-                    }
-
-                    serializers.clear();
-                }
-
-                std::shared_ptr<StreamSerializer> SerializerHolder::lookupGlobalSerializer(int typeId) {
-                    if (!globalSerializer.get()) {
-                        return std::shared_ptr<StreamSerializer>();
-                    }
-
-                    serializers.putIfAbsent(typeId, globalSerializer);
-                    return globalSerializer;
                 }
 
             }

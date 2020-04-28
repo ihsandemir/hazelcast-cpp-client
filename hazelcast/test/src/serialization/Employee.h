@@ -22,11 +22,11 @@
 #include <string>
 #include <stdint.h>
 #include "hazelcast/client/query/EntryComparator.h"
-#include "hazelcast/client/serialization/Portable.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/Comparator.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 namespace hazelcast {
     namespace client {

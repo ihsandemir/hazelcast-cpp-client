@@ -45,7 +45,6 @@
 #include "hazelcast/client/spi/ProxyManager.h"
 #include "hazelcast/client/Ringbuffer.h"
 #include "hazelcast/client/ReliableTopic.h"
-#include "hazelcast/client/mixedtype/HazelcastClient.h"
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 #include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/spi/impl/ClientTransactionManagerServiceImpl.h"
@@ -105,8 +104,6 @@ namespace hazelcast {
             class HAZELCAST_API HazelcastClientInstanceImpl
                     : public std::enable_shared_from_this<HazelcastClientInstanceImpl> {
                 friend class spi::ClientContext;
-                friend class mixedtype::impl::HazelcastClientImpl;
-
             public:
                 /**
                 * Constructs a hazelcastClient with given ClientConfig.
@@ -340,13 +337,6 @@ namespace hazelcast {
                 */
                 void shutdown();
 
-                /**
-                 * Adopts the current map to the mixed type support interface. You can use the mixedtype::HazelcastClient
-                 * interface to get data structures that support manipulating unrelated mixed data types.
-                 * @return The mixed type supporting HazelcastClient.
-                 */
-                mixedtype::HazelcastClient &toMixedType() const;
-
                 spi::LifecycleService &getLifecycleService();
 
                 internal::nearcache::NearCacheManager &getNearCacheManager();
@@ -379,7 +369,6 @@ namespace hazelcast {
                 Cluster cluster;
                 spi::LifecycleService lifecycleService;
                 spi::ProxyManager proxyManager;
-                std::unique_ptr<mixedtype::HazelcastClient> mixedTypeSupportAdaptor;
                 std::shared_ptr<spi::impl::sequence::CallIdSequence> callIdSequence;
                 std::unique_ptr<statistics::Statistics> statistics;
                 protocol::ClientExceptionFactory exceptionFactory;

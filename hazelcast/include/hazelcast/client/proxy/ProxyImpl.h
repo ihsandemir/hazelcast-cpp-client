@@ -23,7 +23,7 @@
 #include <hazelcast/util/ExceptionUtil.h>
 
 #include "hazelcast/client/DistributedObject.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/ClientProxy.h"

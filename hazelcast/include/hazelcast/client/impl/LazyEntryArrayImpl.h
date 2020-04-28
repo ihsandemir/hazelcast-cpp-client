@@ -22,7 +22,7 @@
 #include "hazelcast/client/exception/IllegalArgumentException.h"
 #include "hazelcast/client/LazyEntryArray.h"
 #include "hazelcast/client/query/PagingPredicate.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 namespace hazelcast {
     namespace client {

@@ -21,7 +21,7 @@
 #ifndef HAZELCAST_TestNamedPortableV3
 #define HAZELCAST_TestNamedPortableV3
 
-#include "hazelcast/client/serialization/Portable.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include <string>
 
 namespace hazelcast {

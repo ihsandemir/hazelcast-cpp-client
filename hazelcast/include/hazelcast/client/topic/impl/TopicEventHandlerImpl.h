@@ -21,7 +21,7 @@
 
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/topic/impl/MessageImpl.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/topic/MessageListener.h"
 
@@ -63,42 +63,6 @@ namespace hazelcast {
                     serialization::pimpl::SerializationService &serializationService;
                     MessageListener<E> &listener;
                 };
-            }
-        }
-        namespace mixedtype {
-            namespace topic {
-                namespace impl {
-                    class HAZELCAST_API TopicEventHandlerImpl : public protocol::codec::TopicAddMessageListenerCodec::AbstractEventHandler {
-                    public:
-                        TopicEventHandlerImpl(const std::string &instanceName, spi::ClientClusterService &clusterService,
-                                              serialization::pimpl::SerializationService &serializationService,
-                                              MessageListener &messageListener)
-                                :instanceName(instanceName)
-                                , clusterService(clusterService)
-                                , serializationService(serializationService)
-                                , listener(messageListener) {
-                        }
-
-                        virtual void handleTopicEventV10(const serialization::pimpl::Data &item, const int64_t &publishTime,
-                                                 const std::string &uuid) {
-                            std::shared_ptr<Member> member = clusterService.getMember(uuid);
-
-                            std::unique_ptr<TypedData> object(new TypedData(
-                                    std::unique_ptr<serialization::pimpl::Data>(new serialization::pimpl::Data(item)),
-                                    serializationService));
-
-                            std::unique_ptr<client::topic::Message<TypedData> > listenerMsg(
-                                    new impl::MessageImpl(instanceName, object, publishTime, member));
-                            listener.onMessage(std::move(listenerMsg));
-                        }
-                    private:
-                        const std::string &instanceName;
-                        spi::ClientClusterService &clusterService;
-                        serialization::pimpl::SerializationService &serializationService;
-                        MessageListener &listener;
-                    };
-
-                }
             }
         }
     }

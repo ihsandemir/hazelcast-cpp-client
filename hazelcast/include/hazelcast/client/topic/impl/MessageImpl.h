@@ -79,54 +79,6 @@ namespace hazelcast {
                 };
             }
         }
-
-        namespace mixedtype {
-            namespace topic {
-                namespace impl {
-                    class HAZELCAST_API MessageImpl : public client::topic::Message<TypedData> {
-                    public:
-                        MessageImpl(std::string topicName, std::unique_ptr<TypedData> &message, int64_t publishTime,
-                                    const std::shared_ptr<Member> &member)
-                                : messageObject(std::move(message))
-                                , publishTime(publishTime)
-                                , publishingMember(member)
-                                , name(topicName) {
-                        }
-
-                        virtual ~MessageImpl() { }
-
-                        const TypedData *getMessageObject() const {
-                            return messageObject.get();
-                        }
-
-                        virtual std::unique_ptr<TypedData> &&releaseMessageObject() {
-                            return std::move(messageObject);
-                        }
-
-                        int64_t getPublishTime() const {
-                            return publishTime;
-                        }
-
-                        const Member *getPublishingMember() const {
-                            return publishingMember.get();
-                        }
-
-                        const std::string &getSource() const {
-                            return name;
-                        }
-
-                        std::string getName() {
-                            return name;
-                        }
-                    private:
-                        std::unique_ptr<TypedData> messageObject;
-                        int64_t publishTime;
-                        std::shared_ptr<Member> publishingMember;
-                        std::string name;
-                    };
-                }
-            }
-        }
     }
 }
 

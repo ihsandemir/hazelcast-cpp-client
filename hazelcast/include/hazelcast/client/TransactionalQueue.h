@@ -23,11 +23,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template<typename E>
-            class RawPointerTransactionalQueue;
-        }
-
         /**
         * Transactional implementation of IQueue.
         *
@@ -37,8 +32,6 @@ namespace hazelcast {
         template<typename E>
         class TransactionalQueue : public proxy::TransactionalQueueImpl {
             friend class TransactionContext;
-            friend class adaptor::RawPointerTransactionalQueue<E>;
-
         public:
             /**
             * Transactional implementation of IQueue::offer(const E &e)

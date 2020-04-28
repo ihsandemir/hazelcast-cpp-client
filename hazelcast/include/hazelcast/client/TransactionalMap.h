@@ -28,11 +28,6 @@ namespace hazelcast {
             }
         }
 
-        namespace adaptor {
-            template <typename K, typename V>
-            class RawPointerTransactionalMap;
-        }
-
         /**
         * Transactional implementation of IMap.
         *
@@ -43,8 +38,6 @@ namespace hazelcast {
         template<typename K, typename V>
         class TransactionalMap : public proxy::TransactionalMapImpl {
             friend class TransactionContext;
-            friend class adaptor::RawPointerTransactionalMap<K, V>;
-
         public:
             /**
             * Transactional implementation of IMap#containsKey(Object).

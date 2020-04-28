@@ -39,11 +39,6 @@ namespace hazelcast {
     namespace client {
         class HazelcastClient;
 
-        namespace adaptor {
-            template<typename K, typename V>
-            class RawPointerMap;
-        }
-
         namespace spi {
             class ProxyManager;
         }
@@ -64,11 +59,7 @@ namespace hazelcast {
         template<typename K, typename V>
         class IMap {
             friend class spi::ProxyManager;
-
             friend class impl::HazelcastClientInstanceImpl;
-
-            friend class adaptor::RawPointerMap<K, V>;
-
         public:
             static const std::string SERVICE_NAME;
 
@@ -149,7 +140,8 @@ namespace hazelcast {
              *
              * @param predicate matching entries with this predicate will be removed from this map
              */
-            void removeAll(const query::Predicate &predicate) {
+            template <typename P>
+            void removeAll(const P &predicate) {
                 mapImpl->removeAll(predicate);
             }
 

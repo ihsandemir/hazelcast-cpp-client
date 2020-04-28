@@ -17,8 +17,8 @@
 #ifndef HAZELCAST_CLIENT_TEST_TESTDATASERIALIZABLE_H_
 #define HAZELCAST_CLIENT_TEST_TESTDATASERIALIZABLE_H_
 
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/serialization/DataSerializableFactory.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 namespace hazelcast {
     namespace client {

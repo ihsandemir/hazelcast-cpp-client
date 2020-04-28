@@ -21,11 +21,7 @@
 
 #include "TestNamedPortable.h"
 #include "TestDataSerializable.h"
-#include "hazelcast/client/serialization/PortableFactory.h"
-#include "TestSerializationConstants.h"
-#include <vector>
-
-#include <stdint.h>
+#include "hazelcast/client/serialization/serialization.h>
 
 namespace hazelcast {
     namespace client {

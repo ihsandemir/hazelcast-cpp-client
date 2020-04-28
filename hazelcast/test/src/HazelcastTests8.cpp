@@ -24,7 +24,7 @@
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
-#include <hazelcast/client/serialization/pimpl/SerializationService.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
@@ -90,8 +90,8 @@
 #include <string>
 #include "executor/tasks/SelectAllMembers.h"
 #include "executor/tasks/IdentifiedFactory.h"
-#include <hazelcast/client/serialization/ObjectDataOutput.h>
-#include <hazelcast/client/serialization/ObjectDataInput.h>
+#include <hazelcast/client/serialization/serialization.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include "executor/tasks/CancellationAwareTask.h"
 #include "executor/tasks/NullCallable.h"
 #include "executor/tasks/SerializedCounterCallable.h"
@@ -125,8 +125,8 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -157,15 +157,14 @@
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
 #include "hazelcast/client/exception/IllegalArgumentException.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
-#include "hazelcast/client/serialization/PortableReader.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/util/MurmurHash3.h"
 #include "hazelcast/client/ITopic.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
-#include "hazelcast/client/adaptor/RawPointerSet.h"
 #include "hazelcast/client/query/OrPredicate.h"
 #include "hazelcast/client/query/RegexPredicate.h"
 #include "hazelcast/client/query/PagingPredicate.h"
@@ -182,30 +181,19 @@
 #include "hazelcast/client/query/EqualPredicate.h"
 #include "hazelcast/client/query/TruePredicate.h"
 #include "hazelcast/client/query/FalsePredicate.h"
-#include "hazelcast/client/adaptor/RawPointerMap.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/adaptor/RawPointerList.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalQueue.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
-#include "hazelcast/client/adaptor/RawPointerQueue.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMap.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerMultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMultiMap.h"
 #include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
-#include "hazelcast/client/mixedtype/MultiMap.h"
-#include "hazelcast/client/mixedtype/IList.h"
 #include "hazelcast/client/IList.h"
 #include "hazelcast/client/IQueue.h"
-#include "hazelcast/client/mixedtype/IQueue.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/config/ClientAwsConfig.h"
 #include "hazelcast/client/aws/utility/CloudUtility.h"
 #include "hazelcast/client/ISet.h"
-#include "hazelcast/client/mixedtype/ISet.h"
 #include "hazelcast/client/ReliableTopic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -1065,180 +1053,6 @@ namespace hazelcast {
                 ASSERT_TRUE(set->isEmpty());
                 ASSERT_TRUE(set->add("item1"));
                 ASSERT_FALSE(set->isEmpty());
-            }
-        }
-    }
-}
-
-
-
-
-
-using namespace hazelcast::client::mixedtype;
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            class MixedSetItemListener : public MixedItemListener {
-            public:
-                MixedSetItemListener(boost::latch &latch1)
-                        : latch1(latch1) {
-                }
-
-                virtual void itemAdded(const ItemEvent<TypedData> &item) {
-                    latch1.count_down();
-                }
-
-                virtual void itemRemoved(const ItemEvent<TypedData> &item) {
-                }
-
-            private:
-                boost::latch &latch1;
-            };
-
-            class MixedSetTest : public ClientTestSupport {
-            protected:
-                virtual void TearDown() {
-                    set->clear();
-                }
-
-                static void SetUpTestCase() {
-                    instance = new HazelcastServer(*g_srvFactory);
-                    client = new HazelcastClient;
-                    set = new mixedtype::ISet(client->toMixedType().getSet("MySet"));
-                }
-
-                static void TearDownTestCase() {
-                    delete set;
-                    delete client;
-                    delete instance;
-
-                    set = NULL;
-                    client = NULL;
-                    instance = NULL;
-                }
-
-                bool itemExists(const std::vector<TypedData> &items, const std::string &item) const {
-                    bool found = false;
-                    for (std::vector<TypedData>::const_iterator it = items.begin();it != items.end();++it) {
-                        if (item == *((*it).get<std::string>())) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    return found;
-                }
-
-                static HazelcastServer *instance;
-                static HazelcastClient *client;
-                static  mixedtype::ISet *set;
-            };
-
-            HazelcastServer *MixedSetTest::instance = NULL;
-            HazelcastClient *MixedSetTest::client = NULL;
-            mixedtype::ISet *MixedSetTest::set = NULL;
-
-            TEST_F(MixedSetTest, testAddAll) {
-                std::vector<std::string> l;
-                l.push_back("item1");
-                l.push_back("item2");
-
-                ASSERT_TRUE(set->addAll<std::string>(l));
-                ASSERT_EQ(2, set->size());
-
-                ASSERT_FALSE(set->addAll<std::string>(l));
-                ASSERT_EQ(2, set->size());
-            }
-
-            TEST_F(MixedSetTest, testAddRemove) {
-                ASSERT_TRUE(set->add<std::string>("item1"));
-                ASSERT_TRUE(set->add<std::string>("item2"));
-                ASSERT_TRUE(set->add<std::string>("item3"));
-                ASSERT_EQ(3, set->size());
-
-                ASSERT_FALSE(set->add<std::string>("item3"));
-                ASSERT_EQ(3, set->size());
-
-
-                ASSERT_FALSE(set->remove<std::string>("item4"));
-                ASSERT_TRUE(set->remove<std::string>("item3"));
-            }
-
-            TEST_F(MixedSetTest, testContains) {
-                ASSERT_TRUE(set->add<std::string>("item1"));
-                ASSERT_TRUE(set->add<std::string>("item2"));
-                ASSERT_TRUE(set->add<std::string>("item3"));
-                ASSERT_TRUE(set->add<std::string>("item4"));
-
-                ASSERT_FALSE(set->contains<std::string>("item5"));
-                ASSERT_TRUE(set->contains<std::string>("item2"));
-
-                std::vector<std::string> l;
-                l.push_back("item6");
-                l.push_back("item3");
-
-                ASSERT_FALSE(set->containsAll<std::string>(l));
-                ASSERT_TRUE(set->add<std::string>("item6"));
-                ASSERT_TRUE(set->containsAll<std::string>(l));
-            }
-
-            TEST_F(MixedSetTest, testToArray) {
-                ASSERT_TRUE(set->add<std::string>("item1"));
-                ASSERT_TRUE(set->add<std::string>("item2"));
-                ASSERT_TRUE(set->add<std::string>("item3"));
-                ASSERT_TRUE(set->add<std::string>("item4"));
-                ASSERT_FALSE(set->add<std::string>("item4"));
-
-                std::vector<TypedData> items = set->toArray();
-
-                ASSERT_EQ((size_t) 4, items.size());
-                ASSERT_TRUE(itemExists(items, "item1"));
-                ASSERT_TRUE(itemExists(items, "item2"));
-                ASSERT_TRUE(itemExists(items, "item3"));
-                ASSERT_TRUE(itemExists(items, "item4"));
-            }
-
-            TEST_F(MixedSetTest, testRemoveRetainAll) {
-                ASSERT_TRUE(set->add<std::string>("item1"));
-                ASSERT_TRUE(set->add<std::string>("item2"));
-                ASSERT_TRUE(set->add<std::string>("item3"));
-                ASSERT_TRUE(set->add<std::string>("item4"));
-
-                std::vector<std::string> l;
-                l.push_back("item4");
-                l.push_back("item3");
-
-                ASSERT_TRUE(set->removeAll<std::string>(l));
-                ASSERT_EQ(2, set->size());
-                ASSERT_FALSE(set->removeAll<std::string>(l));
-                ASSERT_EQ(2, set->size());
-
-                l.clear();
-                l.push_back("item1");
-                l.push_back("item2");
-                ASSERT_FALSE(set->retainAll<std::string>(l));
-                ASSERT_EQ(2, set->size());
-
-                l.clear();
-                ASSERT_TRUE(set->retainAll<std::string>(l));
-                ASSERT_EQ(0, set->size());
-
-            }
-
-            TEST_F(MixedSetTest, testListener) {
-                boost::latch latch1(6);
-
-                MixedSetItemListener listener(latch1);
-                std::string registrationId = set->addItemListener(listener, true);
-
-                for (int i = 0; i < 5; i++) {
-                    set->add<std::string>(std::string("item") + hazelcast::util::IOUtil::to_string(i));
-                }
-                set->add<std::string>("done");
-
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(20)));
-
-                ASSERT_TRUE(set->removeItemListener(registrationId));
             }
         }
     }

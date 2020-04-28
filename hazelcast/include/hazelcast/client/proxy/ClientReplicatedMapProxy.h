@@ -25,7 +25,7 @@
 #include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/spi/ClientListenerService.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/map/impl/DataAwareEntryEvent.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/impl/DataArrayImpl.h"

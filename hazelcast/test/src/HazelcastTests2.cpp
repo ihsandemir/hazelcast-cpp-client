@@ -24,7 +24,7 @@
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
-#include <hazelcast/client/serialization/pimpl/SerializationService.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
@@ -90,8 +90,8 @@
 #include <string>
 #include "executor/tasks/SelectAllMembers.h"
 #include "executor/tasks/IdentifiedFactory.h"
-#include <hazelcast/client/serialization/ObjectDataOutput.h>
-#include <hazelcast/client/serialization/ObjectDataInput.h>
+#include <hazelcast/client/serialization/serialization.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include "executor/tasks/CancellationAwareTask.h"
 #include "executor/tasks/NullCallable.h"
 #include "executor/tasks/SerializedCounterCallable.h"
@@ -125,8 +125,8 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -157,15 +157,14 @@
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
 #include "hazelcast/client/exception/IllegalArgumentException.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
-#include "hazelcast/client/serialization/PortableReader.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/util/MurmurHash3.h"
 #include "hazelcast/client/ITopic.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
-#include "hazelcast/client/adaptor/RawPointerSet.h"
 #include "hazelcast/client/query/OrPredicate.h"
 #include "hazelcast/client/query/RegexPredicate.h"
 #include "hazelcast/client/query/PagingPredicate.h"
@@ -182,30 +181,20 @@
 #include "hazelcast/client/query/EqualPredicate.h"
 #include "hazelcast/client/query/TruePredicate.h"
 #include "hazelcast/client/query/FalsePredicate.h"
-#include "hazelcast/client/adaptor/RawPointerMap.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/adaptor/RawPointerList.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalQueue.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
-#include "hazelcast/client/adaptor/RawPointerQueue.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMap.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerMultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMultiMap.h"
 #include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
-#include "hazelcast/client/mixedtype/MultiMap.h"
-#include "hazelcast/client/mixedtype/IList.h"
 #include "hazelcast/client/IList.h"
 #include "hazelcast/client/IQueue.h"
-#include "hazelcast/client/mixedtype/IQueue.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/config/ClientAwsConfig.h"
 #include "hazelcast/client/aws/utility/CloudUtility.h"
 #include "hazelcast/client/ISet.h"
-#include "hazelcast/client/mixedtype/ISet.h"
+
 #include "hazelcast/client/ReliableTopic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

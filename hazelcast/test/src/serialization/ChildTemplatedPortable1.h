@@ -22,10 +22,9 @@
 #define HAZELCAST_ChildTemplatedPortable1
 
 
-#include "hazelcast/client/serialization/Portable.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
-#include "hazelcast/client/serialization/PortableReader.h"
-#include "TestSerializationConstants.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include <string>
 
 namespace hazelcast {

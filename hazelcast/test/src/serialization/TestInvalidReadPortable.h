@@ -19,9 +19,7 @@
 #ifndef __TestInvalidReadPortable_H_
 #define __TestInvalidReadPortable_H_
 
-#include "hazelcast/client/serialization/Portable.h"
-#include <string>
-#include <stdint.h>
+#include "hazelcast/client/serialization/serialization.h>
 
 namespace hazelcast {
     namespace client {

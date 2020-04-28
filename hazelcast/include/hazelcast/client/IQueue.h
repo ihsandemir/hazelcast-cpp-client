@@ -25,11 +25,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template <typename E>
-            class RawPointerQueue;
-        }
-
         /**
         * Concurrent, blocking, distributed, observable, client queue.
         *
@@ -38,8 +33,6 @@ namespace hazelcast {
         template<typename E>
         class IQueue : public proxy::IQueueImpl {
             friend class impl::HazelcastClientInstanceImpl;
-            friend class adaptor::RawPointerQueue<E>;
-
         public:
             /**
             * Adds an item listener for this collection. Listener will get notified

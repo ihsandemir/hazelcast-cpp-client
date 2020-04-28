@@ -19,8 +19,8 @@
 #include <string>
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/query/Predicate.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/exception/IException.h"
 #include "hazelcast/client/query/impl/predicates/PredicateDataSerializerHook.h"
 

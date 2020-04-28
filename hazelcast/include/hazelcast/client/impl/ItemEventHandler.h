@@ -23,7 +23,7 @@
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/ItemEvent.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 
 namespace hazelcast {
@@ -64,39 +64,6 @@ namespace hazelcast {
                 ItemListener<E> &listener;
                 bool includeValue;
             };
-        }
-
-        namespace mixedtype {
-            namespace impl {
-                template<typename BaseType>
-                class MixedItemEventHandler : public BaseType {
-                public:
-                    MixedItemEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
-                                          serialization::pimpl::SerializationService &serializationService,
-                                          MixedItemListener &listener)
-                            : instanceName(instanceName), clusterService(clusterService),
-                              serializationService(serializationService), listener(listener) {
-                    }
-
-                    virtual void handleItemEventV10(std::unique_ptr<serialization::pimpl::Data> &item, const std::string &uuid,
-                                            const int32_t &eventType) {
-                        std::shared_ptr<Member> member = clusterService.getMember(uuid);
-                        ItemEventType type((ItemEventType::Type) eventType);
-                        ItemEvent<TypedData> itemEvent(instanceName, type, TypedData(item, serializationService), *member);
-                        if (type == ItemEventType::ADDED) {
-                            listener.itemAdded(itemEvent);
-                        } else if (type == ItemEventType::REMOVED) {
-                            listener.itemRemoved(itemEvent);
-                        }
-                    }
-
-                private:
-                    const std::string &instanceName;
-                    spi::ClientClusterService &clusterService;
-                    serialization::pimpl::SerializationService &serializationService;
-                    MixedItemListener &listener;
-                };
-            }
         }
     }
 }

@@ -26,11 +26,12 @@
 #include "hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/client/config/NearCacheConfig.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/monitor/NearCacheStats.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
+#include "hazelcast/util/ILogger.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

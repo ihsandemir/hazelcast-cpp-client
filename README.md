@@ -664,7 +664,7 @@ When Hazelcast serializes an object into Data (byte array):
 
 2. If the above check fails, then the object is serialized using the serializer that matches the object type. The object type is determined using the free function `int32_t getHazelcastTypeId(const T *object);`. This method returns the constant built-int serializer type ID for the built-in types such as `byte`, `char`, `int32_t`, `bool` and `int64_t`, etc. If it does not match any of the built-in types, it may match the types offered by Hazelcast, i.e., IdentifiedDataSerializable, Portable or custom. The matching is done based on method parameter matching. 
 
-3. If the above check fails, Hazelcast will use the registered Global Serializer if one exists.
+3. If the above check fails, Hazelcast will use the registered Global hz_serializer if one exists.
 
 If all the above fails, then `exception::HazelcastSerializationException` is thrown.
 
@@ -3027,33 +3027,7 @@ Using the raw pointer based API may improve the performance if you are using the
 
 ## 7.11. Mixed Object Types Supporting HazelcastClient
 
-Sometimes, you may need to use Hazelcast data structures with objects of different types. For example, you may want to put `int`, `string`, `IdentifiedDataSerializable`, etc. objects into the same Hazelcast `IMap` data structure. You can do this by using the mixed type adopted `HazelcastClient`. You can adopt the client in this way:
-```
-    ClientConfig config;
-    HazelcastClient client(config);
-    mixedtype::HazelcastClient &hazelcastClient = client.toMixedType();
-``` 
-The `mixedtype::HazelcastClient` interface is designed to provide you the data structures which allows you to work with any object types in a mixed manner. For example, the interface allows you to provide the key and value type differently for each `map.put` call. An example usage is shown below:
-```
-    mixedtype::IMap map = hazelcastClient.getMap("MyMap");
-
-    map.put<int, int>(3, 5);
-    map.put<string, std::string>("string key1", "MyStringValue");
-    map.put<int, MyCustomObject>("string key1", myCustomInstance);
-    TypedData result = map.get<int>(3);
-``` 
-
-As you can see in the above code snippet, we are putting `int`, `string` and `MyCustomObject` to the same map. Both the key and value can be of different type for each `map.put` call.
-
-If you want to use a mixed type map with near cache, then you should use the `MixedNearCacheConfig` class and add this configuration to the `ClientConfig` using the `addMixedNearCacheConfig` method. See the below example:
-
-```
-   boost::shared_ptr<mixedtype::config::MixedNearCacheConfig> nearCacheConfig(new mixedtype::config::MixedNearCacheConfig("MixedMapTestMap"));
-   clientConfig.addMixedNearCacheConfig(nearCacheConfig);
-```
-Mixed type support for near cache only exists when the in-memory format is BINARY. The OBJECT in-memory format is not supported for `MixedNearCacheConfig`.
-
-The mixed type API uses the TypedData class at the user interface.
+Sometimes, you may need to use Hazelcast data structures with objects of different types. For example, you may want to put `int`, `string`, `IdentifiedDataSerializable`, etc. objects into the same Hazelcast `IMap` data structure.
 
 ### 7.11.1. TypedData API
 
@@ -3090,7 +3064,6 @@ the `DataSerializableFactory`.
 4. <b>Portable</b>: `factoryId`, `classId` and `typeId` are non-negative values as registered by the `PortableFactory`.
 5. <b>Custom serialized objects</b>: `factoryId=-1`, `classId=-1`, `typeId` is the non-negative type ID as 
 registered for the custom object. 
-
 
 # 8. Development and Testing
 

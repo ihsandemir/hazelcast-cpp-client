@@ -44,7 +44,7 @@ namespace hazelcast {
 
                         int64_t getPublishTime() const;
 
-                        const Address *getPublisherAddress() const;
+                        const boost::optional<Address> &getPublisherAddress() const;
 
                         const serialization::pimpl::Data &getPayload() const;
 
@@ -57,7 +57,7 @@ namespace hazelcast {
                         virtual void readData(serialization::ObjectDataInput &reader);
                     private:
                         int64_t publishTime;
-                        std::unique_ptr<Address> publisherAddress;
+                        boost::optional<Address> publisherAddress;
                         serialization::pimpl::Data payload;
                     };
                 }

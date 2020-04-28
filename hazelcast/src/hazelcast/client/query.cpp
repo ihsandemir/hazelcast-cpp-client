@@ -32,8 +32,8 @@
 
 #include "hazelcast/client/query/InstanceOfPredicate.h"
 #include "hazelcast/client/query/impl/predicates/PredicateDataSerializerHook.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/query/ILikePredicate.h"
 #include "hazelcast/client/query/TruePredicate.h"
 #include "hazelcast/client/query/FalsePredicate.h"

@@ -2307,8 +2307,8 @@ namespace hazelcast {
                         return publishTime;
                     }
 
-                    const Address *ReliableTopicMessage::getPublisherAddress() const {
-                        return publisherAddress.get();
+                    const boost::optional<Address> &ReliableTopicMessage::getPublisherAddress() const {
+                        return publisherAddress;
                     }
 
                     const serialization::pimpl::Data &ReliableTopicMessage::getPayload() const {
@@ -2325,7 +2325,7 @@ namespace hazelcast {
 
                     void ReliableTopicMessage::writeData(serialization::ObjectDataOutput &out) const {
                         out.writeLong(publishTime);
-                        out.writeObject<serialization::IdentifiedDataSerializable>(publisherAddress.get());
+                        out.writeObject<Address>(publisherAddress.value_or(nullptr));
                         out.writeData(&payload);
                     }
 

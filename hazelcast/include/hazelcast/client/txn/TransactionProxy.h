@@ -26,7 +26,7 @@
 #include "hazelcast/util/HazelcastDll.h"
 
 #include "hazelcast/client/spi/ClientContext.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include <memory>
 #include <vector>
 

@@ -18,7 +18,7 @@
 #define HAZELCAST_CLIENT_IMPL_CLIENTMESSAGEDECODER_H_
 
 #include "hazelcast/client/protocol/ClientMessage.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

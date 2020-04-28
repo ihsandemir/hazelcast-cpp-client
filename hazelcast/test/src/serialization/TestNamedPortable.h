@@ -24,7 +24,7 @@
 #ifndef Server_TestNamedPortable_h
 #define Server_TestNamedPortable_h
 
-#include "hazelcast/client/serialization/Portable.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include <string>
 
 namespace hazelcast {

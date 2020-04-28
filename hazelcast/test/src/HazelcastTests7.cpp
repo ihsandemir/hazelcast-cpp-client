@@ -24,7 +24,7 @@
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
-#include <hazelcast/client/serialization/pimpl/SerializationService.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <hazelcast/client/spi/impl/ClientInvocation.h>
@@ -91,8 +91,8 @@
 #include <string>
 #include "executor/tasks/SelectAllMembers.h"
 #include "executor/tasks/IdentifiedFactory.h"
-#include <hazelcast/client/serialization/ObjectDataOutput.h>
-#include <hazelcast/client/serialization/ObjectDataInput.h>
+#include <hazelcast/client/serialization/serialization.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include "executor/tasks/CancellationAwareTask.h"
 #include "executor/tasks/NullCallable.h"
 #include "executor/tasks/SerializedCounterCallable.h"
@@ -126,8 +126,8 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -158,15 +158,14 @@
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
 #include "hazelcast/client/exception/IllegalArgumentException.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
-#include "hazelcast/client/serialization/PortableReader.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/util/MurmurHash3.h"
 #include "hazelcast/client/ITopic.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
-#include "hazelcast/client/adaptor/RawPointerSet.h"
 #include "hazelcast/client/query/OrPredicate.h"
 #include "hazelcast/client/query/RegexPredicate.h"
 #include "hazelcast/client/query/PagingPredicate.h"
@@ -183,30 +182,19 @@
 #include "hazelcast/client/query/EqualPredicate.h"
 #include "hazelcast/client/query/TruePredicate.h"
 #include "hazelcast/client/query/FalsePredicate.h"
-#include "hazelcast/client/adaptor/RawPointerMap.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/adaptor/RawPointerList.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalQueue.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
-#include "hazelcast/client/adaptor/RawPointerQueue.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMap.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerMultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMultiMap.h"
 #include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
-#include "hazelcast/client/mixedtype/MultiMap.h"
-#include "hazelcast/client/mixedtype/IList.h"
 #include "hazelcast/client/IList.h"
 #include "hazelcast/client/IQueue.h"
-#include "hazelcast/client/mixedtype/IQueue.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/config/ClientAwsConfig.h"
 #include "hazelcast/client/aws/utility/CloudUtility.h"
 #include "hazelcast/client/ISet.h"
-#include "hazelcast/client/mixedtype/ISet.h"
 #include "hazelcast/client/ReliableTopic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -470,220 +458,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
-using namespace hazelcast::client::mixedtype;
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            class MixedListTest : public ClientTestSupport {
-            protected:
-                class MyListItemListener : public MixedItemListener {
-                public:
-                    MyListItemListener(boost::latch &latch1)
-                            : latch1(latch1) {
-
-                    }
-
-                    virtual void itemAdded(const ItemEvent<TypedData> &item) {
-                        latch1.count_down();
-                    }
-
-                    virtual void itemRemoved(const ItemEvent<TypedData> &item) {
-                    }
-
-                private:
-                    boost::latch &latch1;
-                };
-
-                virtual void TearDown() {
-                    // clear list
-                    list->clear();
-                }
-
-                static void SetUpTestCase() {
-#ifdef HZ_BUILD_WITH_SSL
-                    sslFactory = new HazelcastServerFactory(g_srvFactory->getServerAddress(), getSslFilePath());
-                    instance = new HazelcastServer(*sslFactory);
-#else
-                    instance = new HazelcastServer(*g_srvFactory);
-#endif
-
-                    ClientConfig clientConfig = getConfig();
-
-#ifdef HZ_BUILD_WITH_SSL
-                    config::ClientNetworkConfig networkConfig;
-                    config::SSLConfig sslConfig;
-                    sslConfig.setEnabled(true).addVerifyFile(getCAFilePath()).setCipherList("HIGH");
-                    networkConfig.setSSLConfig(sslConfig);
-                    clientConfig.setNetworkConfig(networkConfig);
-#endif // HZ_BUILD_WITH_SSL
-
-                    client = new HazelcastClient(clientConfig);
-                    list = new mixedtype::IList(client->toMixedType().getList("MyMixedList"));
-                }
-
-                static void TearDownTestCase() {
-                    delete list;
-                    delete client;
-                    delete instance;
-                    delete sslFactory;
-
-                    list = NULL;
-                    client = NULL;
-                    instance = NULL;
-                }
-
-                static HazelcastServer *instance;
-                static HazelcastClient *client;
-                static mixedtype::IList *list;
-                static HazelcastServerFactory *sslFactory;
-            };
-
-            HazelcastServer *MixedListTest::instance = NULL;
-            HazelcastClient *MixedListTest::client = NULL;
-            mixedtype::IList *MixedListTest::list = NULL;
-            HazelcastServerFactory *MixedListTest::sslFactory = NULL;
-
-            TEST_F(MixedListTest, testAddAll) {
-                std::vector<std::string> l;
-                l.push_back("item1");
-                l.push_back("item2");
-                ASSERT_TRUE(list->addAll<std::string>(l));
-
-                ASSERT_TRUE(list->addAll<std::string>(1, l));
-                ASSERT_EQ(4, list->size());
-
-                ASSERT_EQ("item1", *(list->get(0).get<std::string>()));
-                ASSERT_EQ("item1", *(list->get(1).get<std::string>()));
-                ASSERT_EQ("item2", *(list->get(2).get<std::string>()));
-                ASSERT_EQ("item2", *(list->get(3).get<std::string>()));
-            }
-
-            TEST_F(MixedListTest, testAddSetRemove) {
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item2"));
-                list->add<std::string>(0, "item3");
-                ASSERT_EQ(3, list->size());
-                std::unique_ptr<std::string> temp = list->IList::set<std::string>(2, "item4").get<std::string>();
-                ASSERT_EQ("item2", *temp);
-
-                ASSERT_EQ(3, list->size());
-                ASSERT_EQ("item3", *(list->get(0).get<std::string>()));
-                ASSERT_EQ("item1", *(list->get(1).get<std::string>()));
-                ASSERT_EQ("item4", *(list->get(2).get<std::string>()));
-
-                ASSERT_FALSE(list->remove<std::string>("item2"));
-                ASSERT_TRUE(list->remove<std::string>("item3"));
-
-                temp = list->remove(1).get<std::string>();
-                ASSERT_EQ("item4", *temp);
-
-                ASSERT_EQ(1, list->size());
-                ASSERT_EQ("item1", *(list->get(0).get<std::string>()));
-            }
-
-            TEST_F(MixedListTest, testIndexOf) {
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item2"));
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item4"));
-
-                ASSERT_EQ(-1, list->indexOf<std::string>("item5"));
-                ASSERT_EQ(0, list->indexOf<std::string>("item1"));
-
-                ASSERT_EQ(-1, list->lastIndexOf<std::string>("item6"));
-                ASSERT_EQ(2, list->lastIndexOf<std::string>("item1"));
-            }
-
-            TEST_F(MixedListTest, testToArray) {
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item2"));
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item4"));
-
-                std::vector<TypedData> ar = list->toArray();
-
-                ASSERT_EQ("item1", *ar[0].get<std::string>());
-                ASSERT_EQ("item2", *ar[1].get<std::string>());
-                ASSERT_EQ("item1", *ar[2].get<std::string>());
-                ASSERT_EQ("item4", *ar[3].get<std::string>());
-
-                std::vector<TypedData> arr2 = list->subList(1, 3);
-
-                ASSERT_EQ(2, (int) arr2.size());
-                ASSERT_EQ("item2", *arr2[0].get<std::string>());
-                ASSERT_EQ("item1", *arr2[1].get<std::string>());
-            }
-
-            TEST_F(MixedListTest, testContains) {
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item2"));
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item4"));
-
-                ASSERT_FALSE(list->contains<std::string>("item3"));
-                ASSERT_TRUE(list->contains<std::string>("item2"));
-
-                std::vector<std::string> l;
-                l.push_back("item4");
-                l.push_back("item3");
-
-                ASSERT_FALSE(list->containsAll<std::string>(l));
-                ASSERT_TRUE(list->add<std::string>("item3"));
-                ASSERT_TRUE(list->containsAll<std::string>(l));
-            }
-
-            TEST_F(MixedListTest, testRemoveRetainAll) {
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item2"));
-                ASSERT_TRUE(list->add<std::string>("item1"));
-                ASSERT_TRUE(list->add<std::string>("item4"));
-
-                std::vector<std::string> l;
-                l.push_back("item4");
-                l.push_back("item3");
-
-                ASSERT_TRUE(list->removeAll<std::string>(l));
-                ASSERT_EQ(3, (int) list->size());
-                ASSERT_FALSE(list->removeAll<std::string>(l));
-                ASSERT_EQ(3, (int) list->size());
-
-                l.clear();
-                l.push_back("item1");
-                l.push_back("item2");
-                ASSERT_FALSE(list->retainAll<std::string>(l));
-                ASSERT_EQ(3, (int) list->size());
-
-                l.clear();
-                ASSERT_TRUE(list->retainAll<std::string>(l));
-                ASSERT_EQ(0, (int) list->size());
-
-            }
-
-            TEST_F(MixedListTest, testListener) {
-                boost::latch latch1(5);
-
-                MyListItemListener listener(latch1);
-                std::string registrationId = list->addItemListener(listener, true);
-
-                for (int i = 0; i < 5; i++) {
-                    list->add(std::string("item") + hazelcast::util::IOUtil::to_string(i));
-                }
-
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(20)));
-
-                ASSERT_TRUE(list->removeItemListener(registrationId));
-            }
-        }
-    }
-}
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -901,10 +675,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1207,306 +977,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
-
-using namespace hazelcast::client::mixedtype;
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            class MixedQueueTest : public ClientTestSupport {
-            protected:
-                virtual void TearDown() {
-                    q->clear();
-                }
-
-                static void SetUpTestCase() {
-                    instance = new HazelcastServer(*g_srvFactory);
-                    client = new HazelcastClient;
-                    q = new mixedtype::IQueue(client->toMixedType().getQueue("MyQueue"));
-                }
-
-                static void TearDownTestCase() {
-                    delete q;
-                    delete client;
-                    delete instance;
-
-                    q = NULL;
-                    client = NULL;
-                    instance = NULL;
-                }
-
-                static void testOfferPollThread2(hazelcast::util::ThreadArgs &args) {
-                    mixedtype::IQueue *queue = (mixedtype::IQueue *) args.arg0;
-                    hazelcast::util::sleep(2);
-                    queue->offer<std::string>("item1");
-                }
-
-                static HazelcastServer *instance;
-                static HazelcastClient *client;
-                static mixedtype::IQueue *q;
-            };
-
-            HazelcastServer *MixedQueueTest::instance = NULL;
-            HazelcastClient *MixedQueueTest::client = NULL;
-            mixedtype::IQueue *MixedQueueTest::q = NULL;
-
-            class MixedQueueTestItemListener : public MixedItemListener {
-            public:
-                MixedQueueTestItemListener(boost::latch &latch1)
-                        : latch1(latch1) {
-                }
-
-                virtual void itemAdded(const ItemEvent<TypedData> &item) {
-                    latch1.count_down();
-                }
-
-                virtual void itemRemoved(const ItemEvent<TypedData> &item) {
-                }
-
-            private:
-                boost::latch &latch1;
-            };
-
-            TEST_F(MixedQueueTest, testListener) {
-                ASSERT_EQ(0, q->size());
-
-                boost::latch latch1(5);
-
-                MixedQueueTestItemListener listener(latch1);
-                std::string id = q->addItemListener(listener, true);
-
-                hazelcast::util::sleep(1);
-
-                for (int i = 0; i < 5; i++) {
-                    ASSERT_TRUE(
-                            q->offer<std::string>(std::string("event_item") + hazelcast::util::IOUtil::to_string(i)));
-                }
-
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(5)));
-                ASSERT_TRUE(q->removeItemListener(id));
-
-                // added for test coverage
-                ASSERT_NO_THROW(q->destroy());
-            }
-
-            TEST_F(MixedQueueTest, testOfferPoll) {
-                for (int i = 0; i < 10; i++) {
-                    bool result = q->offer<std::string>("item");
-                    ASSERT_TRUE(result);
-                }
-                ASSERT_EQ(10, q->size());
-                q->poll();
-                bool result = q->offer<std::string>("item", 5);
-                ASSERT_TRUE(result);
-
-                for (int i = 0; i < 10; i++) {
-                    ASSERT_NE(q->poll().get<std::string>().get(), (std::string *) NULL);
-                }
-                ASSERT_EQ(0, q->size());
-
-                hazelcast::util::StartedThread t2(testOfferPollThread2, q);
-
-                std::unique_ptr<std::string> item = q->poll(30 * 1000).get<std::string>();
-                ASSERT_NE(item.get(), (std::string *) NULL);
-                ASSERT_EQ("item1", *item);
-                t2.join();
-            }
-
-            TEST_F(MixedQueueTest, testPeek) {
-                ASSERT_TRUE(q->offer<std::string>("peek 1"));
-                ASSERT_TRUE(q->offer<std::string>("peek 2"));
-                ASSERT_TRUE(q->offer<std::string>("peek 3"));
-
-                std::unique_ptr<std::string> item = q->peek().get<std::string>();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 1", *item);
-            }
-
-            TEST_F(MixedQueueTest, testTake) {
-                ASSERT_TRUE(q->offer<std::string>("peek 1"));
-                ASSERT_TRUE(q->offer<std::string>("peek 2"));
-                ASSERT_TRUE(q->offer<std::string>("peek 3"));
-
-                std::unique_ptr<std::string> item = q->take().get<std::string>();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 1", *item);
-
-                item = q->take().get<std::string>();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 2", *item);
-
-                item = q->take().get<std::string>();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 3", *item);
-
-                ASSERT_TRUE(q->isEmpty());
-
-// start a thread to insert an item
-                hazelcast::util::StartedThread t2(testOfferPollThread2, q);
-
-                item = q->take().get<std::string>();  //  should block till it gets an item
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("item1", *item);
-
-                t2.join();
-            }
-
-            TEST_F(MixedQueueTest, testRemainingCapacity) {
-                int capacity = q->remainingCapacity();
-                ASSERT_TRUE(capacity > 10000);
-                q->offer<std::string>("item");
-                ASSERT_EQ(capacity - 1, q->remainingCapacity());
-            }
-
-
-            TEST_F(MixedQueueTest, testRemove) {
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-
-                ASSERT_FALSE(q->remove<std::string>("item4"));
-                ASSERT_EQ(3, q->size());
-
-                ASSERT_TRUE(q->remove<std::string>("item2"));
-
-                ASSERT_EQ(2, q->size());
-
-                ASSERT_EQ("item1", *(q->poll().get<std::string>()));
-                ASSERT_EQ("item3", *(q->poll().get<std::string>()));
-            }
-
-
-            TEST_F(MixedQueueTest, testContains) {
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-                ASSERT_TRUE(q->offer<std::string>("item4"));
-                ASSERT_TRUE(q->offer<std::string>("item5"));
-
-
-                ASSERT_TRUE(q->contains<std::string>("item3"));
-                ASSERT_FALSE(q->contains<std::string>("item"));
-
-                std::vector<std::string> list;
-                list.push_back("item4");
-                list.push_back("item2");
-
-                ASSERT_TRUE(q->containsAll<std::string>(list));
-
-                list.push_back("item");
-                ASSERT_FALSE(q->containsAll(list));
-            }
-
-            TEST_F(MixedQueueTest, testDrain) {
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-                ASSERT_TRUE(q->offer<std::string>("item4"));
-                ASSERT_TRUE(q->offer<std::string>("item5"));
-
-                std::vector<TypedData> list;
-                size_t result = q->drainTo(list, 2);
-                ASSERT_EQ(2U, result);
-                ASSERT_EQ("item1", *list[0].get<std::string>());
-                ASSERT_EQ("item2", *list[1].get<std::string>());
-
-                std::vector<TypedData> list2;
-                result = q->drainTo(list2);
-                ASSERT_EQ(3U, result);
-                ASSERT_EQ("item3", *list2[0].get<std::string>());
-                ASSERT_EQ("item4", *list2[1].get<std::string>());
-                ASSERT_EQ("item5", *list2[2].get<std::string>());
-
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-                list2.clear();
-                result = q->drainTo(list2, 5);
-                ASSERT_EQ(3U, result);
-                ASSERT_EQ("item1", *list2[0].get<std::string>());
-                ASSERT_EQ("item2", *list2[1].get<std::string>());
-                ASSERT_EQ("item3", *list2[2].get<std::string>());
-            }
-
-            TEST_F(MixedQueueTest, testToArray) {
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-                ASSERT_TRUE(q->offer<std::string>("item4"));
-                ASSERT_TRUE(q->offer<std::string>("item5"));
-
-                std::vector<TypedData> array = q->toArray();
-                size_t size = array.size();
-                for (size_t i = 0; i < size; i++) {
-                    ASSERT_EQ(std::string("item") + hazelcast::util::IOUtil::to_string(i + 1),
-                              *array[i].get<std::string>());
-                }
-            }
-
-            TEST_F(MixedQueueTest, testAddAll) {
-                std::vector<std::string> coll;
-                coll.push_back("item1");
-                coll.push_back("item2");
-                coll.push_back("item3");
-                coll.push_back("item4");
-
-                ASSERT_TRUE(q->addAll<std::string>(coll));
-                int size = q->size();
-                ASSERT_EQ(size, (int) coll.size());
-            }
-
-            TEST_F(MixedQueueTest, testRemoveRetain) {
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-                ASSERT_TRUE(q->offer<std::string>("item4"));
-                ASSERT_TRUE(q->offer<std::string>("item5"));
-
-                std::vector<std::string> list;
-                list.push_back("item8");
-                list.push_back("item9");
-                ASSERT_FALSE(q->removeAll(list));
-                ASSERT_EQ(5, q->size());
-
-                list.push_back("item3");
-                list.push_back("item4");
-                list.push_back("item1");
-                ASSERT_TRUE(q->removeAll(list));
-                ASSERT_EQ(2, q->size());
-
-                list.clear();
-                list.push_back("item2");
-                list.push_back("item5");
-                ASSERT_FALSE(q->retainAll<std::string>(list));
-                ASSERT_EQ(2, q->size());
-
-                list.clear();
-                ASSERT_TRUE(q->retainAll<std::string>(list));
-                ASSERT_EQ(0, q->size());
-            }
-
-            TEST_F(MixedQueueTest, testClear) {
-                ASSERT_TRUE(q->offer<std::string>("item1"));
-                ASSERT_TRUE(q->offer<std::string>("item2"));
-                ASSERT_TRUE(q->offer<std::string>("item3"));
-                ASSERT_TRUE(q->offer<std::string>("item4"));
-                ASSERT_TRUE(q->offer<std::string>("item5"));
-
-                q->clear();
-
-                ASSERT_EQ(0, q->size());
-                ASSERT_EQ(q->poll().get<std::string>().get(), (std::string *) NULL);
-            }
-        }
-    }
-}
-
-
-
-
 int hazelcast::client::test::executor::tasks::SelectAllMembers::getFactoryId() const {
     return IdentifiedFactory::FACTORY_ID;
 }
@@ -1532,9 +1002,6 @@ bool hazelcast::client::test::executor::tasks::SelectAllMembers::select(const ha
 void hazelcast::client::test::executor::tasks::SelectAllMembers::toString(std::ostream &os) const {
     os << "SelectAllMembers";
 }
-
-
-
 
 int hazelcast::client::test::executor::tasks::CancellationAwareTask::getFactoryId() const {
     return IdentifiedFactory::FACTORY_ID;

@@ -20,7 +20,7 @@
 #define HAZELCAST_Employee
 
 #include <string>
-#include "hazelcast/client/serialization/Portable.h"
+#include "hazelcast/client/serialization/serializer.h"
 #include "hazelcast/util/Comparator.h"
 #include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
 #include "hazelcast/client/query/EntryComparator.h"

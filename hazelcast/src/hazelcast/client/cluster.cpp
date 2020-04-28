@@ -35,7 +35,7 @@
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipListener.h"
 #include "hazelcast/client/Member.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/MembershipEvent.h"
 #include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/impl/RoundRobinLB.h"

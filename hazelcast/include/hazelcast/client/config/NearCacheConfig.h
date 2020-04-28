@@ -357,27 +357,6 @@ namespace hazelcast {
             const InMemoryFormat NearCacheConfig<K, V>::DEFAULT_MEMORY_FORMAT = BINARY;
 
         }
-
-        namespace mixedtype {
-            namespace config {
-                class HAZELCAST_API MixedNearCacheConfig : public client::config::NearCacheConfig<TypedData, TypedData> {
-                public:
-                    MixedNearCacheConfig(const char *cacheName)
-                            : client::config::NearCacheConfig<TypedData, TypedData>(cacheName) {
-                    }
-
-                    virtual MixedNearCacheConfig &setInMemoryFormat(const client::config::InMemoryFormat &inMemoryFormat) {
-                        if (client::config::OBJECT == inMemoryFormat) {
-                            BOOST_THROW_EXCEPTION(exception::IllegalArgumentException(
-                                                          "MixedNearCacheConfig does not allow setting the in memory format different from BINARY."));
-                        }
-
-                        client::config::NearCacheConfig<TypedData, TypedData>::setInMemoryFormat(inMemoryFormat);
-                        return *this;
-                    }
-                };
-            }
-        }
     }
 }
 

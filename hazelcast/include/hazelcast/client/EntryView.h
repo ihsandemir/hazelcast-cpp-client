@@ -22,7 +22,7 @@
 #include <stdint.h>
 
 #include "hazelcast/client/map/DataEntryView.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

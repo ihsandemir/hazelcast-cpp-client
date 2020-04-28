@@ -22,16 +22,14 @@
 #ifndef HAZELCAST_XmlSerializer
 #define HAZELCAST_XmlSerializer
 
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
-#include "hazelcast/client/serialization/Serializer.h"
-#include <assert.h>
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h>
 
 namespace hazelcast {
     namespace client {
         namespace test {
             template<typename T>
-            class TestCustomSerializerX : public serialization::Serializer<T> {
+            class TestCustomSerializerX : public serialization::hz_serializer<T> {
             public:
 
                 void write(serialization::ObjectDataOutput & out, const T& object) {

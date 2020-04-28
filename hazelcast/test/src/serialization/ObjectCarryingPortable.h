@@ -21,10 +21,9 @@
 #ifndef HAZELCAST_ObjectCarryingPortable
 #define HAZELCAST_ObjectCarryingPortable
 
-#include "hazelcast/client/serialization/Portable.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "TestSerializationConstants.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include <string>
 
 namespace hazelcast {

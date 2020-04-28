@@ -22,7 +22,7 @@
 
 #include "hazelcast/util/HazelcastDll.h"
 #include <string>
-#include "hazelcast/client/serialization/Serializer.h"
+
 
 namespace hazelcast {
     namespace client {

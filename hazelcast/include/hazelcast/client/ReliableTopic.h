@@ -280,9 +280,9 @@ namespace hazelcast {
 
                 std::unique_ptr<topic::Message<E> > toMessage(const topic::impl::reliable::ReliableTopicMessage *m) {
                     std::shared_ptr<Member> member;
-                    const Address *addr = m->getPublisherAddress();
-                    if (addr != NULL) {
-                        member = std::shared_ptr<Member>(new Member(*addr));
+                    auto &addr = m->getPublisherAddress();
+                    if (addr.has_value()) {
+                        member = std::make_shared<Member>(addr.value());
                     }
                     std::unique_ptr<E> msg = serializationService->toObject<E>(m->getPayload());
                     return std::unique_ptr<topic::Message<E> >(

@@ -21,7 +21,7 @@
 #ifndef HAZELCAST_Credentials
 #define HAZELCAST_Credentials
 
-#include "hazelcast/client/serialization/Portable.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include <string>
 
 namespace hazelcast {

@@ -22,11 +22,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template <typename E>
-            class RawPointerSet;
-        }
-
         /**
         * Concurrent, distributed client implementation of std::unordered_set.
         *
@@ -35,8 +30,6 @@ namespace hazelcast {
         template<typename E>
         class ISet : public proxy::ISetImpl {
             friend class impl::HazelcastClientInstanceImpl;
-            friend class adaptor::RawPointerSet<E>;
-
         public:
             /**
             * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.

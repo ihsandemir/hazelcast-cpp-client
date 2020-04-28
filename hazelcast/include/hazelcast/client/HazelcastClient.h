@@ -148,14 +148,6 @@ namespace hazelcast {
  *                  //process the item
  *              }
  *
- *              // You can work with raw pointer maps if you want to get memory ownership of returned objects
- *              hazelcast::client::adaptor::RawPointerMap<int, int> rawMap(myMap);
- *              myMap.put(2, 6);
- *              std::unique_ptr<int> value = myMap.get(1);
- *              if (NULL != value.get()) {
- *                  // do something with the value
- *              }
- *
  *              // query values with predicate
  *              // EqualPredicate
  *              // key == 5
@@ -630,13 +622,6 @@ namespace hazelcast {
             * Shuts down this HazelcastClient.
             */
             void shutdown();
-
-            /**
-             * Adopts the current map to the mixed type support interface. You can use the mixedtype::HazelcastClient
-             * interface to get data structures that support manipulating unrelated mixed data types.
-             * @return The mixed type supporting HazelcastClient.
-             */
-            mixedtype::HazelcastClient &toMixedType() const;
 
             /**
              * Returns the lifecycle service for this instance.

@@ -26,11 +26,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template <typename K, typename V>
-            class RawPointerMultiMap;
-        }
-
         /**
         * A specialized distributed map client whose keys can be associated with multiple values.
         *
@@ -39,8 +34,6 @@ namespace hazelcast {
         template<typename K, typename V>
         class MultiMap : public proxy::MultiMapImpl {
             friend class impl::HazelcastClientInstanceImpl;
-            friend class adaptor::RawPointerMultiMap<K, V>;
-
         public:
             /**
             * Stores a key-value pair in the multimap.

@@ -16,7 +16,7 @@
 #ifndef HAZELCAST_CLIENT_QUERY_ENTRYCOMPARATOR_H_
 #define HAZELCAST_CLIENT_QUERY_ENTRYCOMPARATOR_H_
 
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/Comparator.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

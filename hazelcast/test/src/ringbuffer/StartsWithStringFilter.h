@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include <hazelcast/client/serialization/IdentifiedDataSerializable.h>
+#include <hazelcast/client/serialization/serialization.h>
 
 namespace hazelcast {
     namespace client {

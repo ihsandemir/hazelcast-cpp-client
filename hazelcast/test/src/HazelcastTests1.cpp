@@ -24,7 +24,7 @@
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
-#include <hazelcast/client/serialization/pimpl/SerializationService.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
@@ -90,8 +90,8 @@
 #include <string>
 #include "executor/tasks/SelectAllMembers.h"
 #include "executor/tasks/IdentifiedFactory.h"
-#include <hazelcast/client/serialization/ObjectDataOutput.h>
-#include <hazelcast/client/serialization/ObjectDataInput.h>
+#include <hazelcast/client/serialization/serialization.h>
+#include <hazelcast/client/serialization/serialization.h>
 #include "executor/tasks/CancellationAwareTask.h"
 #include "executor/tasks/NullCallable.h"
 #include "executor/tasks/SerializedCounterCallable.h"
@@ -125,8 +125,8 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/serialization/ObjectDataOutput.h"
-#include "hazelcast/client/serialization/ObjectDataInput.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -156,15 +156,14 @@
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
 #include "hazelcast/client/exception/IllegalArgumentException.h"
-#include "hazelcast/client/serialization/PortableWriter.h"
-#include "hazelcast/client/serialization/PortableReader.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/util/MurmurHash3.h"
 #include "hazelcast/client/ITopic.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
-#include "hazelcast/client/adaptor/RawPointerSet.h"
 #include "hazelcast/client/query/OrPredicate.h"
 #include "hazelcast/client/query/RegexPredicate.h"
 #include "hazelcast/client/query/PagingPredicate.h"
@@ -181,30 +180,20 @@
 #include "hazelcast/client/query/EqualPredicate.h"
 #include "hazelcast/client/query/TruePredicate.h"
 #include "hazelcast/client/query/FalsePredicate.h"
-#include "hazelcast/client/adaptor/RawPointerMap.h"
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
-#include "hazelcast/client/adaptor/RawPointerList.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalQueue.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
-#include "hazelcast/client/adaptor/RawPointerQueue.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMap.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerMultiMap.h"
-#include "hazelcast/client/adaptor/RawPointerTransactionalMultiMap.h"
 #include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
-#include "hazelcast/client/mixedtype/MultiMap.h"
-#include "hazelcast/client/mixedtype/IList.h"
 #include "hazelcast/client/IList.h"
 #include "hazelcast/client/IQueue.h"
-#include "hazelcast/client/mixedtype/IQueue.h"
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/config/ClientAwsConfig.h"
 #include "hazelcast/client/aws/utility/CloudUtility.h"
 #include "hazelcast/client/ISet.h"
-#include "hazelcast/client/mixedtype/ISet.h"
+
 #include "hazelcast/client/ReliableTopic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -583,105 +572,6 @@ namespace hazelcast {
         }
     }
 }
-
-using namespace hazelcast::client::mixedtype;
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            class MixedRingbufferTest : public ClientTestSupport {
-            public:
-                MixedRingbufferTest() : rb(client->toMixedType().getRingbuffer(getTestName())) {
-                }
-
-            protected:
-                virtual void TearDown() {
-                }
-
-                static void SetUpTestCase() {
-                    instance = new HazelcastServer(*g_srvFactory);
-                    client = new HazelcastClient;
-                }
-
-                static void TearDownTestCase() {
-                    delete client;
-                    delete instance;
-
-                    client = NULL;
-                    instance = NULL;
-                }
-
-                mixedtype::Ringbuffer rb;
-                static HazelcastServer *instance;
-                static HazelcastClient *client;
-
-                static const int64_t CAPACITY;
-            };
-
-            const int64_t MixedRingbufferTest::CAPACITY = 10;
-
-            HazelcastServer *MixedRingbufferTest::instance = NULL;
-            HazelcastClient *MixedRingbufferTest::client = NULL;
-
-            TEST_F(MixedRingbufferTest, testAPI) {
-                ASSERT_EQ(CAPACITY, rb.capacity());
-                ASSERT_EQ(0, rb.headSequence());
-                ASSERT_EQ(-1, rb.tailSequence());
-                ASSERT_EQ(0, rb.size());
-                ASSERT_EQ(CAPACITY, rb.remainingCapacity());
-                ASSERT_THROW(rb.readOne(-1), exception::IllegalArgumentException);
-                ASSERT_THROW(rb.readOne(1), exception::IllegalArgumentException);
-
-                Employee employee1("First", 10);
-                Employee employee2("Second", 20);
-
-                ASSERT_EQ(0, rb.add<Employee>(employee1));
-                ASSERT_EQ(CAPACITY, rb.capacity());
-                ASSERT_EQ(CAPACITY, rb.remainingCapacity());
-                ASSERT_EQ(0, rb.headSequence());
-                ASSERT_EQ(0, rb.tailSequence());
-                ASSERT_EQ(1, rb.size());
-                ASSERT_EQ(employee1, *rb.readOne(0).get<Employee>());
-                ASSERT_THROW(rb.readOne(2), exception::IllegalArgumentException);
-
-                ASSERT_EQ(1, rb.add<Employee>(employee2));
-                ASSERT_EQ(CAPACITY, rb.capacity());
-                ASSERT_EQ(CAPACITY, rb.remainingCapacity());
-                ASSERT_EQ(0, rb.headSequence());
-                ASSERT_EQ(1, rb.tailSequence());
-                ASSERT_EQ(2, rb.size());
-                ASSERT_EQ(employee1, *rb.readOne(0).get<Employee>());
-                ASSERT_EQ(employee2, *rb.readOne(1).get<Employee>());
-                ASSERT_THROW(rb.readOne(3), exception::IllegalArgumentException);
-
-                // insert many employees to fill the ringbuffer capacity
-                for (int i = 0; i < CAPACITY - 2; ++i) {
-                    Employee eleman("name", 10 * (i + 2));
-                    ASSERT_EQ(i + 2, rb.add<Employee>(eleman));
-                    ASSERT_EQ(CAPACITY, rb.capacity());
-                    ASSERT_EQ(CAPACITY, rb.remainingCapacity());
-                    ASSERT_EQ(0, rb.headSequence());
-                    ASSERT_EQ(i + 2, rb.tailSequence());
-                    ASSERT_EQ(i + 3, rb.size());
-                    ASSERT_EQ(eleman, *rb.readOne(i + 2).get<Employee>());
-                }
-
-                // verify that the head element is overriden on the first add
-                Employee latestEmployee("latest employee", 100);
-                ASSERT_EQ(CAPACITY, rb.add<Employee>(latestEmployee));
-                ASSERT_EQ(CAPACITY, rb.capacity());
-                ASSERT_EQ(CAPACITY, rb.remainingCapacity());
-                ASSERT_EQ(1, rb.headSequence());
-                ASSERT_EQ(CAPACITY, rb.tailSequence());
-                ASSERT_EQ(CAPACITY, rb.size());
-                ASSERT_EQ(latestEmployee, *rb.readOne(CAPACITY).get<Employee>());
-            }
-        }
-    }
-}
-
-
-
 
 namespace hazelcast {
     namespace client {

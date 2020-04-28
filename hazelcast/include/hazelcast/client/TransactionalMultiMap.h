@@ -23,11 +23,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template<typename K, typename V>
-            class RawPointerTransactionalMultiMap;
-        }
-
         /**
         *
         * Transactional implementation of MultiMap.
@@ -39,8 +34,6 @@ namespace hazelcast {
         template<typename K, typename V>
         class TransactionalMultiMap : public proxy::TransactionalMultiMapImpl {
             friend class TransactionContext;
-            friend class adaptor::RawPointerTransactionalMultiMap<K, V>;
-
         public:
             /**
             * Transactional implementation of Multimap#put(key , value).

@@ -33,7 +33,7 @@
 #include "hazelcast/client/impl/EntryEventHandler.h"
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/EntryView.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/impl/ClientMessageDecoder.h"
 #include "hazelcast/util/ExceptionUtil.h"
 
@@ -52,11 +52,6 @@
 
 namespace hazelcast {
     namespace client {
-        namespace adaptor {
-            template<typename K, typename V>
-            class RawPointerMap;
-        }
-
         namespace map {
             /**
             * Concurrent, distributed, observable and queryable map client.
@@ -73,8 +68,6 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             class ClientMapProxy : public proxy::IMapImpl {
-                friend class adaptor::RawPointerMap<K, V>;
-
             public:
                 ClientMapProxy(const std::string &instanceName, spi::ClientContext *context)
                         : proxy::IMapImpl(instanceName, context) {
@@ -177,8 +170,9 @@ namespace hazelcast {
                  *
                  * @param predicate matching entries with this predicate will be removed from this map
                  */
+                template <typename P>
                 void removeAll(const query::Predicate &predicate) {
-                    serialization::pimpl::Data predicateData = toData(predicate);
+                    serialization::pimpl::Data predicateData = toData<P>(predicate);
 
                     removeAllInternal(predicateData);
                 }

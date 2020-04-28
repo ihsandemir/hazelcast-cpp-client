@@ -28,7 +28,7 @@
 #include <vector>
 #include <boost/asio.hpp>
 
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/ConcurrentSet.h"
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/Address.h"

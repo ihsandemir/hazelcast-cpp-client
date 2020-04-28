@@ -31,7 +31,7 @@
  */
 
 #include "hazelcast/client/ClientConfig.h"
-#include "hazelcast/client/serialization/Serializer.h"
+
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/client/config/SSLConfig.h"
 #include "hazelcast/util/Preconditions.h"
@@ -59,55 +59,6 @@ namespace hazelcast {
         SerializationConfig &SerializationConfig::setPortableVersion(int version) {
             this->version = version;
             return *this;
-        }
-
-        std::vector<std::shared_ptr<serialization::SerializerBase> > const &
-        SerializationConfig::getSerializers() const {
-            return serializers;
-        }
-
-        SerializationConfig &
-        SerializationConfig::registerSerializer(std::shared_ptr<serialization::SerializerBase> serializer) {
-            serializers.push_back(serializer);
-            return *this;
-        }
-
-        SerializationConfig &
-        SerializationConfig::registerSerializer(std::shared_ptr<serialization::StreamSerializer> serializer) {
-            serializers.push_back(serializer);
-            return *this;
-        }
-
-        SerializationConfig &SerializationConfig::addDataSerializableFactory(int32_t factoryId,
-                                                                             std::shared_ptr<serialization::DataSerializableFactory> dataSerializableFactory) {
-            dataSerializableFactories[factoryId] = dataSerializableFactory;
-            return *this;
-        }
-
-        SerializationConfig &SerializationConfig::addPortableFactory(int32_t factoryId,
-                                                                     std::shared_ptr<serialization::PortableFactory> portableFactory) {
-            portableFactories[factoryId] = portableFactory;
-            return *this;
-        }
-
-        const std::map<int32_t, std::shared_ptr<serialization::DataSerializableFactory> > &
-        SerializationConfig::getDataSerializableFactories() const {
-            return dataSerializableFactories;
-        }
-
-        const std::map<int32_t, std::shared_ptr<serialization::PortableFactory> > &
-        SerializationConfig::getPortableFactories() const {
-            return portableFactories;
-        }
-
-        SerializationConfig &
-        SerializationConfig::setGlobalSerializer(const std::shared_ptr<serialization::StreamSerializer> &serializer) {
-            globalSerializer = serializer;
-            return *this;
-        }
-
-        const std::shared_ptr<serialization::StreamSerializer> &SerializationConfig::getGlobalSerializer() const {
-            return globalSerializer;
         }
 
         namespace config {
@@ -797,12 +748,6 @@ namespace hazelcast {
         ClientConfig &ClientConfig::setNetworkConfig(const config::ClientNetworkConfig &networkConfig) {
             this->networkConfig = networkConfig;
             return *this;
-        }
-
-        const std::shared_ptr<mixedtype::config::MixedNearCacheConfig>
-        ClientConfig::getMixedNearCacheConfig(const std::string &name) {
-            return std::static_pointer_cast<mixedtype::config::MixedNearCacheConfig>(
-                    getNearCacheConfig<TypedData, TypedData>(name));
         }
 
         const std::shared_ptr<std::string> &ClientConfig::getInstanceName() const {

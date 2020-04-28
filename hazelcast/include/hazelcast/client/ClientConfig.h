@@ -410,20 +410,6 @@ namespace hazelcast {
             }
 
             /**
-             * Helper method to add a new NearCacheConfig
-             *
-             * @param nearCacheConfig {@link com.hazelcast.config.NearCacheConfig} to be added
-             * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-             * @see com.hazelcast.config.NearCacheConfig
-             *
-             * Memory ownership of the config is passed to the client config
-             */
-            ClientConfig &addMixedNearCacheConfig(const std::shared_ptr<mixedtype::config::MixedNearCacheConfig> nearCacheConfig) {
-                nearCacheConfigMap.put(nearCacheConfig->getName(), nearCacheConfig);
-                return *this;
-            }
-
-            /**
              * Gets the {@link NearCacheConfig} configured for the map / cache with name
              *
              * @param name name of the map / cache
@@ -441,8 +427,6 @@ namespace hazelcast {
                 //initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
                 return std::static_pointer_cast<config::NearCacheConfig<K, V> >(nearCacheConfig);
             }
-
-            const std::shared_ptr<mixedtype::config::MixedNearCacheConfig> getMixedNearCacheConfig(const std::string &name);
 
             /**
              * Gets {@link com.hazelcast.client.config.ClientNetworkConfig}

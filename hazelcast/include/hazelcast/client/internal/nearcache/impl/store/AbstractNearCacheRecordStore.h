@@ -27,7 +27,7 @@
 #include "hazelcast/client/internal/eviction/EvictionChecker.h"
 #include "hazelcast/client/internal/eviction/EvictionStrategy.h"
 #include "hazelcast/client/internal/eviction/EvictionPolicyType.h"
-#include "hazelcast/client/serialization/pimpl/SerializationService.h"
+#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/internal/eviction/EvictionPolicyEvaluatorProvider.h"
 #include "hazelcast/client/internal/eviction/EvictionStrategyProvider.h"
 #include "hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h"
