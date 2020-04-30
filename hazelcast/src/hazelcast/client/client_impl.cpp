@@ -485,34 +485,6 @@ namespace hazelcast {
             return host;
         }
 
-        int Address::getFactoryId() const {
-            return cluster::impl::F_ID;
-        }
-
-        int Address::getClassId() const {
-            return ID;
-        }
-
-        void Address::writeData(serialization::ObjectDataOutput &out) const {
-            out.writeInt(port);
-            out.writeByte(type);
-            int len = (int) host.size();
-            out.writeInt(len);
-            out.writeBytes((const byte *) host.c_str(), len);
-        }
-
-        void Address::readData(serialization::ObjectDataInput &in) {
-            port = in.readInt();
-            type = in.readByte();
-            int len = in.readInt();
-            if (len > 0) {
-                std::vector<byte> bytes;
-                in.readFully(bytes);
-                host.clear();
-                host.append(bytes.begin(), bytes.end());
-            }
-        }
-
         bool Address::operator<(const Address &rhs) const {
             if (host < rhs.host) {
                 return true;
@@ -545,6 +517,30 @@ namespace hazelcast {
 
         std::ostream &operator<<(std::ostream &stream, const Address &address) {
             return stream << address.toString();
+        }
+
+        namespace serialization {
+            int32_t hz_serializer<Address>::getFactoryId() {
+                return F_ID;
+            }
+
+            int32_t hz_serializer<Address>::getClassId() {
+                return ADDRESS;
+            }
+
+            void hz_serializer<Address>::writeData(const Address &object, ObjectDataOutput &out) {
+                out.writeInt(object.port);
+                out.writeByte(object.type);
+                out.writeUTF(object.host);
+            }
+
+            Address hz_serializer<Address>::readData(ObjectDataInput &in) {
+                Address object;
+                object.port = in.readInt();
+                object.type = in.readByte();
+                object.host = in.readUTF();
+                return object;
+            }
         }
 
         LifecycleListener::~LifecycleListener() {

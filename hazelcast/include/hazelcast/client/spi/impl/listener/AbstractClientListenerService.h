@@ -63,8 +63,8 @@ namespace hazelcast {
                                                  const std::shared_ptr<protocol::ClientMessage> response);
 
                         virtual std::string
-                        registerListener(const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                                         const std::shared_ptr<EventHandler<protocol::ClientMessage> > handler);
+                        registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                         std::unique_ptr<impl::BaseEventHandler> &&handler);
 
                         virtual bool deregisterListener(const std::string registrationId);
 
@@ -91,8 +91,8 @@ namespace hazelcast {
                         void removeEventHandler(const ClientEventRegistration &registration);
 
                         virtual std::string
-                        registerListenerInternal(const std::shared_ptr<ListenerMessageCodec> &listenerMessageCodec,
-                                                 const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
+                        registerListenerInternal(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                                 std::unique_ptr<impl::BaseEventHandler> &&handler);
 
                         virtual bool deregisterListenerInternal(const std::string &userRegistrationId);
 

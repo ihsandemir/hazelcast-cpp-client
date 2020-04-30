@@ -38,17 +38,14 @@ namespace hazelcast {
     namespace client {
         namespace impl {
 
-            template<typename K, typename V, typename BaseType>
+            template<typename Listener, typename BaseType>
             class EntryEventHandler : public BaseType {
             public:
                 EntryEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
                                   serialization::pimpl::SerializationService &serializationService,
-                                  EntryListener<K, V> &listener, bool includeValue)
-                : instanceName(instanceName)
-                , clusterService(clusterService)
-                , serializationService(serializationService)
-                , listener(listener)
-                , includeValue(includeValue) {
+                                  Listener &&listener, bool includeValue)
+                : instanceName(instanceName), clusterService(clusterService), serializationService(serializationService)
+                , listener(listener), includeValue(includeValue) {
                 }
 
                 virtual void handleEntryEventV10(std::unique_ptr<serialization::pimpl::Data> &key,
@@ -89,30 +86,29 @@ namespace hazelcast {
                                     std::unique_ptr<serialization::pimpl::Data> &mergingValue,
                                     const int32_t &eventType, const std::string &uuid,
                                     const int32_t &numberOfAffectedEntries) {
-                    EntryEventType type((EntryEventType::Type)eventType);
-                    std::unique_ptr<V> val;
-                    std::unique_ptr<V> oldVal;
-                    std::unique_ptr<V> mergingVal;
+                    type type((EntryEventType::type)eventType);
+                    TypedData val, oldVal, mergingVal;
                     if (includeValue) {
-                        if (NULL != value.get()) {
-                            val = serializationService.toObject<V>(*value);
+                        if (value) {
+                            val = TypedData(std::move(*value), serializationService);
                         }
-                        if (NULL != oldValue.get()) {
-                            oldVal = serializationService.toObject<V>(*oldValue);
+                        if (oldValue) {
+                            oldVal = TypedData(std::move(*oldValue), serializationService);
                         }
-                        if (NULL != mergingValue.get()) {
-                            mergingVal = serializationService.toObject<V>(*mergingValue);
+                        if (mergingValue) {
+                            mergingVal = TypedData(std::move(*mergingValue), serializationService);
                         }
                     }
-                    std::unique_ptr<K> eventKey;
-                    if (NULL != key.get()) {
-                        eventKey = serializationService.toObject<K>(*key);
+                    TypedData eventKey;
+                    if (key) {
+                        eventKey = TypedData(std::move(*key), serializationService);
                     }
                     std::shared_ptr<Member> member = clusterService.getMember(uuid);
-                    if (member.get() == NULL) {
+                    if (!member) {
                         member.reset(new Member(uuid));
                     }
-                    EntryEvent<K, V> entryEvent(instanceName, *member, type, eventKey, val, oldVal, mergingVal);
+                    EntryEvent entryEvent(instanceName, *member, type, std::move(eventKey), std::move(val),
+                                          std::move(oldVal), std::move(mergingVal));
                     if (type == EntryEventType::ADDED) {
                         listener.entryAdded(entryEvent);
                     } else if (type == EntryEventType::REMOVED) {
@@ -132,7 +128,7 @@ namespace hazelcast {
                 const std::string& instanceName;
                 spi::ClientClusterService &clusterService;
                 serialization::pimpl::SerializationService& serializationService;
-                EntryListener<K, V>& listener;
+                Listener listener;
                 bool includeValue;
             };
         }

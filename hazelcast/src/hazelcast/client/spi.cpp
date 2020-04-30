@@ -580,19 +580,10 @@ namespace hazelcast {
                 handler->onListenerRegister();
             }
 
-            std::string ClientProxy::registerListener(const std::shared_ptr<spi::impl::ListenerMessageCodec> &codec,
-                                                      client::impl::BaseEventHandler *handler) {
-                handler->setLogger(&getContext().getLogger());
-                return getContext().getClientListenerService().registerListener(codec,
-                                                                                std::shared_ptr<spi::EventHandler<protocol::ClientMessage> >(
-                                                                                        new EventHandlerDelegator(
-                                                                                                handler)));
-            }
-
             std::string
-            ClientProxy::registerListener(const std::shared_ptr<impl::ListenerMessageCodec> &listenerMessageCodec,
-                                          const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) {
-                std::static_pointer_cast<client::impl::BaseEventHandler>(handler)->setLogger(&getContext().getLogger());
+            ClientProxy::registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                          std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
+                handler->setLogger(&getContext().getLogger());
                 return getContext().getClientListenerService().registerListener(listenerMessageCodec, handler);
             }
 
@@ -2129,8 +2120,8 @@ namespace hazelcast {
 
                     std::string
                     AbstractClientListenerService::registerListener(
-                            const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                            const std::shared_ptr<EventHandler<protocol::ClientMessage> > handler) {
+                            std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                            std::unique_ptr<impl::BaseEventHandler> &&handler) {
                         return boost::asio::post(registrationExecutor->get_executor(), std::packaged_task<std::string()>([=]() {
                             return registerListenerInternal(listenerMessageCodec, handler);
                         })).get();
@@ -2202,8 +2193,8 @@ namespace hazelcast {
                     }
 
                     std::string AbstractClientListenerService::registerListenerInternal(
-                            const std::shared_ptr<ListenerMessageCodec> &listenerMessageCodec,
-                            const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler) {
+                            const std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                            const std::unique_ptr<impl::BaseEventHandler> &&handler) {
                         std::string userRegistrationId = util::UuidUtil::newUnsecureUuidString();
 
                         ClientRegistrationKey registrationKey(userRegistrationId, handler, listenerMessageCodec);
@@ -2446,8 +2437,8 @@ namespace hazelcast {
 
                     std::string
                     SmartClientListenerService::registerListener(
-                            const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                            const std::shared_ptr<EventHandler<protocol::ClientMessage> > handler) {
+                            std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                            std::unique_ptr<impl::BaseEventHandler> &&handler) {
                         trySyncConnectToAllMembers();
                         return AbstractClientListenerService::registerListener(listenerMessageCodec, handler);
                     }
@@ -2548,25 +2539,22 @@ namespace hazelcast {
                     }
 
                     ClientRegistrationKey::ClientRegistrationKey(const std::string &userRegistrationId,
-                                                                 const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler,
-                                                                 const std::shared_ptr<ListenerMessageCodec> &codec)
-                            : userRegistrationId(userRegistrationId), handler(handler), codec(codec) {
-                    }
+                                                                 std::unique_ptr<EventHandler<protocol::ClientMessage>> &&handler,
+                                                                 std::unique_ptr<ListenerMessageCodec> &&codec)
+                            : userRegistrationId(userRegistrationId), handler(handler), codec(codec) {}
 
                     ClientRegistrationKey::ClientRegistrationKey(const std::string &userRegistrationId)
-                            : userRegistrationId(userRegistrationId) {
-                    }
+                            : userRegistrationId(userRegistrationId) {}
 
                     const std::string &ClientRegistrationKey::getUserRegistrationId() const {
                         return userRegistrationId;
                     }
 
-                    const std::shared_ptr<EventHandler<protocol::ClientMessage> > &
-                    ClientRegistrationKey::getHandler() const {
+                    const std::unique_ptr<impl::BaseEventHandler> &ClientRegistrationKey::getHandler() const {
                         return handler;
                     }
 
-                    const std::shared_ptr<ListenerMessageCodec> &ClientRegistrationKey::getCodec() const {
+                    const std::unique_ptr<ListenerMessageCodec> &ClientRegistrationKey::getCodec() const {
                         return codec;
                     }
 

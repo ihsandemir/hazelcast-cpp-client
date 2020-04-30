@@ -36,6 +36,11 @@ namespace hazelcast {
             class HAZELCAST_API Predicate : public serialization::IdentifiedDataSerializable {
             };
         }
+        namespace serialization {
+            template<>
+            struct hz_serializer<query::Predicate> : public identified_data_serializer {
+            };
+        }
     }
 }
 

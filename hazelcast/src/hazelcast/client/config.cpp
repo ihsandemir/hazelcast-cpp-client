@@ -687,7 +687,7 @@ namespace hazelcast {
             return *this;
         }
 
-        const Credentials *ClientConfig::getCredentials() {
+        const Credentials *ClientConfig::getCredentials() const {
             return credentials;
         }
 

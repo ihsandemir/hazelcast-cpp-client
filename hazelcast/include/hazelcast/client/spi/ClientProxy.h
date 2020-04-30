@@ -19,6 +19,7 @@
 
 #include <string>
 #include <memory>
+#include <boost/thread/future.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/DistributedObject.h"
@@ -91,27 +92,18 @@ namespace hazelcast {
                 /**
                 * Internal API.
                 *
-                * @param codec The codec used for listener register/deregister
-                * @param handler Event handler for the listener
-                */
-                std::string registerListener(const std::shared_ptr<spi::impl::ListenerMessageCodec> &codec,
-                                             client::impl::BaseEventHandler *handler);
-
-                /**
-                * Internal API.
-                *
                 * @param listenerMessageCodec The codec used for listener register/deregister
                 * @param handler Event handler for the listener
                 */
-                std::string registerListener(const std::shared_ptr<impl::ListenerMessageCodec> &listenerMessageCodec,
-                                             const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler);
+                boost::future<std::string> registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                             std::unique_ptr<client::impl::BaseEventHandler> &&handler);
 
                 /**
                 * Internal API.
                 *
                 * @param registrationId The registration id for the listener to be unregistered.
                 */
-                bool deregisterListener(const std::string &registrationId);
+                boost::future<bool> deregisterListener(const std::string &registrationId);
             protected:
                 /**
                  * Called before proxy is destroyed and determines whether destroy should be done.

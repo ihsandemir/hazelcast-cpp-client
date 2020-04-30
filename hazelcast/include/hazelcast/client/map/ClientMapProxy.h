@@ -23,12 +23,10 @@
 #include <stdexcept>
 #include <climits>
 #include <assert.h>
-#include <hazelcast/util/concurrent/TimeUnit.h>
 
 #include "hazelcast/client/monitor/LocalMapStats.h"
 #include "hazelcast/client/monitor/impl/NearCacheStatsImpl.h"
 #include "hazelcast/client/monitor/impl/LocalMapStatsImpl.h"
-#include "hazelcast/client/impl/EntryArrayImpl.h"
 #include "hazelcast/client/proxy/IMapImpl.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
 #include "hazelcast/client/EntryListener.h"
@@ -36,12 +34,6 @@
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/impl/ClientMessageDecoder.h"
 #include "hazelcast/util/ExceptionUtil.h"
-
-// Codecs
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 
 
@@ -63,77 +55,40 @@ namespace hazelcast {
             *      HazelcastClient client(clientConfig);
             *      IMap<int,std::string> imap = client.getMap<int,std::string>("aKey");
             *
-            * @param <K> key
-            * @param <V> value
             */
-            template<typename K, typename V>
             class ClientMapProxy : public proxy::IMapImpl {
             public:
                 ClientMapProxy(const std::string &instanceName, spi::ClientContext *context)
                         : proxy::IMapImpl(instanceName, context) {
                 }
 
-                /**
-                * check if this map contains key.
-                * @param key
-                * @return true if contains, false otherwise
-                * @throws IClassCastException if the type of the specified element is incompatible with the server side.
-                */
-                bool containsKey(const K &key) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    return containsKeyInternal(keyData);
+                template<typename K>
+                boost::future<bool> containsKey(const K &key) {
+                    return containsKeyInternal(toData(key));
                 }
 
-                /**
-                * check if this map contains value.
-                * @param value
-                * @return true if contains, false otherwise
-                * @throws IClassCastException if the type of the specified element is incompatible with the server side.
-                */
-                bool containsValue(const V &value) {
+                template<typename V>
+                boost::future<bool> containsValue(const V &value) {
                     return proxy::IMapImpl::containsValue(toData(value));
                 }
 
-                /**
-                * get the value.
-                * @param key
-                * @return value value in shared_ptr, if there is no mapping for key
-                * then return NULL in shared_ptr.
-                * @throws IClassCastException if the type of the specified element is incompatible with the server side.
-                */
-                std::shared_ptr<V> get(const K &key) {
+                template<typename K, typename V>
+                boost::future<boost::optional<V>> get(const K &key) {
                     serialization::pimpl::Data keyData = toData(key);
                     return getInternal(keyData);
                 }
 
-                /**
-                * put new entry into map.
-                * @param key
-                * @param value
-                * @return the previous value in shared_ptr, if there is no mapping for key
-                * @throws IClassCastException if the type of the specified elements are incompatible with the server side.
-                * then returns NULL in shared_ptr.
-                */
-                std::shared_ptr<V> put(const K &key, const V &value) {
-                    return put(key, value, -1);
+                template<typename K, typename V>
+                boost::future<boost::optional<V>> put(const K &key, const V &value) {
+                    return put(key, value, std::chrono::milliseconds(-1));
                 }
 
-                /**
-                * Puts an entry into this map with a given ttl (time to live) value.
-                * Entry will expire and get evicted after the ttl. If ttl is 0, then
-                * the entry lives forever.
-                *
-                * @param key              key of the entry
-                * @param value            value of the entry
-                * @param ttlInMillis      maximum time for this entry to stay in the map in milliseconds,0 means infinite.
-                * @return the previous value in shared_ptr, if there is no mapping for key
-                * then returns NULL in shared_ptr.
-                */
-                std::shared_ptr<V> put(const K &key, const V &value, int64_t ttlInMillis) {
+                template<typename K, typename V>
+                boost::future<boost::optional<V>> put(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
-                    return std::shared_ptr<V>(std::move(toObject<V>(putInternal(keyData, valueData, ttlInMillis))));
+                    return std::shared_ptr<V>(std::move(toObject<V>(putInternal(keyData, valueData, ttl))));
                 }
 
                 /**
@@ -143,7 +98,7 @@ namespace hazelcast {
                 * then returns NULL in shared_ptr.
                 * @throws IClassCastException if the type of the specified element is incompatible with the server side.
                 */
-                std::shared_ptr<V> remove(const K &key) {
+                boost::future<boost::optional<V>> remove(const K &key) {
                     serialization::pimpl::Data keyData = toData(key);
 
                     std::unique_ptr<serialization::pimpl::Data> response = removeInternal(keyData);
@@ -157,7 +112,7 @@ namespace hazelcast {
                 * @return true if remove is successful false otherwise
                 * @throws IClassCastException if the type of the specified element is incompatible with the server side.
                 */
-                bool remove(const K &key, const V &value) {
+                boost::future<bool> remove(const K &key, const V &value) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
@@ -171,7 +126,7 @@ namespace hazelcast {
                  * @param predicate matching entries with this predicate will be removed from this map
                  */
                 template <typename P>
-                void removeAll(const query::Predicate &predicate) {
+                boost::future<void> removeAll(const query::Predicate &predicate) {
                     serialization::pimpl::Data predicateData = toData<P>(predicate);
 
                     removeAllInternal(predicateData);
@@ -183,7 +138,7 @@ namespace hazelcast {
                 * @param key The key of the map entry to remove.
                 * @throws IClassCastException if the type of the specified element is incompatible with the server side.
                 */
-                void deleteEntry(const K &key) {
+                boost::future<void> deleteEntry(const K &key) {
                     serialization::pimpl::Data keyData = toData(key);
 
                     deleteInternal(keyData);
@@ -193,7 +148,7 @@ namespace hazelcast {
                 * If this map has a MapStore this method flushes
                 * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
                 */
-                void flush() {
+                boost::future<void> flush() {
                     proxy::IMapImpl::flush();
                 }
 
@@ -207,7 +162,7 @@ namespace hazelcast {
                 * @param timeoutInMillis  maximum time in milliseconds to wait for acquiring the lock
                 *                 for the key
                 */
-                bool tryRemove(const K &key, int64_t timeoutInMillis) {
+                boost::future<bool> tryRemove(const K &key, int64_t timeoutInMillis) {
                     serialization::pimpl::Data keyData = toData(key);
 
                     return tryRemoveInternal(keyData, timeoutInMillis);
@@ -225,7 +180,7 @@ namespace hazelcast {
                 * @return <tt>true</tt> if the put is successful, <tt>false</tt>
                 *         otherwise.
                 */
-                bool tryPut(const K &key, const V &value, int64_t timeoutInMillis) {
+                boost::future<bool> tryPut(const K &key, const V &value, int64_t timeoutInMillis) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
@@ -241,7 +196,7 @@ namespace hazelcast {
                 * @param value        value of the entry
                 * @param ttlInMillis  maximum time for this entry to stay in the map in milliseconds, 0 means infinite.
                 */
-                void putTransient(const K &key, const V &value, int64_t ttlInMillis) {
+                boost::future<void> putTransient(const K &key, const V &value, int64_t ttlInMillis) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
@@ -256,7 +211,7 @@ namespace hazelcast {
                 * @return the previous value in shared_ptr, if there is no mapping for key
                 * then returns NULL in shared_ptr.
                 */
-                std::shared_ptr<V> putIfAbsent(const K &key, const V &value) {
+                boost::future<boost::optional<V>> putIfAbsent(const K &key, const V &value) {
                     return putIfAbsent(key, value, -1);
                 }
 
@@ -271,7 +226,7 @@ namespace hazelcast {
                 * @return the previous value of the entry, if there is no mapping for key
                 * then returns NULL in shared_ptr.
                 */
-                std::shared_ptr<V> putIfAbsent(const K &key, const V &value, int64_t ttlInMillis) {
+                boost::future<boost::optional<V>> putIfAbsent(const K &key, const V &value, int64_t ttlInMillis) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
@@ -287,7 +242,7 @@ namespace hazelcast {
                 * @param newValue
                 * @return <tt>true</tt> if the value was replaced
                 */
-                bool replace(const K &key, const V &oldValue, const V &newValue) {
+                boost::future<bool> replace(const K &key, const V &oldValue, const V &newValue) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data oldValueData = toData(oldValue);
                     serialization::pimpl::Data newValueData = toData(newValue);
@@ -302,7 +257,7 @@ namespace hazelcast {
                 * @return the previous value of the entry, if there is no mapping for key
                 * then returns NULL in shared_ptr.
                 */
-                std::shared_ptr<V> replace(const K &key, const V &value) {
+                boost::future<boost::optional<V>> replace(const K &key, const V &value) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
@@ -316,7 +271,7 @@ namespace hazelcast {
                 * @param key
                 * @param value
                 */
-                void set(const K &key, const V &value) {
+                boost::future<void> set(const K &key, const V &value) {
                     set(key, value, -1);
                 }
 
@@ -329,7 +284,7 @@ namespace hazelcast {
                 * @param ttl maximum time in milliseconds for this entry to stay in the map
                 0 means infinite.
                 */
-                void set(const K &key, const V &value, int64_t ttl) {
+                boost::future<void> set(const K &key, const V &value, int64_t ttl) {
                     serialization::pimpl::Data keyData = toData(key);
                     serialization::pimpl::Data valueData = toData(value);
 
@@ -350,7 +305,7 @@ namespace hazelcast {
                 *
                 * @param key key to lock.
                 */
-                void lock(const K &key) {
+                boost::future<void> lock(const K &key) {
                     lock(key, -1);
                 }
 
@@ -372,7 +327,7 @@ namespace hazelcast {
                 * @param key key to lock.
                 * @param leaseTime time in milliseconds to wait before releasing the lock.
                 */
-                void lock(const K &key, int64_t leaseTime) {
+                boost::future<void> lock(const K &key, int64_t leaseTime) {
                     serialization::pimpl::Data keyData = toData(key);
 
                     proxy::IMapImpl::lock(toData(key), leaseTime);
@@ -386,7 +341,7 @@ namespace hazelcast {
                 * @param key key to lock to be checked.
                 * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
                 */
-                bool isLocked(const K &key) {
+                boost::future<bool> isLocked(const K &key) {
                     return proxy::IMapImpl::isLocked(toData(key));
                 }
 
@@ -399,7 +354,7 @@ namespace hazelcast {
                 * @param key key to lock.
                 * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
                 */
-                bool tryLock(const K &key) {
+                boost::future<bool> tryLock(const K &key) {
                     return tryLock(key, 0);
                 }
 
@@ -419,7 +374,7 @@ namespace hazelcast {
                 * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
                 *         if the waiting time elapsed before the lock was acquired.
                 */
-                bool tryLock(const K &key, int64_t timeInMillis) {
+                boost::future<bool> tryLock(const K &key, int64_t timeInMillis) {
                     return proxy::IMapImpl::tryLock(toData(key), timeInMillis);
                 }
 
@@ -436,7 +391,7 @@ namespace hazelcast {
                 * @param key key to lock.
                 * @throws IllegalMonitorStateException if the current thread does not hold this lock MTODO
                 */
-                void unlock(const K &key) {
+                boost::future<void> unlock(const K &key) {
                     proxy::IMapImpl::unlock(toData(key));
                 }
 
@@ -448,7 +403,7 @@ namespace hazelcast {
                 *
                 * @param key key to lock.
                 */
-                void forceUnlock(const K &key) {
+                boost::future<void> forceUnlock(const K &key) {
                     proxy::IMapImpl::forceUnlock(toData(key));
                 }
 
@@ -464,8 +419,8 @@ namespace hazelcast {
                 * @return id of registered interceptor
                 */
                 template<typename MapInterceptor>
-                std::string addInterceptor(MapInterceptor &interceptor) {
-                    return proxy::IMapImpl::addInterceptor(interceptor);
+                boost::future<std::string> addInterceptor(MapInterceptor &interceptor) {
+                    return proxy::IMapImpl::addInterceptor<MapInterceptor>(toData(interceptor));
                 }
 
                 /**
@@ -474,7 +429,7 @@ namespace hazelcast {
                 *
                 * @param id registration id of map interceptor
                 */
-                void removeInterceptor(const std::string &id) {
+                boost::future<void> removeInterceptor(const std::string &id) {
                     proxy::IMapImpl::removeInterceptor(id);
                 }
 
@@ -492,14 +447,14 @@ namespace hazelcast {
                 *
                 * @return registrationId of added listener that can be used to remove the entry listener.
                 */
-                std::string addEntryListener(EntryListener<K, V> &listener, bool includeValue) {
-                    client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
-                            new client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
-                                    getName(), getContext().getClientClusterService(),
-                                    getContext().getSerializationService(),
-                                    listener,
-                                    includeValue);
-                    return proxy::IMapImpl::addEntryListener(entryEventHandler, includeValue);
+                template<typename Listener>
+                boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue) {
+                    return proxy::IMapImpl::addEntryListener(
+                            std::unique_ptr<impl::BaseEventHandler>(new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
+                            getName(), getContext().getClientClusterService(),
+                            getContext().getSerializationService(),
+                            listener,
+                            includeValue)), includeValue);
                 }
 
                 /**
@@ -517,28 +472,15 @@ namespace hazelcast {
                 *
                 * @return registrationId of added listener that can be used to remove the entry listener.
                 */
+                template<typename Listener, typename P>
                 std::string
-                addEntryListener(EntryListener<K, V> &listener, const query::Predicate &predicate, bool includeValue) {
-                    client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler> *entryEventHandler =
-                            new client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
+                addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
+                    return proxy::IMapImpl::addEntryListener(
+                            std::unique_ptr<impl::BaseEventHandler>(new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
                                     getName(), getContext().getClientClusterService(),
                                     getContext().getSerializationService(),
                                     listener,
-                                    includeValue);
-                    return proxy::IMapImpl::addEntryListener(entryEventHandler, predicate, includeValue);
-                }
-
-                /**
-                * Removes the specified entry listener
-                * Returns silently if there is no such listener added before.
-                *
-                *
-                * @param registrationId id of registered listener
-                *
-                * @return true if registration is removed, false otherwise
-                */
-                bool removeEntryListener(const std::string &registrationId) {
-                    return proxy::IMapImpl::removeEntryListener(registrationId);
+                                    includeValue)), toData<P>(predicate), includeValue);
                 }
 
                 /**
@@ -554,15 +496,28 @@ namespace hazelcast {
                 * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
                 *                     contain the value.
                 */
-                std::string addEntryListener(EntryListener<K, V> &listener, const K &key, bool includeValue) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler> *entryEventHandler =
-                            new client::impl::EntryEventHandler<K, V, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler>(
+                template<typename Listener, typename K>
+                boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
+                    return proxy::IMapImpl::addEntryListener(
+                            std::unique_ptr<impl::BaseEventHandler>(new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler>(
                                     getName(), getContext().getClientClusterService(),
                                     getContext().getSerializationService(),
                                     listener,
-                                    includeValue);
-                    return proxy::IMapImpl::addEntryListener(entryEventHandler, keyData, includeValue);
+                                    includeValue)), includeValue, toData<K>(key));
+                }
+
+
+                /**
+                * Removes the specified entry listener
+                * Returns silently if there is no such listener added before.
+                *
+                *
+                * @param registrationId id of registered listener
+                *
+                * @return true if registration is removed, false otherwise
+                */
+                boost::future<bool> removeEntryListener(const std::string &registrationId) {
+                    return proxy::IMapImpl::removeEntryListener(registrationId);
                 }
 
                 /**
@@ -591,7 +546,7 @@ namespace hazelcast {
                 * @param key key to evict
                 * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
                 */
-                bool evict(const K &key) {
+                boost::future<bool> evict(const K &key) {
                     serialization::pimpl::Data keyData = toData(key);
 
                     return evictInternal(keyData);
@@ -608,7 +563,7 @@ namespace hazelcast {
                 *
                 * @see #clear()
                 */
-                void evictAll() {
+                boost::future<void> evictAll() {
                     proxy::IMapImpl::evictAll();
                 }
 
@@ -891,8 +846,33 @@ namespace hazelcast {
                     std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetForPagingPredicateData(
                             predicate);
 
-                    client::impl::EntryArrayImpl<K, V> entries(dataResult, getContext().getSerializationService());
-                    entries.sort(query::ENTRY, predicate.getComparator());
+                    std::vector<std::pair<K, V> > entries;
+                    std::for_each(dataResult.begin(), dataResult.end(),
+                                  [&](const std::pair<serialization::pimpl::Data, serialization::pimpl::Data> &entry) {
+                        entries.push_back(std::make_pair(toObject<K>(entry.first).value(), toObject<V>(entry.second).value()));
+                    });
+                    std::sort(entries.begin(), entries.end(), [&] (const std::pair<K, V> &lhs, const std::pair<K, V> &rhs) {
+                        auto comparator = predicate.getComparator();
+                        if (!comparator) {
+                            switch(predicate.getIterationType()) {
+                                case query::VALUE:
+                                    return lhs.second < rhs.second;
+                                default:
+                                    return lhs.first < rhs.first;
+                            }
+                        }
+
+                        std::pair<const K *, const V *> leftVal(&lhs.first, &lhs.second);
+                        std::pair<const K *, const V *> rightVal(&rhs.first, &rhs.second);
+                        int result = comparator->compare(&leftVal, &rightVal);
+                        if (0 != result) {
+                            // std sort: comparison function object returns ​true if the first argument is less
+                            // than (i.e. is ordered before) the second.
+                            return result < 0;
+                        }
+
+                        return lhs.first < rhs.first;
+                    });
 
                     std::pair<size_t, size_t> range = updateAnchor<K, V>(entries, predicate, query::ENTRY);
 
@@ -913,9 +893,9 @@ namespace hazelcast {
                 *   class Employee : public serialization::Portable {
                 *       //...
                 *       private:
-                *          bool active;
+                *          boost::future<bool> active;
                 *          int age;
-                *          std::string name;
+                *          boost::future<std::string> name;
                 *
                 *   }
                 *
@@ -936,7 +916,7 @@ namespace hazelcast {
                 * @param ordered   <tt>true</tt> if index should be ordered,
                 *                  <tt>false</tt> otherwise.
                 */
-                void addIndex(const std::string &attribute, bool ordered) {
+                boost::future<void> addIndex(const std::string &attribute, bool ordered) {
                     proxy::IMapImpl::addIndex(attribute, ordered);
                 }
 
@@ -1002,7 +982,7 @@ namespace hazelcast {
                 */
                 template<typename ResultType, typename EntryProcessor>
                 std::map<K, std::shared_ptr<ResultType> > executeOnEntries(const EntryProcessor &entryProcessor) {
-                    EntryVector entries = proxy::IMapImpl::executeOnEntriesData<EntryProcessor>(entryProcessor);
+                    EntryVector entries = proxy::IMapImpl::executeOnEntriesData<EntryProcessor>(toData(entryProcessor));
                     std::map<K, std::shared_ptr<ResultType> > result;
                     for (size_t i = 0; i < entries.size(); ++i) {
                         std::unique_ptr<K> keyObj = toObject<K>(entries[i].first);
@@ -1080,7 +1060,7 @@ namespace hazelcast {
                 *
                 * @return <tt>true</tt> if this map contains no key-value mappings
                 */
-                bool isEmpty() {
+                boost::future<bool> isEmpty() {
                     return proxy::IMapImpl::isEmpty();
                 }
 
@@ -1095,7 +1075,7 @@ namespace hazelcast {
                 *
                 * @param m mappings to be stored in this map
                 */
-                void putAll(const std::map<K, V> &entries) {
+                boost::future<void> putAll(const std::map<K, V> &entries) {
                     std::map<int, EntryVector> entryMap;
 
                     for (typename std::map<K, V>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
@@ -1114,15 +1094,15 @@ namespace hazelcast {
                 * Removes all of the mappings from this map (optional operation).
                 * The map will be empty after this call returns.
                 */
-                void clear() {
+                boost::future<void> clear() {
                     proxy::IMapImpl::clear();
                 }
 
-                virtual monitor::LocalMapStats &getLocalMapStats() {
+                monitor::LocalMapStats &getLocalMapStats() {
                     return stats;
                 }
 
-                virtual boost::future<std::shared_ptr<V>> getAsync(const K &key) {
+                boost::future<std::shared_ptr<V>> getAsync(const K &key) {
                     auto future = getAsyncInternal(key);
                     return future.then(boost::launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                         return GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(), getSerializationService());
@@ -1199,7 +1179,7 @@ namespace hazelcast {
                     return std::shared_ptr<V>(std::move(toObject<V>(proxy::IMapImpl::getData(keyData))));
                 }
 
-                virtual bool containsKeyInternal(const serialization::pimpl::Data &keyData) {
+                virtual boost::future<bool> containsKeyInternal(const serialization::pimpl::Data &keyData) {
                     return proxy::IMapImpl::containsKey(keyData);
                 }
 

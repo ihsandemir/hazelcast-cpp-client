@@ -18,8 +18,6 @@
 
 #include <stdint.h>
 
-#include "hazelcast/client/impl/DataArrayImpl.h"
-
 namespace hazelcast {
     namespace client {
         namespace ringbuffer {

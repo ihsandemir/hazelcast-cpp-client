@@ -36,7 +36,9 @@ namespace hazelcast {
         namespace topic {
             namespace impl {
                 namespace reliable {
-                    class HAZELCAST_API ReliableTopicMessage : public serialization::IdentifiedDataSerializable {
+                    class HAZELCAST_API ReliableTopicMessage {
+                        template<>
+                        friend class serialization::hz_serializer<topic::impl::reliable::ReliableTopicMessage>;
                     public:
                         ReliableTopicMessage();
 
@@ -47,14 +49,6 @@ namespace hazelcast {
                         const boost::optional<Address> &getPublisherAddress() const;
 
                         const serialization::pimpl::Data &getPayload() const;
-
-                        virtual int getFactoryId() const;
-
-                        virtual int getClassId() const;
-
-                        virtual void writeData(serialization::ObjectDataOutput &writer) const;
-
-                        virtual void readData(serialization::ObjectDataInput &reader);
                     private:
                         int64_t publishTime;
                         boost::optional<Address> publisherAddress;
@@ -62,6 +56,21 @@ namespace hazelcast {
                     };
                 }
             }
+        }
+        namespace serialization {
+            template<>
+            struct hz_serializer<topic::impl::reliable::ReliableTopicMessage> : public identified_data_serializer {
+                static constexpr int32_t F_ID = -18;
+                static constexpr int32_t RELIABLE_TOPIC_MESSAGE = 2;
+
+                static int32_t getFactoryId();
+
+                static int32_t getClassId();
+
+                static void writeData(const topic::impl::reliable::ReliableTopicMessage &object, ObjectDataOutput &out);
+
+                static topic::impl::reliable::ReliableTopicMessage readData(ObjectDataInput &in);
+            };
         }
     }
 }

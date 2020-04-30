@@ -196,9 +196,7 @@ namespace hazelcast {
 
                 PagingPredicate(std::unique_ptr<Predicate> &&predicate, std::unique_ptr<query::EntryComparator<K, V> > &&comparatorObj,
                                 size_t predicatePageSize) : innerPredicate(std::move(predicate)), comparator(std::move(comparatorObj)),
-                                                         pageSize(predicatePageSize), page(0), iterationType(VALUE) {
-
-                }
+                                                         pageSize(predicatePageSize), page(0), iterationType(VALUE) {}
 
                 ~PagingPredicate() {
                     for (typename std::vector<std::pair<size_t, std::pair<K *, V *> > >::const_iterator it = anchorList.begin();

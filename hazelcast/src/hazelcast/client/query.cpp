@@ -137,7 +137,7 @@ namespace hazelcast {
                 out.writeInt((int) predicates.size());
                 for (std::vector<Predicate *>::const_iterator it = predicates.begin();
                      it != predicates.end(); ++it) {
-                    out.writeObject<serialization::IdentifiedDataSerializable>(*it);
+                    out.writeObject<Predicate>(*it);
                 }
             }
 
@@ -164,7 +164,7 @@ namespace hazelcast {
             }
 
             void NotPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeObject<serialization::IdentifiedDataSerializable>(internalPredicate.get());
+                out.writeObject<Predicate>(internalPredicate.get());
             }
 
             void NotPredicate::readData(serialization::ObjectDataInput &in) {
@@ -270,7 +270,7 @@ namespace hazelcast {
                 out.writeInt((int) predicates.size());
                 for (std::vector<Predicate *>::const_iterator it = predicates.begin();
                      it != predicates.end(); ++it) {
-                    out.writeObject<serialization::IdentifiedDataSerializable>(*it);
+                    out.writeObject<Predicate>(*it);
                 }
             }
 

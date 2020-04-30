@@ -127,7 +127,7 @@ namespace hazelcast {
             /**
             * Can be used instead of GroupConfig in Hazelcast Extensions.
             */
-            const Credentials *getCredentials();
+            const Credentials *getCredentials() const;
 
             /**
             * @deprecated Please use {@link ClientNetworkConfig#setConnectionAttemptLimit(int32_t)}

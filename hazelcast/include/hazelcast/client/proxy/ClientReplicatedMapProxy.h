@@ -28,7 +28,6 @@
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/map/impl/DataAwareEntryEvent.h"
 #include "hazelcast/client/ClientConfig.h"
-#include "hazelcast/client/impl/DataArrayImpl.h"
 #include "hazelcast/client/impl/LazyEntryArrayImpl.h"
 
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"

@@ -69,39 +69,24 @@ namespace hazelcast {
         TypedData::TypedData() : ss(NULL) {
         }
 
-        TypedData::TypedData(std::unique_ptr<serialization::pimpl::Data> &data,
-                             serialization::pimpl::SerializationService &serializationService) : data(std::move(data)),
+        TypedData::TypedData(serialization::pimpl::Data &&d,
+                             serialization::pimpl::SerializationService &serializationService) : data(d),
                                                                                                  ss(&serializationService) {
         }
-
-        TypedData::TypedData(const std::shared_ptr<serialization::pimpl::Data> &data,
-                             serialization::pimpl::SerializationService &serializationService) : data(data),
-                                                                                                 ss(&serializationService) {
-
-        }
-
-        TypedData::~TypedData() {}
 
         const serialization::pimpl::ObjectType TypedData::getType() const {
-            return ss->getObjectType(data.get());
+            return ss->getObjectType(&data);
         }
 
-        const std::shared_ptr<serialization::pimpl::Data> TypedData::getData() const {
+        const serialization::pimpl::Data &TypedData::getData() const {
             return data;
         }
 
         bool operator<(const TypedData &lhs, const TypedData &rhs) {
-            const serialization::pimpl::Data *lhsData = lhs.getData().get();
-            const serialization::pimpl::Data *rhsData = rhs.getData().get();
-            if (lhsData == NULL) {
-                return true;
-            }
+            auto lhsData = lhs.getData();
+            auto rhsData = rhs.getData();
 
-            if (rhsData == NULL) {
-                return false;
-            }
-
-            return *lhsData < *rhsData;
+            return lhsData < rhsData;
         }
 
         namespace serialization {
@@ -1683,14 +1668,14 @@ namespace hazelcast {
 
                     type.typeId = data->getType();
 
-                    // Constant 4 is Data::TYPE_OFFSET. Windows DLL export does not
-                    // let usage of static member.
-                    DataInput dataInput(data->toByteArray(), 4);
-
-                    ObjectDataInput objectDataInput(dataInput, getSerializerHolder());
-
                     if (SerializationConstants::CONSTANT_TYPE_DATA == type.typeId ||
                         SerializationConstants::CONSTANT_TYPE_PORTABLE == type.typeId) {
+                        // Constant 4 is Data::TYPE_OFFSET. Windows DLL export does not
+                        // let usage of static member.
+                        DataInput dataInput(data->toByteArray(), 4);
+
+                        ObjectDataInput objectDataInput(dataInput, getSerializerHolder());
+
                         int32_t objectTypeId = objectDataInput.readInt();
                         assert(type.typeId == objectTypeId);
                         boost::ignore_unused_variable_warning(objectTypeId);

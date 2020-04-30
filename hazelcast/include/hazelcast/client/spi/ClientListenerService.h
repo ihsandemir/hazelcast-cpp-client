@@ -33,11 +33,12 @@ namespace hazelcast {
              * For smart client, it registers local  listeners to all nodes in cluster.
              * For dummy client, it registers global listener to one node.
              */
+             // TODO: Remove this interface and use abstract base class instead
             class ClientListenerService {
             public:
                 virtual std::string
-                registerListener(const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                                 const std::shared_ptr<EventHandler<protocol::ClientMessage>> handler) = 0;
+                registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                 std::unique_ptr<impl::BaseEventHandler> &&handler) = 0;
 
                 virtual bool deregisterListener(const std::string registrationId) = 0;
             };

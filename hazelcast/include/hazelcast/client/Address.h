@@ -34,6 +34,7 @@ namespace hazelcast {
          * IP Address
          */
         class HAZELCAST_API Address {
+            friend class serialization::hz_serializer<Address>;
         public:
             Address(const std::string &hostname, int port, unsigned long scopeId);
 
@@ -77,17 +78,6 @@ namespace hazelcast {
              */
             const std::string& getHost() const;
 
-            /***** serialization::IdentifiedDataSerializable interface implementation starts here *********************/
-            int getFactoryId() const;
-
-            int getClassId() const;
-
-            void writeData(serialization::ObjectDataOutput &writer) const;
-
-            void readData(serialization::ObjectDataInput &reader);
-
-            /***** serialization::IdentifiedDataSerializable interface implementation end here ************************/
-
             unsigned long getScopeId() const;
 
             bool operator<(const Address &rhs) const;
@@ -102,6 +92,18 @@ namespace hazelcast {
             static const byte IPV4;
             static const byte IPV6;
         };
+
+        namespace serialization {
+            template<>
+            class hz_serializer<Address> : public identified_data_serializer {
+                static constexpr int32_t F_ID = 0;
+                static constexpr int32_t ADDRESS = 1;
+                static int32_t getFactoryId();
+                static int32_t getClassId();
+                static void writeData(const Address &object, ObjectDataOutput &out);
+                static Address readData(ObjectDataInput &in);
+            };
+        }
 
         typedef std::less<Address> addressComparator;
 

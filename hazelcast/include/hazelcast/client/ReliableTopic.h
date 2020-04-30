@@ -22,7 +22,6 @@
 
 #include "hazelcast/client/proxy/ReliableTopicImpl.h"
 #include "hazelcast/client/Ringbuffer.h"
-#include "hazelcast/client/DataArray.h"
 #include "hazelcast/client/topic/impl/TopicEventHandlerImpl.h"
 #include "hazelcast/util/Preconditions.h"
 

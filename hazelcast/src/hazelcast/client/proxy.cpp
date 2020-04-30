@@ -32,7 +32,6 @@
 
 #include <limits.h>
 
-#include "hazelcast/client/topic/impl/TopicDataSerializerHook.h"
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
 #include "hazelcast/client/crdt/pncounter/impl/PNCounterProxyFactory.h"
 #include "hazelcast/client/proxy/ClientPNCounterProxy.h"
@@ -194,54 +193,54 @@ namespace hazelcast {
                 lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
             }
 
-            bool MultiMapImpl::put(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
+            boost::future<bool> MultiMapImpl::put(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapPutCodec::encodeRequest(getName(), key, value,
                                                                          util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapPutCodec::ResponseParameters>(request, key);
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapPutCodec::ResponseParameters>(request, key);
             }
 
-            std::vector<serialization::pimpl::Data> MultiMapImpl::getData(const serialization::pimpl::Data &key) {
+            boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::getData(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapGetCodec::encodeRequest(getName(), key,
                                                                          util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapGetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapGetCodec::ResponseParameters>(
                         request, key);
             }
 
-            bool MultiMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
+            boost::future<bool> MultiMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapRemoveEntryCodec::encodeRequest(getName(), key, value,
                                                                                  util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapRemoveEntryCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapRemoveEntryCodec::ResponseParameters>(request,
                                                                                                                key);
             }
 
-            std::vector<serialization::pimpl::Data> MultiMapImpl::removeData(const serialization::pimpl::Data &key) {
+            boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::removeData(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapRemoveCodec::encodeRequest(getName(), key,
                                                                             util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapRemoveCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapRemoveCodec::ResponseParameters>(
                         request, key);
             }
 
-            std::vector<serialization::pimpl::Data> MultiMapImpl::keySetData() {
+            boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::keySetData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapKeySetCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapKeySetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapKeySetCodec::ResponseParameters>(
                         request);
             }
 
-            std::vector<serialization::pimpl::Data> MultiMapImpl::valuesData() {
+            boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::valuesData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapValuesCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapValuesCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapValuesCodec::ResponseParameters>(
                         request);
             }
 
@@ -250,34 +249,34 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapEntrySetCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >, protocol::codec::MultiMapEntrySetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >, protocol::codec::MultiMapEntrySetCodec::ResponseParameters>(
                         request);
             }
 
-            bool MultiMapImpl::containsKey(const serialization::pimpl::Data &key) {
+            boost::future<bool> MultiMapImpl::containsKey(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapContainsKeyCodec::encodeRequest(getName(), key,
                                                                                  util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapContainsKeyCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapContainsKeyCodec::ResponseParameters>(request,
                                                                                                                key);
             }
 
-            bool MultiMapImpl::containsValue(const serialization::pimpl::Data &value) {
+            boost::future<bool> MultiMapImpl::containsValue(const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapContainsValueCodec::encodeRequest(getName(), value);
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapContainsValueCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapContainsValueCodec::ResponseParameters>(
                         request);
             }
 
-            bool MultiMapImpl::containsEntry(const serialization::pimpl::Data &key,
+            boost::future<bool> MultiMapImpl::containsEntry(const serialization::pimpl::Data &key,
                                              const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapContainsEntryCodec::encodeRequest(getName(), key, value,
                                                                                    util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapContainsEntryCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapContainsEntryCodec::ResponseParameters>(
                         request, key);
             }
 
@@ -285,10 +284,10 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MultiMapSizeCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<int, protocol::codec::MultiMapSizeCodec::ResponseParameters>(request);
+                return invokeAndGetFuture<int, protocol::codec::MultiMapSizeCodec::ResponseParameters>(request);
             }
 
-            void MultiMapImpl::clear() {
+            boost::future<void> MultiMapImpl::clear() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapClearCodec::encodeRequest(getName());
 
@@ -300,28 +299,28 @@ namespace hazelcast {
                         protocol::codec::MultiMapValueCountCodec::encodeRequest(getName(), key,
                                                                                 util::getCurrentThreadId());
 
-                return invokeAndGetResult<int, protocol::codec::MultiMapValueCountCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<int, protocol::codec::MultiMapValueCountCodec::ResponseParameters>(request,
                                                                                                              key);
             }
 
-            std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+            boost::future<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
                 return registerListener(createMultiMapEntryListenerCodec(includeValue), entryEventHandler);
             }
 
-            std::string MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
+            boost::future<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
                                                        serialization::pimpl::Data &key, bool includeValue) {
                 return registerListener(createMultiMapEntryListenerCodec(includeValue, key), entryEventHandler);
             }
 
-            bool MultiMapImpl::removeEntryListener(const std::string &registrationId) {
+            boost::future<bool> MultiMapImpl::removeEntryListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            void MultiMapImpl::lock(const serialization::pimpl::Data &key) {
+            boost::future<void> MultiMapImpl::lock(const serialization::pimpl::Data &key) {
                 lock(key, -1);
             }
 
-            void MultiMapImpl::lock(const serialization::pimpl::Data &key, long leaseTime) {
+            boost::future<void> MultiMapImpl::lock(const serialization::pimpl::Data &key, long leaseTime) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -333,36 +332,36 @@ namespace hazelcast {
             }
 
 
-            bool MultiMapImpl::isLocked(const serialization::pimpl::Data &key) {
+            boost::future<bool> MultiMapImpl::isLocked(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapIsLockedCodec::encodeRequest(getName(), key);
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapIsLockedCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapIsLockedCodec::ResponseParameters>(request,
                                                                                                             key);
             }
 
-            bool MultiMapImpl::tryLock(const serialization::pimpl::Data &key) {
+            boost::future<bool> MultiMapImpl::tryLock(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapTryLockCodec::encodeRequest(getName(), key,
                                                                              util::getCurrentThreadId(), LONG_MAX,
                                                                              0,
                                                                              lockReferenceIdGenerator->getNextReferenceId());
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request,
                                                                                                            key);
             }
 
-            bool MultiMapImpl::tryLock(const serialization::pimpl::Data &key, long timeInMillis) {
+            boost::future<bool> MultiMapImpl::tryLock(const serialization::pimpl::Data &key, long timeInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MultiMapTryLockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(),
                                                                              LONG_MAX, timeInMillis,
                                                                              lockReferenceIdGenerator->getNextReferenceId());
 
-                return invokeAndGetResult<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request,
                                                                                                            key);
             }
 
-            void MultiMapImpl::unlock(const serialization::pimpl::Data &key) {
+            boost::future<void> MultiMapImpl::unlock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -372,7 +371,7 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            void MultiMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
+            boost::future<void> MultiMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -412,7 +411,7 @@ namespace hazelcast {
                 return protocol::codec::MultiMapAddEntryListenerCodec::encodeRequest(name, includeValue, localOnly);
             }
 
-            std::string MultiMapImpl::MultiMapEntryListenerMessageCodec::decodeAddResponse(
+            boost::future<std::string> MultiMapImpl::MultiMapEntryListenerMessageCodec::decodeAddResponse(
                     protocol::ClientMessage &responseMessage) const {
                 return protocol::codec::MultiMapAddEntryListenerCodec::ResponseParameters::decode(
                         responseMessage).response;
@@ -436,7 +435,7 @@ namespace hazelcast {
                                                                                           localOnly);
             }
 
-            std::string MultiMapImpl::MultiMapEntryListenerToKeyCodec::decodeAddResponse(
+            boost::future<std::string> MultiMapImpl::MultiMapEntryListenerToKeyCodec::decodeAddResponse(
                     protocol::ClientMessage &responseMessage) const {
                 return protocol::codec::MultiMapAddEntryListenerToKeyCodec::ResponseParameters::decode(
                         responseMessage).response;
@@ -466,7 +465,7 @@ namespace hazelcast {
                       config(context->getClientConfig().getReliableTopicConfig(instanceName)) {
             }
 
-            void ReliableTopicImpl::publish(const serialization::pimpl::Data &data) {
+            boost::future<void> ReliableTopicImpl::publish(const serialization::pimpl::Data &data) {
                 std::unique_ptr<Address> nullAddress;
                 topic::impl::reliable::ReliableTopicMessage message(data, nullAddress);
                 ringbuffer->add(message);
@@ -694,7 +693,7 @@ namespace hazelcast {
                 } else {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::PNCounterGetConfiguredReplicaCountCodec::encodeRequest(
                             getName());
-                    maxConfiguredReplicaCount = invokeAndGetResult<int32_t, protocol::codec::PNCounterGetConfiguredReplicaCountCodec::ResponseParameters>(
+                    maxConfiguredReplicaCount = invokeAndGetFuture<int32_t, protocol::codec::PNCounterGetConfiguredReplicaCountCodec::ResponseParameters>(
                             request);
                 }
                 return maxConfiguredReplicaCount;
@@ -795,11 +794,11 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            std::string IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+            boost::future<std::string> IListImpl::addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
                 return registerListener(createItemListenerCodec(includeValue), entryEventHandler);
             }
 
-            bool IListImpl::removeItemListener(const std::string &registrationId) {
+            boost::future<bool> IListImpl::removeItemListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -807,127 +806,127 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSizeCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<int, protocol::codec::ListSizeCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<int, protocol::codec::ListSizeCodec::ResponseParameters>(request,
                                                                                                    partitionId);
             }
 
-            bool IListImpl::isEmpty() {
+            boost::future<bool> IListImpl::isEmpty() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListIsEmptyCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<bool, protocol::codec::ListIsEmptyCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListIsEmptyCodec::ResponseParameters>(request,
                                                                                                        partitionId);
             }
 
-            bool IListImpl::contains(const serialization::pimpl::Data &element) {
+            boost::future<bool> IListImpl::contains(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListContainsCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::ListContainsCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListContainsCodec::ResponseParameters>(request,
                                                                                                         partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IListImpl::toArrayData() {
+            boost::future<std::vector<serialization::pimpl::Data>> IListImpl::toArrayData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListGetAllCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::ListGetAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::ListGetAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool IListImpl::add(const serialization::pimpl::Data &element) {
+            boost::future<bool> IListImpl::add(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::ListAddCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListAddCodec::ResponseParameters>(request,
                                                                                                    partitionId);
             }
 
-            bool IListImpl::remove(const serialization::pimpl::Data &element) {
+            boost::future<bool> IListImpl::remove(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListRemoveCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::ListRemoveCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListRemoveCodec::ResponseParameters>(request,
                                                                                                       partitionId);
             }
 
-            bool IListImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IListImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListContainsAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::ListContainsAllCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListContainsAllCodec::ResponseParameters>(request,
                                                                                                            partitionId);
             }
 
-            bool IListImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IListImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::ListAddAllCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListAddAllCodec::ResponseParameters>(request,
                                                                                                       partitionId);
             }
 
-            bool IListImpl::addAll(int index, const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IListImpl::addAll(int index, const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddAllWithIndexCodec::encodeRequest(getName(), index,
                                                                                  elements);
 
-                return invokeAndGetResult<bool, protocol::codec::ListAddAllWithIndexCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::ListAddAllWithIndexCodec::ResponseParameters>(request,
                                                                                                                partitionId);
             }
 
-            bool IListImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IListImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListCompareAndRemoveAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::ListCompareAndRemoveAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::ListCompareAndRemoveAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool IListImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IListImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListCompareAndRetainAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::ListCompareAndRetainAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::ListCompareAndRetainAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            void IListImpl::clear() {
+            boost::future<void> IListImpl::clear() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListClearCodec::encodeRequest(getName());
 
                 invokeOnPartition(request, partitionId);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IListImpl::getData(int index) {
+            boost::future<serialization::pimpl::Data>  IListImpl::getData(int index) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListGetCodec::encodeRequest(getName(), index);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListGetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListGetCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IListImpl::setData(int index,
+            boost::future<serialization::pimpl::Data>  IListImpl::setData(int index,
                                                                            const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSetCodec::encodeRequest(getName(), index, element);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListSetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListSetCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            void IListImpl::add(int index, const serialization::pimpl::Data &element) {
+            boost::future<void> IListImpl::add(int index, const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListAddWithIndexCodec::encodeRequest(getName(), index, element);
 
                 invokeOnPartition(request, partitionId);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IListImpl::removeData(int index) {
+            boost::future<serialization::pimpl::Data>  IListImpl::removeData(int index) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListRemoveWithIndexCodec::encodeRequest(getName(), index);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListRemoveWithIndexCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListRemoveWithIndexCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -935,7 +934,7 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListIndexOfCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<int, protocol::codec::ListIndexOfCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<int, protocol::codec::ListIndexOfCodec::ResponseParameters>(request,
                                                                                                       partitionId);
             }
 
@@ -943,15 +942,15 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListLastIndexOfCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<int, protocol::codec::ListLastIndexOfCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<int, protocol::codec::ListLastIndexOfCodec::ResponseParameters>(request,
                                                                                                           partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IListImpl::subListData(int fromIndex, int toIndex) {
+            boost::future<std::vector<serialization::pimpl::Data>> IListImpl::subListData(int fromIndex, int toIndex) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::ListSubCodec::encodeRequest(getName(), fromIndex, toIndex);
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::ListSubCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::ListSubCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -971,7 +970,7 @@ namespace hazelcast {
                 return protocol::codec::ListAddListenerCodec::encodeRequest(name, includeValue, localOnly);
             }
 
-            std::string IListImpl::ListListenerMessageCodec::decodeAddResponse(
+            boost::future<std::string> IListImpl::ListListenerMessageCodec::decodeAddResponse(
                     protocol::ClientMessage &responseMessage) const {
                 return protocol::codec::ListAddListenerCodec::ResponseParameters::decode(responseMessage).response;
             }
@@ -1014,7 +1013,7 @@ namespace hazelcast {
                 return flakeidgen::impl::IdBatch(response.base, response.increment, response.batchSize);
             }
 
-            bool ClientFlakeIdGeneratorProxy::init(int64_t id) {
+            boost::future<bool> ClientFlakeIdGeneratorProxy::init(int64_t id) {
                 // Add 1 hour worth of IDs as a reserve: due to long batch validity some clients might be still getting
                 // older IDs. 1 hour is just a safe enough value, not a real guarantee: some clients might have longer
                 // validity.
@@ -1039,35 +1038,35 @@ namespace hazelcast {
                 partitionId = getPartitionId(data);
             }
 
-            std::string IQueueImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
+            boost::future<std::string> IQueueImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
                 return registerListener(createItemListenerCodec(includeValue), itemEventHandler);
             }
 
-            bool IQueueImpl::removeItemListener(const std::string &registrationId) {
+            boost::future<bool> IQueueImpl::removeItemListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            bool IQueueImpl::offer(const serialization::pimpl::Data &element, long timeoutInMillis) {
+            boost::future<bool> IQueueImpl::offer(const serialization::pimpl::Data &element, long timeoutInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueOfferCodec::encodeRequest(getName(), element,
                                                                         timeoutInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueOfferCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::QueueOfferCodec::ResponseParameters>(request,
                                                                                                       partitionId);
             }
 
-            void IQueueImpl::put(const serialization::pimpl::Data &element) {
+            boost::future<void> IQueueImpl::put(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueuePutCodec::encodeRequest(getName(), element);
 
                 invokeOnPartition(request, partitionId);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IQueueImpl::pollData(long timeoutInMillis) {
+            boost::future<serialization::pimpl::Data>  IQueueImpl::pollData(long timeoutInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueuePollCodec::encodeRequest(getName(), timeoutInMillis);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::QueuePollCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::QueuePollCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -1075,47 +1074,47 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueRemainingCapacityCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<int, protocol::codec::QueueRemainingCapacityCodec::ResponseParameters>(
+                return invokeAndGetFuture<int, protocol::codec::QueueRemainingCapacityCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool IQueueImpl::remove(const serialization::pimpl::Data &element) {
+            boost::future<bool> IQueueImpl::remove(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueRemoveCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueRemoveCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::QueueRemoveCodec::ResponseParameters>(request,
                                                                                                        partitionId);
             }
 
-            bool IQueueImpl::contains(const serialization::pimpl::Data &element) {
+            boost::future<bool> IQueueImpl::contains(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueContainsCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueContainsCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::QueueContainsCodec::ResponseParameters>(request,
                                                                                                          partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IQueueImpl::drainToData(size_t maxElements) {
+            boost::future<std::vector<serialization::pimpl::Data>> IQueueImpl::drainToData(size_t maxElements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueDrainToMaxSizeCodec::encodeRequest(getName(), (int32_t) maxElements);
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::QueueDrainToMaxSizeCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::QueueDrainToMaxSizeCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IQueueImpl::drainToData() {
+            boost::future<std::vector<serialization::pimpl::Data>> IQueueImpl::drainToData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueDrainToCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::QueueDrainToMaxSizeCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::QueueDrainToMaxSizeCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IQueueImpl::peekData() {
+            boost::future<serialization::pimpl::Data>  IQueueImpl::peekData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueuePeekCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::QueuePeekCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::QueuePeekCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -1123,59 +1122,59 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueSizeCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<int, protocol::codec::QueueSizeCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<int, protocol::codec::QueueSizeCodec::ResponseParameters>(request,
                                                                                                     partitionId);
             }
 
-            bool IQueueImpl::isEmpty() {
+            boost::future<bool> IQueueImpl::isEmpty() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueIsEmptyCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<bool, protocol::codec::QueueIsEmptyCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::QueueIsEmptyCodec::ResponseParameters>(request,
                                                                                                         partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> IQueueImpl::toArrayData() {
+            boost::future<std::vector<serialization::pimpl::Data>> IQueueImpl::toArrayData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueIteratorCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::QueueIteratorCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::QueueIteratorCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool IQueueImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IQueueImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueContainsAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueContainsAllCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::QueueContainsAllCodec::ResponseParameters>(request,
                                                                                                             partitionId);
             }
 
-            bool IQueueImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IQueueImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueAddAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueAddAllCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::QueueAddAllCodec::ResponseParameters>(request,
                                                                                                        partitionId);
             }
 
-            bool IQueueImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IQueueImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueCompareAndRemoveAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueCompareAndRemoveAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::QueueCompareAndRemoveAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool IQueueImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> IQueueImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueCompareAndRetainAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::QueueCompareAndRetainAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::QueueCompareAndRetainAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            void IQueueImpl::clear() {
+            boost::future<void> IQueueImpl::clear() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::QueueClearCodec::encodeRequest(getName());
 
@@ -1198,7 +1197,7 @@ namespace hazelcast {
                 return protocol::codec::QueueAddListenerCodec::encodeRequest(name, includeValue, localOnly);
             }
 
-            std::string IQueueImpl::QueueListenerMessageCodec::decodeAddResponse(
+            boost::future<std::string> IQueueImpl::QueueListenerMessageCodec::decodeAddResponse(
                     protocol::ClientMessage &responseMessage) const {
                 return protocol::codec::QueueAddListenerCodec::ResponseParameters::decode(responseMessage).response;
             }
@@ -1324,59 +1323,61 @@ namespace hazelcast {
                 partitionId = getContext().getPartitionService().getPartitionId(toData<std::string>(partitionKey));
             }
 
+            constexpr std::string IMap::SERVICE_NAME = "hz:impl:mapService";
+
             IMapImpl::IMapImpl(const std::string &instanceName, spi::ClientContext *context)
                     : ProxyImpl("hz:impl:mapService", instanceName, context) {
             }
 
-            bool IMapImpl::containsKey(const serialization::pimpl::Data &key) {
+            boost::future<bool> IMapImpl::containsKey(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapContainsKeyCodec::encodeRequest(getName(), key,
                                                                             util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MapContainsKeyCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MapContainsKeyCodec::ResponseParameters>(request,
                                                                                                           key);
             }
 
-            bool IMapImpl::containsValue(const serialization::pimpl::Data &value) {
+            boost::future<bool> IMapImpl::containsValue(const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapContainsValueCodec::encodeRequest(getName(), value);
 
-                return invokeAndGetResult<bool, protocol::codec::MapContainsValueCodec::ResponseParameters>(request);
+                return invokeAndGetFuture<bool, protocol::codec::MapContainsValueCodec::ResponseParameters>(request);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IMapImpl::getData(const serialization::pimpl::Data &key) {
+            boost::future<serialization::pimpl::Data>  IMapImpl::getData(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapGetCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapGetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapGetCodec::ResponseParameters>(
                         request, key);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IMapImpl::removeData(const serialization::pimpl::Data &key) {
+            boost::future<serialization::pimpl::Data>  IMapImpl::removeData(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapRemoveCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapRemoveCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapRemoveCodec::ResponseParameters>(
                         request, key);
             }
 
-            bool IMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
+            boost::future<bool> IMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapRemoveIfSameCodec::encodeRequest(getName(), key, value,
                                                                              util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MapRemoveIfSameCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MapRemoveIfSameCodec::ResponseParameters>(request,
                                                                                                            key);
             }
 
-            void IMapImpl::removeAll(const serialization::pimpl::Data &predicateData) {
+            boost::future<void> IMapImpl::removeAll(const serialization::pimpl::Data &predicateData) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapRemoveAllCodec::encodeRequest(getName(), predicateData);
 
                 invoke(request);
             }
 
-            void IMapImpl::deleteEntry(const serialization::pimpl::Data &key) {
+            boost::future<void> IMapImpl::deleteEntry(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -1385,33 +1386,33 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            void IMapImpl::flush() {
+            boost::future<void> IMapImpl::flush() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapFlushCodec::encodeRequest(getName());
 
                 invoke(request);
             }
 
-            bool IMapImpl::tryRemove(const serialization::pimpl::Data &key, int64_t timeoutInMillis) {
+            boost::future<bool> IMapImpl::tryRemove(const serialization::pimpl::Data &key, int64_t timeoutInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapTryRemoveCodec::encodeRequest(getName(), key,
                                                                           util::getCurrentThreadId(),
                                                                           timeoutInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::MapTryRemoveCodec::ResponseParameters>(request, key);
+                return invokeAndGetFuture<bool, protocol::codec::MapTryRemoveCodec::ResponseParameters>(request, key);
             }
 
-            bool IMapImpl::tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+            boost::future<bool> IMapImpl::tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                   int64_t timeoutInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapTryPutCodec::encodeRequest(getName(), key, value,
                                                                        util::getCurrentThreadId(),
                                                                        timeoutInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::MapTryPutCodec::ResponseParameters>(request, key);
+                return invokeAndGetFuture<bool, protocol::codec::MapTryPutCodec::ResponseParameters>(request, key);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IMapImpl::putData(const serialization::pimpl::Data &key,
+            boost::future<serialization::pimpl::Data>  IMapImpl::putData(const serialization::pimpl::Data &key,
                                                                           const serialization::pimpl::Data &value,
                                                                           int64_t ttlInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -1419,11 +1420,11 @@ namespace hazelcast {
                                                                     util::getCurrentThreadId(),
                                                                     ttlInMillis);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapPutCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapPutCodec::ResponseParameters>(
                         request, key);
             }
 
-            void IMapImpl::putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+            boost::future<void> IMapImpl::putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                         int64_t ttlInMillis) {
                 int partitionId = getPartitionId(key);
 
@@ -1435,7 +1436,7 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
+            boost::future<serialization::pimpl::Data>  IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
                                                                                   const serialization::pimpl::Data &value,
                                                                                   int64_t ttlInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -1443,32 +1444,32 @@ namespace hazelcast {
                                                                             util::getCurrentThreadId(),
                                                                             ttlInMillis);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapPutIfAbsentCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapPutIfAbsentCodec::ResponseParameters>(
                         request, key);
             }
 
-            bool IMapImpl::replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
+            boost::future<bool> IMapImpl::replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
                                    const serialization::pimpl::Data &newValue) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapReplaceIfSameCodec::encodeRequest(getName(), key, oldValue,
                                                                               newValue,
                                                                               util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MapReplaceIfSameCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MapReplaceIfSameCodec::ResponseParameters>(request,
                                                                                                             key);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> IMapImpl::replaceData(const serialization::pimpl::Data &key,
+            boost::future<serialization::pimpl::Data>  IMapImpl::replaceData(const serialization::pimpl::Data &key,
                                                                               const serialization::pimpl::Data &value) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapReplaceCodec::encodeRequest(getName(), key, value,
                                                                         util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapReplaceCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapReplaceCodec::ResponseParameters>(
                         request, key);
             }
 
-            void IMapImpl::set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+            boost::future<void> IMapImpl::set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                int64_t ttl) {
                 int partitionId = getPartitionId(key);
 
@@ -1479,11 +1480,11 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            void IMapImpl::lock(const serialization::pimpl::Data &key) {
+            boost::future<void> IMapImpl::lock(const serialization::pimpl::Data &key) {
                 lock(key, -1);
             }
 
-            void IMapImpl::lock(const serialization::pimpl::Data &key, int64_t leaseTime) {
+            boost::future<void> IMapImpl::lock(const serialization::pimpl::Data &key, int64_t leaseTime) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -1494,23 +1495,23 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            bool IMapImpl::isLocked(const serialization::pimpl::Data &key) {
+            boost::future<bool> IMapImpl::isLocked(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapIsLockedCodec::encodeRequest(getName(), key);
 
-                return invokeAndGetResult<bool, protocol::codec::MapIsLockedCodec::ResponseParameters>(request, key);
+                return invokeAndGetFuture<bool, protocol::codec::MapIsLockedCodec::ResponseParameters>(request, key);
             }
 
-            bool IMapImpl::tryLock(const serialization::pimpl::Data &key, int64_t timeInMillis) {
+            boost::future<bool> IMapImpl::tryLock(const serialization::pimpl::Data &key, int64_t timeInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapTryLockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(), -1,
                                                                         timeInMillis,
                                                                         lockReferenceIdGenerator->getNextReferenceId());
 
-                return invokeAndGetResult<bool, protocol::codec::MapTryLockCodec::ResponseParameters>(request, key);
+                return invokeAndGetFuture<bool, protocol::codec::MapTryLockCodec::ResponseParameters>(request, key);
             }
 
-            void IMapImpl::unlock(const serialization::pimpl::Data &key) {
+            boost::future<void> IMapImpl::unlock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -1520,7 +1521,7 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            void IMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
+            boost::future<void> IMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
                 int partitionId = getPartitionId(key);
 
                 std::unique_ptr<protocol::ClientMessage> request =
@@ -1530,31 +1531,38 @@ namespace hazelcast {
                 invokeOnPartition(request, partitionId);
             }
 
-            std::string IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
+            boost::future<std::string> IMapImpl::addInterceptor(const serialization::pimpl::Data &interceptor) {
+                std::unique_ptr<protocol::ClientMessage> request =
+                        protocol::codec::MapAddInterceptorCodec::encodeRequest(getName(), interceptor);
+
+                return invokeAndGetResult<std::string, protocol::codec::MapAddInterceptorCodec::ResponseParameters>(
+                        request);
+            }
+
+            // TODO: We can use generic template Listener instead of impl::BaseEventHandler to prevent the virtual function calls
+            boost::future<std::string> IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
-                int32_t listenerFlags = EntryEventType::ALL;
+                auto listenerFlags = EntryEvent::type::ALL;
                 return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), entryEventHandler);
             }
 
             std::string
-            IMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, const query::Predicate &predicate,
-                                       bool includeValue) {
+            IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                    Data &&predicate, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
-                int32_t listenerFlags = EntryEventType::ALL;
-                serialization::pimpl::Data predicateData = toData<serialization::IdentifiedDataSerializable>(predicate);
-                return registerListener(createMapEntryListenerCodec(includeValue, predicateData, listenerFlags),
-                                        entryEventHandler);
+                EntryEvent::type listenerFlags = EntryEvent::type::ALL;
+                return registerListener(createMapEntryListenerCodec(includeValue, predicate, listenerFlags), entryEventHandler);
             }
 
-            bool IMapImpl::removeEntryListener(const std::string &registrationId) {
+            boost::future<bool> IMapImpl::removeEntryListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            std::string IMapImpl::addEntryListener(impl::BaseEventHandler *handler,
-                                                   serialization::pimpl::Data &key, bool includeValue) {
+            boost::future<std::string> IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                                                   bool includeValue, Data &&key) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
-                int32_t listenerFlags = EntryEventType::ALL;
-                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags, key), handler);
+                EntryEvent::type listenerFlags = EntryEvent::type::ALL;
+                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags, key), entryEventHandler);
 
             }
 
@@ -1563,19 +1571,19 @@ namespace hazelcast {
                         protocol::codec::MapGetEntryViewCodec::encodeRequest(getName(), key,
                                                                              util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::unique_ptr<map::DataEntryView>, protocol::codec::MapGetEntryViewCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<map::DataEntryView>, protocol::codec::MapGetEntryViewCodec::ResponseParameters>(
                         request, key);
             }
 
-            bool IMapImpl::evict(const serialization::pimpl::Data &key) {
+            boost::future<bool> IMapImpl::evict(const serialization::pimpl::Data &key) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapEvictCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
 
-                return invokeAndGetResult<bool, protocol::codec::MapEvictCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::MapEvictCodec::ResponseParameters>(request,
                                                                                                     key);
             }
 
-            void IMapImpl::evictAll() {
+            boost::future<void> IMapImpl::evictAll() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapEvictAllCodec::encodeRequest(getName());
 
@@ -1608,33 +1616,32 @@ namespace hazelcast {
                 return result;
             }
 
-            std::vector<serialization::pimpl::Data> IMapImpl::keySetData() {
+            boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapKeySetCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetCodec::ResponseParameters>(
                         request);
             }
 
-            std::vector<serialization::pimpl::Data> IMapImpl::keySetData(
-                    const serialization::IdentifiedDataSerializable &predicate) {
+            boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetData(const query::Predicate &predicate) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapKeySetWithPredicateCodec::encodeRequest(getName(),
-                                                                                    toData<serialization::IdentifiedDataSerializable>(
+                                                                                    toData<query::Predicate>(
                                                                                             predicate));
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetWithPredicateCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetWithPredicateCodec::ResponseParameters>(
                         request);
             }
 
-            std::vector<serialization::pimpl::Data> IMapImpl::keySetForPagingPredicateData(
+            boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetForPagingPredicateData(
                     const serialization::IdentifiedDataSerializable &predicate) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapKeySetWithPagingPredicateCodec::encodeRequest(getName(),
-                                                                                          toData<serialization::IdentifiedDataSerializable>(
+                                                                                          toData<query::Predicate>(
                                                                                                   predicate));
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetWithPagingPredicateCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetWithPagingPredicateCodec::ResponseParameters>(
                         request);
             }
 
@@ -1643,7 +1650,7 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapEntrySetCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<EntryVector, protocol::codec::MapEntrySetCodec::ResponseParameters>(
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapEntrySetCodec::ResponseParameters>(
                         request);
             }
 
@@ -1653,7 +1660,7 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapEntriesWithPredicateCodec::encodeRequest(
                         getName(), toData(predicate));
 
-                return invokeAndGetResult<EntryVector, protocol::codec::MapEntriesWithPredicateCodec::ResponseParameters>(
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapEntriesWithPredicateCodec::ResponseParameters>(
                         request);
             }
 
@@ -1663,40 +1670,37 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapEntriesWithPagingPredicateCodec::encodeRequest(
                         getName(), toData(predicate));
 
-                return invokeAndGetResult<EntryVector, protocol::codec::MapEntriesWithPagingPredicateCodec::ResponseParameters>(
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapEntriesWithPagingPredicateCodec::ResponseParameters>(
                         request);
             }
 
-            std::vector<serialization::pimpl::Data> IMapImpl::valuesData() {
-
+            boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::valuesData() {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapValuesCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MapValuesCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapValuesCodec::ResponseParameters>(
                         request);
             }
 
-            std::vector<serialization::pimpl::Data> IMapImpl::valuesData(
-                    const serialization::IdentifiedDataSerializable &predicate) {
-
+            boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::valuesData(const query::Predicate &predicate) {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapValuesWithPredicateCodec::encodeRequest(
-                        getName(), toData<serialization::IdentifiedDataSerializable>(predicate));
+                        getName(), toData<query::Predicate>(predicate));
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::MapValuesWithPredicateCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapValuesWithPredicateCodec::ResponseParameters>(
                         request);
             }
 
             EntryVector
-            IMapImpl::valuesForPagingPredicateData(const serialization::IdentifiedDataSerializable &predicate) {
+            IMapImpl::valuesForPagingPredicateData(const query::Predicate &predicate) {
 
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapValuesWithPagingPredicateCodec::encodeRequest(
-                        getName(), toData<serialization::IdentifiedDataSerializable>(predicate));
+                        getName(), toData<query::Predicate>(predicate));
 
-                return invokeAndGetResult<EntryVector, protocol::codec::MapValuesWithPagingPredicateCodec::ResponseParameters>(
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapValuesWithPagingPredicateCodec::ResponseParameters>(
                         request);
             }
 
-            void IMapImpl::addIndex(const std::string &attribute, bool ordered) {
+            boost::future<void> IMapImpl::addIndex(const std::string &attribute, bool ordered) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapAddIndexCodec::encodeRequest(getName(), attribute, ordered);
 
@@ -1707,17 +1711,17 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapSizeCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<int, protocol::codec::MapSizeCodec::ResponseParameters>(request);
+                return invokeAndGetFuture<int, protocol::codec::MapSizeCodec::ResponseParameters>(request);
             }
 
-            bool IMapImpl::isEmpty() {
+            boost::future<bool> IMapImpl::isEmpty() {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapIsEmptyCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<bool, protocol::codec::MapIsEmptyCodec::ResponseParameters>(request);
+                return invokeAndGetFuture<bool, protocol::codec::MapIsEmptyCodec::ResponseParameters>(request);
             }
 
-            void IMapImpl::putAllData(const std::map<int, EntryVector> &partitionedEntries) {
+            boost::future<void> IMapImpl::putAllData(const std::map<int, EntryVector> &partitionedEntries) {
                 std::vector<boost::future<protocol::ClientMessage>> futures;
 
                 for (std::map<int, EntryVector>::const_iterator it = partitionedEntries.begin();
@@ -1732,14 +1736,14 @@ namespace hazelcast {
                 wait_for_all(futures.begin(), futures.end());
             }
 
-            void IMapImpl::clear() {
+            boost::future<void> IMapImpl::clear() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapClearCodec::encodeRequest(getName());
 
                 invoke(request);
             }
 
-            std::unique_ptr<serialization::pimpl::Data>
+            boost::future<serialization::pimpl::Data>
             IMapImpl::executeOnKeyData(const serialization::pimpl::Data &key,
                                        const serialization::pimpl::Data &processor) {
                 int partitionId = getPartitionId(key);
@@ -1750,7 +1754,7 @@ namespace hazelcast {
                                                                              key,
                                                                              util::getCurrentThreadId());
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>,
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>,
                         protocol::codec::MapExecuteOnKeyCodec::ResponseParameters>(request, partitionId);
             }
 
@@ -1759,54 +1763,58 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapExecuteOnKeysCodec::encodeRequest(getName(), processor, keys);
 
-                return invokeAndGetResult<EntryVector,
+                return invokeAndGetFuture<EntryVector,
                         protocol::codec::MapExecuteOnKeysCodec::ResponseParameters>(request);
             }
 
-            std::string IMapImpl::addInterceptor(serialization::Portable &interceptor) {
-                std::unique_ptr<protocol::ClientMessage> request =
-                        protocol::codec::MapAddInterceptorCodec::encodeRequest(
-                                getName(), toData<serialization::Portable>(interceptor));
-
-                return invokeAndGetResult<std::string, protocol::codec::MapAddInterceptorCodec::ResponseParameters>(
-                        request);
-            }
-
-            std::string IMapImpl::addInterceptor(serialization::IdentifiedDataSerializable &interceptor) {
-                std::unique_ptr<protocol::ClientMessage> request =
-                        protocol::codec::MapAddInterceptorCodec::encodeRequest(
-                                getName(), toData<serialization::IdentifiedDataSerializable>(interceptor));
-
-                return invokeAndGetResult<std::string, protocol::codec::MapAddInterceptorCodec::ResponseParameters>(
-                        request);
-            }
-
-            void IMapImpl::removeInterceptor(const std::string &id) {
+            boost::future<void> IMapImpl::removeInterceptor(const std::string &id) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::MapRemoveInterceptorCodec::encodeRequest(getName(), id);
 
                 invoke(request);
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec>
-            IMapImpl::createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &predicate,
-                                                  int32_t listenerFlags) {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
-                        new MapEntryListenerWithPredicateMessageCodec(getName(), includeValue, listenerFlags,
-                                                                      predicate));
+            boost::future<EntryVector> IMapImpl::executeOnEntriesData(const serialization::pimpl::Data &entryProcessor) {
+                std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapExecuteOnAllKeysCodec::encodeRequest(
+                        getName(), entryProcessor);
+
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapExecuteOnAllKeysCodec::ResponseParameters>(
+                        request);
+
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec>
-            IMapImpl::createMapEntryListenerCodec(bool includeValue, int32_t listenerFlags) {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
-                        new MapEntryListenerMessageCodec(getName(), includeValue, listenerFlags));
+            boost::future<EntryVector>
+            executeOnEntriesData(const serialization::pimpl::Data &entryProcessor, const serialization::pimpl::Data &predicate) {
+                std::unique_ptr<protocol::ClientMessage> request =
+                        protocol::codec::MapExecuteWithPredicateCodec::encodeRequest(getName(),
+                                                                                     entryProcessor,
+                                                                                     predicate);
+
+                return invokeAndGetFuture<EntryVector,
+                        protocol::codec::MapExecuteWithPredicateCodec::ResponseParameters>(request);
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec>
-            IMapImpl::createMapEntryListenerCodec(bool includeValue, int32_t listenerFlags,
-                                                  serialization::pimpl::Data &key) {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
-                        new MapEntryListenerToKeyCodec(getName(), includeValue, listenerFlags, key));
+
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            IMapImpl::createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&predicate,
+                                                  EntryEvent::type listenerFlags) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MapEntryListenerWithPredicateMessageCodec(getName(), includeValue,
+                                                                      static_cast<int32_t>(listenerFlags), predicate));
+            }
+
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MapEntryListenerMessageCodec(getName(), includeValue, static_cast<int32_t>(listenerFlags)));
+            }
+
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
+                                                  serialization::pimpl::Data &&key) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MapEntryListenerToKeyCodec(getName(), includeValue, static_cast<int32_t>(listenerFlags),
+                                                       key));
             }
 
             void IMapImpl::onInitialize() {
@@ -1873,7 +1881,7 @@ namespace hazelcast {
 
             IMapImpl::MapEntryListenerWithPredicateMessageCodec::MapEntryListenerWithPredicateMessageCodec(
                     const std::string &name, bool includeValue, int32_t listenerFlags,
-                    serialization::pimpl::Data &predicate) : name(name), includeValue(includeValue),
+                    serialization::pimpl::Data &&predicate) : name(name), includeValue(includeValue),
                                                              listenerFlags(listenerFlags), predicate(predicate) {}
 
             std::unique_ptr<protocol::ClientMessage>
@@ -1952,21 +1960,21 @@ namespace hazelcast {
 
             }
 
-            bool TransactionalQueueImpl::offer(const serialization::pimpl::Data &e, long timeoutInMillis) {
+            boost::future<bool> TransactionalQueueImpl::offer(const serialization::pimpl::Data &e, long timeoutInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::TransactionalQueueOfferCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), e, timeoutInMillis);
 
-                return invokeAndGetResult<bool, protocol::codec::TransactionalQueueOfferCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::TransactionalQueueOfferCodec::ResponseParameters>(
                         request);
             }
 
-            std::unique_ptr<serialization::pimpl::Data> TransactionalQueueImpl::pollData(long timeoutInMillis) {
+            boost::future<serialization::pimpl::Data>  TransactionalQueueImpl::pollData(long timeoutInMillis) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::TransactionalQueuePollCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), timeoutInMillis);
 
-                return invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalQueuePollCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalQueuePollCodec::ResponseParameters>(
                         request);
             }
 
@@ -1975,7 +1983,7 @@ namespace hazelcast {
                         protocol::codec::TransactionalQueueSizeCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId());
 
-                return invokeAndGetResult<int, protocol::codec::TransactionalQueueSizeCodec::ResponseParameters>(
+                return invokeAndGetFuture<int, protocol::codec::TransactionalQueueSizeCodec::ResponseParameters>(
                         request);
             }
 
@@ -1986,11 +1994,11 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            std::string ISetImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
+            boost::future<std::string> ISetImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
                 return registerListener(createItemListenerCodec(includeValue), itemEventHandler);
             }
 
-            bool ISetImpl::removeItemListener(const std::string &registrationId) {
+            boost::future<bool> ISetImpl::removeItemListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -1998,81 +2006,81 @@ namespace hazelcast {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::SetSizeCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<int, protocol::codec::SetSizeCodec::ResponseParameters>(request, partitionId);
+                return invokeAndGetFuture<int, protocol::codec::SetSizeCodec::ResponseParameters>(request, partitionId);
             }
 
-            bool ISetImpl::isEmpty() {
+            boost::future<bool> ISetImpl::isEmpty() {
                 std::unique_ptr<protocol::ClientMessage> request = protocol::codec::SetIsEmptyCodec::encodeRequest(
                         getName());
 
-                return invokeAndGetResult<bool, protocol::codec::SetIsEmptyCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::SetIsEmptyCodec::ResponseParameters>(request,
                                                                                                       partitionId);
             }
 
-            bool ISetImpl::contains(const serialization::pimpl::Data &element) {
+            boost::future<bool> ISetImpl::contains(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetContainsCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::SetContainsCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::SetContainsCodec::ResponseParameters>(request,
                                                                                                        partitionId);
             }
 
-            std::vector<serialization::pimpl::Data> ISetImpl::toArrayData() {
+            boost::future<std::vector<serialization::pimpl::Data>> ISetImpl::toArrayData() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetGetAllCodec::encodeRequest(getName());
 
-                return invokeAndGetResult<std::vector<serialization::pimpl::Data>, protocol::codec::SetGetAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::SetGetAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool ISetImpl::add(const serialization::pimpl::Data &element) {
+            boost::future<bool> ISetImpl::add(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetAddCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::SetAddCodec::ResponseParameters>(request, partitionId);
+                return invokeAndGetFuture<bool, protocol::codec::SetAddCodec::ResponseParameters>(request, partitionId);
             }
 
-            bool ISetImpl::remove(const serialization::pimpl::Data &element) {
+            boost::future<bool> ISetImpl::remove(const serialization::pimpl::Data &element) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetRemoveCodec::encodeRequest(getName(), element);
 
-                return invokeAndGetResult<bool, protocol::codec::SetRemoveCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::SetRemoveCodec::ResponseParameters>(request,
                                                                                                      partitionId);
             }
 
-            bool ISetImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> ISetImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetContainsAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::SetContainsAllCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::SetContainsAllCodec::ResponseParameters>(request,
                                                                                                           partitionId);
             }
 
-            bool ISetImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> ISetImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetAddAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::SetAddAllCodec::ResponseParameters>(request,
+                return invokeAndGetFuture<bool, protocol::codec::SetAddAllCodec::ResponseParameters>(request,
                                                                                                      partitionId);
             }
 
-            bool ISetImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> ISetImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetCompareAndRemoveAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::SetCompareAndRemoveAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::SetCompareAndRemoveAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            bool ISetImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
+            boost::future<bool> ISetImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetCompareAndRetainAllCodec::encodeRequest(getName(), elements);
 
-                return invokeAndGetResult<bool, protocol::codec::SetCompareAndRetainAllCodec::ResponseParameters>(
+                return invokeAndGetFuture<bool, protocol::codec::SetCompareAndRetainAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            void ISetImpl::clear() {
+            boost::future<void> ISetImpl::clear() {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::SetClearCodec::encodeRequest(getName());
 
@@ -2115,18 +2123,18 @@ namespace hazelcast {
                 partitionId = getPartitionId(toData(instanceName));
             }
 
-            void ITopicImpl::publish(const serialization::pimpl::Data &data) {
+            boost::future<void> ITopicImpl::publish(const serialization::pimpl::Data &data) {
                 std::unique_ptr<protocol::ClientMessage> request =
                         protocol::codec::TopicPublishCodec::encodeRequest(getName(), data);
 
                 invokeOnPartition(request, partitionId);
             }
 
-            std::string ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
+            boost::future<std::string> ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
                 return registerListener(createItemListenerCodec(), topicEventHandler);
             }
 
-            bool ITopicImpl::removeMessageListener(const std::string &registrationId) {
+            boost::future<bool> ITopicImpl::removeMessageListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -2299,7 +2307,7 @@ namespace hazelcast {
                     ReliableTopicMessage::ReliableTopicMessage(
                             hazelcast::client::serialization::pimpl::Data payloadData,
                             std::unique_ptr<Address> &address)
-                            : publishTime(util::currentTimeMillis()), publisherAddress(std::move(address)),
+                            : publishTime(util::currentTimeMillis()), publisherAddress(std::move(*address)),
                               payload(payloadData) {
                     }
 
@@ -2314,46 +2322,37 @@ namespace hazelcast {
                     const serialization::pimpl::Data &ReliableTopicMessage::getPayload() const {
                         return payload;
                     }
-
-                    int ReliableTopicMessage::getFactoryId() const {
-                        return F_ID;
-                    }
-
-                    int ReliableTopicMessage::getClassId() const {
-                        return RELIABLE_TOPIC_MESSAGE;
-                    }
-
-                    void ReliableTopicMessage::writeData(serialization::ObjectDataOutput &out) const {
-                        out.writeLong(publishTime);
-                        out.writeObject<Address>(publisherAddress.value_or(nullptr));
-                        out.writeData(&payload);
-                    }
-
-                    void ReliableTopicMessage::readData(serialization::ObjectDataInput &in) {
-                        publishTime = in.readLong();
-                        publisherAddress = in.readObject<Address>();
-                        payload = in.readData();
-                    }
                 }
             }
         }
 
-        EntryEventType::EntryEventType() : value(UNDEFINED) {
+        namespace serialization {
+            int32_t hz_serializer<topic::impl::reliable::ReliableTopicMessage>::getFactoryId() {
+                return F_ID;
+            }
+
+            int hz_serializer<topic::impl::reliable::ReliableTopicMessage>::getClassId() {
+                return RELIABLE_TOPIC_MESSAGE;
+            }
+
+            void hz_serializer<topic::impl::reliable::ReliableTopicMessage>::writeData(
+                    const topic::impl::reliable::ReliableTopicMessage &object, ObjectDataOutput &out) {
+                out.writeLong(object.publishTime);
+                out.writeObject<Address>(object.publisherAddress.value_or(boost::none));
+                out.writeData(&object.payload);
+            }
+
+            topic::impl::reliable::ReliableTopicMessage
+            hz_serializer<topic::impl::reliable::ReliableTopicMessage>::readData(ObjectDataInput &in) {
+                topic::impl::reliable::ReliableTopicMessage message;
+                message.publishTime = in.readLong();
+                message.publisherAddress = in.readObject<Address>();
+                message.payload = in.readData();
+                return message;
+            }
         }
 
-        EntryEventType::EntryEventType(Type value)
-                : value(value) {
-        }
-
-        EntryEventType::operator int() const {
-            return value;
-        }
-
-        void EntryEventType::operator=(int i) {
-            value = (EntryEventType::Type) i;
-        }
-
-        MapEvent::MapEvent(const Member &member, EntryEventType eventType, const std::string &name,
+        MapEvent::MapEvent(const Member &member, EntryEvent::type eventType, const std::string &name,
                            int numberOfEntriesAffected)
                 : member(member), eventType(eventType), name(name), numberOfEntriesAffected(numberOfEntriesAffected) {
 
@@ -2363,7 +2362,7 @@ namespace hazelcast {
             return member;
         }
 
-        EntryEventType MapEvent::getEventType() const {
+        EntryEvent::type MapEvent::getEventType() const {
             return eventType;
         }
 
@@ -2432,7 +2431,7 @@ namespace hazelcast {
             return impl_->newId();
         }
 
-        bool FlakeIdGenerator::init(int64_t id) {
+        boost::future<bool> FlakeIdGenerator::init(int64_t id) {
             return impl_->init(id);
         }
     }

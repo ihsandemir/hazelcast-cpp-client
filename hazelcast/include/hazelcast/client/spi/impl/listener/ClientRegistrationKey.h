@@ -21,7 +21,6 @@
 #include <memory>
 #include <ostream>
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/client/spi/EventHandler.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -37,6 +36,7 @@ namespace hazelcast {
 
             namespace impl {
                 class ListenerMessageCodec;
+                class BaseEventHandler;
 
                 namespace listener {
                     class HAZELCAST_API ClientRegistrationKey {
@@ -44,16 +44,16 @@ namespace hazelcast {
                         ClientRegistrationKey();
 
                         ClientRegistrationKey(const std::string &userRegistrationId,
-                                              const std::shared_ptr<EventHandler<protocol::ClientMessage> > &handler,
-                                              const std::shared_ptr<ListenerMessageCodec> &codec);
+                                              std::unique_ptr<impl::BaseEventHandler> &&handler,
+                                              std::unique_ptr<ListenerMessageCodec> &&codec);
 
                         ClientRegistrationKey(const std::string &userRegistrationId);
 
                         const std::string &getUserRegistrationId() const;
 
-                        const std::shared_ptr<EventHandler<protocol::ClientMessage> > &getHandler() const;
+                        const std::unique_ptr<impl::BaseEventHandler> &getHandler() const;
 
-                        const std::shared_ptr<ListenerMessageCodec> &getCodec() const;
+                        const std::unique_ptr<ListenerMessageCodec> &getCodec() const;
 
                         bool operator==(const ClientRegistrationKey &rhs) const;
 
@@ -65,8 +65,8 @@ namespace hazelcast {
 
                     private:
                         std::string userRegistrationId;
-                        std::shared_ptr<EventHandler<protocol::ClientMessage> > handler;
-                        std::shared_ptr<ListenerMessageCodec> codec;
+                        std::unique_ptr<impl::BaseEventHandler> handler;
+                        std::unique_ptr<ListenerMessageCodec> codec;
                     };
                 }
             }

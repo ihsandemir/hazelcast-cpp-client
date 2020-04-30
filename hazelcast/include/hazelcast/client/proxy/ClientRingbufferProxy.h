@@ -21,8 +21,6 @@
 #include "hazelcast/util/ExceptionUtil.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/ringbuffer/ReadResultSet.h"
-#include "hazelcast/client/DataArray.h"
-#include "hazelcast/client/impl/DataArrayImpl.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"

@@ -105,7 +105,7 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                std::unique_ptr<T> toObject(const serialization::pimpl::Data &data) {
+                boost::optional<T> toObject(const serialization::pimpl::Data &data) {
                     return getContext().getSerializationService().template toObject<T>(data);
                 }
 
@@ -191,7 +191,7 @@ namespace hazelcast {
                 }
 
                 template<typename T, typename CODEC>
-                T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
+                T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage &request, int partitionId) {
                     return (T) CODEC::decode(invokeOnPartition(request, partitionId)).response;
                 }
 

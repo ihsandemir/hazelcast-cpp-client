@@ -25,7 +25,6 @@
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/query/Predicate.h"
-#include "hazelcast/client/DataArray.h"
 #include "hazelcast/client/LazyEntryArray.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

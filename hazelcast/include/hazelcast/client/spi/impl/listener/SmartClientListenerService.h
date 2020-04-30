@@ -38,8 +38,8 @@ namespace hazelcast {
                         void shutdown() override;
 
                         std::string
-                        registerListener(const std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                                         const std::shared_ptr<EventHandler < protocol::ClientMessage>> handler) override;
+                        registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                         std::unique_ptr<impl::BaseEventHandler> &&handler) override;
 
                         void asyncConnectToAllMembersInternal();
 

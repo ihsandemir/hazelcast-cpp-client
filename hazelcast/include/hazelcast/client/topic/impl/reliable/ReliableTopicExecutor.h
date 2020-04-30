@@ -23,7 +23,6 @@
 #include <stdint.h>
 
 #include "hazelcast/client/Ringbuffer.h"
-#include "hazelcast/client/DataArray.h"
 #include "hazelcast/util/BlockingConcurrentQueue.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/topic/impl/reliable/ReliableTopicMessage.h"

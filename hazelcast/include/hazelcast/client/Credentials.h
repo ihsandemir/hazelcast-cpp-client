@@ -59,10 +59,15 @@ namespace hazelcast {
              *  Destructor
              */
             virtual ~Credentials() {
-
             }
 
         };
+
+        namespace serialization {
+            template<>
+            struct hz_serializer<Credentials> : public portable_serializer {
+            };
+        }
     }
 }
 
