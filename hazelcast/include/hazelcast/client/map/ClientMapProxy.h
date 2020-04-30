@@ -1102,48 +1102,6 @@ namespace hazelcast {
                     return stats;
                 }
 
-                boost::future<std::shared_ptr<V>> getAsync(const K &key) {
-                    auto future = getAsyncInternal(key);
-                    return future.then(boost::launch::sync, [=](boost::future<protocol::ClientMessage> f) {
-                        return GET_ASYNC_RESPONSE_DECODER()->decodeClientMessage(f.get(), getSerializationService());
-                    });
-                }
-
-                boost::future<std::shared_ptr<V>> putAsync(const K &key, const V &value) {
-                    return putAsyncInternal(DEFAULT_TTL, util::concurrent::TimeUnit::MILLISECONDS(), NULL,
-                                            util::concurrent::TimeUnit::MILLISECONDS(), toData<K>(key), value);
-                }
-
-                boost::future<std::shared_ptr<V>>
-                putAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit) {
-                    return putAsyncInternal(ttl, ttlUnit, NULL, ttlUnit, toData<K>(key), value);
-                }
-
-                boost::future<std::shared_ptr<V>>
-                putAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
-                         int64_t maxIdle, const util::concurrent::TimeUnit &maxIdleUnit) {
-                    return putAsyncInternal(ttl, ttlUnit, &maxIdle, maxIdleUnit, toData<K>(key), value);
-                }
-
-                boost::future<void> setAsync(const K &key, const V &value) {
-                    return setAsync(key, value, DEFAULT_TTL, util::concurrent::TimeUnit::MILLISECONDS());
-                }
-
-                boost::future<void>
-                setAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit) {
-                    return setAsyncInternal(ttl, ttlUnit, NULL, ttlUnit, toData<K>(key), value);
-                }
-
-                boost::future<void>
-                setAsync(const K &key, const V &value, int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
-                         int64_t maxIdle, const util::concurrent::TimeUnit &maxIdleUnit) {
-                    return setAsyncInternal(ttl, ttlUnit, &maxIdle, maxIdleUnit, toData<K>(key), value);
-                }
-
-                boost::future<std::shared_ptr<V>> removeAsync(const K &key) {
-                    return removeAsyncInternal(toData<K>(key));
-                }
-
             protected:
                 typedef std::pair<const K *, std::shared_ptr<serialization::pimpl::Data> > KEY_DATA_PAIR;
 

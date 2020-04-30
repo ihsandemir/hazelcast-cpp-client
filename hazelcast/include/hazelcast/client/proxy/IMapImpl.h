@@ -205,17 +205,6 @@ namespace hazelcast {
 
                 void onInitialize() override;
 
-                boost::future<protocol::ClientMessage>
-                putAsyncInternalData(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, const int64_t *maxIdle,
-                                     const util::concurrent::TimeUnit &maxIdleUnit,
-                                     const serialization::pimpl::Data &keyData,
-                                     const serialization::pimpl::Data &valueData);
-
-                boost::future<protocol::ClientMessage>
-                setAsyncInternalData(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, const int64_t *maxIdle,
-                                     const util::concurrent::TimeUnit &maxIdleUnit,
-                                     const serialization::pimpl::Data &keyData,
-                                     const serialization::pimpl::Data &valueData);
             private:
                 class MapEntryListenerWithPredicateMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:

@@ -58,7 +58,7 @@ namespace hazelcast {
             *
             * @param message The message to be published
             */
-            void publish(const E *message) {
+            boost::future<void> publish(const E *message) {
                 serialization::pimpl::Data data = getContext().getSerializationService().template toData<E>(message);
                 proxy::ReliableTopicImpl::publish(data);
             }
@@ -80,7 +80,7 @@ namespace hazelcast {
             *
             * @return returns registration id.
             */
-            std::string addMessageListener(topic::ReliableMessageListener<E> &listener) {
+            boost::future<std::string>  addMessageListener(topic::ReliableMessageListener<E> &listener) {
                 int id = ++runnerCounter;
                 std::shared_ptr<MessageRunner>
                         runner(new MessageRunner(id, &listener, ringbuffer.get(), getName(),
@@ -98,7 +98,7 @@ namespace hazelcast {
             *
             * @return true if registration is removed, false otherwise
             */
-            bool removeMessageListener(const std::string &registrationId) {
+            boost::future<bool> removeMessageListener(const std::string &registrationId) {
                 int id = util::IOUtil::to_value<int>(registrationId);
                 std::shared_ptr<MessageRunner> runner = runnersMap.get(id);
                 if (NULL == runner) {

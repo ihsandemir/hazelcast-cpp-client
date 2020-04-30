@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_ISET
-#define HAZELCAST_ISET
+#pragma once
 
 #include "hazelcast/client/proxy/ISetImpl.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
@@ -57,7 +56,7 @@ namespace hazelcast {
             *
             * @return true if registration is removed, false otherwise
             */
-            bool removeItemListener(const std::string &registrationId) {
+            boost::future<bool> removeItemListener(const std::string &registrationId) {
                 return proxy::ISetImpl::removeItemListener(registrationId);
             }
 
@@ -65,7 +64,7 @@ namespace hazelcast {
             *
             * @returns size of the distributed set
             */
-            int size() {
+            boost::future<int> size() {
                 return proxy::ISetImpl::size();
             }
 
@@ -73,7 +72,7 @@ namespace hazelcast {
             *
             * @returns true if empty
             */
-            bool isEmpty() {
+            boost::future<bool> isEmpty() {
                 return proxy::ISetImpl::isEmpty();
             }
 
@@ -83,7 +82,7 @@ namespace hazelcast {
             * @returns true if set contains element
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool contains(const E &element) {
+            boost::future<bool> contains(const E &element) {
                 return proxy::ISetImpl::contains(toData(element));
             }
 
@@ -91,7 +90,7 @@ namespace hazelcast {
             *
             * @returns all elements as std::vector
             */
-            std::vector<E> toArray() {
+            boost::future<std::vector<E>> toArray() {
                 return toObjectCollection<E>(proxy::ISetImpl::toArrayData());
             }
 
@@ -101,7 +100,7 @@ namespace hazelcast {
             * @return true if element is added successfully. If elements was already there returns false.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool add(const E &element) {
+            boost::future<bool> add(const E &element) {
                 return proxy::ISetImpl::add(toData(element));
             }
 
@@ -111,7 +110,7 @@ namespace hazelcast {
             * @return true if element is removed successfully.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool remove(const E &element) {
+            boost::future<bool> remove(const E &element) {
                 return proxy::ISetImpl::remove(toData(element));
             }
 
@@ -121,7 +120,7 @@ namespace hazelcast {
             * @return true if this set contains all elements given in vector.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool containsAll(const std::vector<E> &elements) {
+            boost::future<bool> containsAll(const std::vector<E> &elements) {
                 return proxy::ISetImpl::containsAll(toDataCollection(elements));
             }
 
@@ -131,7 +130,7 @@ namespace hazelcast {
             * @return true if all elements given in vector can be added to set.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool addAll(const std::vector<E> &elements) {
+            boost::future<bool> addAll(const std::vector<E> &elements) {
                 std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(elements);
                 return proxy::ISetImpl::addAll(toDataCollection(elements));
             }
@@ -142,7 +141,7 @@ namespace hazelcast {
             * @return true if all elements are removed successfully.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool removeAll(const std::vector<E> &elements) {
+            boost::future<bool> removeAll(const std::vector<E> &elements) {
                 std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(elements);
                 return proxy::ISetImpl::removeAll(dataCollection);
             }
@@ -154,7 +153,7 @@ namespace hazelcast {
             * @return true if operation is successful.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool retainAll(const std::vector<E> &elements) {
+            boost::future<bool> retainAll(const std::vector<E> &elements) {
                 return proxy::ISetImpl::retainAll(toDataCollection(elements));
             }
 
@@ -162,17 +161,14 @@ namespace hazelcast {
             *
             * Removes all elements from set.
             */
-            void clear() {
+            boost::future<void> clear() {
                 proxy::ISetImpl::clear();
             }
 
         private:
             ISet(const std::string &instanceName, spi::ClientContext *context)
-                    : proxy::ISetImpl(instanceName, context) {
-            }
+                    : proxy::ISetImpl(instanceName, context) {}
         };
     }
 }
-
-#endif /* HAZELCAST_ISET */
 

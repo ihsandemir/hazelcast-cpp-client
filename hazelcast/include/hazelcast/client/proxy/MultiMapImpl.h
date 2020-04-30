@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_MULTI_MAP_IMPL
-#define HAZELCAST_MULTI_MAP_IMPL
+#pragma once
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include <vector>
@@ -31,54 +30,53 @@ namespace hazelcast {
             protected:
                 MultiMapImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                bool put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<bool> put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::vector<serialization::pimpl::Data> getData(const serialization::pimpl::Data &key);
+                boost::future<std::vector<serialization::pimpl::Data>> getData(const serialization::pimpl::Data &key);
 
-                bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<bool> remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::vector<serialization::pimpl::Data> removeData(const serialization::pimpl::Data& key);
+                boost::future<std::vector<serialization::pimpl::Data>> removeData(const serialization::pimpl::Data& key);
 
-                std::vector<serialization::pimpl::Data> keySetData();
+                boost::future<std::vector<serialization::pimpl::Data>> keySetData();
 
-                std::vector<serialization::pimpl::Data> valuesData();
+                boost::future<std::vector<serialization::pimpl::Data>> valuesData();
 
                 std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entrySetData();
 
-                bool containsKey(const serialization::pimpl::Data& key);
+                boost::future<bool> containsKey(const serialization::pimpl::Data& key);
 
-                bool containsValue(const serialization::pimpl::Data& key);
+                boost::future<bool> containsValue(const serialization::pimpl::Data& key);
 
-                bool containsEntry(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<bool> containsEntry(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                int size();
+                boost::future<int> size();
 
-                void clear();
+                boost::future<void> clear();
 
-                int valueCount(const serialization::pimpl::Data& key);
+                boost::future<int> valueCount(const serialization::pimpl::Data& key);
 
-                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
+                boost::future<std::string> addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
 
-                std::string addEntryListener(impl::BaseEventHandler *entryEventHandler, serialization::pimpl::Data& key, bool includeValue);
+                boost::future<std::string> addEntryListener(impl::BaseEventHandler *entryEventHandler, serialization::pimpl::Data& key, bool includeValue);
 
-                bool removeEntryListener(const std::string& registrationId);
+                boost::future<bool> removeEntryListener(const std::string& registrationId);
 
-                void lock(const serialization::pimpl::Data& key);
+                boost::future<void> lock(const serialization::pimpl::Data& key);
 
-                void lock(const serialization::pimpl::Data& key, long leaseTimeInMillis);
+                boost::future<void> lock(const serialization::pimpl::Data& key, long leaseTimeInMillis);
 
-                bool isLocked(const serialization::pimpl::Data& key);
+                boost::future<bool> isLocked(const serialization::pimpl::Data& key);
 
-                bool tryLock(const serialization::pimpl::Data& key);
+                boost::future<bool> tryLock(const serialization::pimpl::Data& key);
 
-                bool tryLock(const serialization::pimpl::Data& key, long timeoutInMillis);
+                boost::future<bool> tryLock(const serialization::pimpl::Data& key, long timeoutInMillis);
 
-                void unlock(const serialization::pimpl::Data& key);
+                boost::future<void> unlock(const serialization::pimpl::Data& key);
 
-                void forceUnlock(const serialization::pimpl::Data& key);
+                boost::future<void> forceUnlock(const serialization::pimpl::Data& key);
 
                 virtual void onInitialize();
-
             private:
                 class MultiMapEntryListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -92,7 +90,6 @@ namespace hazelcast {
                     encodeRemoveRequest(const std::string &realRegistrationId) const;
 
                     virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
-
                 private:
                     std::string name;
                     bool includeValue;
@@ -111,9 +108,8 @@ namespace hazelcast {
                     encodeRemoveRequest(const std::string &realRegistrationId) const;
 
                     virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
-
                 private:
-                    std::string name;
+                    std::string  name;
                     bool includeValue;
                     serialization::pimpl::Data key;
                 };
@@ -124,7 +120,6 @@ namespace hazelcast {
 
                 std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &key);
-
             };
         }
     }
@@ -133,6 +128,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif /* HAZELCAST_MULTI_MAP_IMPL */
 

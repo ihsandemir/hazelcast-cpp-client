@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 8/6/13.
-#ifndef HAZELCAST_TransactionalList
-#define HAZELCAST_TransactionalList
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalListImpl.h"
 
@@ -36,7 +33,7 @@ namespace hazelcast {
              * @param e item
              * @return true if item is added successfully
              */
-            bool add(const E &e) {
+            boost::future<bool> add(const E &e) {
                 return proxy::TransactionalListImpl::add(toData(&e));
             }
 
@@ -45,7 +42,7 @@ namespace hazelcast {
              * @param e item
              * @return true if item is remove successfully
              */
-            bool remove(const E &e) {
+            boost::future<bool> remove(const E &e) {
                 return proxy::TransactionalListImpl::remove(toData(&e));
             }
 
@@ -53,7 +50,7 @@ namespace hazelcast {
              * Returns the size of the list
              * @return size
              */
-            int size() {
+            boost::future<int>  size() {
                 return proxy::TransactionalListImpl::size();
             }
 
@@ -63,9 +60,6 @@ namespace hazelcast {
 
             }
         };
-
     }
 }
-
-#endif //HAZELCAST_TransactionalList
 

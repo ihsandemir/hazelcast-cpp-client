@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 8/6/13.
-
-
-
-
-#ifndef HAZELCAST_TransactionalSet
-#define HAZELCAST_TransactionalSet
-
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalSetImpl.h"
 
@@ -33,14 +25,13 @@ namespace hazelcast {
         template<typename E>
         class TransactionalSet : public proxy::TransactionalSetImpl {
             friend class TransactionContext;
-
         public:
             /**
             * Add new item to transactional set
             * @param e item
             * @return true if item is added successfully
             */
-            bool add(const E& e) {
+            boost::future<bool> add(const E& e) {
                 return proxy::TransactionalSetImpl::add(toData(&e));
             }
 
@@ -49,7 +40,7 @@ namespace hazelcast {
             * @param e item
             * @return true if item is remove successfully
             */
-            bool remove(const E& e) {
+            boost::future<bool> remove(const E& e) {
                 return proxy::TransactionalSetImpl::remove(toData(&e));
             }
 
@@ -57,7 +48,7 @@ namespace hazelcast {
             * Returns the size of the set
             * @return size
             */
-            int size() {
+            boost::future<int>  size() {
                 return proxy::TransactionalSetImpl::size();
             }
 
@@ -70,7 +61,4 @@ namespace hazelcast {
 
     }
 }
-
-
-#endif //HAZELCAST_TransactionalSet
 

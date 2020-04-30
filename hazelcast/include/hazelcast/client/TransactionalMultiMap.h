@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 8/6/13.
-
-#ifndef HAZELCAST_TransactionalMultiMap
-#define HAZELCAST_TransactionalMultiMap
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalMultiMapImpl.h"
 
@@ -40,7 +36,7 @@ namespace hazelcast {
             *
             * @see Multimap#put(key , value)
             */
-            bool put(const K& key, const V& value) {
+            boost::future<bool> put(const K& key, const V& value) {
                 return proxy::TransactionalMultiMapImpl::put(toData(&key), toData(&value));
             };
 
@@ -49,7 +45,7 @@ namespace hazelcast {
             *
             * @see Multimap#get(key)
             */
-            std::vector<V> get(const K& key) {
+            boost::future<std::vector<V>>  get(const K& key) {
                 return toObjectCollection<V>(proxy::TransactionalMultiMapImpl::getData(toData(&key)));
             };
 
@@ -58,7 +54,7 @@ namespace hazelcast {
             *
             * @see Multimap#remove(key , value)
             */
-            bool remove(const K& key, const V& value) {
+            boost::future<bool> remove(const K& key, const V& value) {
                 return proxy::TransactionalMultiMapImpl::remove(toData(&key), toData(&value));
             };
 
@@ -67,7 +63,7 @@ namespace hazelcast {
             *
             * @see Multimap#remove(key)
             */
-            std::vector<V> remove(const K& key) {
+            boost::future<std::vector<V>>  remove(const K& key) {
                 return toObjectCollection<V>(proxy::TransactionalMultiMapImpl::removeData(toData(&key)));
             };
 
@@ -77,7 +73,7 @@ namespace hazelcast {
             *
             * @see Multimap#valueCount(key)
             */
-            int valueCount(const K& key) {
+            boost::future<int>  valueCount(const K& key) {
                 return proxy::TransactionalMultiMapImpl::valueCount(toData(&key));
             }
 
@@ -86,7 +82,7 @@ namespace hazelcast {
             *
             * @see Multimap#size()
             */
-            int size() {
+            boost::future<int>  size() {
                 return proxy::TransactionalMultiMapImpl::size();
             }
 
@@ -98,7 +94,4 @@ namespace hazelcast {
         };
     }
 }
-
-
-#endif //HAZELCAST_TransactionalMultiMap
 

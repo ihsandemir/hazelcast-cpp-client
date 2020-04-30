@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 01/10/14.
-//
-#ifndef HAZELCAST_ITopicImpl
-#define HAZELCAST_ITopicImpl
+#pragma once
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include <string>
@@ -29,12 +25,11 @@ namespace hazelcast {
             protected:
                 ITopicImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                void publish(const serialization::pimpl::Data& data);
+                boost::future<void> publish(const serialization::pimpl::Data& data);
 
-                std::string addMessageListener(impl::BaseEventHandler *topicEventHandler);
+                boost::future<std::string>  addMessageListener(impl::BaseEventHandler *topicEventHandler);
 
-                virtual bool removeMessageListener(const std::string& registrationId);
-
+                boost::future<bool> removeMessageListener(const std::string& registrationId);
             private:
                 class TopicListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -60,5 +55,3 @@ namespace hazelcast {
         }
     }
 }
-
-#endif //HAZELCAST_ITopicImpl

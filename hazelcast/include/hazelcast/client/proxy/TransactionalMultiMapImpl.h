@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 01/10/14.
-//
-
-
-#ifndef HAZELCAST_TransactionalMultiMapProxy
-#define HAZELCAST_TransactionalMultiMapProxy
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalObject.h"
 
@@ -33,23 +27,21 @@ namespace hazelcast {
         namespace proxy {
             class HAZELCAST_API TransactionalMultiMapImpl : public TransactionalObject {
             protected:
-                TransactionalMultiMapImpl(const std::string& name, txn::TransactionProxy *transactionProxy);
+                TransactionalMultiMapImpl(const std::string &name, txn::TransactionProxy *transactionProxy);
 
-                bool put(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<bool> put(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                std::vector<serialization::pimpl::Data> getData(const serialization::pimpl::Data& key);
+                std::vector<serialization::pimpl::Data> getData(const serialization::pimpl::Data &key);
 
-                bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<bool>
+                remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                std::vector<serialization::pimpl::Data> removeData(const serialization::pimpl::Data& key);
+                boost::future<std::vector<serialization::pimpl::Data>> removeData(const serialization::pimpl::Data &key);
 
-                int valueCount(const serialization::pimpl::Data& key);
+                boost::future<int> valueCount(const serialization::pimpl::Data &key);
 
-                int size();
+                boost::future<int> size();
             };
         }
     }
 }
-
-
-#endif //HAZELCAST_TransactionalMultiMapProxy

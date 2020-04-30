@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 8/5/13.
-#ifndef HAZELCAST_TransactionalMap
-#define HAZELCAST_TransactionalMap
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalMapImpl.h"
 
@@ -44,7 +41,7 @@ namespace hazelcast {
             *
             * @see IMap#containsKey(key)
             */
-            bool containsKey(const K& key) {
+            boost::future<bool> containsKey(const K& key) {
                 return proxy::TransactionalMapImpl::containsKey(toData(&key));
             }
 
@@ -53,7 +50,7 @@ namespace hazelcast {
             *
             * @see IMap#get(keu)
             */
-            std::shared_ptr<V> get(const K& key) {
+            boost::future<boost::optional<V>> get(const K& key) {
                 return std::shared_ptr<V>(toObject<V>(proxy::TransactionalMapImpl::getData(toData(&key))));
             }
 
@@ -62,7 +59,7 @@ namespace hazelcast {
             *
             * @see IMap#size()
             */
-            int size() {
+            boost::future<int> size() {
                 return proxy::TransactionalMapImpl::size();
             }
 
@@ -71,7 +68,7 @@ namespace hazelcast {
             *
             * @see IMap#isEmpty()
             */
-            bool isEmpty() {
+            boost::future<bool> isEmpty() {
                 return proxy::TransactionalMapImpl::isEmpty();
             }
 
@@ -82,7 +79,7 @@ namespace hazelcast {
             *
             * @see IMap#put(key, value)
             */
-            std::shared_ptr<V> put(const K& key, const V& value) {
+            boost::future<boost::optional<V>> put(const K& key, const V& value) {
                 return std::shared_ptr<V>(toObject<V>(proxy::TransactionalMapImpl::putData(toData(&key), toData(&value))));
             };
 
@@ -93,7 +90,7 @@ namespace hazelcast {
             *
             * @see IMap#set(key, value)
             */
-            void set(const K& key, const V& value) {
+            boost::future<void> set(const K& key, const V& value) {
                 proxy::TransactionalMapImpl::set(toData(&key), toData(&value));
             }
 
@@ -104,7 +101,7 @@ namespace hazelcast {
             *
             * @see IMap#putIfAbsent(key, value)
             */
-            std::shared_ptr<V> putIfAbsent(const K& key, const V& value) {
+            boost::future<boost::optional<V>> putIfAbsent(const K& key, const V& value) {
                 return std::shared_ptr<V>(toObject<V>(proxy::TransactionalMapImpl::putIfAbsentData(toData(&key), toData(&value))));
             };
 
@@ -115,7 +112,7 @@ namespace hazelcast {
             *
             * @see IMap#replace(key, value)
             */
-            std::shared_ptr<V> replace(const K& key, const V& value) {
+            boost::future<boost::optional<V>> replace(const K& key, const V& value) {
                 return std::shared_ptr<V>(toObject<V>(proxy::TransactionalMapImpl::replaceData(toData(&key), toData(&value))));
             };
 
@@ -126,7 +123,7 @@ namespace hazelcast {
             *
             * @see IMap#replace(key, value, oldValue)
             */
-            bool replace(const K& key, const V& oldValue, const V& newValue) {
+            boost::future<bool> replace(const K& key, const V& oldValue, const V& newValue) {
                 return proxy::TransactionalMapImpl::replace(toData(&key), toData(&oldValue), toData(&newValue));
             };
 
@@ -137,7 +134,7 @@ namespace hazelcast {
             *
             * @see IMap#remove(key)
             */
-            std::shared_ptr<V> remove(const K& key) {
+            boost::future<boost::optional<V>> remove(const K& key) {
                 return std::shared_ptr<V>(toObject<V>(proxy::TransactionalMapImpl::removeData(toData(&key))));
             };
 
@@ -149,7 +146,7 @@ namespace hazelcast {
             * @see IMap#delete(keu)
             */
 
-            void deleteEntry(const K& key) {
+            boost::future<void> deleteEntry(const K& key) {
                 proxy::TransactionalMapImpl::deleteEntry(toData(&key));
             };
 
@@ -160,7 +157,7 @@ namespace hazelcast {
             *
             * @see IMap#remove(key, value)
             */
-            bool remove(const K& key, const V& value) {
+            boost::future<bool> remove(const K& key, const V& value) {
                 return proxy::TransactionalMapImpl::remove(toData(&key), toData(&value));
             }
 
@@ -170,7 +167,7 @@ namespace hazelcast {
             *
             * @see IMap#keySet()
             */
-            std::vector<K> keySet() {
+            boost::future<std::vector<K>> keySet() {
                 return toObjectCollection<K>(proxy::TransactionalMapImpl::keySetData());
             }
 
@@ -180,7 +177,7 @@ namespace hazelcast {
             *
             * @see IMap#keySet(predicate)
             */
-            std::vector<K> keySet(const serialization::IdentifiedDataSerializable *predicate) {
+            boost::future<std::vector<K>> keySet(const serialization::IdentifiedDataSerializable *predicate) {
                 return toObjectCollection<K>(proxy::TransactionalMapImpl::keySetData(predicate));
             }
 
@@ -190,7 +187,7 @@ namespace hazelcast {
             *
             * @see IMap#values()
             */
-            std::vector<V> values() {
+            boost::future<std::vector<V>> values() {
                 return toObjectCollection<K>(proxy::TransactionalMapImpl::valuesData());
             }
 
@@ -199,7 +196,7 @@ namespace hazelcast {
             *
             * @see IMap#values(Predicate)
             */
-            std::vector<V> values(const serialization::IdentifiedDataSerializable *predicate) {
+            boost::future<std::vector<V>> values(const serialization::IdentifiedDataSerializable *predicate) {
                 return toObjectCollection<K>(proxy::TransactionalMapImpl::valuesData(predicate));
             }
 
@@ -212,6 +209,4 @@ namespace hazelcast {
         };
     }
 }
-
-#endif //HAZELCAST_TransactionalMap
 

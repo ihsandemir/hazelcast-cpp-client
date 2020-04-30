@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_IQUEUE_IMPL
-#define HAZELCAST_IQUEUE_IMPL
+#pragma once
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include <vector>
@@ -32,21 +31,21 @@ namespace hazelcast {
             protected:
                 IQueueImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                std::string addItemListener(impl::BaseEventHandler *handler, bool includeValue);
+                boost::future<std::string>  addItemListener(impl::BaseEventHandler *handler, bool includeValue);
 
-                bool removeItemListener(const std::string& registrationId);
+                boost::future<bool> removeItemListener(const std::string& registrationId);
 
-                bool offer(const serialization::pimpl::Data& element, long timeoutInMillis);
+                boost::future<bool> offer(const serialization::pimpl::Data& element, long timeoutInMillis);
 
-                void put(const serialization::pimpl::Data& element);
+                boost::future<void> put(const serialization::pimpl::Data& element);
 
                 std::unique_ptr<serialization::pimpl::Data> pollData(long timeoutInMillis);
 
-                int remainingCapacity();
+                boost::future<int>  remainingCapacity();
 
-                bool remove(const serialization::pimpl::Data& element);
+                boost::future<bool> remove(const serialization::pimpl::Data& element);
 
-                bool contains(const serialization::pimpl::Data& element);
+                boost::future<bool> contains(const serialization::pimpl::Data& element);
 
                 std::vector<serialization::pimpl::Data> drainToData(size_t maxElements);
 
@@ -54,21 +53,21 @@ namespace hazelcast {
 
                 std::unique_ptr<serialization::pimpl::Data> peekData();
 
-                int size();
+                boost::future<int>  size();
 
-                bool isEmpty();
+                boost::future<bool> isEmpty();
 
                 std::vector<serialization::pimpl::Data> toArrayData();
 
-                bool containsAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> containsAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                bool addAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> addAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                bool removeAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> removeAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                bool retainAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> retainAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                void clear();
+                boost::future<void> clear();
             private:
                 class QueueListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -84,7 +83,7 @@ namespace hazelcast {
                     virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
 
                 private:
-                    std::string name;
+                    boost::future<std::string>  name;
                     bool includeValue;
                 };
 
@@ -95,6 +94,4 @@ namespace hazelcast {
         }
     }
 }
-
-#endif /* HAZELCAST_IQUEUE */
 

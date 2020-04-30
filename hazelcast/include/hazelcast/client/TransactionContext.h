@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 8/5/13.
-#ifndef HAZELCAST_TransactionContext
-#define HAZELCAST_TransactionContext
+#pragma once
 
 #include "hazelcast/client/TransactionOptions.h"
 #include "hazelcast/client/txn/TransactionProxy.h"
@@ -68,21 +65,21 @@ namespace hazelcast {
              *
              * @throws IllegalStateException if a transaction already is active.
              */
-            void beginTransaction();
+            boost::future<void> beginTransaction();
 
             /**
              * Commits a transaction.
              *
              * @throws TransactionException if no transaction is active or the transaction could not be committed.
              */
-            void commitTransaction();
+            boost::future<void> commitTransaction();
 
             /**
              * Begins a transaction.
              *
              * @throws IllegalStateException if a transaction already is active.
              */
-            void rollbackTransaction();
+            boost::future<void> rollbackTransaction();
 
             /**
              * Returns the transactional distributed map instance with the specified name.
@@ -177,6 +174,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HAZELCAST_TransactionContext
 

@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 8/5/13.
-
-#ifndef HAZELCAST_TransactionalQueue
-#define HAZELCAST_TransactionalQueue
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalQueueImpl.h"
 
@@ -38,7 +34,7 @@ namespace hazelcast {
             *
             * @see IQueue::offer(const E &e)
             */
-            bool offer(const E& e) {
+            boost::future<bool> offer(const E& e) {
                 return offer(e, 0);
             }
 
@@ -47,7 +43,7 @@ namespace hazelcast {
             *
             * @see IQueue::offer(const E &e, long timeoutInMillis)
             */
-            bool offer(const E& e, long timeoutInMillis) {
+            boost::future<bool> offer(const E& e, long timeoutInMillis) {
                 return proxy::TransactionalQueueImpl::offer(toData(&e), timeoutInMillis);
             }
 
@@ -56,7 +52,7 @@ namespace hazelcast {
             *
             * @see IQueue::poll()
             */
-            std::shared_ptr<E> poll() {
+            boost::future<boost::optional<E>> poll() {
                 return poll(0);
             }
 
@@ -65,7 +61,7 @@ namespace hazelcast {
             *
             * @see IQueue::poll(long timeoutInMillis)
             */
-            std::shared_ptr<E> poll(long timeoutInMillis) {
+            boost::future<boost::optional<E>> poll(long timeoutInMillis) {
                 return std::shared_ptr<E>(toObject<E>(proxy::TransactionalQueueImpl::pollData(timeoutInMillis)));
             }
 
@@ -74,7 +70,7 @@ namespace hazelcast {
             *
             * @see IQueue::size()
             */
-            int size() {
+            boost::future<int>  size() {
                 return proxy::TransactionalQueueImpl::size();
             }
 
@@ -86,6 +82,4 @@ namespace hazelcast {
         };
     }
 }
-
-#endif //HAZELCAST_TransactionalQueue
 

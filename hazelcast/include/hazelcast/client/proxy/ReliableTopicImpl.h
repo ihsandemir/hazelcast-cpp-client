@@ -48,8 +48,7 @@ namespace hazelcast {
                 ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context,
                                   std::shared_ptr<Ringbuffer<topic::impl::reliable::ReliableTopicMessage> > rb);
 
-                void publish(const serialization::pimpl::Data &data);
-
+                boost::future<void> publish(const serialization::pimpl::Data &data);
             protected:
                 std::shared_ptr<Ringbuffer<topic::impl::reliable::ReliableTopicMessage> > ringbuffer;
                 util::ILogger &logger;

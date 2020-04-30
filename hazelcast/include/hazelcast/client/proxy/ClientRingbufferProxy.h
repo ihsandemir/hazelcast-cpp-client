@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_PROXY_CLIENTRINGBUFFERPROXY_H_
-#define HAZELCAST_CLIENT_PROXY_CLIENTRINGBUFFERPROXY_H_
+#pragma once
 
 #include <atomic>
 
@@ -62,7 +61,7 @@ namespace hazelcast {
                 }
 
                 /****************  RingBuffer<E> interface implementation starts here *********************************/
-                int64_t capacity() {
+                boost::future<int64_t> capacity() {
                     if (-1 == bufferCapacity) {
                         std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferCapacityCodec::encodeRequest(
                                 getName());
@@ -73,7 +72,7 @@ namespace hazelcast {
                     return bufferCapacity;
                 }
 
-                int64_t size() {
+                boost::future<int64_t> size() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferSizeCodec::encodeRequest(
                             getName());
                     protocol::codec::RingbufferSizeCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferSizeCodec::ResponseParameters::decode(
@@ -81,7 +80,7 @@ namespace hazelcast {
                     return resultParamaters.response;
                 }
 
-                int64_t tailSequence() {
+                boost::future<int64_t> tailSequence() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferTailSequenceCodec::encodeRequest(
                             getName());
                     protocol::codec::RingbufferTailSequenceCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferTailSequenceCodec::ResponseParameters::decode(
@@ -89,7 +88,7 @@ namespace hazelcast {
                     return resultParamaters.response;
                 }
 
-                int64_t headSequence() {
+                boost::future<int64_t> headSequence() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferHeadSequenceCodec::encodeRequest(
                             getName());
                     protocol::codec::RingbufferHeadSequenceCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferHeadSequenceCodec::ResponseParameters::decode(
@@ -97,7 +96,7 @@ namespace hazelcast {
                     return resultParamaters.response;
                 }
 
-                int64_t remainingCapacity() {
+                boost::future<int64_t> remainingCapacity() {
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferRemainingCapacityCodec::encodeRequest(
                             getName());
                     protocol::codec::RingbufferRemainingCapacityCodec::ResponseParameters resultParamaters = protocol::codec::RingbufferRemainingCapacityCodec::ResponseParameters::decode(
@@ -105,7 +104,7 @@ namespace hazelcast {
                     return resultParamaters.response;
                 }
 
-                int64_t add(const E &item) {
+                boost::future<int64_t> add(const E &item) {
                     serialization::pimpl::Data itemData = toData<E>(item);
                     std::unique_ptr<protocol::ClientMessage> msg = protocol::codec::RingbufferAddCodec::encodeRequest(
                             getName(), Ringbuffer<E>::OVERWRITE, itemData);
@@ -316,6 +315,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HAZELCAST_CLIENT_PROXY_CLIENTRINGBUFFERPROXY_H_
 

@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_IQUEUE
-#define HAZELCAST_IQUEUE
+#pragma once
 
 #include <stdexcept>
 
@@ -48,7 +47,7 @@ namespace hazelcast {
             *                     to the item listener, <tt>false</tt> otherwise.
             * @return returns registration id.
             */
-            std::string addItemListener(ItemListener<E>& listener, bool includeValue) {
+            boost::future<std::string>  addItemListener(ItemListener<E>& listener, boost::future<bool> includeValue) {
                 spi::ClientClusterService &cs = getContext().getClientClusterService();
                 serialization::pimpl::SerializationService& ss = getContext().getSerializationService();
                 impl::ItemEventHandler<E, protocol::codec::QueueAddListenerCodec::AbstractEventHandler> *itemEventHandler =
@@ -64,7 +63,7 @@ namespace hazelcast {
             *
             * @return true if registration is removed, false otherwise
             */
-            bool removeItemListener(const std::string& registrationId) {
+            boost::future<bool> removeItemListener(const std::string& registrationId) {
                 return proxy::IQueueImpl::removeItemListener(registrationId);
             }
 
@@ -76,7 +75,7 @@ namespace hazelcast {
             *         <tt>false</tt>
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool offer(const E& element) {
+            boost::future<bool> offer(const E& element) {
                 return offer(element, 0);
             }
 
@@ -84,7 +83,7 @@ namespace hazelcast {
             * Puts the element into queue.
             * If queue is  full waits for space to became available.
             */
-            void put(const E& element) {
+            boost::future<void> put(const E& element) {
                 proxy::IQueueImpl::put(toData(element));
             }
 
@@ -97,7 +96,7 @@ namespace hazelcast {
             * @return <tt>true</tt> if successful, or <tt>false</tt> if
             *         the specified waiting time elapses before space is available
             */
-            bool offer(const E& element, long timeoutInMillis) {
+            boost::future<bool> offer(const E& element, long timeoutInMillis) {
                 return proxy::IQueueImpl::offer(toData(element), timeoutInMillis);
             }
 
@@ -105,7 +104,7 @@ namespace hazelcast {
             *
             * @return the head of the queue. If queue is empty waits for an item to be added.
             */
-            std::shared_ptr<E> take() {
+             boost::future<boost::optional<E>>  take() {
                 return poll(-1);
             }
 
@@ -114,7 +113,7 @@ namespace hazelcast {
             * @param timeoutInMillis time to wait if item is not available.
             * @return the head of the queue. If queue is empty waits for specified time.
             */
-            std::shared_ptr<E> poll(long timeoutInMillis) {
+             boost::future<boost::optional<E>>  poll(long timeoutInMillis) {
                 return std::shared_ptr<E>(std::move(toObject<E>(proxy::IQueueImpl::pollData(timeoutInMillis))));
             }
 
@@ -122,7 +121,7 @@ namespace hazelcast {
             *
             * @return remaining capacity
             */
-            int remainingCapacity() {
+            boost::future<int> remainingCapacity() {
                 return proxy::IQueueImpl::remainingCapacity();
             }
 
@@ -131,7 +130,7 @@ namespace hazelcast {
             * @param element to be removed.
             * @return true if element removed successfully.
             */
-            bool remove(const E& element) {
+            boost::future<bool> remove(const E& element) {
                 return proxy::IQueueImpl::remove(toData(element));
             }
 
@@ -140,7 +139,7 @@ namespace hazelcast {
             * @param element to be checked.
             * @return true if queue contains the element.
             */
-            bool contains(const E& element) {
+            boost::future<bool> contains(const E& element) {
                 return proxy::IQueueImpl::contains(toData(element));
             }
 
@@ -150,7 +149,7 @@ namespace hazelcast {
             * @param elements the vector that elements will be drained to.
             * @return number of elements drained.
             */
-            size_t drainTo(std::vector<E>& elements) {
+            boost::future<size_t>  drainTo(std::vector<E>& elements) {
                 std::vector<serialization::pimpl::Data> coll = proxy::IQueueImpl::drainToData();
                 for (std::vector<serialization::pimpl::Data>::const_iterator it = coll.begin(); it != coll.end(); ++it) {
                     std::unique_ptr<E> e = getContext().getSerializationService().template toObject<E>(*it);
@@ -166,7 +165,7 @@ namespace hazelcast {
             * @param elements vector that elements will be drained to.
             * @return number of elements drained.
             */
-            size_t drainTo(std::vector<E>& elements, size_t maxElements) {
+            boost::future<size_t> drainTo(std::vector<E>& elements, size_t maxElements) {
                 std::vector<serialization::pimpl::Data> coll = proxy::IQueueImpl::drainToData(maxElements);
                 for (std::vector<serialization::pimpl::Data>::const_iterator it = coll.begin(); it != coll.end(); ++it) {
                     std::unique_ptr<E> e = getContext().getSerializationService().template toObject<E>(*it);
@@ -180,7 +179,7 @@ namespace hazelcast {
             *
             * @return removes head of the queue and returns it to user . If not available returns empty constructed shared_ptr.
             */
-            std::shared_ptr<E> poll() {
+             boost::future<boost::optional<E>>  poll() {
                 return poll(0);
             }
 
@@ -189,7 +188,7 @@ namespace hazelcast {
             *
             * @return head of queue without removing it. If not available returns empty constructed shared_ptr.
             */
-            std::shared_ptr<E> peek() {
+             boost::future<boost::optional<E>>  peek() {
                 return std::shared_ptr<E>(toObject<E>(proxy::IQueueImpl::peekData()));
             }
 
@@ -197,7 +196,7 @@ namespace hazelcast {
             *
             * @return size of this distributed queue
             */
-            int size() {
+            boost::future<int> size() {
                 return proxy::IQueueImpl::size();
             }
 
@@ -205,7 +204,7 @@ namespace hazelcast {
             *
             * @return true if queue is empty
             */
-            bool isEmpty() {
+            boost::future<bool> isEmpty() {
                 return proxy::IQueueImpl::isEmpty();
             }
 
@@ -223,7 +222,7 @@ namespace hazelcast {
             * @return true if this queue contains all elements given in vector.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool containsAll(const std::vector<E>& elements) {
+            boost::future<bool> containsAll(const std::vector<E>& elements) {
                 std::vector<serialization::pimpl::Data> list = toDataCollection(elements);
                 return proxy::IQueueImpl::containsAll(list);
             }
@@ -234,7 +233,7 @@ namespace hazelcast {
             * @return true if all elements given in vector can be added to queue.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool addAll(const std::vector<E>& elements) {
+            boost::future<bool> addAll(const std::vector<E>& elements) {
                 std::vector<serialization::pimpl::Data> dataList = toDataCollection(elements);
                 return proxy::IQueueImpl::addAll(dataList);
             }
@@ -245,7 +244,7 @@ namespace hazelcast {
             * @return true if all elements are removed successfully.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool removeAll(const std::vector<E>& elements) {
+            boost::future<bool> removeAll(const std::vector<E>& elements) {
                 std::vector<serialization::pimpl::Data> dataList = toDataCollection(elements);
                 return proxy::IQueueImpl::removeAll(dataList);
             }
@@ -257,7 +256,7 @@ namespace hazelcast {
             * @return true if operation is successful.
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            bool retainAll(const std::vector<E>& elements) {
+            boost::future<bool> retainAll(const std::vector<E>& elements) {
                 std::vector<serialization::pimpl::Data> dataList = toDataCollection(elements);
                 return proxy::IQueueImpl::retainAll(dataList);
             }
@@ -265,7 +264,7 @@ namespace hazelcast {
             /**
             * Removes all elements from queue.
             */
-            void clear() {
+            boost::future<void> clear() {
                 proxy::IQueueImpl::clear();
             }
         private:
@@ -275,6 +274,4 @@ namespace hazelcast {
         };
     }
 }
-
-#endif /* HAZELCAST_IQUEUE */
 

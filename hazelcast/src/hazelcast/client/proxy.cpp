@@ -1908,52 +1908,6 @@ namespace hazelcast {
                 return protocol::codec::MapRemoveEntryListenerCodec::ResponseParameters::decode(clientMessage).response;
             }
 
-            boost::future<protocol::ClientMessage>
-            IMapImpl::putAsyncInternalData(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
-                                           const int64_t *maxIdle, const util::concurrent::TimeUnit &maxIdleUnit,
-                                           const serialization::pimpl::Data &keyData,
-                                           const serialization::pimpl::Data &valueData) {
-                int64_t ttlMillis = hazelcast::util::TimeUtil::timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
-                std::unique_ptr<protocol::ClientMessage> request;
-                if (maxIdle != NULL) {
-                    request = protocol::codec::MapPutWithMaxIdleCodec::encodeRequest(name, keyData, valueData,
-                                                                                     util::getCurrentThreadId(),
-                                                                                     ttlMillis,
-                                                                                     util::TimeUtil::timeInMsOrOneIfResultIsZero(
-                                                                                             *maxIdle,
-                                                                                             maxIdleUnit));
-                } else {
-                    request = protocol::codec::MapPutCodec::encodeRequest(name, keyData, valueData,
-                                                                          util::getCurrentThreadId(),
-                                                                          ttlMillis);
-                }
-
-                return invokeOnKeyOwner(request, keyData);
-            }
-
-            boost::future<protocol::ClientMessage>
-            IMapImpl::setAsyncInternalData(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit,
-                                           const int64_t *maxIdle, const util::concurrent::TimeUnit &maxIdleUnit,
-                                           const serialization::pimpl::Data &keyData,
-                                           const serialization::pimpl::Data &valueData) {
-                int64_t ttlMillis = util::TimeUtil::timeInMsOrOneIfResultIsZero(ttl, ttlUnit);
-                std::unique_ptr<protocol::ClientMessage> request;
-                if (maxIdle != NULL) {
-                    request = protocol::codec::MapSetWithMaxIdleCodec::encodeRequest(name, keyData, valueData,
-                                                                                     util::getCurrentThreadId(),
-                                                                                     ttlMillis,
-                                                                                     util::TimeUtil::timeInMsOrOneIfResultIsZero(
-                                                                                             *maxIdle,
-                                                                                             maxIdleUnit));
-                } else {
-                    request = protocol::codec::MapSetCodec::encodeRequest(name, keyData, valueData,
-                                                                          util::getCurrentThreadId(),
-                                                                          ttlMillis);
-                }
-
-                return invokeOnKeyOwner(request, keyData);
-            }
-
             TransactionalQueueImpl::TransactionalQueueImpl(const std::string &name,
                                                            txn::TransactionProxy *transactionProxy)
                     : TransactionalObject("hz:impl:queueService", name, transactionProxy) {

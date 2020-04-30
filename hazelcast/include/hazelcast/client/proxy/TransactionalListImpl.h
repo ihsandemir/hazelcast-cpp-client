@@ -13,16 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 01/10/14.
-//
-
-
-#ifndef HAZELCAST_TransactionalListProxy
-#define HAZELCAST_TransactionalListProxy
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalObject.h"
-
 
 namespace hazelcast {
     namespace client {
@@ -31,15 +24,13 @@ namespace hazelcast {
             public:
                 TransactionalListImpl(const std::string& objectName, txn::TransactionProxy *context);
 
-                bool add(const serialization::pimpl::Data& e);
+                boost::future<bool> add(const serialization::pimpl::Data& e);
 
-                bool remove(const serialization::pimpl::Data& e);
+                boost::future<bool> remove(const serialization::pimpl::Data& e);
 
-                int size();
-
+                boost::future<int>  size();
             };
         }
     }
 }
 
-#endif //HAZELCAST_TransactionalListProxy

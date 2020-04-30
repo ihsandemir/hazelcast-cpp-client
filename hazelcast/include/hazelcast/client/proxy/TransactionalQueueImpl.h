@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 01/10/14.
-//
-#ifndef HAZELCAST_TransactionalQueueProxy
-#define HAZELCAST_TransactionalQueueProxy
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalObject.h"
 
@@ -26,16 +22,14 @@ namespace hazelcast {
         namespace proxy {
             class HAZELCAST_API TransactionalQueueImpl : public TransactionalObject {
             public:
-                TransactionalQueueImpl(const std::string& name, txn::TransactionProxy *transactionProxy);
+                TransactionalQueueImpl(const std::string &name, txn::TransactionProxy *transactionProxy);
 
-                bool offer(const serialization::pimpl::Data& e, long timeoutInMillis);
+                boost::future<bool> offer(const serialization::pimpl::Data &e, long timeoutInMillis);
 
-                std::unique_ptr<serialization::pimpl::Data> pollData(long timeoutInMillis);
+                boost::future<std::optional<serialization::pimpl::Data>> pollData(long timeoutInMillis);
 
-                int size();
+                boost::future<int> size();
             };
         }
     }
 }
-
-#endif //HAZELCAST_TransactionalQueueProxy

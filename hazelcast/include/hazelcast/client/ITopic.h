@@ -12,11 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-//
-// Created by sancar koyunlu on 6/20/13.
-#ifndef HAZELCAST_TOPIC
-#define HAZELCAST_TOPIC
+#pragma once
 
 #include "hazelcast/client/proxy/ITopicImpl.h"
 #include "hazelcast/client/topic/impl/TopicEventHandlerImpl.h"
@@ -40,7 +36,6 @@ namespace hazelcast {
         template<typename E>
         class ITopic : public proxy::ITopicImpl {
             friend class impl::HazelcastClientInstanceImpl;
-
         public:
 
             /**
@@ -48,7 +43,7 @@ namespace hazelcast {
             *
             * @param message
             */
-            void publish(const E& message) {
+            boost::future<void> publish(const E& message) {
                 proxy::ITopicImpl::publish(toData<E>(message));
             }
 
@@ -77,7 +72,7 @@ namespace hazelcast {
             * @return returns registration id.
             */
             template<typename L>
-            std::string addMessageListener(L& listener) {
+            boost::future<std::string> addMessageListener(L& listener) {
                 impl::BaseEventHandler *topicEventHandler = new topic::impl::TopicEventHandlerImpl<E>(getName(),
                                                                                                       getContext().getClientClusterService(),
                                                                                                       getContext().getSerializationService(),
@@ -93,7 +88,7 @@ namespace hazelcast {
             *
             * @return true if registration is removed, false otherwise
             */
-            bool removeMessageListener(const std::string& registrationId) {
+            boost::future<bool> removeMessageListener(const std::string& registrationId) {
                 return proxy::ITopicImpl::removeMessageListener(registrationId);
             };
 
@@ -104,6 +99,4 @@ namespace hazelcast {
         };
     }
 }
-
-#endif //HAZELCAST_TOPIC
 

@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_PROXY_CLIENTREPLICATEDMAPPROXY_H_
-#define HAZELCAST_CLIENT_PROXY_CLIENTREPLICATEDMAPPROXY_H_
+#pragma once
 
 #include <stdlib.h>
 
@@ -73,7 +72,7 @@ namespace hazelcast {
                         SERVICE_NAME, objectName, context) {
                 }
 
-                std::shared_ptr<V> put(const K &key, const V &value, int64_t ttl) {
+                boost::future<boost::optional<V>>  put(const K &key, const V &value, int64_t ttl) {
                     std::shared_ptr<serialization::pimpl::Data> keyData;
                     try {
                         serialization::pimpl::Data valueData = toData<V>(value);
@@ -92,21 +91,21 @@ namespace hazelcast {
                     }
                 }
 
-                virtual int32_t size() {
+                virtual boost::future<int32_t>  size() {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapSizeCodec::encodeRequest(
                             name);
                     return invokeAndGetResult<int32_t, protocol::codec::ReplicatedMapSizeCodec::ResponseParameters>(
                             request, targetPartitionId);
                 }
 
-                virtual bool isEmpty() {
+                virtual boost::future<bool> isEmpty() {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapIsEmptyCodec::encodeRequest(
                             name);
                     return invokeAndGetResult<bool, protocol::codec::ReplicatedMapIsEmptyCodec::ResponseParameters>(
                             request, targetPartitionId);
                 }
 
-                virtual bool containsKey(const K &key) {
+                virtual boost::future<bool> containsKey(const K &key) {
                     serialization::pimpl::Data keyData = toData<K>(key);
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapContainsKeyCodec::encodeRequest(
                             name, keyData);
@@ -114,7 +113,7 @@ namespace hazelcast {
                             request, keyData);
                 }
 
-                virtual bool containsValue(const V &value) {
+                virtual boost::future<bool> containsValue(const V &value) {
                     serialization::pimpl::Data valueData = toData<V>(value);
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapContainsValueCodec::encodeRequest(
                             name, valueData);
@@ -122,7 +121,7 @@ namespace hazelcast {
                             request, valueData);
                 }
 
-                virtual std::shared_ptr<V> get(const K &key) {
+                virtual boost::future<boost::optional<V>>  get(const K &key) {
                     std::shared_ptr<V> cachedValue = getCachedValue(key);
                     if (cachedValue.get() != NULL) {
                         return cachedValue;
@@ -158,11 +157,11 @@ namespace hazelcast {
                     }
                 }
 
-                virtual std::shared_ptr<V> put(const K &key, const V &value) {
+                virtual boost::future<boost::optional<V>>  put(const K &key, const V &value) {
                     return put(key, value, (int64_t) 0);
                 }
 
-                virtual std::shared_ptr<V> remove(const K &key) {
+                virtual boost::future<boost::optional<V>>  remove(const K &key) {
                     std::shared_ptr<serialization::pimpl::Data> keyData;
 
                     try {
@@ -181,7 +180,7 @@ namespace hazelcast {
                     }
                 }
 
-                virtual void putAll(const std::map<K, V> &entries) {
+                virtual boost::future<void> putAll(const std::map<K, V> &entries) {
                     EntryVector dataEntries;
                     try {
                         dataEntries = toDataEntries<K, V>(entries);
@@ -208,7 +207,7 @@ namespace hazelcast {
                     }
                 }
 
-                virtual void clear() {
+                virtual boost::future<void> clear() {
                     try {
                         std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapClearCodec::encodeRequest(
                                 name);
@@ -228,11 +227,11 @@ namespace hazelcast {
                     }
                 }
 
-                virtual bool removeEntryListener(const std::string &registrationId) {
+                virtual boost::future<bool> removeEntryListener(const std::string &registrationId) {
                     return deregisterListener(registrationId);
                 }
 
-                virtual std::string addEntryListener(const std::shared_ptr<EntryListener<K, V> > &listener) {
+                virtual boost::future<std::string> addEntryListener(const std::shared_ptr<EntryListener<K, V> > &listener) {
                     util::Preconditions::isNotNull(listener, "listener");
                     std::shared_ptr<spi::EventHandler<protocol::ClientMessage> > handler = createHandler(listener);
                     return registerListener(createEntryListenerCodec(name), handler);
@@ -246,7 +245,7 @@ namespace hazelcast {
                     return registerListener(createEntryListenerToKeyCodec(keyData), handler);
                 }
 
-                virtual const std::string addEntryListener(const std::shared_ptr<EntryListener<K, V> > &listener,
+                virtual const boost::future<std::string> addEntryListener(const std::shared_ptr<EntryListener<K, V> > &listener,
                                                            const query::Predicate &predicate) {
                     util::Preconditions::isNotNull(listener, "listener");
                     std::shared_ptr<serialization::pimpl::Data> predicateData = toShared(
@@ -255,7 +254,7 @@ namespace hazelcast {
                     return registerListener(createEntryListenerWithPredicateCodec(predicateData), handler);
                 }
 
-                virtual std::string addEntryListener(const std::shared_ptr<EntryListener<K, V> > &listener,
+                virtual boost::future<std::string> addEntryListener(const std::shared_ptr<EntryListener<K, V> > &listener,
                                                      const query::Predicate &predicate,
                                                      const K &key) {
                     util::Preconditions::isNotNull(listener, "listener");
@@ -268,7 +267,7 @@ namespace hazelcast {
                                             handler);
                 }
 
-                virtual std::shared_ptr<DataArray<K> > keySet() {
+                virtual boost::future<DataArray<K>>  keySet() {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapKeySetCodec::encodeRequest(
                             name);
                     protocol::codec::ReplicatedMapKeySetCodec::ResponseParameters result = protocol::codec::ReplicatedMapKeySetCodec::ResponseParameters::decode(
@@ -277,7 +276,7 @@ namespace hazelcast {
                             new impl::DataArrayImpl<K>(result.response, getContext().getSerializationService()));
                 }
 
-                virtual std::shared_ptr<DataArray<V> > values() {
+                virtual boost::future<DataArray<V>> values() {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapValuesCodec::encodeRequest(
                             name);
                     protocol::codec::ReplicatedMapValuesCodec::ResponseParameters result = protocol::codec::ReplicatedMapValuesCodec::ResponseParameters::decode(
@@ -286,7 +285,7 @@ namespace hazelcast {
                             new impl::DataArrayImpl<V>(result.response, getContext().getSerializationService()));
                 }
 
-                virtual std::shared_ptr<LazyEntryArray<K, V> > entrySet() {
+                virtual boost::future<LazyEntryArray<K, V>>> entrySet() {
                     std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapEntrySetCodec::encodeRequest(
                             name);
                     protocol::codec::ReplicatedMapEntrySetCodec::ResponseParameters result = protocol::codec::ReplicatedMapEntrySetCodec::ResponseParameters::decode(
@@ -652,7 +651,7 @@ namespace hazelcast {
                     }
                 }
 
-                std::string addNearCacheInvalidationListener(
+                boost::future<std::string> addNearCacheInvalidationListener(
                         const std::shared_ptr<spi::EventHandler<protocol::ClientMessage> > handler) {
                     return registerListener(createNearCacheInvalidationListenerCodec(), handler);
                 }
@@ -685,11 +684,11 @@ namespace hazelcast {
                     cache->invalidate(key);
                 }
 
-                std::shared_ptr<V> getCachedValue(const K &key) {
+                boost::future<boost::optional<V>>  getCachedValue(const K &key) {
                     std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V> > cache = nearCache.get();
                     if (cache.get() == NULL) {
                         // TODO Check to see if Java NOT_CACHED object impl. is possible
-                        return std::shared_ptr<V>();
+                        return boost::future<boost::optional<V>> ();
                     }
 
                     return cache->get(toSharedData<K>(key));
@@ -710,5 +709,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HAZELCAST_CLIENT_PROXY_CLIENTREPLICATEDMAPPROXY_H_

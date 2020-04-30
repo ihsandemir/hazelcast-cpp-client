@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by ihsan demir on 16/20/13.
-#ifndef HZELCAST_CLIENT_RINGBUFFER_H_
-#define HZELCAST_CLIENT_RINGBUFFER_H_
+#pragma once
 
 #include <memory>
 #include <stdint.h>
@@ -110,7 +107,7 @@ namespace hazelcast {
              *
              * @return the capacity.
              */
-            virtual int64_t capacity() = 0;
+            virtual boost::future<int64_t> capacity() = 0;
 
             /**
              * Returns number of items in the ringbuffer.
@@ -120,7 +117,7 @@ namespace hazelcast {
              *
              * @return the size.
              */
-            virtual int64_t size() = 0;
+            virtual boost::future<int64_t> size() = 0;
 
             /**
              * Returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
@@ -129,7 +126,7 @@ namespace hazelcast {
              *
              * @return the sequence of the tail.
              */
-            virtual int64_t tailSequence() = 0;
+            virtual boost::future<int64_t> tailSequence() = 0;
 
             /**
              * Returns the sequence of the head. The head is the side of the ringbuffer where the oldest items in the
@@ -141,7 +138,7 @@ namespace hazelcast {
              *
              * @return the sequence of the head.
              */
-            virtual int64_t headSequence() = 0;
+            virtual boost::future<int64_t> headSequence() = 0;
 
             /**
              * Returns the remaining capacity of the ringbuffer.
@@ -152,7 +149,7 @@ namespace hazelcast {
              *
              * @return the remaining capacity.
              */
-            virtual int64_t remainingCapacity() = 0;
+            virtual boost::future<int64_t> remainingCapacity() = 0;
 
             /**
              * Adds an item to the tail of the Ringbuffer. If there is no space in the Ringbuffer, the add will overwrite the oldest
@@ -171,7 +168,7 @@ namespace hazelcast {
              * @param item the item to add.
              * @return the sequence of the added item.
              */
-            virtual int64_t add(const E &item) = 0;
+            virtual boost::future<int64_t> add(const E &item) = 0;
 
             /**
              * Reads one item from the Ringbuffer.
@@ -329,6 +326,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HZELCAST_CLIENT_RINGBUFFER_H_
 

@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 30/09/14.
-//
 
-#ifndef HAZELCAST_IListImpl
-#define HAZELCAST_IListImpl
-
+#pragma once
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include <vector>
@@ -33,46 +28,45 @@ namespace hazelcast {
 
                 std::string addItemListener(impl::BaseEventHandler *entryEventHandler, bool includeValue);
 
-                bool removeItemListener(const std::string& registrationId);
+                boost::future<bool> removeItemListener(const std::string& registrationId);
 
-                int size();
+                boost::future<int>  size();
 
-                bool isEmpty();
+                boost::future<bool> isEmpty();
 
-                bool contains(const serialization::pimpl::Data& element);
+                boost::future<bool> contains(const serialization::pimpl::Data& element);
 
-                std::vector<serialization::pimpl::Data> toArrayData();
+                boost::future<std::vector<serialization::pimpl::Data>>  toArrayData();
 
-                bool add(const serialization::pimpl::Data& element);
+                boost::future<bool> add(const serialization::pimpl::Data& element);
 
-                bool remove(const serialization::pimpl::Data& element);
+                boost::future<bool> remove(const serialization::pimpl::Data& element);
 
-                bool containsAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> containsAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                bool addAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> addAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                bool addAll(int index, const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> addAll(int index, const std::vector<serialization::pimpl::Data>& elements);
 
-                bool removeAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> removeAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                bool retainAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> retainAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                void clear();
+                boost::future<void> clear();
 
-                std::unique_ptr<serialization::pimpl::Data> getData(int index);
+                boost::future<std::optional<serialization::pimpl::Data>>  getData(int index);
 
-                std::unique_ptr<serialization::pimpl::Data> setData(int index, const serialization::pimpl::Data& element);
+                boost::future<std::optional<serialization::pimpl::Data>>  setData(int index, const serialization::pimpl::Data& element);
 
-                void add(int index, const serialization::pimpl::Data& element);
+                boost::future<void> add(int index, const serialization::pimpl::Data& element);
 
-                std::unique_ptr<serialization::pimpl::Data> removeData(int index);
+                boost::future<std::optional<serialization::pimpl::Data>>  removeData(int index);
 
-                int indexOf(const serialization::pimpl::Data& element);
+                boost::future<int>  indexOf(const serialization::pimpl::Data& element);
 
-                int lastIndexOf(const serialization::pimpl::Data& element);
+                boost::future<int>  lastIndexOf(const serialization::pimpl::Data& element);
 
-                std::vector<serialization::pimpl::Data> subListData(int fromIndex, int toIndex);
-
+                boost::future<std::vector<serialization::pimpl::Data>> subListData(int fromIndex, int toIndex);
             private:
                 class ListListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -89,7 +83,7 @@ namespace hazelcast {
 
                 private:
                     std::string name;
-                    bool includeValue;
+                    boost::future<bool> includeValue;
                 };
 
                 int partitionId;
@@ -99,4 +93,3 @@ namespace hazelcast {
         }
     }
 }
-#endif //HAZELCAST_IListImpl
