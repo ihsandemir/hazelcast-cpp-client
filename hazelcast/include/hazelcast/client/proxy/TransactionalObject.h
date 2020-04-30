@@ -97,13 +97,13 @@ namespace hazelcast {
 
                 int getTimeoutInMilliseconds() const;
 
-                protocol::ClientMessage invoke(std::unique_ptr<protocol::ClientMessage> &request);
+                boost::future<protocol::ClientMessage> invoke(std::unique_ptr<protocol::ClientMessage> &request);
 
                 template<typename T, typename CODEC>
-                T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request) {
-                    auto response = invoke(request);
-
-                    return CODEC::decode(response).response;
+                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request) {
+                    return invoke(request).then([] (boost::future<protocol::ClientMessage> f) {
+                        return CODEC::decode(f.get()).response;
+                    });
                 }
 
                 const std::string serviceName;

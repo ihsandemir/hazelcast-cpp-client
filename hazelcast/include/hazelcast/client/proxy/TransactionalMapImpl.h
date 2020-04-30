@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 01/10/14.
-//
-
-
-#ifndef HAZELCAST_TransactionalMapProxy
-#define HAZELCAST_TransactionalMapProxy
+#pragma once
 
 #include "hazelcast/client/proxy/TransactionalObject.h"
 
@@ -30,41 +24,40 @@ namespace hazelcast {
             class HAZELCAST_API TransactionalMapImpl : public TransactionalObject {
             protected:
 
-                bool containsKey(const serialization::pimpl::Data& key);
+                boost::future<bool> containsKey(const serialization::pimpl::Data& key);
 
-                std::unique_ptr<serialization::pimpl::Data> getData(const serialization::pimpl::Data& key);
+                boost::future<serialization::pimpl::Data>  getData(const serialization::pimpl::Data& key);
 
-                int size();
+                boost::future<int>  size();
 
-                bool isEmpty();
+                boost::future<bool> isEmpty();
 
-                std::unique_ptr<serialization::pimpl::Data> putData(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<serialization::pimpl::Data>  putData(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                void set(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<void> set(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::unique_ptr<serialization::pimpl::Data> putIfAbsentData(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<serialization::pimpl::Data>  putIfAbsentData(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::unique_ptr<serialization::pimpl::Data> replaceData(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<serialization::pimpl::Data>  replaceData(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                bool replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& oldValue, const serialization::pimpl::Data& newValue);
+                boost::future<bool> replace(const serialization::pimpl::Data& key, const serialization::pimpl::Data& oldValue, const serialization::pimpl::Data& newValue);
 
-                std::unique_ptr<serialization::pimpl::Data> removeData(const serialization::pimpl::Data& key);
+                boost::future<serialization::pimpl::Data>  removeData(const serialization::pimpl::Data& key);
 
-                void deleteEntry(const serialization::pimpl::Data& key);
+                boost::future<void> deleteEntry(const serialization::pimpl::Data& key);
 
-                bool remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
+                boost::future<bool> remove(const serialization::pimpl::Data& key, const serialization::pimpl::Data& value);
 
-                std::vector<serialization::pimpl::Data> keySetData();
+                boost::future<std::vector<serialization::pimpl::Data>>  keySetData();
 
-                std::vector<serialization::pimpl::Data> keySetData(const serialization::IdentifiedDataSerializable *predicate);
+                boost::future<std::vector<serialization::pimpl::Data>>  keySetData(const serialization::IdentifiedDataSerializable *predicate);
 
-                std::vector<serialization::pimpl::Data> valuesData();
+                boost::future<std::vector<serialization::pimpl::Data>>  valuesData();
 
-                std::vector<serialization::pimpl::Data> valuesData(const serialization::IdentifiedDataSerializable *predicate);
+                boost::future<std::vector<serialization::pimpl::Data>>  valuesData(const serialization::IdentifiedDataSerializable *predicate);
 
                 TransactionalMapImpl(const std::string& name, txn::TransactionProxy *transactionProxy);
             };
         }
     }
 }
-#endif //HAZELCAST_TransactionalMapProxy
