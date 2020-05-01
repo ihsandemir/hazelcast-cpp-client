@@ -157,7 +157,7 @@ namespace hazelcast {
 
                 void Statistics::sendStats(const std::string &newStats,
                                            const std::shared_ptr<connection::Connection> &ownerConnection) {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ClientStatisticsCodec::encodeRequest(
+                    auto request = protocol::codec::ClientStatisticsCodec::encodeRequest(
                             newStats);
                     try {
                         spi::impl::ClientInvocation::create(clientContext, request, "", ownerConnection)->invoke();

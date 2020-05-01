@@ -77,7 +77,7 @@ namespace hazelcast {
                     try {
                         serialization::pimpl::Data valueData = toData<V>(value);
                         auto keyData = toSharedData<K>(key);
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapPutCodec::encodeRequest(
+                        auto request = protocol::codec::ReplicatedMapPutCodec::encodeRequest(
                                 name, *keyData, valueData, ttl);
                         std::unique_ptr<serialization::pimpl::Data> response = invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ReplicatedMapPutCodec::ResponseParameters>(
                                 request, *keyData);
@@ -92,14 +92,14 @@ namespace hazelcast {
                 }
 
                 virtual boost::future<int32_t>  size() {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapSizeCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapSizeCodec::encodeRequest(
                             name);
                     return invokeAndGetResult<int32_t, protocol::codec::ReplicatedMapSizeCodec::ResponseParameters>(
                             request, targetPartitionId);
                 }
 
                 virtual boost::future<bool> isEmpty() {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapIsEmptyCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapIsEmptyCodec::encodeRequest(
                             name);
                     return invokeAndGetResult<bool, protocol::codec::ReplicatedMapIsEmptyCodec::ResponseParameters>(
                             request, targetPartitionId);
@@ -107,7 +107,7 @@ namespace hazelcast {
 
                 virtual boost::future<bool> containsKey(const K &key) {
                     serialization::pimpl::Data keyData = toData<K>(key);
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapContainsKeyCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapContainsKeyCodec::encodeRequest(
                             name, keyData);
                     return invokeAndGetResult<bool, protocol::codec::ReplicatedMapContainsKeyCodec::ResponseParameters>(
                             request, keyData);
@@ -115,7 +115,7 @@ namespace hazelcast {
 
                 virtual boost::future<bool> containsValue(const V &value) {
                     serialization::pimpl::Data valueData = toData<V>(value);
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapContainsValueCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapContainsValueCodec::encodeRequest(
                             name, valueData);
                     return invokeAndGetResult<bool, protocol::codec::ReplicatedMapContainsKeyCodec::ResponseParameters>(
                             request, valueData);
@@ -131,7 +131,7 @@ namespace hazelcast {
                     try {
                         keyData = toShared(toData(key));
                         // TODO: Change to reservation model as in Java when near cache impl is updated
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapGetCodec::encodeRequest(
+                        auto request = protocol::codec::ReplicatedMapGetCodec::encodeRequest(
                                 name, *keyData);
                         std::unique_ptr<serialization::pimpl::Data> result = invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ReplicatedMapGetCodec::ResponseParameters>(
                                 request, *keyData);
@@ -166,7 +166,7 @@ namespace hazelcast {
 
                     try {
                         keyData = toShared(toData(key));
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapRemoveCodec::encodeRequest(
+                        auto request = protocol::codec::ReplicatedMapRemoveCodec::encodeRequest(
                                 name, *keyData);
                         std::unique_ptr<serialization::pimpl::Data> result = invokeAndGetResult<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ReplicatedMapRemoveCodec::ResponseParameters>(
                                 request, *keyData);
@@ -185,7 +185,7 @@ namespace hazelcast {
                     try {
                         dataEntries = toDataEntries<K, V>(entries);
 
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapPutAllCodec::encodeRequest(
+                        auto request = protocol::codec::ReplicatedMapPutAllCodec::encodeRequest(
                                 name, dataEntries);
                         invoke(request);
 
@@ -209,7 +209,7 @@ namespace hazelcast {
 
                 virtual boost::future<void> clear() {
                     try {
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapClearCodec::encodeRequest(
+                        auto request = protocol::codec::ReplicatedMapClearCodec::encodeRequest(
                                 name);
                         invoke(request);
 
@@ -268,7 +268,7 @@ namespace hazelcast {
                 }
 
                 virtual boost::future<DataArray<K>>  keySet() {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapKeySetCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapKeySetCodec::encodeRequest(
                             name);
                     protocol::codec::ReplicatedMapKeySetCodec::ResponseParameters result = protocol::codec::ReplicatedMapKeySetCodec::ResponseParameters::decode(
                             invokeOnPartition(request, targetPartitionId));
@@ -277,7 +277,7 @@ namespace hazelcast {
                 }
 
                 virtual boost::future<DataArray<V>> values() {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapValuesCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapValuesCodec::encodeRequest(
                             name);
                     protocol::codec::ReplicatedMapValuesCodec::ResponseParameters result = protocol::codec::ReplicatedMapValuesCodec::ResponseParameters::decode(
                             invokeOnPartition(request, targetPartitionId));
@@ -286,7 +286,7 @@ namespace hazelcast {
                 }
 
                 virtual boost::future<LazyEntryArray<K, V>>> entrySet() {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ReplicatedMapEntrySetCodec::encodeRequest(
+                    auto request = protocol::codec::ReplicatedMapEntrySetCodec::encodeRequest(
                             name);
                     protocol::codec::ReplicatedMapEntrySetCodec::ResponseParameters result = protocol::codec::ReplicatedMapEntrySetCodec::ResponseParameters::decode(
                             invokeOnPartition(request, targetPartitionId));

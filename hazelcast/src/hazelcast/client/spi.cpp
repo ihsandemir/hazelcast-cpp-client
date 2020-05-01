@@ -2231,7 +2231,7 @@ namespace hazelcast {
                             try {
                                 const std::shared_ptr<ListenerMessageCodec> &listenerMessageCodec = registration.getCodec();
                                 const std::string &serverRegistrationId = registration.getServerRegistrationId();
-                                std::unique_ptr<protocol::ClientMessage> request = listenerMessageCodec->encodeRemoveRequest(
+                                auto request = listenerMessageCodec->encodeRemoveRequest(
                                         serverRegistrationId);
                                 std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
                                                                                                         request, "",
@@ -2311,7 +2311,7 @@ namespace hazelcast {
                         }
 
                         const std::shared_ptr<ListenerMessageCodec> &codec = registrationKey.getCodec();
-                        std::unique_ptr<protocol::ClientMessage> request = codec->encodeAddRequest(
+                        auto request = codec->encodeAddRequest(
                                 registersLocalOnly());
                         std::shared_ptr<EventHandler<protocol::ClientMessage> >
                                 handler = registrationKey.getHandler();

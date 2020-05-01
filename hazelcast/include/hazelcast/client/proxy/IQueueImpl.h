@@ -18,6 +18,7 @@
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include <vector>
 #include <memory>
+#include <chrono>
 
 namespace hazelcast {
     namespace client {
@@ -35,11 +36,11 @@ namespace hazelcast {
 
                 boost::future<bool> removeItemListener(const std::string& registrationId);
 
-                boost::future<bool> offer(const serialization::pimpl::Data& element, long timeoutInMillis);
+                boost::future<bool> offer(const serialization::pimpl::Data& element, std::chrono::steady_clock::duration timeout);
 
                 boost::future<void> put(const serialization::pimpl::Data& element);
 
-                std::unique_ptr<serialization::pimpl::Data> pollData(long timeoutInMillis);
+                std::unique_ptr<serialization::pimpl::Data> pollData(std::chrono::steady_clock::duration timeout);
 
                 boost::future<int>  remainingCapacity();
 

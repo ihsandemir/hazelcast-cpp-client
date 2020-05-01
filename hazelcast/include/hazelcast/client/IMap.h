@@ -22,9 +22,6 @@
 #include <stdexcept>
 #include <climits>
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/proxy/IMapImpl.h"
-#include "hazelcast/client/impl/EntryEventHandler.h"
-#include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/EntryView.h"
 #include "hazelcast/client/map/ClientMapProxy.h"
 

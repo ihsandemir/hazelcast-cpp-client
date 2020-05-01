@@ -54,21 +54,21 @@ namespace hazelcast {
 
                 boost::future<void> flush();
 
-                boost::future<bool> tryRemove(const serialization::pimpl::Data &key, int64_t timeoutInMillis);
+                boost::future<bool> tryRemove(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout);
 
                 boost::future<bool> tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
-                            int64_t timeoutInMillis);
+                            std::chrono::steady_clock::duration timeout);
 
                 boost::future<serialization::pimpl::Data> 
                 putData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
-                        int64_t ttlInMillis);
+                        std::chrono::steady_clock::duration ttl);
 
                 boost::future<void> putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
-                                  int64_t ttlInMillis);
+                                  std::chrono::steady_clock::duration ttl);
 
                 boost::future<serialization::pimpl::Data> 
                 putIfAbsentData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
-                                int64_t ttlInMillis);
+                                std::chrono::steady_clock::duration ttl);
 
                 boost::future<bool> replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
                              const serialization::pimpl::Data &newValue);
@@ -76,7 +76,7 @@ namespace hazelcast {
                 boost::future<serialization::pimpl::Data> 
                 replaceData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                boost::future<void> set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value, int64_t ttl);
+                boost::future<void> set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value, std::chrono::steady_clock::duration ttl);
 
                 boost::future<void> lock(const serialization::pimpl::Data &key);
 
@@ -84,7 +84,7 @@ namespace hazelcast {
 
                 boost::future<bool> isLocked(const serialization::pimpl::Data &key);
 
-                boost::future<bool> tryLock(const serialization::pimpl::Data &key, int64_t timeInMillis);
+                boost::future<bool> tryLock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout);
 
                 boost::future<void> unlock(const serialization::pimpl::Data &key);
 

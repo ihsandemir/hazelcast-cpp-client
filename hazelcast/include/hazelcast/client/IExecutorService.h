@@ -110,7 +110,7 @@ namespace hazelcast {
                         return protocol::codec::ExecutorServiceCancelOnPartitionCodec::ResponseParameters::decode(
                                 clientInvocation->invoke().get()).response;
                     } else {
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ExecutorServiceCancelOnAddressCodec::encodeRequest(
+                        auto request = protocol::codec::ExecutorServiceCancelOnAddressCodec::encodeRequest(
                                 uuid, address, mayInterruptIfRunning);
                         std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                                 context, request, uuid, address);
@@ -608,8 +608,7 @@ namespace hazelcast {
             std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
             invokeOnPartitionInternal(const serialization::pimpl::Data &taskData, int partitionId,
                                       const std::string &uuid) {
-                std::unique_ptr<protocol::ClientMessage> request =
-                        protocol::codec::ExecutorServiceSubmitToPartitionCodec::encodeRequest(name, uuid, taskData,
+                auto request = protocol::codec::ExecutorServiceSubmitToPartitionCodec::encodeRequest(name, uuid, taskData,
                                                                                               partitionId);
 
                 return invokeOnPartitionOwner(request, partitionId);

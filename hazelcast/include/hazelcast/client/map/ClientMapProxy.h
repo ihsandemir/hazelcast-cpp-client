@@ -45,18 +45,7 @@
 namespace hazelcast {
     namespace client {
         namespace map {
-            /**
-            * Concurrent, distributed, observable and queryable map client.
-            *
-            * Notice that this class have a private constructor.
-            * You can access get an IMap in the following way
-            *
-            *      ClientConfig clientConfig;
-            *      HazelcastClient client(clientConfig);
-            *      IMap<int,std::string> imap = client.getMap<int,std::string>("aKey");
-            *
-            */
-            class ClientMapProxy : public proxy::IMapImpl {
+            class HAZELCAST_API ClientMapProxy : public proxy::IMapImpl {
             public:
                 ClientMapProxy(const std::string &instanceName, spi::ClientContext *context)
                         : proxy::IMapImpl(instanceName, context) {
@@ -85,314 +74,106 @@ namespace hazelcast {
 
                 template<typename K, typename V>
                 boost::future<boost::optional<V>> put(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    return std::shared_ptr<V>(std::move(toObject<V>(putInternal(keyData, valueData, ttl))));
+                    return toObject<V>(putInternal(toData(key), toData(value), ttl));
                 }
 
-                /**
-                * remove entry form map
-                * @param key
-                * @return the previous value in shared_ptr, if there is no mapping for key
-                * then returns NULL in shared_ptr.
-                * @throws IClassCastException if the type of the specified element is incompatible with the server side.
-                */
+                template<typename K, typename V>
                 boost::future<boost::optional<V>> remove(const K &key) {
-                    serialization::pimpl::Data keyData = toData(key);
-
-                    std::unique_ptr<serialization::pimpl::Data> response = removeInternal(keyData);
-                    return std::shared_ptr<V>(toObject<V>(response));
+                    return toObject<V>(removeInternal(toData(key)));
                 }
 
-                /**
-                * removes entry from map if there is an entry with same key and value.
-                * @param key
-                * @param value
-                * @return true if remove is successful false otherwise
-                * @throws IClassCastException if the type of the specified element is incompatible with the server side.
-                */
+                template<typename K, typename V>
                 boost::future<bool> remove(const K &key, const V &value) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    return removeInternal(keyData, valueData);
+                    return removeInternal(toData(key), toData(value));
                 }
 
-                /**
-                 * Removes all entries which match with the supplied predicate.
-                 * If this map has index, matching entries will be found via index search, otherwise they will be found by full-scan.
-                 *
-                 * @param predicate matching entries with this predicate will be removed from this map
-                 */
                 template <typename P>
-                boost::future<void> removeAll(const query::Predicate &predicate) {
-                    serialization::pimpl::Data predicateData = toData<P>(predicate);
-
-                    removeAllInternal(predicateData);
+                boost::future<void> removeAll(const P &predicate) {
+                    removeAllInternal(toData<P>(predicate));
                 }
 
-                /**
-                * removes entry from map.
-                * Does not return anything.
-                * @param key The key of the map entry to remove.
-                * @throws IClassCastException if the type of the specified element is incompatible with the server side.
-                */
+                template <typename K>
                 boost::future<void> deleteEntry(const K &key) {
-                    serialization::pimpl::Data keyData = toData(key);
-
-                    deleteInternal(keyData);
+                    return deleteInternal(toData(key));
                 }
 
-                /**
-                * If this map has a MapStore this method flushes
-                * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
-                */
                 boost::future<void> flush() {
-                    proxy::IMapImpl::flush();
+                    return proxy::IMapImpl::flush();
                 }
 
-                /**
-                * Tries to remove the entry with the given key from this map
-                * within specified timeout value. If the key is already locked by another
-                * thread and/or member, then this operation will wait timeout
-                * amount for acquiring the lock.
-                *
-                * @param key      key of the entry
-                * @param timeoutInMillis  maximum time in milliseconds to wait for acquiring the lock
-                *                 for the key
-                */
-                boost::future<bool> tryRemove(const K &key, int64_t timeoutInMillis) {
-                    serialization::pimpl::Data keyData = toData(key);
-
-                    return tryRemoveInternal(keyData, timeoutInMillis);
+                template<typename K>
+                boost::future<bool> tryRemove(const K &key, std::chrono::steady_clock::duration timeout) {
+                    return tryRemoveInternal(toData(key), timeout);
                 }
 
-                /**
-                * Tries to put the given key, value into this map within specified
-                * timeout value. If this method returns false, it means that
-                * the caller thread couldn't acquire the lock for the key within
-                * timeout duration, thus put operation is not successful.
-                *
-                * @param key      key of the entry
-                * @param value    value of the entry
-                * @param timeoutInMillis  maximum time to wait in milliseconds
-                * @return <tt>true</tt> if the put is successful, <tt>false</tt>
-                *         otherwise.
-                */
-                boost::future<bool> tryPut(const K &key, const V &value, int64_t timeoutInMillis) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    return tryPutInternal(keyData, valueData, timeoutInMillis);
+                template<typename K, typename V>
+                boost::future<bool> tryPut(const K &key, const V &value, std::chrono::steady_clock::duration timeout) {
+                    return tryPutInternal(toData(key), toData(value), timeout);
                 }
 
-                /**
-                * Same as put(K, V, int64_t, TimeUnit) but MapStore, if defined,
-                * will not be called to store/persist the entry.  If ttl is 0, then
-                * the entry lives forever.
-                *
-                * @param key          key of the entry
-                * @param value        value of the entry
-                * @param ttlInMillis  maximum time for this entry to stay in the map in milliseconds, 0 means infinite.
-                */
-                boost::future<void> putTransient(const K &key, const V &value, int64_t ttlInMillis) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    tryPutTransientInternal(keyData, valueData, ttlInMillis);
+                template<typename K, typename V>
+                boost::future<void> putTransient(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
+                    tryPutTransientInternal(toData(key), toData(value), ttl);
                 }
 
-                /**
-                * Puts an entry into this map, if the specified key is not already associated with a value.
-                *
-                * @param key key with which the specified value is to be associated
-                * @param value
-                * @return the previous value in shared_ptr, if there is no mapping for key
-                * then returns NULL in shared_ptr.
-                */
+                template<typename K, typename V>
                 boost::future<boost::optional<V>> putIfAbsent(const K &key, const V &value) {
-                    return putIfAbsent(key, value, -1);
+                    return putIfAbsent(key, value, std::chrono::milliseconds(-1));
                 }
 
-                /**
-                * Puts an entry into this map with a given ttl (time to live) value
-                * if the specified key is not already associated with a value.
-                * Entry will expire and get evicted after the ttl.
-                *
-                * @param key            key of the entry
-                * @param value          value of the entry
-                * @param ttlInMillis    maximum time in milliseconds for this entry to stay in the map
-                * @return the previous value of the entry, if there is no mapping for key
-                * then returns NULL in shared_ptr.
-                */
-                boost::future<boost::optional<V>> putIfAbsent(const K &key, const V &value, int64_t ttlInMillis) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    std::unique_ptr<serialization::pimpl::Data> response = putIfAbsentInternal(keyData, valueData,
-                                                                                             ttlInMillis);
-                    return std::shared_ptr<V>(toObject<V>(response));
+                template<typename K, typename V>
+                boost::future<boost::optional<V>> putIfAbsent(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
+                    return toObject<V>(putIfAbsentInternal(toData(key), toData(value), ttl));
                 }
 
-                /**
-                * Replaces the entry for a key only if currently mapped to a given value.
-                * @param key key with which the specified value is associated
-                * @param oldValue value expected to be associated with the specified key
-                * @param newValue
-                * @return <tt>true</tt> if the value was replaced
-                */
+                template<typename K, typename V>
                 boost::future<bool> replace(const K &key, const V &oldValue, const V &newValue) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data oldValueData = toData(oldValue);
-                    serialization::pimpl::Data newValueData = toData(newValue);
-
-                    return replaceIfSameInternal(keyData, oldValueData, newValueData);
+                    return replaceIfSameInternal(toData(key), toData(oldValue), toData(newValue));
                 }
 
-                /**
-                * Replaces the entry for a key only if currently mapped to some value.
-                * @param key key with which the specified value is associated
-                * @param value
-                * @return the previous value of the entry, if there is no mapping for key
-                * then returns NULL in shared_ptr.
-                */
+                template<typename K, typename V>
                 boost::future<boost::optional<V>> replace(const K &key, const V &value) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    return std::shared_ptr<V>(toObject<V>(replaceInternal(keyData, valueData)));
+                    return toObject<V>(replaceInternal(toData(key), toData(value)));
                 }
 
-                /**
-                * Puts an entry into this map.
-                * Similar to put operation except that set
-                * doesn't return the old value which is more efficient.
-                * @param key
-                * @param value
-                */
+                template<typename K, typename V>
                 boost::future<void> set(const K &key, const V &value) {
-                    set(key, value, -1);
+                    return set(key, value, -1);
                 }
 
-                /**
-                * Puts an entry into this map.
-                * Similar to put operation except that set
-                * doesn't return the old value which is more efficient.
-                * @param key key with which the specified value is associated
-                * @param value
-                * @param ttl maximum time in milliseconds for this entry to stay in the map
-                0 means infinite.
-                */
-                boost::future<void> set(const K &key, const V &value, int64_t ttl) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data valueData = toData(value);
-
-                    setInternal(keyData, valueData, ttl);
+                template<typename K, typename V>
+                boost::future<void> set(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
+                    return setInternal(toData(key), toData(value), ttl);
                 }
 
-                /**
-                * Acquires the lock for the specified key.
-                * <p>If the lock is not available then
-                * the current thread becomes disabled for thread scheduling
-                * purposes and lies dormant until the lock has been acquired.
-                *
-                * Scope of the lock is this map only.
-                * Acquired lock is only for the key in this map.
-                *
-                * Locks are re-entrant so if the key is locked N times then
-                * it should be unlocked N times before another thread can acquire it.
-                *
-                * @param key key to lock.
-                */
+                template<typename K>
                 boost::future<void> lock(const K &key) {
-                    lock(key, -1);
+                    return lock(key, std::chrono::milliseconds(-1));
                 }
 
-                /**
-                * Acquires the lock for the specified key for the specified lease time.
-                * <p>After lease time, lock will be released..
-                *
-                * <p>If the lock is not available then
-                * the current thread becomes disabled for thread scheduling
-                * purposes and lies dormant until the lock has been acquired.
-                *
-                * Scope of the lock is this map only.
-                * Acquired lock is only for the key in this map.
-                *
-                * Locks are re-entrant so if the key is locked N times then
-                * it should be unlocked N times before another thread can acquire it.
-                *
-                *
-                * @param key key to lock.
-                * @param leaseTime time in milliseconds to wait before releasing the lock.
-                */
-                boost::future<void> lock(const K &key, int64_t leaseTime) {
-                    serialization::pimpl::Data keyData = toData(key);
-
-                    proxy::IMapImpl::lock(toData(key), leaseTime);
+                template<typename K>
+                boost::future<void> lock(const K &key, std::chrono::steady_clock::duration leaseTime) {
+                    return proxy::IMapImpl::lock(toData(key), leaseTime);
                 }
 
-                /**
-                * Checks the lock for the specified key.
-                * <p>If the lock is acquired then returns true, else false.
-                *
-                *
-                * @param key key to lock to be checked.
-                * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
-                */
+                template<typename K>
                 boost::future<bool> isLocked(const K &key) {
                     return proxy::IMapImpl::isLocked(toData(key));
                 }
 
-                /**
-                * Tries to acquire the lock for the specified key.
-                * <p>If the lock is not available then the current thread
-                * doesn't wait and returns false immediately.
-                *
-                *
-                * @param key key to lock.
-                * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
-                */
+                template<typename K>
                 boost::future<bool> tryLock(const K &key) {
-                    return tryLock(key, 0);
+                    return tryLock(key, std::chrono::milliseconds(0));
                 }
 
-                /**
-                * Tries to acquire the lock for the specified key.
-                * <p>If the lock is not available then
-                * the current thread becomes disabled for thread scheduling
-                * purposes and lies dormant until one of two things happens:
-                * <ul>
-                * <li>The lock is acquired by the current thread; or
-                * <li>The specified waiting time elapses
-                * </ul>
-                *
-                *
-                * @param key      key to lock in this map
-                * @param timeInMillis     maximum time in milliseconds to wait for the lock
-                * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-                *         if the waiting time elapsed before the lock was acquired.
-                */
-                boost::future<bool> tryLock(const K &key, int64_t timeInMillis) {
-                    return proxy::IMapImpl::tryLock(toData(key), timeInMillis);
+                template<typename K>
+                boost::future<bool> tryLock(const K &key, std::chrono::steady_clock::duration timeout) {
+                    return proxy::IMapImpl::tryLock(toData(key), timeout);
                 }
 
-                /**
-                * Releases the lock for the specified key. It never blocks and
-                * returns immediately.
-                *
-                * <p>If the current thread is the holder of this lock then the hold
-                * count is decremented.  If the hold count is now zero then the lock
-                * is released.  If the current thread is not the holder of this
-                * lock then IllegalMonitorStateException is thrown.
-                *
-                *
-                * @param key key to lock.
-                * @throws IllegalMonitorStateException if the current thread does not hold this lock MTODO
-                */
+                template<typename K>
                 boost::future<void> unlock(const K &key) {
-                    proxy::IMapImpl::unlock(toData(key));
+                    return proxy::IMapImpl::unlock(toData(key));
                 }
 
                 /**
@@ -809,16 +590,6 @@ namespace hazelcast {
                     return entries;
                 }
 
-                /**
-                * Queries the map based on the specified predicate and
-                * returns the matching entries.
-                *
-                * Specified predicate runs on all members in parallel.
-                *
-                *
-                * @param predicate query criteria
-                * @return result entry vector of the query
-                */
                 std::vector<std::pair<K, V> > entrySet(const query::Predicate &predicate) {
                     std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetData(
                             predicate);
@@ -832,16 +603,6 @@ namespace hazelcast {
                     return entries;
                 }
 
-                /**
-                * Queries the map based on the specified predicate and
-                * returns the matching entries.
-                *
-                * Specified predicate runs on all members in parallel.
-                *
-                *
-                * @param predicate query criteria
-                * @return result entry vector of the query
-                */
                 std::vector<std::pair<K, V> > entrySet(query::PagingPredicate<K, V> &predicate) {
                     std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetForPagingPredicateData(
                             predicate);
@@ -884,56 +645,10 @@ namespace hazelcast {
                     return result;
                 }
 
-                /**
-                * Adds an index to this map for the specified entries so
-                * that queries can run faster.
-                *
-                * Let's say your map values are Employee objects.
-                *
-                *   class Employee : public serialization::Portable {
-                *       //...
-                *       private:
-                *          boost::future<bool> active;
-                *          int age;
-                *          boost::future<std::string> name;
-                *
-                *   }
-                *
-                *
-                * If you are querying your values mostly based on age and active then
-                * you should consider indexing these fields.
-                *
-                *   IMap<std::string, Employee > imap = hazelcastInstance.getMap<std::string, Employee >("employees");
-                *   imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
-                *   imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
-                *
-                *
-                * In the server side, Index  should either have a getter method or be public.
-                * You should also make sure to add the indexes before adding
-                * entries to this map.
-                *
-                * @param attribute attribute of value
-                * @param ordered   <tt>true</tt> if index should be ordered,
-                *                  <tt>false</tt> otherwise.
-                */
                 boost::future<void> addIndex(const std::string &attribute, bool ordered) {
                     proxy::IMapImpl::addIndex(attribute, ordered);
                 }
 
-                /**
-                * Applies the user defined EntryProcessor to the entry mapped by the key.
-                * Returns the the ResultType which is result of the process() method of EntryProcessor.
-                *
-                * EntryProcessor should extend either Portable or IdentifiedSerializable.
-                * Notice that map EntryProcessor runs on the nodes. Because of that, same class should be implemented in java side
-                * with same classId and factoryId.
-                *
-                * @tparam EntryProcessor type of entry processor class
-                * @tparam ResultType that entry processor will return
-                * @param entryProcessor that will be applied
-                * @param key of entry that entryProcessor will be applied on
-                * @return result of entry process.
-                */
                 template<typename ResultType, typename EntryProcessor>
                 std::shared_ptr<ResultType> executeOnKey(const K &key, const EntryProcessor &entryProcessor) {
                     serialization::pimpl::Data keyData = toData(key);
@@ -1141,12 +856,12 @@ namespace hazelcast {
                     return proxy::IMapImpl::containsKey(keyData);
                 }
 
-                virtual std::unique_ptr<serialization::pimpl::Data> removeInternal(
+                virtual boost::future<serialization::pimpl::Data> removeInternal(
                         const serialization::pimpl::Data &keyData) {
                     return proxy::IMapImpl::removeData(keyData);
                 }
 
-                virtual bool removeInternal(
+                virtual boost::future<bool> removeInternal(
                         const serialization::pimpl::Data &keyData, const serialization::pimpl::Data &valueData) {
                     return proxy::IMapImpl::remove(keyData, valueData);
                 }
@@ -1171,35 +886,35 @@ namespace hazelcast {
                     return proxy::IMapImpl::removeAll(predicateData);
                 }
 
-                virtual void deleteInternal(const serialization::pimpl::Data &keyData) {
-                    proxy::IMapImpl::deleteEntry(keyData);
+                virtual boost::future<void> deleteInternal(const serialization::pimpl::Data &keyData) {
+                    return proxy::IMapImpl::deleteEntry(keyData);
                 }
 
-                virtual bool tryRemoveInternal(const serialization::pimpl::Data &keyData, int64_t timeoutInMillis) {
-                    return proxy::IMapImpl::tryRemove(keyData, timeoutInMillis);
+                virtual boost::future<bool> tryRemoveInternal(const serialization::pimpl::Data &keyData, std::chrono::steady_clock::duration timeout) {
+                    return proxy::IMapImpl::tryRemove(keyData, timeout);
                 }
 
                 virtual bool tryPutInternal(const serialization::pimpl::Data &keyData,
-                                            const serialization::pimpl::Data &valueData, int64_t timeoutInMillis) {
-                    return proxy::IMapImpl::tryPut(keyData, valueData, timeoutInMillis);
+                                            const serialization::pimpl::Data &valueData, std::chrono::steady_clock::duration timeout) {
+                    return proxy::IMapImpl::tryPut(keyData, valueData, timeout);
                 }
 
-                virtual std::unique_ptr<serialization::pimpl::Data> putInternal(const serialization::pimpl::Data &keyData,
+                virtual boost::future<serialization::pimpl::Data> putInternal(const serialization::pimpl::Data &keyData,
                                                                               const serialization::pimpl::Data &valueData,
-                                                                              int64_t timeoutInMillis) {
-                    return proxy::IMapImpl::putData(keyData, valueData, timeoutInMillis);
+                                                                              std::chrono::steady_clock::duration ttl) {
+                    return proxy::IMapImpl::putData(keyData, valueData, ttl);
                 }
 
                 virtual void tryPutTransientInternal(const serialization::pimpl::Data &keyData,
-                                                     const serialization::pimpl::Data &valueData, int64_t ttlInMillis) {
-                    proxy::IMapImpl::putTransient(keyData, valueData, ttlInMillis);
+                                                     const serialization::pimpl::Data &valueData, std::chrono::steady_clock::duration ttl) {
+                    proxy::IMapImpl::putTransient(keyData, valueData, ttl);
                 }
 
                 virtual std::unique_ptr<serialization::pimpl::Data>
                 putIfAbsentInternal(const serialization::pimpl::Data &keyData,
                                     const serialization::pimpl::Data &valueData,
-                                    int64_t ttlInMillis) {
-                    return proxy::IMapImpl::putIfAbsentData(keyData, valueData, ttlInMillis);
+                                    std::chrono::steady_clock::duration ttl) {
+                    return proxy::IMapImpl::putIfAbsentData(keyData, valueData, ttl);
                 }
 
                 virtual bool replaceIfSameInternal(const serialization::pimpl::Data &keyData,
@@ -1217,8 +932,8 @@ namespace hazelcast {
 
                 virtual void
                 setInternal(const serialization::pimpl::Data &keyData, const serialization::pimpl::Data &valueData,
-                            int64_t ttlInMillis) {
-                    proxy::IMapImpl::set(keyData, valueData, ttlInMillis);
+                            std::chrono::steady_clock::duration ttl) {
+                    proxy::IMapImpl::set(keyData, valueData, ttl);
                 }
 
                 virtual bool evictInternal(const serialization::pimpl::Data &keyData) {
@@ -1276,8 +991,7 @@ namespace hazelcast {
                                     const serialization::pimpl::Data &processor) {
                     int partitionId = getPartitionId(keyData);
 
-                    std::unique_ptr<protocol::ClientMessage> request =
-                            protocol::codec::MapSubmitToKeyCodec::encodeRequest(getName(),
+                    auto request = protocol::codec::MapSubmitToKeyCodec::encodeRequest(getName(),
                                                                                 processor,
                                                                                 keyData,
                                                                                 util::getCurrentThreadId());
@@ -1327,7 +1041,7 @@ namespace hazelcast {
                 virtual boost::future<protocol::ClientMessage>
                 getAsyncInternal(const serialization::pimpl::Data &keyData) {
                     try {
-                        std::unique_ptr<protocol::ClientMessage> request = protocol::codec::MapGetCodec::encodeRequest(
+                        auto request = protocol::codec::MapGetCodec::encodeRequest(
                                 name, keyData, util::getCurrentThreadId());
                         return invokeOnKeyOwner(request, keyData);
                     } catch (exception::IException &e) {
@@ -1337,7 +1051,7 @@ namespace hazelcast {
                 }
 
                 virtual boost::future<std::shared_ptr<V>>
-                putAsyncInternal(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
+                putAsyncInternal(std::chrono::steady_clock::duration ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
                                  const util::concurrent::TimeUnit &maxIdleUnit,
                                  const serialization::pimpl::Data &keyData,
                                  const V &value) {
@@ -1355,7 +1069,7 @@ namespace hazelcast {
                 }
 
                 virtual boost::future<void>
-                setAsyncInternal(int64_t ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
+                setAsyncInternal(std::chrono::steady_clock::duration ttl, const util::concurrent::TimeUnit &ttlUnit, int64_t *maxIdle,
                                  const util::concurrent::TimeUnit &maxIdleUnit,
                                  const serialization::pimpl::Data &keyData, const V &value) {
                     try {

@@ -151,7 +151,7 @@ namespace hazelcast {
                 addAsync(const E &item, typename Ringbuffer<E>::OverflowPolicy overflowPolicy) {
 
                     serialization::pimpl::Data element = toData<E>(item);
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::RingbufferAddCodec::encodeRequest(
+                    auto request = protocol::codec::RingbufferAddCodec::encodeRequest(
                             name, overflowPolicy, element);
                     try {
                         auto invocationFuture = spi::impl::ClientInvocation::create(getContext(), request, getName(),
@@ -173,7 +173,7 @@ namespace hazelcast {
                     util::Preconditions::checkMax((int32_t) items.size(), MAX_BATCH_SIZE, "items");
 
                     std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(items);
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::RingbufferAddAllCodec::encodeRequest(
+                    auto request = protocol::codec::RingbufferAddAllCodec::encodeRequest(
                             name, dataCollection, overflowPolicy);
 
                     try {
@@ -237,7 +237,7 @@ namespace hazelcast {
                                                    "the maxCount should be smaller than or equal to the capacity");
                     util::Preconditions::checkMax(maxCount, MAX_BATCH_SIZE, "maxCount");
 
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::RingbufferReadManyCodec::encodeRequest(
+                    auto request = protocol::codec::RingbufferReadManyCodec::encodeRequest(
                             name,
                             startSequence,
                             minCount,

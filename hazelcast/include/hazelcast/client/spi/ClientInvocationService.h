@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <memory>
+#include <chrono>
 #include "hazelcast/client/exception/IOException.h"
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
 #include "hazelcast/client/Address.h"

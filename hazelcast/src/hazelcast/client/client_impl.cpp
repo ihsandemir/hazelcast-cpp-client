@@ -622,13 +622,13 @@ namespace hazelcast {
         }
 
         void IExecutorService::shutdown() {
-            std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ExecutorServiceShutdownCodec::encodeRequest(
+            auto request = protocol::codec::ExecutorServiceShutdownCodec::encodeRequest(
                     getName());
             invoke(request);
         }
 
         bool IExecutorService::isShutdown() {
-            std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ExecutorServiceIsShutdownCodec::encodeRequest(
+            auto request = protocol::codec::ExecutorServiceIsShutdownCodec::encodeRequest(
                     getName());
             return invokeAndGetResult<bool, protocol::codec::ExecutorServiceIsShutdownCodec::ResponseParameters>(
                     request);

@@ -1187,7 +1187,7 @@ namespace hazelcast {
                 }
 
                 if (now - connection->lastReadTime() > heartbeatIntervalSeconds) {
-                    std::unique_ptr<protocol::ClientMessage> request = protocol::codec::ClientPingCodec::encodeRequest();
+                    auto request = protocol::codec::ClientPingCodec::encodeRequest();
                     std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                             client, request, "", connection);
                     clientInvocation->invokeUrgent();

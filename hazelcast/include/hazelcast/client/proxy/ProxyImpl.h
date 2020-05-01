@@ -13,85 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 01/10/14.
-//
-#ifndef HAZELCAST_ProxyImpl
-#define HAZELCAST_ProxyImpl
+#pragma once
 
 #include <memory>
-#include <hazelcast/util/ExceptionUtil.h>
 
-#include "hazelcast/client/DistributedObject.h"
+#include "hazelcast/util/ExceptionUtil.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/ClientProxy.h"
 #include "hazelcast/client/TypedData.h"
-#include "hazelcast/client/spi/ClientInvocationService.h"
+#include "hazelcast/client/spi/impl/ClientInvocation.h"
 
 namespace hazelcast {
     namespace client {
-        namespace connection {
-            class Connection;
-        }
-
-        namespace serialization {
-            namespace pimpl {
-                class Data;
-            }
-        }
-
         typedef std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > EntryVector;
 
         namespace proxy {
             class HAZELCAST_API ProxyImpl : public spi::ClientProxy {
             protected:
-                /**
-                * Constructor
-                */
                 ProxyImpl(const std::string &serviceName, const std::string &objectName, spi::ClientContext *context);
 
-                /**
-                * Destructor
-                */
                 virtual ~ProxyImpl();
 
-                /**
-                * Internal API.
-                * method to be called by distributed objects.
-                * memory ownership is moved to DistributedObject.
-                *
-                * @param partitionId that given request will be send to.
-                * @param request Client request message to be sent.
-                */
-                protocol::ClientMessage invokeOnPartition(std::unique_ptr<protocol::ClientMessage> &request,
-                                                          int partitionId);
+                boost::future<protocol::ClientMessage> invoke(std::unique_ptr<protocol::ClientMessage> &request);
 
                 boost::future<protocol::ClientMessage>
-                invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request,
-                                   int partitionId);
+                invokeOnPartition(std::unique_ptr<protocol::ClientMessage> &request, int partitionId);
 
                 boost::future<protocol::ClientMessage>
                 invokeOnKeyOwner(std::unique_ptr<protocol::ClientMessage> &request,
                                  const serialization::pimpl::Data &keyData);
 
-                /**
-                * Internal API.
-                * method to be called by distributed objects.
-                * memory ownership is moved to DistributedObject.
-                *
-                * @param request ClientMessage ptr.
-                */
-                protocol::ClientMessage invoke(std::unique_ptr<protocol::ClientMessage> &request);
-
-                protocol::ClientMessage invokeOnAddress(std::unique_ptr<protocol::ClientMessage> &request,
+                boost::future<protocol::ClientMessage> invokeOnAddress(std::unique_ptr<protocol::ClientMessage> &request,
                                                         const Address &address);
 
-                /**
-                * Internal API.
-                * @param key
-                */
                 int getPartitionId(const serialization::pimpl::Data &key);
 
                 template<typename T>
@@ -102,6 +58,13 @@ namespace hazelcast {
                 template<typename T>
                 std::shared_ptr<serialization::pimpl::Data> toSharedData(const T &object) {
                     return toShared(toData<T>(object));
+                }
+
+                template<typename T>
+                boost::future<boost::optional<T>> toObject(boost::future<protocol::ClientMessage> &f) {
+                    return f.then(boost::launch::deferred, [=] (boost::future<protocol::ClientMessage> f) {
+                        return toObject<T>(f.get());
+                    });
                 }
 
                 template<typename T>
@@ -186,24 +149,25 @@ namespace hazelcast {
                 }
 
                 template<typename T, typename CODEC>
-                T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request) {
-                    return (T) CODEC::decode(invoke(request)).response;
+                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request) {
+                    invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                        return (T) CODEC::decode(f.get()).response;
+                    });
                 }
 
                 template<typename T, typename CODEC>
-                T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage &request, int partitionId) {
-                    return (T) CODEC::decode(invokeOnPartition(request, partitionId)).response;
+                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
+                    invokeOnPartition(request, partitionId).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                        return (T) CODEC::decode(f.get()).response;
+                    });
                 }
 
                 template<typename T, typename CODEC>
-                T invokeAndGetResult(std::unique_ptr<protocol::ClientMessage> &request,
+                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request,
                                      const serialization::pimpl::Data &key) {
-                    try {
-                        return (T) CODEC::decode(invokeOnKeyOwner(request, key).get()).response;
-                    } catch (exception::IException &e) {
-                        util::ExceptionUtil::rethrow(std::current_exception());
-                    }
-                    return T();
+                    invokeOnKeyOwner(request, key).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                        return (T) CODEC::decode(f.get()).response;
+                    });
                 }
 
                 std::shared_ptr<serialization::pimpl::Data> toShared(const serialization::pimpl::Data &data);
@@ -212,4 +176,3 @@ namespace hazelcast {
     }
 }
 
-#endif //HAZELCAST_ProxyImpl
