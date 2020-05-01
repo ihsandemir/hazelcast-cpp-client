@@ -580,14 +580,14 @@ namespace hazelcast {
                 handler->onListenerRegister();
             }
 
-            std::string
-            ClientProxy::registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
-                                          std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
+            boost::future<std::string>
+            ClientProxy::registerListener(std::unique_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
+                                          std::unique_ptr<client::impl::BaseEventHandler> handler) {
                 handler->setLogger(&getContext().getLogger());
                 return getContext().getClientListenerService().registerListener(listenerMessageCodec, handler);
             }
 
-            bool ClientProxy::deregisterListener(const std::string &registrationId) {
+            boost::future<bool> ClientProxy::deregisterListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -2118,19 +2118,25 @@ namespace hazelcast {
                     AbstractClientListenerService::~AbstractClientListenerService() {
                     }
 
-                    std::string
+                    boost::future<std::string>
                     AbstractClientListenerService::registerListener(
                             std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                             std::unique_ptr<impl::BaseEventHandler> &&handler) {
-                        return boost::asio::post(registrationExecutor->get_executor(), std::packaged_task<std::string()>([=]() {
-                            return registerListenerInternal(listenerMessageCodec, handler);
-                        })).get();
+                        auto task = boost::packaged_task<std::string()>(std::bind(
+                                [=](std::unique_ptr<impl::ListenerMessageCodec> &codec,
+                                    std::unique_ptr<impl::BaseEventHandler> &h) {
+                                    return registerListenerInternal(std::move(codec), std::move(h));
+                                }, std::move(listenerMessageCodec), std::move(handler)));
+                        boost::asio::post(registrationExecutor->get_executor(), task);
+                        return task.get_future();
                     }
 
-                    bool AbstractClientListenerService::deregisterListener(const std::string registrationId) {
-                        return boost::asio::post(registrationExecutor->get_executor(), std::packaged_task<bool()>([=]() {
+                    boost::future<bool> AbstractClientListenerService::deregisterListener(const std::string registrationId) {
+                        auto task = boost::packaged_task<bool()>([=]() {
                             return deregisterListenerInternal(registrationId);
-                        })).get();
+                        });
+                        boost::asio::post(registrationExecutor->get_executor(), task);
+                        return task.get_future();
                     }
 
                     void AbstractClientListenerService::connectionAdded(

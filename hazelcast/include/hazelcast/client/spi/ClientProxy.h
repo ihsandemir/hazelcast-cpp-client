@@ -95,8 +95,8 @@ namespace hazelcast {
                 * @param listenerMessageCodec The codec used for listener register/deregister
                 * @param handler Event handler for the listener
                 */
-                boost::future<std::string> registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
-                                             std::unique_ptr<client::impl::BaseEventHandler> &&handler);
+                boost::future<std::string> registerListener(std::unique_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
+                                             std::unique_ptr<client::impl::BaseEventHandler> handler);
 
                 /**
                 * Internal API.

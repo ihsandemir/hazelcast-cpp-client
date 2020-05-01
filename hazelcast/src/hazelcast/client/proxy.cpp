@@ -1440,7 +1440,7 @@ namespace hazelcast {
             boost::future<std::string> IMapImpl::addInterceptor(const serialization::pimpl::Data &interceptor) {
                 auto request = protocol::codec::MapAddInterceptorCodec::encodeRequest(getName(), interceptor);
 
-                return invokeAndGetResult<std::string, protocol::codec::MapAddInterceptorCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::string, protocol::codec::MapAddInterceptorCodec::ResponseParameters>(
                         request);
             }
 
@@ -1451,7 +1451,7 @@ namespace hazelcast {
                 return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), entryEventHandler);
             }
 
-            std::string
+            boost::future<std::string>
             IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                     Data &&predicate, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL

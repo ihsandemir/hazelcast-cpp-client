@@ -94,14 +94,14 @@ namespace hazelcast {
 
                 virtual boost::future<void> removeInterceptor(const std::string &id);
 
-                std::string
+                boost::future<std::string>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
 
-                std::string
+                boost::future<std::string>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, Data &&predicate,
                                  bool includeValue);
 
-                std::string
+                boost::future<std::string>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
                                  Data &&key);
 

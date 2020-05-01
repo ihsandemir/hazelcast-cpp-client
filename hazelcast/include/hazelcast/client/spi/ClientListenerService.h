@@ -19,13 +19,13 @@
 
 #include <string>
 #include "hazelcast/client/protocol/ClientMessage.h"
-#include "hazelcast/client/spi/EventHandler.h"
 
 namespace hazelcast {
     namespace client {
         namespace spi {
             namespace impl {
                 class ListenerMessageCodec;
+                class BaseEventHandler;
             }
             /**
              * Client service to add/remove remote listeners.
@@ -36,11 +36,11 @@ namespace hazelcast {
              // TODO: Remove this interface and use abstract base class instead
             class ClientListenerService {
             public:
-                virtual std::string
+                virtual boost::future<std::string>
                 registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                                  std::unique_ptr<impl::BaseEventHandler> &&handler) = 0;
 
-                virtual bool deregisterListener(const std::string registrationId) = 0;
+                virtual boost::future<bool> deregisterListener(const std::string registrationId) = 0;
             };
         }
     }
