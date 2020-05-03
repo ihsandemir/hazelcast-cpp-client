@@ -68,19 +68,19 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                boost::optional<T> toObject(const serialization::pimpl::Data &data) {
+                inline boost::optional<T> toObject(const serialization::pimpl::Data &data) {
                     return getContext().getSerializationService().template toObject<T>(data);
                 }
 
                 template<typename T>
-                std::unique_ptr<T> toObject(std::unique_ptr<serialization::pimpl::Data> &data) {
+                inline boost::optional<T> toObject(std::unique_ptr<serialization::pimpl::Data> &data) {
                     return toObject<T>(std::move(data));
                 }
 
                 template<typename T>
-                std::unique_ptr<T> toObject(std::unique_ptr<serialization::pimpl::Data> &&data) {
-                    if (NULL == data.get()) {
-                        return std::unique_ptr<T>();
+                inline boost::optional<T> toObject(std::unique_ptr<serialization::pimpl::Data> &&data) {
+                    if (!data) {
+                        return boost::optional<T>();
                     } else {
                         return toObject<T>(*data);
                     }
@@ -151,7 +151,7 @@ namespace hazelcast {
                 template<typename T, typename CODEC>
                 boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request) {
                     invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
-                        return (T) CODEC::decode(f.get()).response;
+                        return CODEC::decode(f.get()).response;
                     });
                 }
 
@@ -166,7 +166,7 @@ namespace hazelcast {
                 boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request,
                                      const serialization::pimpl::Data &key) {
                     invokeOnKeyOwner(request, key).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
-                        return (T) CODEC::decode(f.get()).response;
+                        return CODEC::decode(f.get()).response;
                     });
                 }
 

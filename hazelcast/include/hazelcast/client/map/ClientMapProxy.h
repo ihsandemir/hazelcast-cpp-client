@@ -17,7 +17,7 @@
 #define HAZELCAST_CLIENT_MAP_CLIENTMAPPROXY_H_
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <vector>
 #include <stdexcept>
@@ -176,234 +176,125 @@ namespace hazelcast {
                     return proxy::IMapImpl::unlock(toData(key));
                 }
 
-                /**
-                * Releases the lock for the specified key regardless of the lock owner.
-                * It always successfully unlocks the key, never blocks
-                * and returns immediately.
-                *
-                *
-                * @param key key to lock.
-                */
+                template<typename K>
                 boost::future<void> forceUnlock(const K &key) {
                     proxy::IMapImpl::forceUnlock(toData(key));
                 }
 
-                /**
-                * Adds an interceptor for this map. Added interceptor will intercept operations
-                * and execute user defined methods and will cancel operations if user defined method throw exception.
-                *
-                *
-                * Interceptor should extend either Portable or IdentifiedSerializable.
-                * Notice that map interceptor runs on the nodes. Because of that same class should be implemented in java side
-                * with same classId and factoryId.
-                * @param interceptor map interceptor
-                * @return id of registered interceptor
-                */
                 template<typename MapInterceptor>
                 boost::future<std::string> addInterceptor(MapInterceptor &interceptor) {
-                    return proxy::IMapImpl::addInterceptor<MapInterceptor>(toData(interceptor));
+                    return proxy::IMapImpl::addInterceptor(toData(interceptor));
                 }
 
-                /**
-                * Removes the given interceptor for this map. So it will not intercept operations anymore.
-                *
-                *
-                * @param id registration id of map interceptor
-                */
                 boost::future<void> removeInterceptor(const std::string &id) {
                     proxy::IMapImpl::removeInterceptor(id);
                 }
 
-                /**
-                * Adds an entry listener for this map.
-                *
-                * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.
-                * otherwise it will slow down the system.
-                *
-                * Warning 2: Do not make a call to hazelcast. It can cause deadlock.
-                *
-                * @param listener     entry listener
-                * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-                *                     contain the value.
-                *
-                * @return registrationId of added listener that can be used to remove the entry listener.
-                */
                 template<typename Listener>
                 boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue) {
                     return proxy::IMapImpl::addEntryListener(
-                            std::unique_ptr<impl::BaseEventHandler>(new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
-                            getName(), getContext().getClientClusterService(),
-                            getContext().getSerializationService(),
-                            listener,
-                            includeValue)), includeValue);
+                            std::unique_ptr<impl::BaseEventHandler>(
+                                    new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
+                                            getName(), getContext().getClientClusterService(),
+                                            getContext().getSerializationService(),
+                                            listener,
+                                            includeValue)), includeValue);
                 }
 
-                /**
-                * Adds an entry listener for this map.
-                *
-                * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.
-                * otherwise it will slow down the system.
-                *
-                * Warning 2: Do not make a call to hazelcast. It can cause deadlock.
-                *
-                * @param listener     entry listener
-                * @param predicate The query filter to use when returning the events to the user.
-                * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-                *                     contain the value.
-                *
-                * @return registrationId of added listener that can be used to remove the entry listener.
-                */
                 template<typename Listener, typename P>
                 std::string
                 addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
                     return proxy::IMapImpl::addEntryListener(
-                            std::unique_ptr<impl::BaseEventHandler>(new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
-                                    getName(), getContext().getClientClusterService(),
-                                    getContext().getSerializationService(),
-                                    listener,
-                                    includeValue)), toData<P>(predicate), includeValue);
+                            std::unique_ptr<impl::BaseEventHandler>(
+                                    new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
+                                            getName(), getContext().getClientClusterService(),
+                                            getContext().getSerializationService(),
+                                            listener,
+                                            includeValue)), toData<P>(predicate), includeValue);
                 }
 
-                /**
-                * Adds the specified entry listener for the specified key.
-                *
-                * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.
-                * otherwise it will slow down the system.
-                *
-                * Warning 2: Do not make a call to hazelcast. It can cause deadlock.
-                *
-                * @param listener     entry listener
-                * @param key          key to listen
-                * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-                *                     contain the value.
-                */
                 template<typename Listener, typename K>
                 boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
                     return proxy::IMapImpl::addEntryListener(
-                            std::unique_ptr<impl::BaseEventHandler>(new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler>(
-                                    getName(), getContext().getClientClusterService(),
-                                    getContext().getSerializationService(),
-                                    listener,
-                                    includeValue)), includeValue, toData<K>(key));
+                            std::unique_ptr<impl::BaseEventHandler>(
+                                    new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler>(
+                                            getName(), getContext().getClientClusterService(),
+                                            getContext().getSerializationService(),
+                                            listener,
+                                            includeValue)), includeValue, toData<K>(key));
                 }
 
-
-                /**
-                * Removes the specified entry listener
-                * Returns silently if there is no such listener added before.
-                *
-                *
-                * @param registrationId id of registered listener
-                *
-                * @return true if registration is removed, false otherwise
-                */
                 boost::future<bool> removeEntryListener(const std::string &registrationId) {
                     return proxy::IMapImpl::removeEntryListener(registrationId);
                 }
 
-                /**
-                * Returns the <tt>EntryView</tt> for the specified key.
-                *
-                *
-                * @param key key of the entry
-                * @return <tt>EntryView</tt> of the specified key
-                * @see EntryView
-                */
-                EntryView<K, V> getEntryView(const K &key) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    std::unique_ptr<map::DataEntryView> dataEntryView = proxy::IMapImpl::getEntryViewData(keyData);
-                    std::unique_ptr<V> v = toObject<V>(dataEntryView->getValue());
-                    EntryView<K, V> view(key, *v, *dataEntryView);
-                    return view;
+                template<typename K, typename V>
+                boost::future<boost::optional<EntryView<K, V>>> getEntryView(const K &key) {
+                    toObject(proxy::IMapImpl::getEntryViewData(toData(key))).then([=] (boost::future<boost::optional<DataEntryView>> f) {
+                        auto dataView = f.get();
+                        if (!dataView.has_value()) {
+                            return boost::none;
+                        }
+                        auto v = toObject<V>(dataView.value().getValue());
+                        return boost::make_optional(EntryView<K, V>(key, v, dataView.value()));
+                    });
                 }
 
-                /**
-                * Evicts the specified key from this map. If
-                * a <tt>MapStore</tt> defined for this map, then the entry is not
-                * deleted from the underlying <tt>MapStore</tt>, evict only removes
-                * the entry from the memory.
-                *
-                *
-                * @param key key to evict
-                * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
-                */
+                template<typename K>
                 boost::future<bool> evict(const K &key) {
-                    serialization::pimpl::Data keyData = toData(key);
-
-                    return evictInternal(keyData);
+                    return evictInternal(toData(key));
                 }
 
-                /**
-                * Evicts all keys from this map except locked ones.
-                * <p/>
-                * If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
-                * If you do want to deleteAll to be called use the #clear() method.
-                * <p/>
-                * The EVICT_ALL event is fired for any registered listeners.
-                * See EntryListener#mapEvicted(MapEvent)}.
-                *
-                * @see #clear()
-                */
                 boost::future<void> evictAll() {
-                    proxy::IMapImpl::evictAll();
+                    return proxy::IMapImpl::evictAll();
                 }
 
-                /**
-                * Returns the entries for the given keys.
-                *
-                * @param keys keys to get
-                * @return map of entries
-                */
-                std::map<K, V> getAll(const std::set<K> &keys) {
+                template<typename K, typename V>
+                boost::future<std::unordered_map<K, V>> getAll(const std::set<K> &keys) {
                     if (keys.empty()) {
-                        return std::map<K, V>();
+                        return boost::none;
                     }
 
-                    std::map<int, std::vector<KEY_DATA_PAIR> > partitionToKeyData;
+                    std::unordered_map<int, std::vector<serialization::pimpl::Data>> partitionToKeyData;
                     // group the request per parition id
-                    for (typename std::set<K>::const_iterator it = keys.begin(); it != keys.end(); ++it) {
-                        serialization::pimpl::Data keyData = toData<K>(*it);
-
-                        int partitionId = getPartitionId(keyData);
-
-                        partitionToKeyData[partitionId].push_back(std::make_pair(&(*it), toShared(keyData)));
+                    for (auto &key : keys) {
+                        auto keyData = toData<K>(key);
+                        auto partitionId = getPartitionId(keyData);
+                        partitionToKeyData[partitionId].push_back(std::move(keyData));
                     }
 
-                    std::map<K, V> result;
-                    getAllInternal(partitionToKeyData, result);
-                    return result;
-                }
-
-                /**
-                * Returns a vector clone of the keys contained in this map.
-                * The vector is <b>NOT</b> backed by the map,
-                * so changes to the map are <b>NOT</b> reflected in the vector, and vice-versa.
-                *
-                * @return a vector clone of the keys contained in this map
-                */
-                std::vector<K> keySet() {
-                    std::vector<serialization::pimpl::Data> dataResult = proxy::IMapImpl::keySetData();
-                    size_t size = dataResult.size();
-                    std::vector<K> keys(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<K> key = toObject<K>(dataResult[i]);
-                        keys[i] = *key;
+                    std::vector<boost::future<EntryVector>> futures;
+                    for (auto &entry : partitionToKeyData) {
+                        futures.push_back(getAllInternal(entry.first, std::move(entry.second)));
                     }
-                    return keys;
+
+                    return boost::when_all(futures.begin(), futures.end()).then(boost::launch::deferred,
+                                                                                [=](std::vector<boost::future<EntryVector>> &resultsData) {
+                        std::unordered_map<K, V> result;
+                        for (auto &entryVectorFuture : resultsData) {
+                            for(auto &entry : entryVectorFuture.get()) {
+                                result[toObject<K>(entry.first).value()] = toObject<V>(entry.second).value();
+                            }
+                        }
+                        return result;
+                    });
                 }
 
-                /**
-                  * @deprecated This API is deprecated in favor of @sa{keySet(const query::Predicate &predicate)}
-                  *
-                  * Queries the map based on the specified predicate and
-                  * returns the keys of matching entries.
-                  *
-                  * Specified predicate runs on all members in parallel.
-                  *
-                  *
-                  * @param predicate query criteria
-                  * @return result key set of the query
-                  */
+                template<typename K>
+                boost::future<std::vector<K>> keySet() {
+                    proxy::IMapImpl::keySetData().then(boost::launch::deferred,
+                                                       [=](boost::future<std::vector<serialization::pimpl::Data>> f) {
+                                                           auto dataResult = f.get();
+                                                           std::vector<K> result;
+                                                           std::for_each(dataResult.begin(), dataResult.end(),
+                                                                         [&](const serialization::pimpl::Data &keyData) {
+                                                                             result.push_back(toObject<K>(keyData));
+                                                                         });
+                                                           return result;
+                                                       });
+                }
+
+                template<typename K>
                 std::vector<K> keySet(const serialization::IdentifiedDataSerializable &predicate) {
                     const query::Predicate *p = (const query::Predicate *) (&predicate);
                     return keySet(*p);
@@ -940,43 +831,10 @@ namespace hazelcast {
                     return proxy::IMapImpl::evict(keyData);
                 }
 
-                virtual EntryVector getAllInternal(
-                        const std::map<int, std::vector<KEY_DATA_PAIR> > &partitionToKeyData,
-                        std::map<K, V> &result) {
-
-                    /**
-                     * This map is needed so that we do not deserialize the response data keys but just use
-                     * the keys at the original request
-                     */
-                    std::map<std::shared_ptr<serialization::pimpl::Data>, const K *> dataKeyPairMap;
-
-                    std::map<int, std::vector<serialization::pimpl::Data> > partitionKeys;
-
-                    for (typename std::map<int, std::vector<KEY_DATA_PAIR> >::const_iterator
-                                 it = partitionToKeyData.begin(); it != partitionToKeyData.end(); ++it) {
-                        for (typename std::vector<KEY_DATA_PAIR>::const_iterator
-                                     keyIt = it->second.begin(); keyIt != it->second.end(); ++keyIt) {
-                            partitionKeys[it->first].push_back(serialization::pimpl::Data(*(*keyIt).second));
-
-                            dataKeyPairMap[(*keyIt).second] = (*keyIt).first;
-                        }
-                    }
-                    EntryVector allData = proxy::IMapImpl::getAllData(partitionKeys);
-                    EntryVector responseEntries;
-                    for (EntryVector::iterator it = allData.begin(); it != allData.end(); ++it) {
-                        std::unique_ptr<V> value = toObject<V>(it->second);
-                        std::shared_ptr<serialization::pimpl::Data> keyPtr = std::shared_ptr<serialization::pimpl::Data>(
-                                new serialization::pimpl::Data(it->first));
-                        const K *&keyObject = dataKeyPairMap[keyPtr];
-                        assert(keyObject != 0);
-                        // Use insert method instead of '[]' operator to prevent the need for
-                        // std::is_default_constructible requirement for key and value
-                        result.insert(std::make_pair(*keyObject, *value));
-                        responseEntries.push_back(std::pair<serialization::pimpl::Data, serialization::pimpl::Data>(
-                                *keyPtr, it->second));
-                    }
-
-                    return responseEntries;
+                virtual boost::future<EntryVector>
+                getAllInternal(int partitionId, std::vector<serialization::pimpl::Data> &&partitionKeys) {
+                    return proxy::IMapImpl::getAllData(partitionId,
+                            std::forward<std::vector<serialization::pimpl::Data>>(partitionKeys));
                 }
 
                 virtual std::unique_ptr<serialization::pimpl::Data>

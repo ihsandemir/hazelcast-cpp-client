@@ -62,7 +62,6 @@ namespace hazelcast {
                 int64_t getEvictionCriteriaNumber() const;
 
                 int64_t getTtl() const;
-
             private:
                 serialization::pimpl::Data key;
                 serialization::pimpl::Data value;

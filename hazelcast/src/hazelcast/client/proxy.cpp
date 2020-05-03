@@ -1471,7 +1471,7 @@ namespace hazelcast {
 
             }
 
-            std::unique_ptr<map::DataEntryView> IMapImpl::getEntryViewData(const serialization::pimpl::Data &key) {
+            boost::future<std::unique_ptr<map::DataEntryView>> IMapImpl::getEntryViewData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapGetEntryViewCodec::encodeRequest(getName(), key,
                                                                              util::getCurrentThreadId());
 
@@ -1492,29 +1492,10 @@ namespace hazelcast {
                 invoke(request);
             }
 
-            EntryVector
-            IMapImpl::getAllData(const std::map<int, std::vector<serialization::pimpl::Data> > &partitionToKeyData) {
-                std::vector<boost::future<protocol::ClientMessage> > futures;
-
-                for (std::map<int, std::vector<serialization::pimpl::Data> >::const_iterator it = partitionToKeyData.begin();
-                     it != partitionToKeyData.end(); ++it) {
-                    auto request = protocol::codec::MapGetAllCodec::encodeRequest(getName(), it->second);
-
-                    futures.push_back(invokeAndGetFuture(request, it->first));
-                }
-
-                // TODO: change to use boost::when_all
-                EntryVector result;
-                // wait for all futures
-                for (auto &future : futures) {
-                    protocol::codec::MapGetAllCodec::ResponseParameters resultForPartition =
-                            protocol::codec::MapGetAllCodec::ResponseParameters::decode(future.get());
-                    result.insert(result.end(), resultForPartition.response.begin(),
-                                  resultForPartition.response.end());
-
-                }
-
-                return result;
+            boost::future<EntryVector>
+            IMapImpl::getAllData(int partitionId, std::vector<serialization::pimpl::Data> &&keys) {
+                auto request = protocol::codec::MapGetAllCodec::encodeRequest(getName(), keys);
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapGetAllCodec>(request, partitionId);
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetData() {

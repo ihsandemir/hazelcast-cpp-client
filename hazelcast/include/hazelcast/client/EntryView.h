@@ -40,11 +40,7 @@ namespace hazelcast {
         template<typename K, typename V>
         class EntryView{
         public:
-
-            /**
-             * Constructor
-             */
-            EntryView(const K &key, const V &value, const map::DataEntryView& rhs)
+            EntryView(const K &key, const V &value, const map::DataEntryView &rhs)
             : key(key)
             , value(value)
             , cost (rhs.getCost())

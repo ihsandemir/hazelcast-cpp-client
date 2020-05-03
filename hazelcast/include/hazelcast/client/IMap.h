@@ -489,7 +489,7 @@ namespace hazelcast {
             * @see EntryView
             */
             template<typename K, typename V>
-            EntryView<K, V> getEntryView(const K &key) {
+            boost::future<EntryView<K, V>> getEntryView(const K &key) {
                 return mapImpl->getEntryView(key);
             }
 
