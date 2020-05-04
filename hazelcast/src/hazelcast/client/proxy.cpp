@@ -2068,7 +2068,7 @@ namespace hazelcast {
         }
 
         std::ostream &operator<<(std::ostream &os, const MapEvent &event) {
-            os << "MapEvent{member: " << event.member << " eventType: " << event.eventType << " name: " << event.name
+            os << "MapEvent{member: " << event.member << " eventType: " << static_cast<int>(event.eventType) << " name: " << event.name
                << " numberOfEntriesAffected: " << event.numberOfEntriesAffected;
             return os;
         }

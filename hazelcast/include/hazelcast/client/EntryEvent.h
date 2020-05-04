@@ -37,7 +37,7 @@ namespace hazelcast {
          */
         class HAZELCAST_API EntryEvent {
         public:
-            enum class type {
+            enum struct type {
                 UNDEFINED = 0 ,
                 ADDED =  1,
                 REMOVED = 1 << 1,

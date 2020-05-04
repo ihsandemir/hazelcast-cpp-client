@@ -187,7 +187,7 @@ namespace hazelcast {
                                             getName(), getContext().getClientClusterService(),
                                             getContext().getSerializationService(),
                                             listener,
-                                            includeValue)), includeValue);
+                                            includeValue, getContext().getLogger())), includeValue);
                 }
 
                 template<typename Listener, typename P>
@@ -199,7 +199,7 @@ namespace hazelcast {
                                             getName(), getContext().getClientClusterService(),
                                             getContext().getSerializationService(),
                                             listener,
-                                            includeValue)), toData<P>(predicate), includeValue);
+                                            includeValue, getContext().getLogger())), toData<P>(predicate), includeValue);
                 }
 
                 template<typename Listener, typename K>
@@ -210,7 +210,7 @@ namespace hazelcast {
                                             getName(), getContext().getClientClusterService(),
                                             getContext().getSerializationService(),
                                             listener,
-                                            includeValue)), includeValue, toData<K>(key));
+                                            includeValue, getContext().getLogger())), includeValue, toData<K>(key));
                 }
 
                 template<typename K, typename V>

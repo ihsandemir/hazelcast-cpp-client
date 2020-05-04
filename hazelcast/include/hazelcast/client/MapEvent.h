@@ -42,7 +42,7 @@ namespace hazelcast {
             /**
             * Constructor
             */
-            MapEvent(const Member& member, EntryEventType eventType, const std::string& name, int numberOfEntriesAffected);
+            MapEvent(const Member& member, EntryEvent::type eventType, const std::string& name, int numberOfEntriesAffected);
 
             /**
             * Returns the member fired this event.
@@ -56,7 +56,7 @@ namespace hazelcast {
             *
             * @return event type
             */
-            EntryEventType getEventType() const;
+            EntryEvent::type getEventType() const;
 
             /**
             * Returns the name of the map for this event.
@@ -76,7 +76,7 @@ namespace hazelcast {
 
         private:
             Member member;
-            EntryEventType eventType;
+            EntryEvent::type eventType;
             std::string name;
             int numberOfEntriesAffected;
         };
