@@ -117,26 +117,26 @@ namespace hazelcast {
 
                 boost::future<std::vector<serialization::pimpl::Data>> keySetData();
 
-                boost::future<std::vector<serialization::pimpl::Data>> keySetData(const query::Predicate &predicate);
+                boost::future<std::vector<serialization::pimpl::Data>> keySetData(const serialization::pimpl::Data &predicate);
 
                 boost::future<std::vector<serialization::pimpl::Data>>
-                keySetForPagingPredicateData(const serialization::IdentifiedDataSerializable &predicate);
+                keySetForPagingPredicateData(const serialization::pimpl::Data &predicate);
 
                 boost::future<EntryVector> entrySetData();
 
-                boost::future<EntryVector> entrySetData(const serialization::IdentifiedDataSerializable &predicate);
+                boost::future<EntryVector> entrySetData(const serialization::pimpl::Data &predicate);
 
-                boost::future<EntryVector> entrySetForPagingPredicateData(const serialization::IdentifiedDataSerializable &predicate);
+                boost::future<EntryVector> entrySetForPagingPredicateData(const serialization::pimpl::Data &predicate);
 
-                std::vector<serialization::pimpl::Data> valuesData();
+                boost::future<std::vector<serialization::pimpl::Data>> valuesData();
 
-                std::vector<serialization::pimpl::Data> valuesData(const query::Predicate &predicate);
+                boost::future<std::vector<serialization::pimpl::Data>> valuesData(const serialization::pimpl::Data &predicate);
 
-                boost::future<EntryVector> valuesForPagingPredicateData(const query::Predicate &predicate);
+                boost::future<EntryVector> valuesForPagingPredicateData(const serialization::pimpl::Data &predicate);
 
                 boost::future<void> addIndex(const std::string &attribute, bool ordered);
 
-                int size();
+                boost::future<int>  size();
 
                 boost::future<bool> isEmpty();
 

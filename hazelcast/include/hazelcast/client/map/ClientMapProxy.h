@@ -282,61 +282,18 @@ namespace hazelcast {
 
                 template<typename K>
                 boost::future<std::vector<K>> keySet() {
-                    proxy::IMapImpl::keySetData().then(boost::launch::deferred,
-                                                       [=](boost::future<std::vector<serialization::pimpl::Data>> f) {
-                                                           auto dataResult = f.get();
-                                                           std::vector<K> result;
-                                                           std::for_each(dataResult.begin(), dataResult.end(),
-                                                                         [&](const serialization::pimpl::Data &keyData) {
-                                                                             result.push_back(toObject<K>(keyData));
-                                                                         });
-                                                           return result;
-                                                       });
+                    return toObjectVector<K>(proxy::IMapImpl::keySetData());
                 }
 
-                template<typename K>
-                std::vector<K> keySet(const serialization::IdentifiedDataSerializable &predicate) {
-                    const query::Predicate *p = (const query::Predicate *) (&predicate);
-                    return keySet(*p);
+                template<typename K, typename P>
+                boost::future<std::vector<K>> keySet(const P &predicate) {
+                    return toObjectVector<K>(proxy::IMapImpl::keySetData(toData(predicate)));
                 }
 
-                /**
-                  *
-                  * Queries the map based on the specified predicate and
-                  * returns the keys of matching entries.
-                  *
-                  * Specified predicate runs on all members in parallel.
-                  *
-                  *
-                  * @param predicate query criteria
-                  * @return result key set of the query
-                  */
-                std::vector<K> keySet(const query::Predicate &predicate) {
-                    std::vector<serialization::pimpl::Data> dataResult = proxy::IMapImpl::keySetData(predicate);
-                    size_t size = dataResult.size();
-                    std::vector<K> keys(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<K> key = toObject<K>(dataResult[i]);
-                        keys[i] = *key;
-                    }
-                    return keys;
-                }
-
-                /**
-                  *
-                  * Queries the map based on the specified predicate and
-                  * returns the keys of matching entries.
-                  *
-                  * Specified predicate runs on all members in parallel.
-                  *
-                  *
-                  * @param predicate query criteria
-                  * @return result key set of the query
-                  */
-                std::vector<K> keySet(query::PagingPredicate<K, V> &predicate) {
+                template<typename K, typename V>
+                boost::future<std::vector<K>> keySet(query::PagingPredicate<K, V> &predicate) {
                     predicate.setIterationType(query::KEY);
-
-                    std::vector<serialization::pimpl::Data> dataResult = keySetForPagingPredicateData(predicate);
+                    keySetForPagingPredicateData(toData(predicate)).then([] () {});
 
                     EntryVector entryResult;
                     for (std::vector<serialization::pimpl::Data>::iterator it = dataResult.begin();
@@ -358,71 +315,20 @@ namespace hazelcast {
                     return result;
                 }
 
-                /**
-                * Returns a vector clone of the values contained in this map.
-                * The vector is <b>NOT</b> backed by the map,
-                * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-                *
-                * @return a vector clone of the values contained in this map
-                */
-                std::vector<V> values() {
-                    std::vector<serialization::pimpl::Data> dataResult = proxy::IMapImpl::valuesData();
-                    size_t size = dataResult.size();
-                    std::vector<V> values(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<V> value = toObject<V>(dataResult[i]);
-                        values[i] = *value;
-                    }
-                    return values;
+                template<typename V>
+                boost::future<std::vector<V>> values() {
+                    return toObjectVector<V>(proxy::IMapImpl::valuesData());
                 }
 
-                /**
-                * @deprecated This API is deprecated in favor of @sa{values(const query::Predicate &predicate)}
-                *
-                * Returns a vector clone of the values contained in this map.
-                * The vector is <b>NOT</b> backed by the map,
-                * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-                *
-                * @param predicate the criteria for values to match
-                * @return a vector clone of the values contained in this map
-                */
-                std::vector<V> values(const serialization::IdentifiedDataSerializable &predicate) {
-                    const query::Predicate *p = (const query::Predicate *) (&predicate);
-                    return values(*p);
+                template<typename V, typename P>
+                boost::future<std::vector<V>> values(const P &predicate) {
+                    return toObjectVector<V>(proxy::IMapImpl::valuesData(toData(predicate)));
                 }
 
-                /**
-                * Returns a vector clone of the values contained in this map.
-                * The vector is <b>NOT</b> backed by the map,
-                * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-                *
-                * @param predicate the criteria for values to match
-                * @return a vector clone of the values contained in this map
-                */
-                std::vector<V> values(const query::Predicate &predicate) {
-                    std::vector<serialization::pimpl::Data> dataResult = proxy::IMapImpl::valuesData(predicate);
-                    size_t size = dataResult.size();
-                    std::vector<V> values;
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<V> value = toObject<V>(dataResult[i]);
-                        values.push_back(*value);
-                    }
-                    return values;
-                }
-
-                /**
-                * Returns a vector clone of the values contained in this map.
-                * The vector is <b>NOT</b> backed by the map,
-                * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-                *
-                *
-                * @param predicate the criteria for values to match
-                * @return a vector clone of the values contained in this map
-                */
+                template<typename K, typename V>
                 std::vector<V> values(query::PagingPredicate<K, V> &predicate) {
                     predicate.setIterationType(query::VALUE);
-
-                    EntryVector dataResult = proxy::IMapImpl::valuesForPagingPredicateData(predicate);
+                    EntryVector dataResult = proxy::IMapImpl::valuesForPagingPredicateData(toData(predicate));
 
                     client::impl::EntryArrayImpl<K, V> entries(dataResult, getContext().getSerializationService());
 
@@ -437,66 +343,19 @@ namespace hazelcast {
                     return result;
                 }
 
-                /**
-                * Returns a std::vector< std::pair<K, V> > clone of the mappings contained in this map.
-                * The vector is <b>NOT</b> backed by the map,
-                * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
-                *
-                * @return a vector clone of the keys mappings in this map
-                */
-                std::vector<std::pair<K, V> > entrySet() {
-                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetData();
-                    size_t size = dataResult.size();
-                    std::vector<std::pair<K, V> > entries(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<K> key = toObject<K>(dataResult[i].first);
-                        std::unique_ptr<V> value = toObject<V>(dataResult[i].second);
-                        entries[i] = std::make_pair(*key, *value);
-                    }
-                    return entries;
+                template<typename K, typename V>
+                boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet() {
+                    return toEntryObjectVector<K,V>(proxy::IMapImpl::entrySetData());
                 }
 
-                /**
-                * @deprecated This API is deprecated in favor of @sa{entrySet(const query::Predicate &predicate)}
-                *
-                * Queries the map based on the specified predicate and
-                * returns the matching entries.
-                *
-                * Specified predicate runs on all members in parallel.
-                *
-                *
-                * @param predicate query criteria
-                * @return result entry vector of the query
-                */
-                std::vector<std::pair<K, V> > entrySet(const serialization::IdentifiedDataSerializable &predicate) {
-                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetData(
-                            predicate);
-                    size_t size = dataResult.size();
-                    std::vector<std::pair<K, V> > entries(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<K> key = toObject<K>(dataResult[i].first);
-                        std::unique_ptr<V> value = toObject<V>(dataResult[i].second);
-                        entries[i] = std::make_pair(*key, *value);
-                    }
-                    return entries;
+                template<typename K, typename V, typename P>
+                boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet(const P &predicate) {
+                    return toEntryObjectVector<K,V>(proxy::IMapImpl::entrySetData(toData(predicate)));
                 }
 
-                std::vector<std::pair<K, V> > entrySet(const query::Predicate &predicate) {
-                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetData(
-                            predicate);
-                    size_t size = dataResult.size();
-                    std::vector<std::pair<K, V> > entries(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        std::unique_ptr<K> key = toObject<K>(dataResult[i].first);
-                        std::unique_ptr<V> value = toObject<V>(dataResult[i].second);
-                        entries[i] = std::make_pair(*key, *value);
-                    }
-                    return entries;
-                }
-
+                template<typename K, typename V>
                 std::vector<std::pair<K, V> > entrySet(query::PagingPredicate<K, V> &predicate) {
-                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > dataResult = proxy::IMapImpl::entrySetForPagingPredicateData(
-                            predicate);
+                    auto dataResult = proxy::IMapImpl::entrySetForPagingPredicateData(toData(predicate));
 
                     std::vector<std::pair<K, V> > entries;
                     std::for_each(dataResult.begin(), dataResult.end(),
@@ -536,66 +395,26 @@ namespace hazelcast {
                     return result;
                 }
 
-                boost::future<void> addIndex(const std::string &attribute, bool ordered) {
-                    proxy::IMapImpl::addIndex(attribute, ordered);
+                template<typename K, typename ResultType, typename EntryProcessor>
+                boost::future<boost::optional<ResultType>> executeOnKey(const K &key, const EntryProcessor &entryProcessor) {
+                    return toObject<ResultType>(executeOnKeyInternal(toData(key), toData(entryProcessor)));
                 }
 
-                template<typename ResultType, typename EntryProcessor>
-                std::shared_ptr<ResultType> executeOnKey(const K &key, const EntryProcessor &entryProcessor) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data processorData = toData(entryProcessor);
-
-                    std::unique_ptr<serialization::pimpl::Data> response = executeOnKeyInternal(keyData, processorData);
-
-                    return std::shared_ptr<ResultType>(toObject<ResultType>(response).release());
-                }
-
-                template<typename ResultType, typename EntryProcessor>
-                boost::future<std::shared_ptr<ResultType>>
+                template<typename K, typename ResultType, typename EntryProcessor>
+                boost::future<boost::optional<ResultType>>
                 submitToKey(const K &key, const EntryProcessor &entryProcessor) {
-                    serialization::pimpl::Data keyData = toData(key);
-                    serialization::pimpl::Data processorData = toData(entryProcessor);
-
-                    return submitToKeyInternal<ResultType>(keyData, processorData);
+                    return toObject<ResultType>(submitToKeyInternal<ResultType>(toData(key), toData(entryProcessor)));
                 }
 
-                template<typename ResultType, typename EntryProcessor>
-                std::map<K, std::shared_ptr<ResultType> >
+                template<typename K, typename ResultType, typename EntryProcessor>
+                boost::future<std::unordered_map<K, boost::optional<ResultType>>>
                 executeOnKeys(const std::set<K> &keys, const EntryProcessor &entryProcessor) {
-                    EntryVector entries = executeOnKeysInternal<EntryProcessor>(keys, entryProcessor);
-
-                    std::map<K, std::shared_ptr<ResultType> > result;
-                    for (size_t i = 0; i < entries.size(); ++i) {
-                        std::unique_ptr<K> keyObj = toObject<K>(entries[i].first);
-                        std::unique_ptr<ResultType> resObj = toObject<ResultType>(entries[i].second);
-                        result[*keyObj] = std::move(resObj);
-                    }
-                    return result;
+                    return toObjectMap<K, ResultType>(executeOnKeysInternal<EntryProcessor>(keys, entryProcessor));
                 }
 
-                /**
-                * Applies the user defined EntryProcessor to the all entries in the map.
-                * Returns the results mapped by each key in the map.
-                *
-                *
-                * EntryProcessor should extend either Portable or IdentifiedSerializable.
-                * Notice that map EntryProcessor runs on the nodes. Because of that, same class should be implemented in java side
-                * with same classId and factoryId.
-                *
-                * @tparam ResultType that entry processor will return
-                * @tparam EntryProcessor type of entry processor class
-                * @param entryProcessor that will be applied
-                */
-                template<typename ResultType, typename EntryProcessor>
-                std::map<K, std::shared_ptr<ResultType> > executeOnEntries(const EntryProcessor &entryProcessor) {
-                    EntryVector entries = proxy::IMapImpl::executeOnEntriesData<EntryProcessor>(toData(entryProcessor));
-                    std::map<K, std::shared_ptr<ResultType> > result;
-                    for (size_t i = 0; i < entries.size(); ++i) {
-                        std::unique_ptr<K> keyObj = toObject<K>(entries[i].first);
-                        std::unique_ptr<ResultType> resObj = toObject<ResultType>(entries[i].second);
-                        result[*keyObj] = std::move(resObj);
-                    }
-                    return result;
+                template<typename K, typename ResultType, typename EntryProcessor>
+                boost::future<std::unordered_map<K, boost::optional<ResultType>>> executeOnEntries(const EntryProcessor &entryProcessor) {
+                    return toObjectMap<K, ResultType>(proxy::IMapImpl::executeOnEntriesData(toData(entryProcessor)));
                 }
 
                 /**
@@ -837,7 +656,7 @@ namespace hazelcast {
                             std::forward<std::vector<serialization::pimpl::Data>>(partitionKeys));
                 }
 
-                virtual std::unique_ptr<serialization::pimpl::Data>
+                virtual boost::future<serialization::pimpl::Data>
                 executeOnKeyInternal(const serialization::pimpl::Data &keyData,
                                      const serialization::pimpl::Data &processor) {
                     return proxy::IMapImpl::executeOnKeyData(keyData, processor);
@@ -861,20 +680,14 @@ namespace hazelcast {
                     });
                 }
 
-                template<typename EntryProcessor>
-                EntryVector executeOnKeysInternal(const std::set<K> &keys, const EntryProcessor &entryProcessor) {
+                template<typename K, typename EntryProcessor>
+                boost::future<EntryVector> executeOnKeysInternal(const std::set<K> &keys, const EntryProcessor &entryProcessor) {
                     if (keys.empty()) {
-                        return EntryVector();
+                        return boost::make_ready_future(EntryVector());
                     }
-
                     std::vector<serialization::pimpl::Data> keysData;
-                    for (typename std::set<K>::const_iterator it = keys.begin(); it != keys.end(); ++it) {
-                        keysData.push_back(toData<K>(*it));
-                    }
-
-                    serialization::pimpl::Data entryProcessorData = toData<EntryProcessor>(entryProcessor);
-
-                    return proxy::IMapImpl::executeOnKeysData(keysData, entryProcessorData);
+                    std::for_each(keys.begin(), keys.end(), [&](const K &key) { keysData.push_back(toData<K>(key)); });
+                    return proxy::IMapImpl::executeOnKeysData(keysData, toData<EntryProcessor>(entryProcessor));
                 }
 
                 virtual void
