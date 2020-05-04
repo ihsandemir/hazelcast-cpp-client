@@ -34,6 +34,9 @@
 
 namespace hazelcast {
     namespace client {
+        namespace protocol {
+            class ClientMessage;
+        }
         namespace impl {
             class BaseEventHandler;
         }
@@ -70,7 +73,7 @@ namespace hazelcast {
 
                 ClientContext &getContext();
 
-                virtual void destroy();
+                boost::future<void> destroy();
 
                 /**
                  * Destroys this client proxy instance locally without issuing distributed
@@ -87,7 +90,7 @@ namespace hazelcast {
                  * Destroys the remote distributed object counterpart of this proxy by
                  * issuing the destruction request to the cluster.
                  */
-                void destroyRemotely();
+               boost::future<protocol::ClientMessage> destroyRemotely();
 
                 /**
                 * Internal API.

@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 20/02/14.
-//
-
-#ifndef HAZELCAST_DataEntryView
-#define HAZELCAST_DataEntryView
+#pragma once
 
 #include "hazelcast/client/serialization/pimpl/Data.h"
 
@@ -84,5 +79,4 @@ namespace hazelcast {
 #pragma warning(pop)
 #endif
 
-#endif //HAZELCAST_DataEntryView
 

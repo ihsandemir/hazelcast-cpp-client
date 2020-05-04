@@ -53,7 +53,7 @@
 
 namespace hazelcast {
     namespace client {
-        constexpr std::string IMap::SERVICE_NAME = "hz:impl:mapService";
+        std::string IMap::SERVICE_NAME = "hz:impl:mapService";
 
         namespace impl {
             ClientLockReferenceIdGenerator::ClientLockReferenceIdGenerator() : referenceIdCounter(0) {}
@@ -1162,11 +1162,9 @@ namespace hazelcast {
 
             ProxyImpl::ProxyImpl(const std::string &serviceName, const std::string &objectName,
                                  spi::ClientContext *context)
-                    : ClientProxy(objectName, serviceName, *context) {
-            }
+                    : ClientProxy(objectName, serviceName, *context) {}
 
-            ProxyImpl::~ProxyImpl() {
-            }
+            ProxyImpl::~ProxyImpl() {}
 
             int ProxyImpl::getPartitionId(const serialization::pimpl::Data &key) {
                 return getContext().getPartitionService().getPartitionId(key);
@@ -1209,38 +1207,6 @@ namespace hazelcast {
                 }
             }
 
-            std::vector<hazelcast::client::TypedData>
-            ProxyImpl::toTypedDataCollection(const std::vector<serialization::pimpl::Data> &values) {
-                std::vector<hazelcast::client::TypedData> result;
-                typedef std::vector<serialization::pimpl::Data> VALUES;
-                for (const VALUES::value_type &value : values) {
-                    result.push_back(TypedData(
-                            std::unique_ptr<serialization::pimpl::Data>(
-                                    new serialization::pimpl::Data(value)),
-                            getContext().getSerializationService()));
-                }
-                return result;
-            }
-
-            std::vector<std::pair<TypedData, TypedData> > ProxyImpl::toTypedDataEntrySet(
-                    const std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > &dataEntrySet) {
-                typedef std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > ENTRIES_DATA;
-                std::vector<std::pair<TypedData, TypedData> > result;
-                for (const ENTRIES_DATA::value_type &value : dataEntrySet) {
-                    serialization::pimpl::SerializationService &serializationService = getContext().getSerializationService();
-                    TypedData keyData(std::unique_ptr<serialization::pimpl::Data>(
-                            new serialization::pimpl::Data(value.first)), serializationService);
-                    TypedData valueData(std::unique_ptr<serialization::pimpl::Data>(
-                            new serialization::pimpl::Data(value.second)), serializationService);
-                    result.push_back(std::make_pair(keyData, valueData));
-                }
-                return result;
-            }
-
-            std::shared_ptr<serialization::pimpl::Data> ProxyImpl::toShared(const serialization::pimpl::Data &data) {
-                return std::shared_ptr<serialization::pimpl::Data>(new serialization::pimpl::Data(data));
-            }
-
             PartitionSpecificClientProxy::PartitionSpecificClientProxy(const std::string &serviceName,
                                                                        const std::string &objectName,
                                                                        spi::ClientContext *context) : ProxyImpl(
@@ -1259,27 +1225,23 @@ namespace hazelcast {
             boost::future<bool> IMapImpl::containsKey(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapContainsKeyCodec::encodeRequest(getName(), key,
                                                                             util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MapContainsKeyCodec::ResponseParameters>(request,
                                                                                                           key);
             }
 
             boost::future<bool> IMapImpl::containsValue(const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MapContainsValueCodec::encodeRequest(getName(), value);
-
                 return invokeAndGetFuture<bool, protocol::codec::MapContainsValueCodec::ResponseParameters>(request);
             }
 
             boost::future<serialization::pimpl::Data> IMapImpl::getData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapGetCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
-
                 return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapGetCodec::ResponseParameters>(
                         request, key);
             }
 
             boost::future<serialization::pimpl::Data> IMapImpl::removeData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapRemoveCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
-
                 return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapRemoveCodec::ResponseParameters>(
                         request, key);
             }
@@ -1287,29 +1249,23 @@ namespace hazelcast {
             boost::future<bool> IMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MapRemoveIfSameCodec::encodeRequest(getName(), key, value,
                                                                              util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MapRemoveIfSameCodec::ResponseParameters>(request,
                                                                                                            key);
             }
 
-            boost::future<void> IMapImpl::removeAll(const serialization::pimpl::Data &predicateData) {
+            boost::future<protocol::ClientMessage> IMapImpl::removeAll(const serialization::pimpl::Data &predicateData) {
                 auto request = protocol::codec::MapRemoveAllCodec::encodeRequest(getName(), predicateData);
-
-                invoke(request);
+                return invoke(request);
             }
 
-            boost::future<void> IMapImpl::deleteEntry(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
+            boost::future<protocol::ClientMessage> IMapImpl::deleteEntry(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapDeleteCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
-
-                return invokeOnPartition(request, partitionId);
+                return invokeOnPartition(request, getPartitionId(key));
             }
 
-            boost::future<void> IMapImpl::flush() {
+            boost::future<protocol::ClientMessage> IMapImpl::flush() {
                 auto request = protocol::codec::MapFlushCodec::encodeRequest(getName());
-
-                invoke(request);
+                return invoke(request);
             }
 
             boost::future<bool> IMapImpl::tryRemove(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout) {
@@ -1335,20 +1291,16 @@ namespace hazelcast {
                 auto request = protocol::codec::MapPutCodec::encodeRequest(getName(), key, value,
                                                                     util::getCurrentThreadId(),
                                                                     std::chrono::duration_cast<std::chrono::milliseconds>(ttl).count());
-
                 return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapPutCodec::ResponseParameters>(
                         request, key);
             }
 
-            boost::future<void> IMapImpl::putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+            boost::future<protocol::ClientMessage> IMapImpl::putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                         std::chrono::steady_clock::duration ttl) {
-                int partitionId = getPartitionId(key);
-
                 auto request = protocol::codec::MapPutTransientCodec::encodeRequest(getName(), key, value,
                                                                              util::getCurrentThreadId(),
                                                                              std::chrono::duration_cast<std::chrono::milliseconds>(ttl).count());
-
-                invokeOnPartition(request, partitionId);
+                invokeOnPartition(request, getPartitionId(key));
             }
 
             boost::future<serialization::pimpl::Data> IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
@@ -1357,7 +1309,6 @@ namespace hazelcast {
                 auto request = protocol::codec::MapPutIfAbsentCodec::encodeRequest(getName(), key, value,
                                                                             util::getCurrentThreadId(),
                                                                             std::chrono::duration_cast<std::chrono::milliseconds>(ttl).count());
-
                 return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapPutIfAbsentCodec::ResponseParameters>(
                         request, key);
             }
@@ -1381,28 +1332,25 @@ namespace hazelcast {
                         request, key);
             }
 
-            boost::future<void> IMapImpl::set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
-                               int64_t ttl) {
-                int partitionId = getPartitionId(key);
-
+            boost::future<protocol::ClientMessage>
+            IMapImpl::set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+                          std::chrono::steady_clock::duration ttl) {
                 auto request = protocol::codec::MapSetCodec::encodeRequest(getName(), key, value,
-                                                                    util::getCurrentThreadId(), ttl);
-
-                invokeOnPartition(request, partitionId);
+                                                                           util::getCurrentThreadId(),
+                                                                           std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                                                   ttl).count());
+                return invokeOnPartition(request, getPartitionId(key));
             }
 
-            boost::future<void> IMapImpl::lock(const serialization::pimpl::Data &key) {
-                lock(key, -1);
+            boost::future<protocol::ClientMessage> IMapImpl::lock(const serialization::pimpl::Data &key) {
+                return lock(key, -1);
             }
 
-            boost::future<void> IMapImpl::lock(const serialization::pimpl::Data &key, int64_t leaseTime) {
-                int partitionId = getPartitionId(key);
-
+            boost::future<protocol::ClientMessage> IMapImpl::lock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration leaseTime) {
                 auto request = protocol::codec::MapLockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(),
-                                                                     leaseTime,
+                                                                     std::chrono::duration_cast<std::chrono::milliseconds>(leaseTime).count(),
                                                                      lockReferenceIdGenerator->getNextReferenceId());
-
-                invokeOnPartition(request, partitionId);
+                return invokeOnPartition(request, getPartitionId(key));
             }
 
             boost::future<bool> IMapImpl::isLocked(const serialization::pimpl::Data &key) {
@@ -1413,33 +1361,25 @@ namespace hazelcast {
 
             boost::future<bool> IMapImpl::tryLock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout) {
                 auto request = protocol::codec::MapTryLockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(), -1,
-                                                                        timeInMillis,
+                                                                        std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count(),
                                                                         lockReferenceIdGenerator->getNextReferenceId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MapTryLockCodec::ResponseParameters>(request, key);
             }
 
-            boost::future<void> IMapImpl::unlock(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
+            boost::future<protocol::ClientMessage> IMapImpl::unlock(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapUnlockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(),
                                                                        lockReferenceIdGenerator->getNextReferenceId());
-
-                invokeOnPartition(request, partitionId);
+                return invokeOnPartition(request, getPartitionId(key));
             }
 
-            boost::future<void> IMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
+            boost::future<protocol::ClientMessage> IMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapForceUnlockCodec::encodeRequest(getName(), key,
                                                                             lockReferenceIdGenerator->getNextReferenceId());
-
-                invokeOnPartition(request, partitionId);
+                return invokeOnPartition(request, getPartitionId(key));
             }
 
             boost::future<std::string> IMapImpl::addInterceptor(const serialization::pimpl::Data &interceptor) {
                 auto request = protocol::codec::MapAddInterceptorCodec::encodeRequest(getName(), interceptor);
-
                 return invokeAndGetFuture<std::string, protocol::codec::MapAddInterceptorCodec::ResponseParameters>(
                         request);
             }
@@ -1481,15 +1421,13 @@ namespace hazelcast {
 
             boost::future<bool> IMapImpl::evict(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapEvictCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MapEvictCodec::ResponseParameters>(request,
                                                                                                     key);
             }
 
-            boost::future<void> IMapImpl::evictAll() {
+            boost::future<protocol::ClientMessage> IMapImpl::evictAll() {
                 auto request = protocol::codec::MapEvictAllCodec::encodeRequest(getName());
-
-                invoke(request);
+                return invoke(request);
             }
 
             boost::future<EntryVector>
@@ -1543,7 +1481,7 @@ namespace hazelcast {
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::valuesData(const serialization::pimpl::Data &predicate) {
-                auto request = protocol::codec::MapValuesWithPredicateCodec::encodeRequest(predicate);
+                auto request = protocol::codec::MapValuesWithPredicateCodec::encodeRequest(getName(), predicate);
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapValuesWithPredicateCodec::ResponseParameters>(
                         request);
             }
@@ -1555,43 +1493,29 @@ namespace hazelcast {
                         request);
             }
 
-            boost::future<void> IMapImpl::addIndex(const std::string &attribute, bool ordered) {
+            boost::future<protocol::ClientMessage> IMapImpl::addIndex(const std::string &attribute, bool ordered) {
                 auto request = protocol::codec::MapAddIndexCodec::encodeRequest(getName(), attribute, ordered);
-                return toVoidFuture(invoke(request));
+                return invoke(request);
             }
 
             boost::future<int> IMapImpl::size() {
-                auto request = protocol::codec::MapSizeCodec::encodeRequest(
-                        getName());
-
+                auto request = protocol::codec::MapSizeCodec::encodeRequest(getName());
                 return invokeAndGetFuture<int, protocol::codec::MapSizeCodec::ResponseParameters>(request);
             }
 
             boost::future<bool> IMapImpl::isEmpty() {
-                auto request = protocol::codec::MapIsEmptyCodec::encodeRequest(
-                        getName());
-
+                auto request = protocol::codec::MapIsEmptyCodec::encodeRequest(getName());
                 return invokeAndGetFuture<bool, protocol::codec::MapIsEmptyCodec::ResponseParameters>(request);
             }
 
-            boost::future<void> IMapImpl::putAllData(const std::map<int, EntryVector> &partitionedEntries) {
-                std::vector<boost::future<protocol::ClientMessage>> futures;
-
-                for (std::map<int, EntryVector>::const_iterator it = partitionedEntries.begin();
-                     it != partitionedEntries.end(); ++it) {
-                    auto request = protocol::codec::MapPutAllCodec::encodeRequest(getName(), it->second);
-
-                    futures.push_back(invokeAndGetFuture(request, it->first));
-                }
-
-                // wait for all futures
-                wait_for_all(futures.begin(), futures.end());
+            boost::future<protocol::ClientMessage> IMapImpl::putAllData(int partitionId, const EntryVector &entries) {
+                auto request = protocol::codec::MapPutAllCodec::encodeRequest(getName(), entries);
+                return invokeOnPartition(request, partitionId);
             }
 
-            boost::future<void> IMapImpl::clear() {
+            boost::future<protocol::ClientMessage> IMapImpl::clear() {
                 auto request = protocol::codec::MapClearCodec::encodeRequest(getName());
-
-                invoke(request);
+                return invoke(request);
             }
 
             boost::future<serialization::pimpl::Data>
@@ -1605,60 +1529,44 @@ namespace hazelcast {
                         protocol::codec::MapExecuteOnKeyCodec::ResponseParameters>(request, getPartitionId(key));
             }
 
+            boost::future<serialization::pimpl::Data>
+            IMapImpl::submitToKeyData(const serialization::pimpl::Data &key,
+                                       const serialization::pimpl::Data &processor) {
+                auto request = protocol::codec::MapSubmitToKeyCodec::encodeRequest(getName(),
+                                                                                   processor,
+                                                                                   key,
+                                                                                   util::getCurrentThreadId());
+                return invokeAndGetFuture<serialization::pimpl::Data,
+                        protocol::codec::MapExecuteOnKeyCodec::ResponseParameters>(request, getPartitionId(key));
+            }
+
             boost::future<EntryVector> IMapImpl::executeOnKeysData(const std::vector<serialization::pimpl::Data> &keys,
                                                     const serialization::pimpl::Data &processor) {
                 auto request = protocol::codec::MapExecuteOnKeysCodec::encodeRequest(getName(), processor, keys);
-
                 return invokeAndGetFuture<EntryVector,
                         protocol::codec::MapExecuteOnKeysCodec::ResponseParameters>(request);
             }
 
-            boost::future<void> IMapImpl::removeInterceptor(const std::string &id) {
+            boost::future<protocol::ClientMessage> IMapImpl::removeInterceptor(const std::string &id) {
                 auto request = protocol::codec::MapRemoveInterceptorCodec::encodeRequest(getName(), id);
-
-                invoke(request);
+                return invoke(request);
             }
 
             boost::future<EntryVector> IMapImpl::executeOnEntriesData(const serialization::pimpl::Data &entryProcessor) {
                 auto request = protocol::codec::MapExecuteOnAllKeysCodec::encodeRequest(
                         getName(), entryProcessor);
-
                 return invokeAndGetFuture<EntryVector, protocol::codec::MapExecuteOnAllKeysCodec::ResponseParameters>(
                         request);
 
             }
 
             boost::future<EntryVector>
-            executeOnEntriesData(const serialization::pimpl::Data &entryProcessor, const serialization::pimpl::Data &predicate) {
+            IMapImpl::executeOnEntriesData(const serialization::pimpl::Data &entryProcessor, const serialization::pimpl::Data &predicate) {
                 auto request = protocol::codec::MapExecuteWithPredicateCodec::encodeRequest(getName(),
                                                                                      entryProcessor,
                                                                                      predicate);
-
                 return invokeAndGetFuture<EntryVector,
                         protocol::codec::MapExecuteWithPredicateCodec::ResponseParameters>(request);
-            }
-
-
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
-            IMapImpl::createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&predicate,
-                                                  EntryEvent::type listenerFlags) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
-                        new MapEntryListenerWithPredicateMessageCodec(getName(), includeValue,
-                                                                      static_cast<int32_t>(listenerFlags), predicate));
-            }
-
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
-            IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
-                        new MapEntryListenerMessageCodec(getName(), includeValue, static_cast<int32_t>(listenerFlags)));
-            }
-
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
-            IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
-                                                  serialization::pimpl::Data &&key) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
-                        new MapEntryListenerToKeyCodec(getName(), includeValue, static_cast<int32_t>(listenerFlags),
-                                                       key));
             }
 
             void IMapImpl::onInitialize() {

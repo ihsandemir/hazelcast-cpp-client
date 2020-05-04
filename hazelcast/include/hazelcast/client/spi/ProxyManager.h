@@ -60,7 +60,7 @@ namespace hazelcast {
                  *
                  * @param proxy the proxy to destroy.
                  */
-                void destroyProxy(ClientProxy &proxy);
+                boost::future<protocol::ClientMessage> destroyProxy(ClientProxy &proxy);
 
                 void init();
 

@@ -16,8 +16,9 @@
 #pragma once
 
 #include <string>
-#include <map>
-#include <set>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <stdexcept>
 #include <climits>
@@ -49,11 +50,11 @@ namespace hazelcast {
         *      IMap imap = client.getMap("aKey");
         *
         */
-        class IMap {
+        class HAZELCAST_API IMap {
             friend class spi::ProxyManager;
             friend class impl::HazelcastClientInstanceImpl;
         public:
-            static constexpr std::string SERVICE_NAME;
+            static std::string SERVICE_NAME;
 
             /**
             * check if this map contains key.
@@ -70,7 +71,7 @@ namespace hazelcast {
             * @param value
             * @return true if contains, false otherwise
             */
-            template<typename K, typename V>
+            template<typename V>
             boost::future<bool> containsValue(const V &value) {
                 return mapImpl->containsValue(value);
             }
@@ -131,7 +132,7 @@ namespace hazelcast {
              *
              * @param predicate matching entries with this predicate will be removed from this map
              */
-            template <typename P>
+            template<typename P>
             boost::future<void> removeAll(const P &predicate) {
                 mapImpl->removeAll(predicate);
             }
@@ -426,7 +427,7 @@ namespace hazelcast {
             */
             template<typename Listener>
             boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue) {
-                return mapImpl->addEntryListener<Listener>(listener, includeValue);
+                return mapImpl->template addEntryListener<Listener>(listener, includeValue);
             }
 
             /**
@@ -446,7 +447,7 @@ namespace hazelcast {
             */
             template<typename Listener, typename P>
             boost::future<std::string> addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
-                return mapImpl->addEntryListener<Listener, P>(listener, predicate, includeValue);
+                return mapImpl->template addEntryListener<Listener, P>(listener, predicate, includeValue);
             }
 
             /**
@@ -464,7 +465,7 @@ namespace hazelcast {
             */
             template<typename Listener, typename K>
             boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
-                return mapImpl->addEntryListener<Listener, K>(listener, includeValue, key);
+                return mapImpl->template addEntryListener<Listener, K>(listener, includeValue, key);
             }
 
             /**
@@ -530,7 +531,7 @@ namespace hazelcast {
             * @return map of entries
             */
             template<typename K, typename V>
-            std::map<K, V> getAll(const std::set<K> &keys) {
+            boost::future<std::unordered_map<K, boost::optional<V>>> getAll(const std::unordered_set<K> &keys) {
                 return mapImpl->getAll(keys);
             }
 
@@ -542,25 +543,8 @@ namespace hazelcast {
             * @return a vector clone of the keys contained in this map
             */
             template<typename K>
-            std::vector<K> keySet() {
-                return mapImpl->keySet();
-            }
-
-            /**
-              * @deprecated This API is deprecated in favor of @sa{keySet(const query::Predicate &predicate)}
-              *
-              * Queries the map based on the specified predicate and
-              * returns the keys of matching entries.
-              *
-              * Specified predicate runs on all members in parallel.
-              *
-              *
-              * @param predicate query criteria
-              * @return result key set of the query
-              */
-            template<typename K>
-            std::vector<K> keySet(const serialization::IdentifiedDataSerializable &predicate) {
-                return mapImpl->keySet(predicate);
+            boost::future<std::vector<K>> keySet() {
+                return mapImpl->keySet<K>();
             }
 
             /**
@@ -574,9 +558,9 @@ namespace hazelcast {
               * @param predicate query criteria
               * @return result key set of the query
               */
-            template<typename K>
-            std::vector<K> keySet(const query::Predicate &predicate) {
-                return mapImpl->keySet(predicate);
+            template<typename K, typename P>
+            boost::future<std::vector<K>> keySet(const P &predicate) {
+                return mapImpl->keySet<K, P>(predicate);
             }
 
             /**
@@ -591,7 +575,7 @@ namespace hazelcast {
               * @return result key set of the query
               */
             template<typename K, typename V>
-            std::vector<K> keySet(query::PagingPredicate<K, V> &predicate) {
+            boost::future<std::vector<K>> keySet(query::PagingPredicate<K, V> &predicate) {
                 return mapImpl->keySet(predicate);
             }
 
@@ -603,23 +587,8 @@ namespace hazelcast {
             * @return a vector clone of the values contained in this map
             */
             template<typename V>
-            std::vector<V> values() {
-                return mapImpl->values();
-            }
-
-            /**
-            * @deprecated This API is deprecated in favor of @sa{values(const query::Predicate &predicate)}
-            *
-            * Returns a vector clone of the values contained in this map.
-            * The vector is <b>NOT</b> backed by the map,
-            * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-            *
-            * @param predicate the criteria for values to match
-            * @return a vector clone of the values contained in this map
-            */
-            template<typename V>
-            std::vector<V> values(const serialization::IdentifiedDataSerializable &predicate) {
-                return mapImpl->values(predicate);
+            boost::future<std::vector<boost::optional<V>>> values() {
+                return mapImpl->values<V>();
             }
 
             /**
@@ -630,9 +599,9 @@ namespace hazelcast {
             * @param predicate the criteria for values to match
             * @return a vector clone of the values contained in this map
             */
-            template<typename V>
-            std::vector<V> values(const query::Predicate &predicate) {
-                return mapImpl->values(predicate);
+            template<typename V, typename P>
+            boost::future<std::vector<boost::optional<V>>> values(const P &predicate) {
+                return mapImpl->values<V, P>(predicate);
             }
 
             /**
@@ -644,8 +613,8 @@ namespace hazelcast {
             * @param predicate the criteria for values to match
             * @return a vector clone of the values contained in this map
             */
-            template<typename V>
-            std::vector<V> values(query::PagingPredicate<K, V> &predicate) {
+            template<typename K, typename V>
+            boost::future<std::vector<boost::optional<V>>> values(query::PagingPredicate<K, V> &predicate) {
                 return mapImpl->values(predicate);
             }
 
@@ -657,25 +626,8 @@ namespace hazelcast {
             * @return a vector clone of the keys mappings in this map
             */
             template<typename K, typename V>
-            std::vector<std::pair<K, V> > entrySet() {
-                return mapImpl->entrySet();
-            }
-
-            /**
-            * @deprecated This API is deprecated in favor of @sa{entrySet(const query::Predicate &predicate)}
-            *
-            * Queries the map based on the specified predicate and
-            * returns the matching entries.
-            *
-            * Specified predicate runs on all members in parallel.
-            *
-            *
-            * @param predicate query criteria
-            * @return result entry vector of the query
-            */
-            template<typename K, typename V>
-            std::vector<std::pair<K, V> > entrySet(const serialization::IdentifiedDataSerializable &predicate) {
-                return mapImpl->entrySet(predicate);
+            boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet() {
+                return mapImpl->template entrySet<K, V>();
             }
 
             /**
@@ -688,9 +640,9 @@ namespace hazelcast {
             * @param predicate query criteria
             * @return result entry vector of the query
             */
-            template<typename K, typename V>
-            std::vector<std::pair<K, V> > entrySet(const query::Predicate &predicate) {
-                return mapImpl->entrySet(predicate);
+            template<typename K, typename V, typename P>
+            boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet(const P &predicate) {
+                return mapImpl->template entrySet<K, V, P>(predicate);
             }
 
             /**
@@ -704,7 +656,7 @@ namespace hazelcast {
             * @return result entry vector of the query
             */
             template<typename K, typename V>
-            std::vector<std::pair<K, V> > entrySet(query::PagingPredicate<K, V> &predicate) {
+            boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet(query::PagingPredicate<K, V> &predicate) {
                 return mapImpl->entrySet(predicate);
             }
 
@@ -758,9 +710,9 @@ namespace hazelcast {
             * @param key of entry that entryProcessor will be applied on
             * @return result of entry process.
             */
-            template<typename ResultType, typename EntryProcessor>
-            std::shared_ptr<ResultType> executeOnKey(const K &key, const EntryProcessor &entryProcessor) {
-                return mapImpl->template executeOnKey<ResultType, EntryProcessor>(key, entryProcessor);
+            template<typename K, typename ResultType, typename EntryProcessor>
+            boost::future<boost::optional<ResultType>> executeOnKey(const K &key, const EntryProcessor &entryProcessor) {
+                return mapImpl->template executeOnKey<K, ResultType, EntryProcessor>(key, entryProcessor);
             }
 
             /**
@@ -775,10 +727,10 @@ namespace hazelcast {
             * @tparam keys The keys for which the entry processor will be applied.
             * @param entryProcessor that will be applied
             */
-            template<typename ResultType, typename EntryProcessor>
-            std::map<K, std::shared_ptr<ResultType> >
-            executeOnKeys(const std::set<K> &keys, const EntryProcessor &entryProcessor) {
-                return mapImpl->template executeOnKeys<ResultType, EntryProcessor>(keys, entryProcessor);
+            template<typename K, typename ResultType, typename EntryProcessor>
+            boost::future<std::unordered_map<K, boost::optional<ResultType>>>
+            executeOnKeys(const std::unordered_set<K> &keys, const EntryProcessor &entryProcessor) {
+                return mapImpl->template executeOnKeys<K, ResultType, EntryProcessor>(keys, entryProcessor);
             }
 
             /**
@@ -790,9 +742,9 @@ namespace hazelcast {
              * @param entryProcessor processor to process the key
              * @return Future from which the result of the operation can be retrieved.
              */
-            template<typename ResultType, typename EntryProcessor>
-            boost::future<std::shared_ptr<ResultType>> submitToKey(const K &key, const EntryProcessor &entryProcessor) {
-                return mapImpl->template submitToKey<ResultType, EntryProcessor>(key, entryProcessor);
+            template<typename K, typename ResultType, typename EntryProcessor>
+            boost::future<boost::optional<ResultType>> submitToKey(const K &key, const EntryProcessor &entryProcessor) {
+                return mapImpl->template submitToKey<K, ResultType, EntryProcessor>(key, entryProcessor);
             }
 
             /**
@@ -808,32 +760,9 @@ namespace hazelcast {
             * @tparam EntryProcessor type of entry processor class
             * @param entryProcessor that will be applied
             */
-            template<typename ResultType, typename EntryProcessor>
-            std::map<K, std::shared_ptr<ResultType> > executeOnEntries(const EntryProcessor &entryProcessor) {
-                return mapImpl->template executeOnEntries<ResultType, EntryProcessor>(entryProcessor);
-            }
-
-            /**
-            * @deprecated This API is deprecated in favor of
-            * @sa{executeOnEntries(EntryProcessor &entryProcessor, const query::Predicate &predicate)}
-            *
-            * Applies the user defined EntryProcessor to the all entries in the map.
-            * Returns the results mapped by each key in the map.
-            *
-            *
-            * EntryProcessor should extend either Portable or IdentifiedSerializable.
-            * Notice that map EntryProcessor runs on the nodes. Because of that, same class should be implemented in java side
-            * with same classId and factoryId.
-            *
-            * @tparam ResultType that entry processor will return
-            * @tparam EntryProcessor type of entry processor class
-            * @tparam predicate The filter to apply for selecting the entries at the server side.
-            * @param entryProcessor that will be applied
-            */
-            template<typename ResultType, typename EntryProcessor>
-            std::map<K, std::shared_ptr<ResultType> > executeOnEntries(const EntryProcessor &entryProcessor,
-                                                                         const serialization::IdentifiedDataSerializable &predicate) {
-                return mapImpl->template executeOnEntries<ResultType, EntryProcessor>(entryProcessor, predicate);
+            template<typename K, typename ResultType, typename EntryProcessor>
+            boost::future<std::unordered_map<K, boost::optional<ResultType>>> executeOnEntries(const EntryProcessor &entryProcessor) {
+                return mapImpl->template executeOnEntries<K, ResultType, EntryProcessor>(entryProcessor);
             }
 
             /**
@@ -850,10 +779,10 @@ namespace hazelcast {
             * @tparam predicate The filter to apply for selecting the entries at the server side.
             * @param entryProcessor that will be applied
             */
-            template<typename ResultType, typename EntryProcessor>
-            std::map<K, std::shared_ptr<ResultType> >
-            executeOnEntries(const EntryProcessor &entryProcessor, const query::Predicate &predicate) {
-                return mapImpl->template executeOnEntries<ResultType, EntryProcessor>(entryProcessor, predicate);
+            template<typename K, typename ResultType, typename EntryProcessor, typename P>
+            boost::future<std::unordered_map<K, boost::optional<ResultType>>>
+            executeOnEntries(const EntryProcessor &entryProcessor, const P &predicate) {
+                return mapImpl->template executeOnEntries<K, ResultType, EntryProcessor, P>(entryProcessor, predicate);
             }
 
             /**
@@ -863,6 +792,7 @@ namespace hazelcast {
             * @param key
             * @param value
             */
+            template<typename K, typename V>
             boost::future<void> set(const K &key, const V &value) {
                 mapImpl->set(key, value);
             }
@@ -876,7 +806,8 @@ namespace hazelcast {
             * @param ttl maximum time in milliseconds for this entry to stay in the map
             0 means infinite.
             */
-            boost::future<void> set(const K &key, const V &value, int64_t ttl) {
+            template<typename K, typename V>
+            boost::future<void> set(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
                 mapImpl->set(key, value, ttl);
             }
 
@@ -887,7 +818,7 @@ namespace hazelcast {
             *
             * @return the number of key-value mappings in this map
             */
-            int size() {
+            boost::future<int> size() {
                 return mapImpl->size();
             }
 
@@ -911,7 +842,8 @@ namespace hazelcast {
             *
             * @param entries mappings to be stored in this map
             */
-            boost::future<void> putAll(const std::map<K, V> &entries) {
+            template<typename K, typename V>
+            boost::future<void> putAll(const std::unordered_map<K, V> &entries) {
                 return mapImpl->putAll(entries);
             }
 
@@ -920,7 +852,7 @@ namespace hazelcast {
             * The map will be empty after this call returns.
             */
             boost::future<void> clear() {
-                mapImpl->clear();
+                return mapImpl->clear();
             }
 
             /**
@@ -928,7 +860,7 @@ namespace hazelcast {
             * Clears and releases all resources for this object.
             */
             boost::future<void> destroy() {
-                mapImpl->destroy();
+                return mapImpl->destroy();
             }
 
             /**

@@ -35,6 +35,21 @@ namespace hazelcast {
         }
         namespace proxy {
             class HAZELCAST_API IMapImpl : public ProxyImpl {
+            public:
+                boost::future<protocol::ClientMessage> flush();
+
+                boost::future<protocol::ClientMessage> removeInterceptor(const std::string &id);
+
+                boost::future<protocol::ClientMessage> evictAll();
+
+                boost::future<bool> removeEntryListener(const std::string &registrationId);
+
+                boost::future<int> size();
+
+                boost::future<bool> isEmpty();
+
+                boost::future<protocol::ClientMessage> clear();
+
             protected:
                 IMapImpl(const std::string &instanceName, spi::ClientContext *context);
 
@@ -48,51 +63,50 @@ namespace hazelcast {
 
                 boost::future<bool> remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                boost::future<void> removeAll(const serialization::pimpl::Data &predicateData);
+                boost::future<protocol::ClientMessage> removeAll(const serialization::pimpl::Data &predicateData);
 
-                boost::future<void> deleteEntry(const serialization::pimpl::Data &key);
-
-                boost::future<void> flush();
+                boost::future<protocol::ClientMessage> deleteEntry(const serialization::pimpl::Data &key);
 
                 boost::future<bool> tryRemove(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout);
 
                 boost::future<bool> tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                             std::chrono::steady_clock::duration timeout);
 
-                boost::future<serialization::pimpl::Data> 
+                boost::future<serialization::pimpl::Data>
                 putData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                         std::chrono::steady_clock::duration ttl);
 
-                boost::future<void> putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+                boost::future<protocol::ClientMessage> putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                   std::chrono::steady_clock::duration ttl);
 
-                boost::future<serialization::pimpl::Data> 
+                boost::future<serialization::pimpl::Data>
                 putIfAbsentData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                 std::chrono::steady_clock::duration ttl);
 
                 boost::future<bool> replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
                              const serialization::pimpl::Data &newValue);
 
-                boost::future<serialization::pimpl::Data> 
+                boost::future<serialization::pimpl::Data>
                 replaceData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                boost::future<void> set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value, std::chrono::steady_clock::duration ttl);
+                boost::future<protocol::ClientMessage>
+                set(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+                    std::chrono::steady_clock::duration ttl);
 
-                boost::future<void> lock(const serialization::pimpl::Data &key);
+                boost::future<protocol::ClientMessage> lock(const serialization::pimpl::Data &key);
 
-                boost::future<void> lock(const serialization::pimpl::Data &key, int64_t leaseTime);
+                boost::future<protocol::ClientMessage>
+                lock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration leaseTime);
 
                 boost::future<bool> isLocked(const serialization::pimpl::Data &key);
 
                 boost::future<bool> tryLock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout);
 
-                boost::future<void> unlock(const serialization::pimpl::Data &key);
+                boost::future<protocol::ClientMessage> unlock(const serialization::pimpl::Data &key);
 
-                boost::future<void> forceUnlock(const serialization::pimpl::Data &key);
+                boost::future<protocol::ClientMessage> forceUnlock(const serialization::pimpl::Data &key);
 
                 boost::future<std::string> addInterceptor(const serialization::pimpl::Data &interceptor);
-
-                virtual boost::future<void> removeInterceptor(const std::string &id);
 
                 boost::future<std::string>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
@@ -105,13 +119,9 @@ namespace hazelcast {
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
                                  Data &&key);
 
-                virtual boost::future<bool> removeEntryListener(const std::string &registrationId);
-
                 boost::future<std::unique_ptr<map::DataEntryView>> getEntryViewData(const serialization::pimpl::Data &key);
 
                 boost::future<bool> evict(const serialization::pimpl::Data &key);
-
-                virtual boost::future<void> evictAll();
 
                 boost::future<EntryVector> getAllData(int partitionId, std::vector<serialization::pimpl::Data> &&keys);
 
@@ -134,17 +144,14 @@ namespace hazelcast {
 
                 boost::future<EntryVector> valuesForPagingPredicateData(const serialization::pimpl::Data &predicate);
 
-                boost::future<void> addIndex(const std::string &attribute, bool ordered);
+                boost::future<protocol::ClientMessage> addIndex(const std::string &attribute, bool ordered);
 
-                boost::future<int>  size();
-
-                boost::future<bool> isEmpty();
-
-                boost::future<void> putAllData(const std::map<int, EntryVector> &entries);
-
-                boost::future<void> clear();
+                boost::future<protocol::ClientMessage> putAllData(int partitionId, const EntryVector &entries);
 
                 boost::future<serialization::pimpl::Data> executeOnKeyData(const serialization::pimpl::Data &key,
+                                                                           const serialization::pimpl::Data &processor);
+
+                boost::future<serialization::pimpl::Data> submitToKeyData(const serialization::pimpl::Data &key,
                                                                            const serialization::pimpl::Data &processor);
 
                 boost::future<EntryVector> executeOnKeysData(const std::vector<serialization::pimpl::Data> &keys,
@@ -157,7 +164,7 @@ namespace hazelcast {
                                      const serialization::pimpl::Data &predicate);
 
                 template<typename K, typename V>
-                std::pair<size_t, size_t> updateAnchor(EntryArray<K, V> &entries,
+                std::pair<size_t, size_t> updateAnchor(std::vector<std::pair<K, V>> &entries,
                                                        query::PagingPredicate<K, V> &predicate,
                                                        query::IterationType iterationType) {
                     if (0 == entries.size()) {
@@ -180,12 +187,12 @@ namespace hazelcast {
 
                     setAnchor(entries, predicate, nearestPage);
 
-                    return std::pair<size_t, size_t>(begin, end);
+                    return std::make_pair(begin, end);
                 }
 
                 template<typename K, typename V>
                 static void
-                setAnchor(EntryArray<K, V> &entries, query::PagingPredicate<K, V> &predicate, int nearestPage) {
+                setAnchor(std::vector<std::pair<K, V>> &entries, query::PagingPredicate<K, V> &predicate, int nearestPage) {
                     if (0 == entries.size()) {
                         return;
                     }
@@ -205,80 +212,7 @@ namespace hazelcast {
                 void onInitialize() override;
 
             private:
-                class MapEntryListenerWithPredicateMessageCodec : public spi::impl::ListenerMessageCodec {
-                public:
-                    MapEntryListenerWithPredicateMessageCodec(const std::string &name, bool includeValue,
-                                                              int32_t listenerFlags,
-                                                              serialization::pimpl::Data &&predicate);
-
-                    virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
-
-                    virtual std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const;
-
-                    virtual std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const;
-
-                    virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
-
-                private:
-                    std::string name;
-                    bool includeValue;
-                    int32_t listenerFlags;
-                    serialization::pimpl::Data predicate;
-                };
-
-                class MapEntryListenerMessageCodec : public spi::impl::ListenerMessageCodec {
-                public:
-                    MapEntryListenerMessageCodec(const std::string &name, bool includeValue, int32_t listenerFlags);
-
-                    virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
-
-                    virtual std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const;
-
-                    virtual std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const;
-
-                    virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
-
-                private:
-                    std::string name;
-                    bool includeValue;
-                    int32_t listenerFlags;
-                };
-
-                class MapEntryListenerToKeyCodec : public spi::impl::ListenerMessageCodec {
-                public:
-                    MapEntryListenerToKeyCodec(const std::string &name, bool includeValue, int32_t listenerFlags,
-                                               const serialization::pimpl::Data &key);
-
-                    virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
-
-                    virtual std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const;
-
-                    virtual std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const;
-
-                    virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
-
-                private:
-                    std::string name;
-                    bool includeValue;
-                    int32_t listenerFlags;
-                    serialization::pimpl::Data key;
-                };
-
                 std::shared_ptr<impl::ClientLockReferenceIdGenerator> lockReferenceIdGenerator;
-
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
-                createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags);
-
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
-                createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&predicate,
-                                            EntryEvent::type listenerFlags);
-
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
-                createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
-                                            serialization::pimpl::Data &&key);
             };
         }
     }

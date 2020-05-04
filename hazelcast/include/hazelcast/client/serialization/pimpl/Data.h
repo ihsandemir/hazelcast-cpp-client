@@ -13,21 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-//  Data.h
-//  Server
-//
-//  Created by sancar koyunlu on 1/10/13.
-//  Copyright (c) 2013 sancar koyunlu. All rights reserved.
-//
 
-#ifndef HAZELCAST_DATA
-#define HAZELCAST_DATA
+#pragma once
 
 #include <vector>
 #include <memory>
 #include <stdint.h>
-#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/AtomicInt.h"
@@ -104,5 +95,4 @@ namespace std {
 #pragma warning(pop)
 #endif
 
-#endif /* HAZELCAST_DATA */
 

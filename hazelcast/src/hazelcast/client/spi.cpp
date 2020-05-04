@@ -247,7 +247,7 @@ namespace hazelcast {
                 std::this_thread::sleep_for(invocationRetryPause);
             }
 
-            void ProxyManager::destroyProxy(ClientProxy &proxy) {
+            boost::future<protocol::ClientMessage> ProxyManager::destroyProxy(ClientProxy &proxy) {
                 DefaultObjectNamespace objectNamespace(proxy.getServiceName(), proxy.getName());
                 std::lock_guard<std::mutex> guard(lock);
                 auto it = proxies.find(objectNamespace);
@@ -525,8 +525,9 @@ namespace hazelcast {
             void ClientProxy::onDestroy() {
             }
 
-            void ClientProxy::destroy() {
-                getContext().getProxyManager().destroyProxy(*this);
+            boost::future<void> ClientProxy::destroy() {
+                return getContext().getProxyManager().destroyProxy(*this).then(boost::launch::deferred,
+                                                                               [](boost::future<protocol::ClientMessage> f) { f.get(); });
             }
 
             void ClientProxy::destroyLocally() {
@@ -558,10 +559,10 @@ namespace hazelcast {
                 return context.getSerializationService();
             }
 
-            void ClientProxy::destroyRemotely() {
+            boost::future<protocol::ClientMessage> ClientProxy::destroyRemotely() {
                 std::unique_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientDestroyProxyCodec::encodeRequest(
                         getName(), getServiceName());
-                spi::impl::ClientInvocation::create(getContext(), clientMessage, getName())->invoke().get();
+                return spi::impl::ClientInvocation::create(getContext(), clientMessage, getName())->invoke();
             }
 
             ClientProxy::EventHandlerDelegator::EventHandlerDelegator(client::impl::BaseEventHandler *handler)

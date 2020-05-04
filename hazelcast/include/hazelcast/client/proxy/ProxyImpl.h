@@ -22,7 +22,6 @@
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/ClientProxy.h"
-#include "hazelcast/client/TypedData.h"
 #include "hazelcast/client/spi/impl/ClientInvocation.h"
 
 namespace hazelcast {
@@ -130,7 +129,7 @@ namespace hazelcast {
                     });
                 }
 
-                boost::future<void> toVoidFuture(boost::future<protocol::ClientMessage> &messageFuture) {
+                boost::future<void> toVoidFuture(boost::future<protocol::ClientMessage> messageFuture) {
                     return messageFuture.then(boost::launch::deferred,
                                               [](boost::future<protocol::ClientMessage> f) { f.get(); });
                 }
@@ -156,9 +155,6 @@ namespace hazelcast {
                     return objectArray;
                 }
 
-                std::vector<TypedData>
-                toTypedDataCollection(const std::vector<serialization::pimpl::Data> &values);
-
                 template<typename T>
                 const std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T> &elements) {
                     size_t size = elements.size();
@@ -182,9 +178,6 @@ namespace hazelcast {
                     }
                     return entrySet;
                 }
-
-                std::vector<std::pair<TypedData, TypedData> > toTypedDataEntrySet(
-                        const std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > &dataEntrySet);
 
                 template<typename K, typename V>
                 EntryVector toDataEntries(std::map<K, V> const &m) {
