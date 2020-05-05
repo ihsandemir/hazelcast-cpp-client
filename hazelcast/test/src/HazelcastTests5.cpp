@@ -18,6 +18,7 @@
 #include "ClientTestSupport.h"
 #include <regex>
 #include <vector>
+#include <functional>
 #include "ringbuffer/StartsWithStringFilter.h"
 #include "serialization/Employee.h"
 #include "ClientTestSupportBase.h"
@@ -982,7 +983,7 @@ namespace hazelcast {
 namespace hazelcast {
     namespace client {
         namespace test {
-            class PartitionAwareInt : public serialization::IdentifiedDataSerializable, public PartitionAware<int> {
+            class PartitionAwareInt : public PartitionAware<int> {
             public:
                 PartitionAwareInt() : partitionKey(0), actualKey(0) {}
 
@@ -996,31 +997,10 @@ namespace hazelcast {
                 int getActualKey() const {
                     return actualKey;
                 }
-
-                virtual int getFactoryId() const {
-                    return 666;
-                }
-
-                virtual int getClassId() const {
-                    return 9;
-                }
-
-                virtual void writeData(serialization::ObjectDataOutput &writer) const {
-                    writer.writeInt(actualKey);
-                }
-
-                virtual void readData(serialization::ObjectDataInput &reader) {
-                    actualKey = reader.readInt();
-                }
-
             private:
                 int partitionKey;
                 int actualKey;
             };
-
-            bool operator<(const PartitionAwareInt &lhs, const PartitionAwareInt &rhs) {
-                return lhs.getActualKey() < rhs.getActualKey();
-            }
 
             class MapClientConfig : public ClientConfig {
             public:
@@ -1084,9 +1064,9 @@ namespace hazelcast {
             class ClientMapTest : public ClientTestSupport, public ::testing::WithParamInterface<ClientConfig> {
             public:
                 ClientMapTest() : client(HazelcastClient(GetParam())),
-                                  imap(client.getMap<std::string, std::string>(MapClientConfig::imapName)),
-                                  intMap(client.getMap<int, int>(MapClientConfig::intMapName)),
-                                  employees(client.getMap<int, Employee>(MapClientConfig::employeesMapName)) {
+                                  imap(client.getMap(MapClientConfig::imapName)),
+                                  intMap(client.getMap(MapClientConfig::intMapName)),
+                                  employees(client.getMap(MapClientConfig::employeesMapName)) {
                 }
 
                 static void SetUpTestCase() {
@@ -4275,6 +4255,36 @@ namespace hazelcast {
 
                 ASSERT_EQ_PTR(value, actualValue.get(), std::string);
             }
+        }
+
+        namespace serialization {
+            template<>
+            struct hz_serializer<test::PartitionAwareInt> : public identified_data_serializer {
+                static int32_t getFactoryId() {
+                    return 666;
+                }
+
+                static int32_t getClassId() {
+                    return 9;
+                }
+
+                static void writeData(const test::PartitionAwareInt &object, serialization::ObjectDataOutput &out) {
+                    out.writeInt(object.getActualKey());
+                }
+
+                static boost::optional<test::PartitionAwareInt> readData(serialization::ObjectDataInput &in) {
+                    int value = in.readInt();
+                    return boost::make_optional(test::PartitionAwareInt(value, value));
+                }
+            };
+        }
+    }
+}
+
+namespace std {
+    template<> struct hash<hazelcast::test::PartitionAwareInt> {
+        std::size_t operator()(const hazelcast::test::PartitionAwareInt &object) {
+            return std::hash(object.getActualKey);
         }
     }
 }

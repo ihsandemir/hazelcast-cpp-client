@@ -1388,7 +1388,7 @@ namespace hazelcast {
             boost::future<std::string> IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 auto listenerFlags = EntryEvent::type::ALL;
-                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), entryEventHandler);
+                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), std::move(entryEventHandler));
             }
 
             boost::future<std::string>
@@ -1396,7 +1396,7 @@ namespace hazelcast {
                     Data &&predicate, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 EntryEvent::type listenerFlags = EntryEvent::type::ALL;
-                return registerListener(createMapEntryListenerCodec(includeValue, predicate, listenerFlags), entryEventHandler);
+                return registerListener(createMapEntryListenerCodec(includeValue, std::move(predicate), listenerFlags), std::move(entryEventHandler));
             }
 
             boost::future<bool> IMapImpl::removeEntryListener(const std::string &registrationId) {
@@ -1407,14 +1407,13 @@ namespace hazelcast {
                                                    bool includeValue, Data &&key) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 EntryEvent::type listenerFlags = EntryEvent::type::ALL;
-                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags, key), entryEventHandler);
-
+                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags, std::move(key)),
+                                        std::move(entryEventHandler));
             }
 
             boost::future<std::unique_ptr<map::DataEntryView>> IMapImpl::getEntryViewData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapGetEntryViewCodec::encodeRequest(getName(), key,
                                                                              util::getCurrentThreadId());
-
                 return invokeAndGetFuture<std::unique_ptr<map::DataEntryView>, protocol::codec::MapGetEntryViewCodec::ResponseParameters>(
                         request, key);
             }
@@ -1569,15 +1568,35 @@ namespace hazelcast {
                         protocol::codec::MapExecuteWithPredicateCodec::ResponseParameters>(request);
             }
 
+
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            IMapImpl::createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&predicate,
+                                                  EntryEvent::type listenerFlags) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MapEntryListenerWithPredicateMessageCodec(getName(), includeValue, listenerFlags, std::move(predicate)));
+            }
+
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MapEntryListenerMessageCodec(getName(), includeValue, listenerFlags));
+            }
+
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
+                                                  serialization::pimpl::Data &&key) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MapEntryListenerToKeyCodec(getName(), includeValue, listenerFlags, key));
+            }
+
             void IMapImpl::onInitialize() {
                 ProxyImpl::onInitialize();
-
                 lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
             }
 
             IMapImpl::MapEntryListenerMessageCodec::MapEntryListenerMessageCodec(const std::string &name,
                                                                                  bool includeValue,
-                                                                                 int32_t listenerFlags) : name(name),
+                                                                                 EntryEvent::type listenerFlags) : name(name),
                                                                                                           includeValue(
                                                                                                                   includeValue),
                                                                                                           listenerFlags(
@@ -1585,7 +1604,8 @@ namespace hazelcast {
 
             std::unique_ptr<protocol::ClientMessage>
             IMapImpl::MapEntryListenerMessageCodec::encodeAddRequest(bool localOnly) const {
-                return protocol::codec::MapAddEntryListenerCodec::encodeRequest(name, includeValue, listenerFlags,
+                return protocol::codec::MapAddEntryListenerCodec::encodeRequest(name, includeValue,
+                                                                                static_cast<int32_t>(listenerFlags),
                                                                                 localOnly);
             }
 
@@ -1607,7 +1627,7 @@ namespace hazelcast {
             std::unique_ptr<protocol::ClientMessage>
             IMapImpl::MapEntryListenerToKeyCodec::encodeAddRequest(bool localOnly) const {
                 return protocol::codec::MapAddEntryListenerToKeyCodec::encodeRequest(name, key, includeValue,
-                                                                                     listenerFlags, localOnly);
+                                                                                     static_cast<int32_t>(listenerFlags), localOnly);
             }
 
             std::string IMapImpl::MapEntryListenerToKeyCodec::decodeAddResponse(
@@ -1627,12 +1647,12 @@ namespace hazelcast {
             }
 
             IMapImpl::MapEntryListenerToKeyCodec::MapEntryListenerToKeyCodec(const std::string &name, bool includeValue,
-                                                                             int32_t listenerFlags,
+                                                                             EntryEvent::type listenerFlags,
                                                                              const serialization::pimpl::Data &key)
                     : name(name), includeValue(includeValue), listenerFlags(listenerFlags), key(key) {}
 
             IMapImpl::MapEntryListenerWithPredicateMessageCodec::MapEntryListenerWithPredicateMessageCodec(
-                    const std::string &name, bool includeValue, int32_t listenerFlags,
+                    const std::string &name, bool includeValue, EntryEvent::type listenerFlags,
                     serialization::pimpl::Data &&predicate) : name(name), includeValue(includeValue),
                                                              listenerFlags(listenerFlags), predicate(predicate) {}
 
@@ -1640,7 +1660,7 @@ namespace hazelcast {
             IMapImpl::MapEntryListenerWithPredicateMessageCodec::encodeAddRequest(bool localOnly) const {
                 return protocol::codec::MapAddEntryListenerWithPredicateCodec::encodeRequest(name, predicate,
                                                                                              includeValue,
-                                                                                             listenerFlags, localOnly);
+                                                                                             static_cast<int32_t>(listenerFlags), localOnly);
             }
 
             std::string IMapImpl::MapEntryListenerWithPredicateMessageCodec::decodeAddResponse(
