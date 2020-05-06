@@ -3162,7 +3162,7 @@ namespace hazelcast {
                                                                  query::GreaterLessPredicate<int>(
                                                                          query::QueryConstants::getKeyAttributeName(),
                                                                          2, true, true),
-                                                                 false),get();
+                                                                 false).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
