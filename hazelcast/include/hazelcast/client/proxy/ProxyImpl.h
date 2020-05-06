@@ -86,7 +86,7 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                inline boost::future<std::vector<boost::optional<T>>>
+                inline boost::future<std::vector<T>>
                 toObjectVector(boost::future<std::vector<serialization::pimpl::Data>> dataFuture) {
                     return dataFuture.then(boost::launch::deferred,
                                            [=](boost::future<std::vector<serialization::pimpl::Data>> f) {
@@ -94,7 +94,8 @@ namespace hazelcast {
                                                std::vector<T> result;
                                                std::for_each(dataResult.begin(), dataResult.end(),
                                                              [&](const serialization::pimpl::Data &keyData) {
-                                                                 result.push_back(toObject<T>(keyData));
+                                                                 // The object is guaranteed to exist (non-null)
+                                                                 result.push_back(std::move(toObject<T>(keyData).value()));
                                                              });
                                                return result;
                                            });
@@ -113,17 +114,18 @@ namespace hazelcast {
                 }
 
                 template<typename K, typename V>
-                inline boost::future<std::vector<std::pair<K, boost::optional<V>>>>
+                inline boost::future<std::vector<std::pair<K, V>>>
                 toEntryObjectVector(boost::future<EntryVector> dataFuture) {
                     return dataFuture.then(boost::launch::deferred, [=](boost::future<EntryVector> f) {
                         auto dataEntryVector = f.get();
-                        std::vector<K, boost::optional<V>> result;
+                        std::vector<K, V> result;
                         result.reserve(dataEntryVector.size());
                         std::for_each(dataEntryVector.begin(), dataEntryVector.end(),
                                       [&](const std::pair<serialization::pimpl::Data, serialization::pimpl::Data> &entryData) {
+                                          // please note that the key and value will never be null
                                           result.push_back(
                                                   std::make_pair(std::move(toObject<K>(entryData.first).value()),
-                                                                 toObject<V>(entryData.second)));
+                                                                 std::move(toObject<V>(entryData.second).value())));
                                       });
                         return result;
                     });

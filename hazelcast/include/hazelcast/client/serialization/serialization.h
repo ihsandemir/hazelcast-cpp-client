@@ -65,7 +65,7 @@ namespace hazelcast {
             }
 
             template<typename T>
-            class hz_serializer {
+            struct hz_serializer {
             };
 
             /**
@@ -75,7 +75,7 @@ namespace hazelcast {
              *      static int32_t writeData(ObjectDataOutput &out);
              *      static int32_t readData(ObjectDataInput &in) const;
              */
-            class identified_data_serializer {
+            struct identified_data_serializer {
             };
 
             /**
@@ -85,10 +85,10 @@ namespace hazelcast {
              *      static int32_t writePortable(PortableWriter &out);
              *      static int32_t readPortable(PortableReader &in) const;
              */
-            class portable_serializer {
+            struct portable_serializer {
             };
 
-            class versioned_portable_serializer : public portable_serializer {
+            struct versioned_portable_serializer : public portable_serializer {
             };
 
             template<>

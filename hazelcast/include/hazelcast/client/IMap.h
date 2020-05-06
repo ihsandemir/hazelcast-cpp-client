@@ -17,7 +17,7 @@
 
 #include <string>
 #include <unordered_map>
-#include <set>
+#include <unordered_set>
 #include <vector>
 #include <stdexcept>
 #include <climits>
@@ -468,7 +468,7 @@ namespace hazelcast {
             * @return registrationId of added listener that can be used to remove the entry listener.
             */
             template<typename Listener, typename P>
-            std::string
+            boost::future<std::string>
             addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
@@ -545,7 +545,7 @@ namespace hazelcast {
             * @return map of entries
             */
             template<typename K, typename V>
-            boost::future<std::unordered_map<K, boost::optional<V>>> getAll(const std::set<K> &keys) {
+            boost::future<std::unordered_map<K, V>> getAll(const std::unordered_set<K> &keys) {
                 if (keys.empty()) {
                     return boost::none;
                 }
@@ -565,10 +565,13 @@ namespace hazelcast {
 
                 return boost::when_all(futures.begin(), futures.end()).then(boost::launch::deferred,
                                                                             [=](std::vector<boost::future<EntryVector>> &resultsData) {
-                                                                                std::unordered_map<K, boost::optional<V>> result;
+                                                                                std::unordered_map<K, V> result;
                                                                                 for (auto &entryVectorFuture : resultsData) {
                                                                                     for(auto &entry : entryVectorFuture.get()) {
-                                                                                        result[toObject<K>(entry.first).value()] = toObject<V>(entry.second);
+                                                                                        auto val = toObject<V>(entry.second);
+                                                                                        // it is guaranteed that all values are non-null
+                                                                                        assert(val.has_value());
+                                                                                        result[toObject<K>(entry.first).value()] = std::move(val.value());
                                                                                     }
                                                                                 }
                                                                                 return result;
@@ -634,41 +637,41 @@ namespace hazelcast {
             }
 
             /**
-* Returns a vector clone of the values contained in this map.
-* The vector is <b>NOT</b> backed by the map,
-* so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-*
-* @return a vector clone of the values contained in this map
-*/
+            * Returns a vector clone of the values contained in this map.
+            * The vector is <b>NOT</b> backed by the map,
+            * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+            *
+            * @return a vector clone of the values contained in this map
+            */
             template<typename V>
-            boost::future<std::vector<boost::optional<V>>> values() {
+            boost::future<std::vector<V>> values() {
                 return toObjectVector<V>(proxy::IMapImpl::valuesData());
             }
 
             /**
-* Returns a vector clone of the values contained in this map.
-* The vector is <b>NOT</b> backed by the map,
-* so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-*
-* @param predicate the criteria for values to match
-* @return a vector clone of the values contained in this map
-*/
+            * Returns a vector clone of the values contained in this map.
+            * The vector is <b>NOT</b> backed by the map,
+            * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+            *
+            * @param predicate the criteria for values to match
+            * @return a vector clone of the values contained in this map
+            */
             template<typename V, typename P>
-            boost::future<std::vector<boost::optional<V>>> values(const P &predicate) {
+            boost::future<std::vector<V>> values(const P &predicate) {
                 return toObjectVector<V>(proxy::IMapImpl::valuesData(toData(predicate)));
             }
 
             /**
-* Returns a vector clone of the values contained in this map.
-* The vector is <b>NOT</b> backed by the map,
-* so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
-*
-*
-* @param predicate the criteria for values to match
-* @return a vector clone of the values contained in this map
-*/
+            * Returns a vector clone of the values contained in this map.
+            * The vector is <b>NOT</b> backed by the map,
+            * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+            *
+            *
+            * @param predicate the criteria for values to match
+            * @return a vector clone of the values contained in this map
+            */
             template<typename K, typename V>
-            boost::future<std::vector<boost::optional<V>>> values(query::PagingPredicate<K, V> &predicate) {
+            boost::future<std::vector<V>> values(query::PagingPredicate<K, V> &predicate) {
                 predicate.setIterationType(query::IterationType::VALUE);
                 return toEntryObjectVector<K, V>(valuesForPagingPredicateData(toData(predicate))).then(boost::launch::deferred, [&](boost::future<EntryVector> f) {
                     auto entries = f.get();
@@ -676,7 +679,7 @@ namespace hazelcast {
                     std::vector<V> result;
                     result.reserve(resultEntries.size());
                     for (auto &entry : resultEntries) {
-                        result.push_back(std::move(entry.second));
+                        result.push_back(std::move(entry.second.value()));
                     }
                     return result;
                 });
@@ -690,7 +693,7 @@ namespace hazelcast {
             * @return a vector clone of the keys mappings in this map
             */
             template<typename K, typename V>
-            boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet() {
+            boost::future<std::vector<std::pair<K, V>>> entrySet() {
                 return toEntryObjectVector<K,V>(proxy::IMapImpl::entrySetData());
             }
 
@@ -705,7 +708,7 @@ namespace hazelcast {
             * @return result entry vector of the query
             */
             template<typename K, typename V, typename P>
-            boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet(const P &predicate) {
+            boost::future<std::vector<std::pair<K, V>>> entrySet(const P &predicate) {
                 return toEntryObjectVector<K,V>(proxy::IMapImpl::entrySetData(toData(predicate)));
             }
 
@@ -720,7 +723,7 @@ namespace hazelcast {
             * @return result entry vector of the query
             */
             template<typename K, typename V>
-            boost::future<std::vector<std::pair<K, boost::optional<V>>>> entrySet(query::PagingPredicate<K, V> &predicate) {
+            boost::future<std::vector<std::pair<K, V>>> entrySet(query::PagingPredicate<K, V> &predicate) {
                 return toSortedEntryObjectVector<K,V>(proxy::IMapImpl::entrySetForPagingPredicateData(toData(predicate)));
             }
 
@@ -813,7 +816,7 @@ namespace hazelcast {
             */
             template<typename K, typename ResultType, typename EntryProcessor>
             boost::future<std::unordered_map<K, boost::optional<ResultType>>>
-            executeOnKeys(const std::set<K> &keys, const EntryProcessor &entryProcessor) {
+            executeOnKeys(const std::unordered_set<K> &keys, const EntryProcessor &entryProcessor) {
                 return toObjectMap<K, ResultType>(executeOnKeysInternal<EntryProcessor>(keys, entryProcessor));
             }
 
@@ -1006,7 +1009,7 @@ namespace hazelcast {
             }
 
             template<typename K, typename EntryProcessor>
-            boost::future<EntryVector> executeOnKeysInternal(const std::set<K> &keys, const EntryProcessor &entryProcessor) {
+            boost::future<EntryVector> executeOnKeysInternal(const std::unordered_set<K> &keys, const EntryProcessor &entryProcessor) {
                 if (keys.empty()) {
                     return boost::make_ready_future(EntryVector());
                 }
@@ -1025,10 +1028,16 @@ namespace hazelcast {
                                                                                                  context) {}
 
             template<typename K, typename V>
-            boost::future<std::vector<std::pair<K, boost::optional<V>>>> toSortedEntryObjectVector(query::PagingPredicate<K, V> &predicate, query::IterationType iterationType) {
+            boost::future<std::vector<std::pair<K, V>>> toSortedEntryObjectVector(query::PagingPredicate<K, V> &predicate, query::IterationType iterationType) {
                 return toEntryObjectVector<K, V>(proxy::IMapImpl::entrySetForPagingPredicateData(toData(predicate))).then(
-                        boost::launch::deferred, [&](boost::future<std::vector<std::pair<K, boost::optional<V>>>> f) {
-                            return sortAndGet<K, V>(predicate, iterationType, f.get());
+                        boost::launch::deferred, [&](boost::future<std::vector<std::pair<K, V>>> f) {
+                            auto entries = sortAndGet<K, V>(predicate, iterationType, f.get());
+                            std::vector<std::pair<K, V>> result;
+                            result.reserve(entries.size());
+                            for_each(entries.begin(), entries.end(), [&](std::pair<K, boost::optional<V>> &entry) {
+                                result.push_back(
+                                        std::make_pair(std::move(entry.first), std::move(entry.second.value())));
+                            });
                         });
             }
 
@@ -1045,8 +1054,8 @@ namespace hazelcast {
                         }
                     }
 
-                    std::pair<const K *, const V *> leftVal(&lhs.first, &lhs.second);
-                    std::pair<const K *, const V *> rightVal(&rhs.first, &rhs.second);
+                    std::pair<const K *, const V *> leftVal(*lhs.first, *lhs.second);
+                    std::pair<const K *, const V *> rightVal(*rhs.first, *rhs.second);
                     int result = comparator->compare(&leftVal, &rightVal);
                     if (0 != result) {
                         // std sort: comparison function object returns ​true if the first argument is less
@@ -1059,10 +1068,10 @@ namespace hazelcast {
 
                 std::pair<size_t, size_t> range = updateAnchor<K, V>(entries, predicate, iterationType);
 
-                std::vector<std::pair<K, V>> result;
+                std::vector<std::pair<K, boost::optional<V>>> result;
                 for (size_t i = range.first; i < range.second; ++i) {
-                    std::pair<const K *, const V *> entry = entries[i];
-                    result.push_back(std::pair<K, V>(*entry.first, *entry.second));
+                    auto entry = entries[i];
+                    result.push_back(std::make_pair(entry.first, entry.second));
                 }
                 return result;
             }
