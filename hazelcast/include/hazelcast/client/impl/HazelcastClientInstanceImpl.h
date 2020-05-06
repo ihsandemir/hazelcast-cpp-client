@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_IMPL_HAZELCASTCLIENTIMPL_H_
-#define HAZELCAST_CLIENT_IMPL_HAZELCASTCLIENTIMPL_H_
+#pragma once
 
 #include <atomic>
 #include <memory>
@@ -81,8 +80,6 @@ namespace hazelcast {
 
             class ClientProxyFactory;
 
-            class ClientExecutionService;
-
             namespace impl {
                 class ClientExecutionServiceImpl;
                 class ClientPartitionServiceImpl;
@@ -147,13 +144,9 @@ namespace hazelcast {
                 * @param name name of the distributed map
                 * @return distributed map instance with the specified name
                 */
-                template<typename K, typename V>
-                IMap<K, V> getMap(const std::string &name) {
-                    map::impl::ClientMapProxyFactory<K, V> factory(&clientContext);
-                    std::shared_ptr<spi::ClientProxy> proxy =
-                            getDistributedObjectForService(IMap<K, V>::SERVICE_NAME, name, factory);
-
-                    return IMap<K, V>(proxy);
+                template<typename DistributedStructure>
+                std::shared_ptr<DistributedStructure> get(const std::string &name) {
+                    return proxyManager.getOrCreateProxy<DistributedStructure>(DistributedStructure::SERVICE_NAME, name);
                 }
 
                 /**
@@ -162,18 +155,12 @@ namespace hazelcast {
                 * @param name name of the distributed multimap
                 * @return distributed multimap instance with the specified name
                 */
-                template<typename K, typename V>
-                MultiMap<K, V> getMultiMap(const std::string& name) {
-                    return getDistributedObject<MultiMap<K, V> >(name);
+                std::shared_ptr<MultiMap> getMultiMap(const std::string& name) {
+                    return get<MultiMap>(name);
                 }
 
-                template<typename K, typename V>
-                std::shared_ptr<ReplicatedMap<K, V> > getReplicatedMap(const std::string &name) {
-                    map::impl::ReplicatedMapProxyFactory<K, V> factory(&clientContext);
-                    std::shared_ptr<spi::ClientProxy> proxy =
-                            getDistributedObjectForService(proxy::ClientReplicatedMapProxy<K, V>::SERVICE_NAME, name, factory);
-
-                    return std::static_pointer_cast<ReplicatedMap<K, V> >(std::static_pointer_cast<proxy::ClientReplicatedMapProxy<K, V> >(proxy));
+                std::shared_ptr<ReplicatedMap> getReplicatedMap(const std::string &name) {
+                    return get<proxy::ClientReplicatedMapProxy>(name);
                 }
 
                 /**
@@ -182,9 +169,8 @@ namespace hazelcast {
                 * @param name name of the distributed queue
                 * @return distributed queue instance with the specified name
                 */
-                template<typename E>
-                IQueue<E> getQueue(const std::string& name) {
-                    return getDistributedObject<IQueue<E> >(name);
+                std::shared_ptr<IQueue> getQueue(const std::string& name) {
+                    return get<IQueue>(name);
                 }
 
                 /**
@@ -195,9 +181,8 @@ namespace hazelcast {
                 * @return distributed set instance with the specified name
                 */
 
-                template<typename E>
-                ISet<E> getSet(const std::string& name) {
-                    return getDistributedObject<ISet<E> >(name);
+                std::shared_ptr<ISet> getSet(const std::string& name) {
+                    return get<ISet>(name);
                 }
 
                 /**
@@ -207,9 +192,8 @@ namespace hazelcast {
                 * @param name name of the distributed list
                 * @return distributed list instance with the specified name
                 */
-                template<typename E>
-                IList<E> getList(const std::string& name) {
-                    return getDistributedObject<IList<E> >(name);
+                std::shared_ptr<IList> getList(const std::string& name) {
+                    return get<IList>(name);
                 }
 
                 /**
@@ -218,9 +202,8 @@ namespace hazelcast {
                 * @param name name of the distributed topic
                 * @return distributed topic instance with the specified name
                 */
-                template<typename E>
-                ITopic<E> getTopic(const std::string& name) {
-                    return getDistributedObject<ITopic<E> >(name);
+                std::shared_ptr<ITopic> getTopic(const std::string& name) {
+                    return get<ITopic>(name);
                 };
 
                 /**
@@ -229,11 +212,8 @@ namespace hazelcast {
                 * @param name name of the distributed topic
                 * @return distributed topic instance with the specified name
                 */
-                template<typename E>
-                std::shared_ptr<ReliableTopic<E> > getReliableTopic(const std::string& name) {
-                    std::shared_ptr<Ringbuffer<topic::impl::reliable::ReliableTopicMessage> > rb =
-                            getRingbuffer<topic::impl::reliable::ReliableTopicMessage>(TOPIC_RB_PREFIX + name);
-                    return std::shared_ptr<ReliableTopic<E> >(new ReliableTopic<E>(name, &clientContext, rb));
+                std::shared_ptr<ReliableTopic> getReliableTopic(const std::string& name) {
+                    return get<ReliableTopic>(name);
                 }
 
                 FlakeIdGenerator getFlakeIdGenerator(const std::string& name);
@@ -258,14 +238,8 @@ namespace hazelcast {
                  * @param name name of the distributed Ringbuffer
                  * @return distributed RingBuffer instance with the specified name
                  */
-                template <typename E>
                 std::shared_ptr<Ringbuffer<E> > getRingbuffer(const std::string& name) {
-                    ringbuffer::impl::RingbufferProxyFactory<E> factory(&clientContext);
-                    std::shared_ptr<spi::ClientProxy> proxy =
-                            getDistributedObjectForService(proxy::ClientRingbufferProxy<E>::SERVICE_NAME, name,
-                                                           factory);
-
-                    return std::static_pointer_cast<proxy::ClientRingbufferProxy<E> >(proxy);
+                    return get<proxy::ClientRingbufferProxy>(name);
                 }
 
                 /**
@@ -376,7 +350,6 @@ namespace hazelcast {
                 static std::atomic<int32_t> CLIENT_ID;
                 int32_t id;
                 std::shared_ptr<ClientLockReferenceIdGenerator> lockReferenceIdGenerator;
-                const std::string TOPIC_RB_PREFIX;
                 std::shared_ptr<util::ILogger> logger;
                 HazelcastClientInstanceImpl(const HazelcastClientInstanceImpl& rhs);
 
@@ -401,6 +374,18 @@ namespace hazelcast {
 
                 void initalizeNearCacheManager();
             };
+
+            template<>
+            std::shared_ptr<IMap> HazelcastClientInstanceImpl::get(const std::string &name) {
+                std::shared_ptr<map::ClientMapProxy> impl;
+                if (clientConfig.template getNearCacheConfig<serialization::pimpl::Data, serialization::pimpl::Data>(
+                        name)) {
+                    return proxyManager.getOrCreateProxy<map::NearCachedClientMapProxy<serialization::pimpl::Data, serialization::pimpl::Data>>(
+                            IMap::SERVICE_NAME, name);
+                } 
+                    
+                return proxyManager.getOrCreateProxy<IMap>(IMap::SERVICE_NAME, name);
+            }
         }
     }
 }
@@ -408,5 +393,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif /* HAZELCAST_CLIENT_IMPL_HAZELCASTCLIENTIMPL_H_ */

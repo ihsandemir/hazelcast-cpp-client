@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_MONITOR_IMPL_LOCALMAPSTATSIMPL_H_
-#define HAZELCAST_CLIENT_MONITOR_IMPL_LOCALMAPSTATSIMPL_H_
+#pragma once
 
 #include <memory>
 
@@ -36,11 +35,11 @@ namespace hazelcast {
                 public:
                     LocalMapStatsImpl();
 
-                    virtual monitor::NearCacheStats *getNearCacheStats();
+                    LocalMapStatsImpl(const std::shared_ptr<monitor::NearCacheStats> &stats);
 
-                    void setNearCacheStats(NearCacheStats &stats);
+                    std::shared_ptr<monitor::NearCacheStats> getNearCacheStats() const override;
                 private:
-                    util::Sync<monitor::NearCacheStats* > nearCacheStats;
+                    std::shared_ptr<monitor::NearCacheStats> nearCacheStats;
                 };
             }
         }
@@ -50,6 +49,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif /* HAZELCAST_CLIENT_MONITOR_IMPL_LOCALMAPSTATSIMPL_H_ */
 

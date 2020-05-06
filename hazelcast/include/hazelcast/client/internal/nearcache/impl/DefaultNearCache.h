@@ -134,7 +134,7 @@ namespace hazelcast {
                          *
                          * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store
                          */
-                        monitor::NearCacheStats &getNearCacheStats() {
+                        std::shared_ptr<monitor::NearCacheStats> getNearCacheStats() const {
                             return nearCacheRecordStore->getNearCacheStats();
                         }
 

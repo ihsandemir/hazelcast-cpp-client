@@ -442,11 +442,14 @@ namespace hazelcast {
                                                                                            serialization::pimpl::Data &key)
                     : name(name), includeValue(includeValue), key(key) {}
 
-            ReliableTopicImpl::ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context,
-                                                 std::shared_ptr<Ringbuffer<topic::impl::reliable::ReliableTopicMessage> > rb)
-                    : proxy::ProxyImpl("hz:impl:topicService", instanceName, context), ringbuffer(rb),
+
+            std::string ReliableTopicImpl::TOPIC_RB_PREFIX = "_hz_rb_";
+
+            ReliableTopicImpl::ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context)
+                    : proxy::ProxyImpl("hz:impl:topicService", instanceName, context),
                       logger(context->getLogger()),
                       config(context->getClientConfig().getReliableTopicConfig(instanceName)) {
+                ringbuffer = context->getHazelcastClientImplementation()->getRingbuffer<topic::impl::reliable::ReliableTopicMessage>(TOPIC_RB_PREFIX + name);
             }
 
             boost::future<void> ReliableTopicImpl::publish(const serialization::pimpl::Data &data) {

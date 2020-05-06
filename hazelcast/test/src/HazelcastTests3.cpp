@@ -1074,7 +1074,7 @@ namespace hazelcast {
                     nearCacheManager = &clientContext.getNearCacheManager();
                     nearCache = nearCacheManager->
                             getNearCache<int, std::string, serialization::pimpl::Data>(getTestName());
-                    this->stats = (nearCache.get() == NULL) ? NULL : &nearCache->getNearCacheStats();
+                    this->stats = nearCache ? nearCache->getNearCacheStats() : nullptr;
                 }
 
                 void testContainsKey(bool useNearCachedMapForRemoval) {
@@ -1216,7 +1216,7 @@ namespace hazelcast {
                 std::shared_ptr<ReplicatedMap<int, std::string> > nearCachedMap;
                 hazelcast::client::internal::nearcache::NearCacheManager *nearCacheManager;
                 std::shared_ptr<hazelcast::client::internal::nearcache::NearCache<serialization::pimpl::Data, std::string> > nearCache;
-                monitor::NearCacheStats *stats;
+                std::shared_ptr<monitor::NearCacheStats> stats;
                 static HazelcastServer *instance;
                 static HazelcastServer *instance2;
             };
@@ -1513,7 +1513,7 @@ namespace hazelcast {
                     return map;
                 }
 
-                monitor::NearCacheStats *getNearCacheStats(ReplicatedMap<int, int> &map) {
+                std::shared_ptr<monitor::NearCacheStats> getNearCacheStats(ReplicatedMap<int, int> &map) {
                     return  (static_cast<proxy::ClientReplicatedMapProxy<int, int> &>(map)).getNearCacheStats();
                 }
 
@@ -1550,7 +1550,7 @@ namespace hazelcast {
                     map->get(i);
                 }
 
-                monitor::NearCacheStats *stats = getNearCacheStats(*map);
+                auto stats = getNearCacheStats(*map);
                 ASSERT_EQ(size, stats->getOwnedEntryCount());
                 ASSERT_EQ(size, stats->getHits());
             }

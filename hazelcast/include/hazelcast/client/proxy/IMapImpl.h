@@ -36,18 +36,63 @@ namespace hazelcast {
         namespace proxy {
             class HAZELCAST_API IMapImpl : public ProxyImpl {
             public:
+                /**
+                * If this map has a MapStore this method flushes
+                * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
+                */
                 boost::future<protocol::ClientMessage> flush();
 
+                /**
+                * Removes the given interceptor for this map. So it will not intercept operations anymore.
+                *
+                * @param id registration id of map interceptor
+                */
                 boost::future<protocol::ClientMessage> removeInterceptor(const std::string &id);
 
+                /**
+* Evicts all keys from this map except locked ones.
+* <p/>
+* If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
+* If you do want to deleteAll to be called use the #clear() method.
+* <p/>
+* The EVICT_ALL event is fired for any registered listeners.
+* See EntryListener#mapEvicted(MapEvent)}.
+*
+* @see #clear()
+*/
                 boost::future<protocol::ClientMessage> evictAll();
 
+                /**
+* Removes the specified entry listener
+* Returns silently if there is no such listener added before.
+*
+*
+* @param registrationId id of registered listener
+*
+* @return true if registration is removed, false otherwise
+*/
                 boost::future<bool> removeEntryListener(const std::string &registrationId);
 
+                /**
+                * Returns the number of key-value mappings in this map.  If the
+                * map contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
+                * <tt>Integer.MAX_VALUE</tt>.
+                *
+                * @return the number of key-value mappings in this map
+                */
                 boost::future<int> size();
 
+                /**
+                * Returns <tt>true</tt> if this map contains no key-value mappings.
+                *
+                * @return <tt>true</tt> if this map contains no key-value mappings
+                */
                 boost::future<bool> isEmpty();
 
+                /**
+                * Removes all of the mappings from this map (optional operation).
+                * The map will be empty after this call returns.
+                */
                 boost::future<protocol::ClientMessage> clear();
 
             protected:

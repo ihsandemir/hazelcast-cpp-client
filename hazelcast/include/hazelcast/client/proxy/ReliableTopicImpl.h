@@ -45,14 +45,14 @@ namespace hazelcast {
         namespace proxy {
             class HAZELCAST_API ReliableTopicImpl : public proxy::ProxyImpl {
             protected:
-                ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context,
-                                  std::shared_ptr<Ringbuffer<topic::impl::reliable::ReliableTopicMessage> > rb);
+                ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context);
 
                 boost::future<void> publish(const serialization::pimpl::Data &data);
             protected:
                 std::shared_ptr<Ringbuffer<topic::impl::reliable::ReliableTopicMessage> > ringbuffer;
                 util::ILogger &logger;
                 const config::ReliableTopicConfig *config;
+                static std::string TOPIC_RB_PREFIX;
             };
         }
     }

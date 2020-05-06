@@ -1443,7 +1443,7 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(*evictLatch);
 
-                monitor::impl::NearCacheStatsImpl *nearCacheStatsImpl =
+                auto nearCacheStatsImpl =
                         (monitor::impl::NearCacheStatsImpl *) imap.getLocalMapStats().getNearCacheStats();
 
 // When ttl expires at server, the server does not send near cache invalidation, hence below is for
@@ -1474,8 +1474,7 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(*evictLatch);
 
-                monitor::impl::NearCacheStatsImpl *nearCacheStatsImpl =
-                        (monitor::impl::NearCacheStatsImpl *) imap.getLocalMapStats().getNearCacheStats();
+                auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>( imap.getLocalMapStats().getNearCacheStats());
 
 // When ttl expires at server, the server does not send near cache invalidation, hence below is for
 // non-near cache test case.
@@ -1511,8 +1510,7 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(*evictLatch);
 
-                monitor::impl::NearCacheStatsImpl *nearCacheStatsImpl =
-                        (monitor::impl::NearCacheStatsImpl *) imap.getLocalMapStats().getNearCacheStats();
+                auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(imap.getLocalMapStats().getNearCacheStats());
 
 // When ttl expires at server, the server does not send near cache invalidation, hence below is for
 // non-near cache test case.
@@ -1544,8 +1542,7 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(*evictLatch);
 
-                monitor::impl::NearCacheStatsImpl *nearCacheStatsImpl =
-                        (monitor::impl::NearCacheStatsImpl *) imap.getLocalMapStats().getNearCacheStats();
+                auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(imap.getLocalMapStats().getNearCacheStats());
 
 // When ttl expires at server, the server does not send near cache invalidation, hence below is for
 // non-near cache test case.
@@ -1778,7 +1775,7 @@ namespace hazelcast {
                         dummy, dummy, dummy, evict);
                 std::string id = imap.addEntryListener(sampleEntryListener, false);
 
-                monitor::impl::NearCacheStatsImpl *nearCacheStatsImpl = (monitor::impl::NearCacheStatsImpl *) imap.getLocalMapStats().getNearCacheStats();
+                auto nearCacheStatsImpl = (monitor::impl::NearCacheStatsImpl *) imap.getLocalMapStats().getNearCacheStats();
 
                 int64_t initialInvalidationRequests = 0;
                 if (nearCacheStatsImpl) {
@@ -1818,7 +1815,7 @@ namespace hazelcast {
                         dummy, dummy, dummy, evict);
                 std::string id = map.addEntryListener(sampleEntryListener, false);
 
-                monitor::impl::NearCacheStatsImpl *nearCacheStatsImpl = (monitor::impl::NearCacheStatsImpl *) map.getLocalMapStats().getNearCacheStats();
+                auto nearCacheStatsImpl = (monitor::impl::NearCacheStatsImpl *) map.getLocalMapStats().getNearCacheStats();
 
                 int64_t initialInvalidationRequests = 0;
                 if (nearCacheStatsImpl) {

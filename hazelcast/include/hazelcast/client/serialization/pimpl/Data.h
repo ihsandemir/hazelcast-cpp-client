@@ -84,6 +84,26 @@ namespace hazelcast {
 
 namespace std {
     template <>
+    class hash<hazelcast::client::serialization::pimpl::Data> {
+    public:
+        std::size_t HAZELCAST_API operator()(const hazelcast::client::serialization::pimpl::Data &val) const noexcept {
+            return std::hash<int>{}(val.hash());
+        }
+    };
+
+    template<>
+    class hash<std::shared_ptr<hazelcast::client::serialization::pimpl::Data>> {
+    public:
+        std::size_t HAZELCAST_API
+        operator()(const std::shared_ptr<hazelcast::client::serialization::pimpl::Data> &val) const noexcept {
+            if (!val) {
+                return std::hash<int>{}(-1);
+            }
+            return std::hash<int>{}(val->hash());
+        }
+    };
+
+    template <>
     class less<std::shared_ptr<hazelcast::client::serialization::pimpl::Data> > {
     public:
         bool HAZELCAST_API operator() (const std::shared_ptr<hazelcast::client::serialization::pimpl::Data> &lhs,

@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_MAP_IMPL_CLIENTMAPPROXYFACTORY_H_
-#define HAZELCAST_CLIENT_MAP_IMPL_CLIENTMAPPROXYFACTORY_H_
+#pragma once
 
 #include "hazelcast/client/spi/ClientProxyFactory.h"
 #include "hazelcast/client/ClientConfig.h"
@@ -30,26 +29,21 @@ namespace hazelcast {
     namespace client {
         namespace map {
             namespace impl {
-                template<typename K, typename V>
-                class ClientMapProxyFactory : public spi::ClientProxyFactory {
+                class HAZELCAST_API ClientMapProxyFactory : public spi::ClientProxyFactory {
                 public:
-                    ClientMapProxyFactory(spi::ClientContext *context) : clientContext(context) {
-                    }
+                    ClientMapProxyFactory(spi::ClientContext *context) : clientContext(context) {}
 
-                    //@Override
-                    std::shared_ptr<spi::ClientProxy> create(const std::string &name) {
-                        const std::shared_ptr<config::NearCacheConfig<K, V> > nearCacheConfig =
-                                clientContext->getClientConfig().template getNearCacheConfig<K, V>(name);
+                    std::shared_ptr<spi::ClientProxy> create(const std::string &name) override {
+                        auto nearCacheConfig = clientContext->getClientConfig().template getNearCacheConfig<serialization::pimpl::Data, serialization::pimpl::Data>(
+                                name);
                         if (nearCacheConfig != NULL) {
                             //TODO checkNearCacheConfig(nearCacheConfig, true);
-                            return std::shared_ptr<map::NearCachedClientMapProxy<K, V> >(
-                                    new map::NearCachedClientMapProxy<K, V>(name, clientContext, *nearCacheConfig));
+                            return std::make_shared<map::NearCachedClientMapProxy<serialization::pimpl::Data, serialization::pimpl::Data>>(
+                                    name, clientContext, *nearCacheConfig);
                         } else {
-                            return std::shared_ptr<map::ClientMapProxy<K, V> >(
-                                    new map::ClientMapProxy<K, V>(name, clientContext));
+                            return std::make_shared<map::ClientMapProxy>(name, clientContext);
                         }
                     }
-
                 private:
                     spi::ClientContext *clientContext;
                 };
@@ -61,6 +55,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif /* HAZELCAST_CLIENT_MAP_IMPL_CLIENTMAPPROXYFACTORY_H_ */
 

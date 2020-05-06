@@ -3141,14 +3141,14 @@ namespace hazelcast {
                                 }
                             }
 
-                            monitor::NearCacheStats &nearCacheStats = nearCacheRecordStore->getNearCacheStats();
+                            auto nearCacheStats = nearCacheRecordStore->getNearCacheStats();
 
-                            int64_t memoryCostWhenFull = nearCacheStats.getOwnedEntryMemoryCost();
-                            ASSERT_TRUE(nearCacheStats.getCreationTime() >= creationStartTime);
-                            ASSERT_TRUE(nearCacheStats.getCreationTime() <= creationEndTime);
-                            ASSERT_EQ(expectedHits, nearCacheStats.getHits());
-                            ASSERT_EQ(expectedMisses, nearCacheStats.getMisses());
-                            ASSERT_EQ(expectedEntryCount, nearCacheStats.getOwnedEntryCount());
+                            int64_t memoryCostWhenFull = nearCacheStats->getOwnedEntryMemoryCost();
+                            ASSERT_TRUE(nearCacheStats->getCreationTime() >= creationStartTime);
+                            ASSERT_TRUE(nearCacheStats->getCreationTime() <= creationEndTime);
+                            ASSERT_EQ(expectedHits, nearCacheStats->getHits());
+                            ASSERT_EQ(expectedMisses, nearCacheStats->getMisses());
+                            ASSERT_EQ(expectedEntryCount, nearCacheStats->getOwnedEntryCount());
                             switch (inMemoryFormat) {
                                 case config::BINARY:
                                     ASSERT_TRUE(memoryCostWhenFull > 0);
@@ -3164,14 +3164,14 @@ namespace hazelcast {
                                 }
                             }
 
-                            ASSERT_EQ(expectedEntryCount, nearCacheStats.getOwnedEntryCount());
+                            ASSERT_EQ(expectedEntryCount, nearCacheStats->getOwnedEntryCount());
                             switch (inMemoryFormat) {
                                 case config::BINARY:
-                                    ASSERT_TRUE(nearCacheStats.getOwnedEntryMemoryCost() > 0);
-                                    ASSERT_TRUE(nearCacheStats.getOwnedEntryMemoryCost() < memoryCostWhenFull);
+                                    ASSERT_TRUE(nearCacheStats->getOwnedEntryMemoryCost() > 0);
+                                    ASSERT_TRUE(nearCacheStats->getOwnedEntryMemoryCost() < memoryCostWhenFull);
                                     break;
                                 case config::OBJECT:
-                                    ASSERT_EQ(0, nearCacheStats.getOwnedEntryMemoryCost());
+                                    ASSERT_EQ(0, nearCacheStats->getOwnedEntryMemoryCost());
                                     break;
                             }
 
@@ -3180,7 +3180,7 @@ namespace hazelcast {
                             switch (inMemoryFormat) {
                                 case config::BINARY:
                                 case config::OBJECT:
-                                    ASSERT_EQ(0, nearCacheStats.getOwnedEntryMemoryCost());
+                                    ASSERT_EQ(0, nearCacheStats->getOwnedEntryMemoryCost());
                                     break;
                             }
                         }
@@ -3266,9 +3266,9 @@ namespace hazelcast {
 
                             ASSERT_EQ(0, nearCacheRecordStore->size());
 
-                            monitor::NearCacheStats &nearCacheStats = nearCacheRecordStore->getNearCacheStats();
-                            ASSERT_EQ(0, nearCacheStats.getOwnedEntryCount());
-                            ASSERT_EQ(0, nearCacheStats.getOwnedEntryMemoryCost());
+                            auto nearCacheStats = nearCacheRecordStore->getNearCacheStats();
+                            ASSERT_EQ(0, nearCacheStats->getOwnedEntryCount());
+                            ASSERT_EQ(0, nearCacheStats->getOwnedEntryMemoryCost());
                         }
 
                         void createNearCacheWithMaxSizePolicy(config::InMemoryFormat inMemoryFormat,

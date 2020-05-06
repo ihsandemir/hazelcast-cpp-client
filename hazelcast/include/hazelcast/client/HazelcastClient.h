@@ -425,9 +425,8 @@ namespace hazelcast {
             * @param name name of the distributed map
             * @return distributed map instance with the specified name
             */
-            template<typename K, typename V>
-            IMap<K, V> getMap(const std::string &name) {
-                return clientImpl->getMap<K, V>(name);
+            std::shared_ptr<IMap> getMap(const std::string &name) {
+                return clientImpl->getMap(name);
             }
 
             /**

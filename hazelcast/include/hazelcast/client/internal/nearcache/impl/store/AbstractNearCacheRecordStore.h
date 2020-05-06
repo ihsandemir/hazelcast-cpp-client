@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_ABSTRACTNEARCACHERESCORDSTORE_H_
-#define HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_ABSTRACTNEARCACHERESCORDSTORE_H_
+#pragma once
 
 #include <stdint.h>
 #include <memory>
@@ -34,7 +33,6 @@
 #include "hazelcast/client/internal/eviction/EvictionListener.h"
 #include "hazelcast/client/internal/nearcache/impl/store/BaseHeapNearCacheRecordStore.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
-#include "hazelcast/client/monitor/NearCacheStats.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -56,7 +54,7 @@ namespace hazelcast {
                                     : nearCacheConfig(cacheConfig),
                                       timeToLiveMillis(cacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND),
                                       maxIdleMillis(cacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND),
-                                      serializationService(ss) {
+                                      serializationService(ss), nearCacheStats(new monitor::impl::NearCacheStatsImpl) {
                                 const std::shared_ptr<client::config::EvictionConfig<K, V> > &evictionConfig = cacheConfig.getEvictionConfig();
                                 if (NULL != evictionConfig.get()) {
                                     evictionPolicyType = evictionConfig->getEvictionPolicyType();
@@ -94,11 +92,11 @@ namespace hazelcast {
                             virtual void onEvict(const std::shared_ptr<KS> &key, const std::shared_ptr<R> &record,
                                                  bool wasExpired) {
                                 if (wasExpired) {
-                                    nearCacheStats.incrementExpirations();
+                                    nearCacheStats->incrementExpirations();
                                 } else {
-                                    nearCacheStats.incrementEvictions();
+                                    nearCacheStats->incrementEvictions();
                                 }
-                                nearCacheStats.decrementOwnedEntryCount();
+                                nearCacheStats->decrementOwnedEntryCount();
                             }
 
                             //@Override
@@ -116,12 +114,12 @@ namespace hazelcast {
                                             return std::shared_ptr<V>();
                                         }
                                         onRecordAccess(record);
-                                        nearCacheStats.incrementHits();
+                                        nearCacheStats->incrementHits();
                                         value = recordToValue(record.get());
                                         onGet(key, value, record);
                                         return value;
                                     } else {
-                                        nearCacheStats.incrementMisses();
+                                        nearCacheStats->incrementMisses();
                                         return std::shared_ptr<V>();
                                     }
                                 } catch (exception::IException &error) {
@@ -152,12 +150,12 @@ namespace hazelcast {
                                     record = removeRecord(key);
                                     if (record.get() != NULL) {
                                         removed = true;
-                                        nearCacheStats.decrementOwnedEntryCount();
-                                        nearCacheStats.decrementOwnedEntryMemoryCost(
+                                        nearCacheStats->decrementOwnedEntryCount();
+                                        nearCacheStats->decrementOwnedEntryMemoryCost(
                                                 getTotalStorageMemoryCost(key.get(), record.get()));
-                                        nearCacheStats.incrementInvalidations();
+                                        nearCacheStats->incrementInvalidations();
                                     }
-                                    nearCacheStats.incrementInvalidationRequests();
+                                    nearCacheStats->incrementInvalidationRequests();
                                     onRemove(key, record, removed);
                                     return record.get() != NULL;
                                 } catch (exception::IException &error) {
@@ -171,8 +169,8 @@ namespace hazelcast {
                                 checkAvailable();
 
                                 clearRecords();
-                                nearCacheStats.setOwnedEntryCount(0);
-                                nearCacheStats.setOwnedEntryMemoryCost(0L);
+                                nearCacheStats->setOwnedEntryCount(0);
+                                nearCacheStats->setOwnedEntryMemoryCost(0L);
                             }
 
                             //@Override
@@ -180,28 +178,25 @@ namespace hazelcast {
                                 checkAvailable();
 
                                 destroyStore();
-                                nearCacheStats.setOwnedEntryCount(0);
-                                nearCacheStats.setOwnedEntryMemoryCost(0L);
+                                nearCacheStats->setOwnedEntryCount(0);
+                                nearCacheStats->setOwnedEntryMemoryCost(0L);
                             }
 
                             //@Override
                             int size() const {
                                 checkAvailable();
-
                                 return (int) records->size();
                             }
 
                             //@Override
-                            virtual monitor::NearCacheStats &getNearCacheStats() {
+                            virtual std::shared_ptr<monitor::NearCacheStats> getNearCacheStats() const {
                                 checkAvailable();
-
                                 return nearCacheStats;
                             }
 
                             //@Override
                             void doEvictionIfRequired() {
                                 checkAvailable();
-
                                 if (isEvictionEnabled()) {
                                     evictionStrategy->evict(records.get(), evictionPolicyEvaluator.get(),
                                                             evictionChecker.get(), this);
@@ -420,7 +415,7 @@ namespace hazelcast {
                             }
 
                             void onExpire(const std::shared_ptr<KS> &key, const std::shared_ptr<R> &record) {
-                                nearCacheStats.incrementExpirations();
+                                nearCacheStats->incrementExpirations();
                             }
 
                             bool isEvictionEnabled() {
@@ -444,7 +439,7 @@ namespace hazelcast {
                             const int64_t timeToLiveMillis;
                             const int64_t maxIdleMillis;
                             serialization::pimpl::SerializationService &serializationService;
-                            monitor::impl::NearCacheStatsImpl nearCacheStats;
+                            std::shared_ptr<monitor::impl::NearCacheStatsImpl> nearCacheStats;
 
                             std::unique_ptr<eviction::MaxSizeChecker> maxSizeChecker;
                             std::unique_ptr<eviction::EvictionPolicyEvaluator<K, V, KS, R> > evictionPolicyEvaluator;
@@ -490,7 +485,7 @@ namespace hazelcast {
                                     onRecordCreate(key, record);
                                     oldRecord = putRecord(key, record);
                                     if (oldRecord.get() == NULL) {
-                                        nearCacheStats.incrementOwnedEntryCount();
+                                        nearCacheStats->incrementOwnedEntryCount();
                                     }
                                     onPut(key, value, record, oldRecord);
                                 } catch (exception::IException &error) {
@@ -511,6 +506,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif /* HAZELCAST_CLIENT_INTERNAL_NEARCACHE_IMPL_STORE_ABSTRACTNEARCACHERESCORDSTORE_H_ */
 

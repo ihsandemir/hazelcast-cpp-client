@@ -19,7 +19,6 @@
 #include <string>
 #include <sstream>
 #include <stdint.h>
-
 #include <memory>
 
 #include "hazelcast/client/config/InMemoryFormat.h"
@@ -40,7 +39,7 @@ namespace hazelcast {
              * Contains the configuration for a Near Cache.
              * @BinaryInterface
              */
-            template <typename K, typename V>
+            template<typename K = serialization::pimpl::Data, typename V = serialization::pimpl::Data>
             class NearCacheConfig : public NearCacheConfigBase {
             public:
                 /**

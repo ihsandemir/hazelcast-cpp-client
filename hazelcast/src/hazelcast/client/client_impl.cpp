@@ -150,7 +150,7 @@ namespace hazelcast {
                       transactionManager(clientContext, *clientConfig.getLoadBalancer()), cluster(clusterService),
                       lifecycleService(clientContext, clientConfig.getLifecycleListeners(),
                                        clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
-                      id(++CLIENT_ID), TOPIC_RB_PREFIX("_hz_rb_") {
+                      id(++CLIENT_ID) {
                 const std::shared_ptr<std::string> &name = clientConfig.getInstanceName();
                 if (name.get() != NULL) {
                     instanceName = *name;
@@ -274,7 +274,7 @@ namespace hazelcast {
                     const std::string &serviceName,
                     const std::string &name,
                     spi::ClientProxyFactory &factory) {
-                return proxyManager.getOrCreateProxy(serviceName, name, factory);
+                return proxyManager.createProxy(serviceName, name, factory);
             }
 
             const protocol::ClientExceptionFactory &HazelcastClientInstanceImpl::getExceptionFactory() const {
@@ -375,11 +375,7 @@ namespace hazelcast {
 
             std::shared_ptr<crdt::pncounter::PNCounter>
             HazelcastClientInstanceImpl::getPNCounter(const std::string &name) {
-                crdt::pncounter::impl::PNCounterProxyFactory factory(&clientContext);
-                std::shared_ptr<spi::ClientProxy> proxy =
-                        getDistributedObjectForService(proxy::ClientPNCounterProxy::SERVICE_NAME, name, factory);
-
-                return std::static_pointer_cast<proxy::ClientPNCounterProxy>(proxy);
+                return get<proxy::ClientPNCounterProxy>(name);
             }
 
             spi::ProxyManager &HazelcastClientInstanceImpl::getProxyManager() {
@@ -393,11 +389,7 @@ namespace hazelcast {
 
             std::shared_ptr<IExecutorService>
             HazelcastClientInstanceImpl::getExecutorService(const std::string &name) {
-                executor::impl::ExecutorServiceProxyFactory factory(&clientContext);
-                std::shared_ptr<spi::ClientProxy> proxy =
-                        getDistributedObjectForService(IExecutorService::SERVICE_NAME, name, factory);
-
-                return std::static_pointer_cast<IExecutorService>(proxy);
+                return get<IExecutorService>(name);
             }
 
             Client HazelcastClientInstanceImpl::getLocalEndpoint() const {

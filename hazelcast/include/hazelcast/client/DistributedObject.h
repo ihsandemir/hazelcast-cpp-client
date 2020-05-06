@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 12/11/13.
-
-#ifndef HAZELCAST_DistributedObject
-#define HAZELCAST_DistributedObject
+#pragma once
 
 #include "hazelcast/util/HazelcastDll.h"
 
 #include <string>
+#include <boost/thread/future.hpp>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -70,7 +67,7 @@ namespace hazelcast {
             * Destroys this object cluster-wide.
             * Clears and releases all resources for this object.
             */
-            virtual void destroy() = 0;
+            virtual boost::future<void> destroy() = 0;
 
             /**
             * Destructor
@@ -84,6 +81,4 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HAZELCAST_DistributedObject
 

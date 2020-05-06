@@ -301,13 +301,13 @@ namespace hazelcast {
                  *
                  * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store
                  */
-                monitor::NearCacheStats *getNearCacheStats() {
+                std::shared_ptr<monitor::NearCacheStats> getNearCacheStats() const {
                     std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V> > cache = nearCache.get();
                     if (!cache.get()) {
-                        return NULL;
+                        return nullptr;
                     }
 
-                    return &cache->getNearCacheStats();
+                    return cache->getNearCacheStats();
                 }
 
             protected:

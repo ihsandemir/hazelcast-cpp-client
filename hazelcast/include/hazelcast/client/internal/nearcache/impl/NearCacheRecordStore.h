@@ -116,7 +116,7 @@ namespace hazelcast {
                          *
                          * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
                          */
-                        virtual monitor::NearCacheStats &getNearCacheStats() = 0;
+                        virtual std::shared_ptr<monitor::NearCacheStats> getNearCacheStats() const = 0;
 
                         /**
                          * Selects the best candidate object to store from the given {@code candidates}.

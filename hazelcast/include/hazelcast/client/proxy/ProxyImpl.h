@@ -60,8 +60,8 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                boost::future<boost::optional<T>> toObject(boost::future<protocol::ClientMessage> &f) {
-                    return f.then(boost::launch::deferred, [=] (boost::future<protocol::ClientMessage> f) {
+                boost::future<boost::optional<T>> toObject(boost::future<serialization::pimpl::Data> &f) {
+                    return f.then(boost::launch::deferred, [=] (boost::future<serialization::pimpl::Data> f) {
                         return toObject<T>(f.get());
                     });
                 }

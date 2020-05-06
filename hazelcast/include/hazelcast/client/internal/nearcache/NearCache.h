@@ -59,7 +59,7 @@ namespace hazelcast {
                      *
                      * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store
                      */
-                    virtual monitor::NearCacheStats &getNearCacheStats() = 0;
+                    virtual std::shared_ptr<monitor::NearCacheStats> getNearCacheStats() const = 0;
 
                     /**
                      * Gets the name of this {@link NearCache} instance.

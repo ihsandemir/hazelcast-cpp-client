@@ -123,44 +123,6 @@ namespace hazelcast {
                 proxies.clear();
             }
 
-            std::shared_ptr<ClientProxy> ProxyManager::getOrCreateProxy(
-                    const std::string &service, const std::string &id, ClientProxyFactory &factory) {
-                DefaultObjectNamespace ns(service, id);
-
-                std::shared_future<std::shared_ptr<ClientProxy>> proxyFuture;
-                std::promise<std::shared_ptr<ClientProxy>> promise;
-                typedef std::unordered_map<DefaultObjectNamespace, std::shared_future<std::shared_ptr<ClientProxy>>> proxy_map;
-                std::pair<proxy_map::iterator, bool> insertedEntry;
-                {
-                    std::lock_guard<std::mutex> guard(lock);
-                    auto it = proxies.find(ns);
-                    if (it != proxies.end()) {
-                        proxyFuture = it->second;
-                    } else {
-                        insertedEntry = proxies.insert({ns, promise.get_future().share()});
-                        assert(insertedEntry.second);
-                    }
-                }
-
-                if (proxyFuture.valid()) {
-                    return proxyFuture.get();
-                }
-
-                try {
-                    std::shared_ptr<ClientProxy> clientProxy = factory.create(id);
-                    initializeWithRetry(clientProxy);
-                    promise.set_value(clientProxy);
-                    return clientProxy;
-                } catch (exception::IException &e) {
-                    promise.set_exception(std::current_exception());
-
-                    std::lock_guard<std::mutex> guard(lock);
-                    proxies.erase(insertedEntry.first);
-                    throw;
-                }
-                return nullptr;
-            }
-
             void ProxyManager::initializeWithRetry(const std::shared_ptr<ClientProxy> &clientProxy) {
                 auto start = std::chrono::steady_clock::now();
                 while (std::chrono::steady_clock::now() < start + invocationTimeout) {
