@@ -20,12 +20,8 @@
 #define HAZELCAST_CLIENT_TOPIC_IMPL_TOPICEVENTHANDLERIMPL_H_
 
 #include "hazelcast/client/spi/ClientClusterService.h"
-#include "hazelcast/client/topic/impl/MessageImpl.h"
+#include "hazelcast/client/topic/Message.h"
 #include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/topic/MessageListener.h"
-
-#include <assert.h>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -36,32 +32,26 @@ namespace hazelcast {
     namespace client {
         namespace topic {
             namespace impl {
-                template<typename E>
+                template<typename Listener>
                 class TopicEventHandlerImpl : public protocol::codec::TopicAddMessageListenerCodec::AbstractEventHandler {
                 public:
                     TopicEventHandlerImpl(const std::string &instanceName, spi::ClientClusterService &clusterService,
                                       serialization::pimpl::SerializationService &serializationService,
-                                      MessageListener<E> &messageListener)
-                            :instanceName(instanceName)
-                            , clusterService(clusterService)
-                            , serializationService(serializationService)
-                            , listener(messageListener) {
-                    }
+                                          Listener &&messageListener)
+                            :instanceName(instanceName), clusterService(clusterService),
+                            serializationService(serializationService), listener(messageListener) {}
 
-                    virtual void handleTopicEventV10(const serialization::pimpl::Data &item, const int64_t &publishTime,
+                    virtual void handleTopicEventV10(serialization::pimpl::Data &&item, const int64_t &publishTime,
                                              const std::string &uuid) {
-                        std::shared_ptr<Member> member = clusterService.getMember(uuid);
-
-                        std::unique_ptr<E> object = serializationService.toObject<E>(item);
-
-                        std::unique_ptr<Message<E> > listenerMsg(new impl::MessageImpl<E>(instanceName, object, publishTime, member));
-                        listener.onMessage(std::move(listenerMsg));
+                        listener()(
+                                Message(instanceName, TypedData(std::move(item), serializationService), publishTime,
+                                        clusterService.getMember(uuid)));
                     }
                 private:
-                    const std::string &instanceName;
+                    std::string instanceName;
                     spi::ClientClusterService &clusterService;
                     serialization::pimpl::SerializationService &serializationService;
-                    MessageListener<E> &listener;
+                    Listener &listener;
                 };
             }
         }

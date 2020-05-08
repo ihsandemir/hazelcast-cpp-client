@@ -43,7 +43,7 @@ namespace hazelcast {
             *  @returns registrationId that can be used to remove item listener
             */
             template<typename Listener>
-            boost::future<std::string> addItemListener(Listener &listener, bool includeValue) {
+            boost::future<std::string> addItemListener(Listener &&listener, bool includeValue) {
                 std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>> itemEventHandler(
                         new impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>(
                                 getName(), getContext().getClientClusterService(),

@@ -22,14 +22,24 @@ namespace hazelcast {
     namespace client {
         namespace proxy {
             class HAZELCAST_API ITopicImpl : public proxy::ProxyImpl {
+            public:
+                /**
+                * Stops receiving messages for the given message listener. If the given listener already removed,
+                * this method does nothing.
+                *
+                * @param registrationId Id of listener registration.
+                *
+                * @return true if registration is removed, false otherwise
+                */
+                boost::future<bool> removeMessageListener(const std::string& registrationId);
+
             protected:
                 ITopicImpl(const std::string& instanceName, spi::ClientContext *context);
 
                 boost::future<void> publish(const serialization::pimpl::Data& data);
 
-                boost::future<std::string>  addMessageListener(impl::BaseEventHandler *topicEventHandler);
+                boost::future<std::string> addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler);
 
-                boost::future<bool> removeMessageListener(const std::string& registrationId);
             private:
                 class TopicListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -50,7 +60,7 @@ namespace hazelcast {
 
                 int partitionId;
 
-                std::shared_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec();
+                std::unique_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec();
             };
         }
     }

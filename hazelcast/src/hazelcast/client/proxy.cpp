@@ -1800,26 +1800,24 @@ namespace hazelcast {
             }
 
             ITopicImpl::ITopicImpl(const std::string &instanceName, spi::ClientContext *context)
-                    : proxy::ProxyImpl("hz:impl:topicService", instanceName, context) {
-                partitionId = getPartitionId(toData(instanceName));
-            }
+                    : proxy::ProxyImpl("hz:impl:topicService", instanceName, context),
+                    partitionId(getPartitionId(toData(instanceName))) {}
 
             boost::future<void> ITopicImpl::publish(const serialization::pimpl::Data &data) {
                 auto request = protocol::codec::TopicPublishCodec::encodeRequest(getName(), data);
-
-                invokeOnPartition(request, partitionId);
+                return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            boost::future<std::string> ITopicImpl::addMessageListener(impl::BaseEventHandler *topicEventHandler) {
-                return registerListener(createItemListenerCodec(), topicEventHandler);
+            boost::future<std::string> ITopicImpl::addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler) {
+                return registerListener(createItemListenerCodec(), std::move(topicEventHandler));
             }
 
             boost::future<bool> ITopicImpl::removeMessageListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec> ITopicImpl::createItemListenerCodec() {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(new TopicListenerMessageCodec(getName()));
+            std::unique_ptr<spi::impl::ListenerMessageCodec> ITopicImpl::createItemListenerCodec() {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(new TopicListenerMessageCodec(getName()));
             }
 
             ITopicImpl::TopicListenerMessageCodec::TopicListenerMessageCodec(const std::string &name) : name(name) {}

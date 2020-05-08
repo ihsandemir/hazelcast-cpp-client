@@ -281,7 +281,7 @@ namespace hazelcast {
                     ClientConfig clientConfig;
                     clientConfig.setProperty(ClientProperties::STATISTICS_ENABLED, "true")
                             .setProperty(ClientProperties::STATISTICS_PERIOD_SECONDS,
-                                         hazelcast::util::IOUtil::to_string<int>(STATS_PERIOD_SECONDS))
+                                         std::to_string<int>(STATS_PERIOD_SECONDS))
                                     // add IMap Near Cache config
                             .addNearCacheConfig(std::shared_ptr<config::NearCacheConfig<int, int> >(
                                     new config::NearCacheConfig<int, int>(getTestName())));
@@ -3002,7 +3002,7 @@ namespace hazelcast {
                                          boost::latch &latch1) : client(client), mm(mm), latch1(latch1) {}
 
                     virtual void run() {
-                        std::string key = hazelcast::util::IOUtil::to_string(hazelcast::util::getCurrentThreadId());
+                        std::string key = std::to_string(hazelcast::util::getCurrentThreadId());
                         std::string key2 = key + "2";
                         client.getMultiMap<std::string, std::string>("testPutGetRemove").put(key, "value");
                         TransactionContext context = client.newTransactionContext();

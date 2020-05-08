@@ -872,7 +872,7 @@ namespace hazelcast {
                 std::vector<std::string> array = q->toArray<std::string>();
                 size_t size = array.size();
                 for (size_t i = 0; i < size; i++) {
-                    ASSERT_EQ(std::string("item") + hazelcast::util::IOUtil::to_string(i + 1), array[i]);
+                    ASSERT_EQ(std::string("item") + std::to_string(i + 1), array[i]);
                 }
             }
 

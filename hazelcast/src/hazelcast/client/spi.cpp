@@ -746,24 +746,23 @@ namespace hazelcast {
                     return id;
                 }
 
-                std::shared_ptr<Member> ClientClusterServiceImpl::getMember(const Address &address) {
+                boost::optional<Member> ClientClusterServiceImpl::getMember(const Address &address) {
                     std::map<Address, std::shared_ptr<Member> > currentMembers = members.get();
-                    const std::map<hazelcast::client::Address, std::shared_ptr<hazelcast::client::Member> >::iterator &it = currentMembers.find(
-                            address);
+                    const auto &it = currentMembers.find(address);
                     if (it == currentMembers.end()) {
-                        return std::shared_ptr<Member>();
+                        return boost::none;
                     }
-                    return it->second;
+                    return boost::make_optional(*it->second);
                 }
 
-                std::shared_ptr<Member> ClientClusterServiceImpl::getMember(const std::string &uuid) {
+                boost::optional<Member> ClientClusterServiceImpl::getMember(const std::string &uuid) {
                     std::vector<Member> memberList = getMemberList();
-                    for (const Member &member : memberList) {
+                    for (Member &member : memberList) {
                         if (uuid == member.getUuid()) {
-                            return std::shared_ptr<Member>(new Member(member));
+                            return boost::make_optional(std::move(member));
                         }
                     }
-                    return std::shared_ptr<Member>();
+                    return boost::none;
                 }
 
                 std::vector<Member> ClientClusterServiceImpl::getMemberList() {

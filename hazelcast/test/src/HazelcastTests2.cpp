@@ -262,7 +262,7 @@ namespace hazelcast {
 
                     ASSERT_EQ(source, ioException.getSource());
                     ASSERT_EQ(
-                            originalMessage + extendedMessage + hazelcast::util::IOUtil::to_string<int>(messageNumber),
+                            originalMessage + extendedMessage + std::to_string<int>(messageNumber),
                             ioException.getMessage());
                 }
             }
@@ -2449,7 +2449,7 @@ namespace hazelcast {
                 std::vector<double> dd(doubleArray, doubleArray + 3);
                 TestNamedPortable portableArray[5];
                 for (int i = 0; i < 5; i++) {
-                    portableArray[i].name = "named-portable-" + hazelcast::util::IOUtil::to_string(i);
+                    portableArray[i].name = "named-portable-" + std::to_string(i);
                     portableArray[i].k = i;
                 }
                 std::vector<TestNamedPortable> nn(portableArray, portableArray + 5);
@@ -2510,7 +2510,7 @@ namespace hazelcast {
                 TestNamedPortable portableArray[5];
 
                 for (int i = 0; i < 5; i++) {
-                    portableArray[i].name = "named-portable-" + hazelcast::util::IOUtil::to_string(i);
+                    portableArray[i].name = "named-portable-" + std::to_string(i);
                     portableArray[i].k = i;
                 }
                 std::vector<TestNamedPortable> nn(portableArray, portableArray + 5);
@@ -2580,7 +2580,7 @@ namespace hazelcast {
                 std::vector<double> dd(doubleArray, doubleArray + 3);
                 TestNamedPortable portableArray[5];
                 for (int i = 0; i < 5; i++) {
-                    portableArray[i].name = "named-portable-" + hazelcast::util::IOUtil::to_string(i);
+                    portableArray[i].name = "named-portable-" + std::to_string(i);
                     portableArray[i].k = i;
                 }
                 std::vector<TestNamedPortable> nn(portableArray, portableArray + 5);

@@ -485,8 +485,8 @@ namespace hazelcast {
             * @param name name of the distributed topic
             * @return distributed topic instance with the specified name
             */
-            ITopic getTopic(const std::string& name) {
-                return clientImpl->getTopic<E>(name);
+            std::shared_ptr<ITopic> getTopic(const std::string& name) {
+                return clientImpl->getTopic(name);
             };
 
             /**

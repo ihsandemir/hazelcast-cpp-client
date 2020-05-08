@@ -11032,7 +11032,7 @@ namespace hazelcast {
 
 
                         virtual void
-                        handleTopicEventV10(const serialization::pimpl::Data &item, const int64_t &publishTime,
+                        handleTopicEventV10(serialization::pimpl::Data &&item, const int64_t &publishTime,
                                             const std::string &uuid) = 0;
 
                     };

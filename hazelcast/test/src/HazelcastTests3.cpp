@@ -1598,52 +1598,34 @@ namespace hazelcast {
     }
 }
 
-
-
-
 namespace hazelcast {
     namespace client {
-
         namespace test {
             class ClientTopicTest : public ClientTestSupport {
             public:
                 ClientTopicTest();
-
             protected:
                 HazelcastServer instance;
                 ClientConfig clientConfig;
                 HazelcastClient client;
-                ITopic<std::string> topic;
+                std::shared_ptr<ITopic> topic;
             };
 
             ClientTopicTest::ClientTopicTest() : instance(*g_srvFactory), client(getNewClient()),
-                                                 topic(client.getTopic<std::string>("ClientTopicTest")) {
-            }
-
-            class MyMessageListener : public topic::MessageListener<std::string> {
-            public:
-                MyMessageListener(boost::latch &latch1)
-                        : latch1(latch1) {
-                }
-
-                void onMessage(std::unique_ptr<topic::Message<std::string> > &&message) {
-                    latch1.count_down();
-                }
-
-            private:
-                boost::latch &latch1;
-            };
+                                                 topic(client.getTopic("ClientTopicTest")) {}
 
             TEST_F(ClientTopicTest, testTopicListeners) {
                 boost::latch latch1(10);
-                MyMessageListener listener(latch1);
-                std::string id = topic.addMessageListener(listener);
+                std::string id = topic->addMessageListener([&] (topic::Message &&message) {
+                    latch1.count_down();
+                }).get();
 
                 for (int i = 0; i < 10; i++) {
-                    topic.publish(std::string("naber") + hazelcast::util::IOUtil::to_string(i));
+                    topic->publish(std::string("naber") + std::to_string(i)).get();
                 }
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(20)));
-                topic.removeMessageListener(id);
+
+                ASSERT_OPEN_EVENTUALLY(latch1);
+                topic->removeMessageListener(id).get();
             }
         }
     }

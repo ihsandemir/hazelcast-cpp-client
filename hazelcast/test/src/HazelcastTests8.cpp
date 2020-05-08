@@ -1040,7 +1040,7 @@ namespace hazelcast {
                 std::string registrationId = set->addItemListener(listener, true);
 
                 for (int i = 0; i < 5; i++) {
-                    set->add(std::string("item") + hazelcast::util::IOUtil::to_string(i));
+                    set->add(std::string("item") + std::to_string(i));
                 }
                 set->add("done");
 
@@ -1287,7 +1287,7 @@ namespace hazelcast {
 
                 std::vector<std::string> items;
                 for (int k = 0; k < 5; k++) {
-                    std::string item = hazelcast::util::IOUtil::to_string<int>(k);
+                    std::string item = std::to_string<int>(k);
                     topic->publish(&item);
                     items.push_back(item);
                 }
@@ -1321,7 +1321,7 @@ namespace hazelcast {
 
                 std::vector<std::string> items;
                 for (int k = 0; k < 5; k++) {
-                    std::string item = hazelcast::util::IOUtil::to_string<int>(k);
+                    std::string item = std::to_string<int>(k);
                     topic->publish(&item);
                     items.push_back(item);
                 }
