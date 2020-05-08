@@ -15,27 +15,22 @@
  */
 #pragma once
 
-#include "hazelcast/client/serialization/pimpl/Data.h"
-#include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
 #include "hazelcast/client/proxy/IListImpl.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 
-#include <stdexcept>
-
-
 namespace hazelcast {
     namespace client {
         /**
-        * Concurrent, distributed , client implementation of std::list
+        * Concurrent, distributed, client implementation of list
         *
-        * @param <E> item type
         */
-        template<typename E>
         class IList : public proxy::IListImpl {
             friend class impl::HazelcastClientInstanceImpl;
         public:
+            static constexpr const char *SERVICE_NAME = "hz:impl:listService";
+
             /**
             *
             * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.
@@ -47,48 +42,23 @@ namespace hazelcast {
             *  @param includeValue bool value representing value should be included in ItemEvent or not.
             *  @returns registrationId that can be used to remove item listener
             */
-            boost::future<std::string> addItemListener(ItemListener<E> &listener, bool includeValue) {
-                impl::ItemEventHandler<E, protocol::codec::ListAddListenerCodec::AbstractEventHandler> *entryEventHandler =
-                        new impl::ItemEventHandler<E, protocol::codec::ListAddListenerCodec::AbstractEventHandler>(
-                                getName(), getContext().getClientClusterService(), getContext().getSerializationService(), listener,
-                                includeValue);
+            template<typename Listener>
+            boost::future<std::string> addItemListener(Listener &listener, bool includeValue) {
+                std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>> entryEventHandler(
+                        new impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>(
+                                getName(), getContext().getClientClusterService(),
+                                getContext().getSerializationService(),
+                                listener,
+                                includeValue));
                 return proxy::IListImpl::addItemListener(entryEventHandler, includeValue);
-            }
-
-            /**
-            * Removes the specified item listener.
-            * Returns false if the specified listener is not added before.
-            *
-            * @param registrationId Id of listener registration.
-            *
-            * @return true if registration is removed, false otherwise
-            */
-            boost::future<bool> removeItemListener(const std::string &registrationId) {
-                return proxy::IListImpl::removeItemListener(registrationId);
-            }
-
-            /**
-            *
-            * @return size of the distributed list
-            */
-            boost::future<int> size() {
-                return proxy::IListImpl::size();
-            }
-
-            /**
-            *
-            * @return true if empty
-            */
-            boost::future<bool> isEmpty() {
-                return proxy::IListImpl::isEmpty();
             }
 
             /**
             *
             * @param element
             * @returns true if list contains element
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> contains(const E &element) {
                 return proxy::IListImpl::contains(toData(element));
             }
@@ -97,16 +67,17 @@ namespace hazelcast {
             *
             * @returns all elements as std::vector
             */
+            template<typename E>
             boost::future<std::vector<E>> toArray() {
-                return toObjectCollection<E>(proxy::IListImpl::toArrayData());
+                return toObjectVector<E>(proxy::IListImpl::toArrayData());
             }
 
             /**
             *
             * @param element
             * @return true if element is added successfully.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> add(const E &element) {
                 return proxy::IListImpl::add(toData(element));
             }
@@ -115,8 +86,8 @@ namespace hazelcast {
             *
             * @param element
             * @return true if element is removed successfully.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> remove(const E &element) {
                 return proxy::IListImpl::remove(toData(element));
             }
@@ -125,20 +96,20 @@ namespace hazelcast {
             *
             * @param elements std::vector<E>
             * @return true if this list contains all elements given in vector.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> containsAll(const std::vector<E> &elements) {
-                return proxy::IListImpl::containsAll(toDataCollection(elements));
+                return proxy::IListImpl::containsAllData(toDataCollection(elements));
             }
 
             /**
             *
             * @param elements std::vector<E>
             * @return true if all elements given in vector can be added to list.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> addAll(const std::vector<E> &elements) {
-                return proxy::IListImpl::addAll(toDataCollection(elements));
+                return proxy::IListImpl::addAllData(toDataCollection(elements));
             }
 
             /**
@@ -146,24 +117,24 @@ namespace hazelcast {
             * Starts adding elements from given index,
             * and shifts others to the right.
             *
-            * @param index start point of insterting given elements
+            * @param index start point of inserting given elements
             * @param elements vector of elements that will be added to list
             * @return true if list elements are added.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
-            boost::future<bool> addAll(int index, const std::vector<E> &elements) {
-                return proxy::IListImpl::addAll(index, toDataCollection(elements));
+            template<typename E>
+            boost::future<bool> addAll(int32_t index, const std::vector<E> &elements) {
+                return proxy::IListImpl::addAllData(index, toDataCollection(elements));
             }
 
             /**
             *
             * @param elements std::vector<E>
             * @return true if all elements are removed successfully.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> removeAll(const std::vector<E> &elements) {
-                return proxy::IListImpl::removeAll(toDataCollection(elements));
+                return proxy::IListImpl::removeAllData(toDataCollection(elements));
             }
 
             /**
@@ -171,24 +142,17 @@ namespace hazelcast {
             * Removes the elements from this list that are not available in given "elements" vector
             * @param elements std::vector<E>
             * @return true if operation is successful.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> retainAll(const std::vector<E> &elements) {
-                return proxy::IListImpl::retainAll(toDataCollection(elements));
-            }
-
-            /**
-            * Removes all elements from list.
-            */
-            boost::future<void> clear() {
-                proxy::IListImpl::clear();
+                return proxy::IListImpl::retainAllData(toDataCollection(elements));
             }
 
             /**
             * You can check if element is available by
             *
-            *      std::shared_ptr<int> e = list.get(5);
-            *      if(e.get() != NULL )
+            *      auto e = list.get(5).get();
+            *      if(e.has_value())
             *          //......;
             *
             * @param index
@@ -196,8 +160,9 @@ namespace hazelcast {
             * @throws IndexOutOfBoundsException if the index is out of range.
             *
             */
-             boost::future<boost::optional<E>>  get(int index) {
-                return std::shared_ptr<E>(toObject<E>(proxy::IListImpl::getData(index)));
+            template<typename E>
+            boost::future<boost::optional<E>> get(int32_t index) {
+                return toObject<E>(proxy::IListImpl::getData(index));
             }
 
             /**
@@ -209,8 +174,9 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
-             boost::future<boost::optional<E>>  set(int index, const E &element) {
-                return std::shared_ptr<E>(toObject<E>(proxy::IListImpl::setData(index, toData(element))));
+            template<typename E>
+            auto set(int32_t index, const E &element) -> decltype(toObject<E>(proxy::IListImpl::setData(index, toData(element))))  {
+                return toObject<E>(proxy::IListImpl::setData(index, toData(element)));
             }
 
             /**
@@ -221,8 +187,9 @@ namespace hazelcast {
             * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
-            boost::future<void> add(int index, const E &element) {
-                proxy::IListImpl::add(index, toData(element));
+            template<typename E>
+            boost::future<void> add(int32_t index, const E &element) {
+                return proxy::IListImpl::add(index, toData(element));
             }
 
             /**
@@ -232,8 +199,9 @@ namespace hazelcast {
             * @see get
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
-             boost::future<boost::optional<E>>  remove(int index) {
-                return std::shared_ptr<E>(toObject<E>(proxy::IListImpl::removeData(index)));
+            template<typename E>
+            boost::future<boost::optional<E>> remove(int32_t index) {
+                return toObject<E>(proxy::IListImpl::removeData(index));
             }
 
             /**
@@ -242,6 +210,7 @@ namespace hazelcast {
             * @return index of first occurrence of given element in the list.
             * Returns -1 if element is not in the list.
             */
+            template<typename E>
             boost::future<int> indexOf(const E &element) {
                 return proxy::IListImpl::indexOf(toData(element));
             }
@@ -250,9 +219,9 @@ namespace hazelcast {
             * @param element that will be searched
             * @return index of last occurrence of given element in the list.
             * Returns -1 if element is not in the list.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
-            boost::future<int> lastIndexOf(const E &element) {
+            template<typename E>
+            boost::future<int32_t> lastIndexOf(const E &element) {
                 return proxy::IListImpl::lastIndexOf(toData(element));
             }
 
@@ -261,12 +230,14 @@ namespace hazelcast {
             * @return the sublist as vector between given indexes.
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
-            boost::future<std::vector<E>> subList(int fromIndex, int toIndex) {
-                return toObjectCollection<E>(proxy::IListImpl::subListData(fromIndex, toIndex));
+            template<typename E>
+            boost::future<std::vector<E>> subList(int32_t fromIndex, int32_t toIndex) {
+                return toObjectVector<E>(proxy::IListImpl::subListData(fromIndex, toIndex));
             }
+
         private:
-            IList(const std::string &instanceName, spi::ClientContext *context)
-                    : proxy::IListImpl(instanceName, context) {}
+            IList(const std::string &instanceName, spi::ClientContext *context) : proxy::IListImpl(instanceName,
+                                                                                                   context) {}
         };
     }
 }

@@ -38,9 +38,7 @@ namespace hazelcast {
     namespace client {
         namespace serialization {
             namespace pimpl {
-                class HAZELCAST_API SerializationConstants {
-                public:
-                    enum Types {
+                enum struct HAZELCAST_API SerializationConstants {
                         CONSTANT_TYPE_NULL = 0,
                         CONSTANT_TYPE_PORTABLE = -1,
                         CONSTANT_TYPE_DATA = -2,
@@ -64,8 +62,7 @@ namespace hazelcast {
                         CONSTANT_TYPE_STRING_ARRAY = -20,
                         JAVASCRIPT_JSON_SERIALIZATION_TYPE = -130,
 
-                        CONSTANT_TYPE_VOID_POINTER = INT32_MIN
-                    };
+                        CONSTANT_TYPE_GLOBAL = INT32_MIN
                     // ------------------------------------------------------------
                 };
             }

@@ -60,15 +60,15 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                boost::future<boost::optional<T>> toObject(boost::future<serialization::pimpl::Data> &f) {
-                    return f.then(boost::launch::deferred, [=] (boost::future<serialization::pimpl::Data> f) {
-                        return toObject<T>(f.get());
-                    });
+                inline auto toObject(const serialization::pimpl::Data &data) -> decltype(getContext().getSerializationService().template toObject<T>(data)) {
+                    return getContext().getSerializationService().template toObject<T>(data);
                 }
 
                 template<typename T>
-                inline boost::optional<T> toObject(const serialization::pimpl::Data &data) {
-                    return getContext().getSerializationService().template toObject<T>(data);
+                auto toObject(boost::future<serialization::pimpl::Data> &f) -> boost::future<decltype(toObject<T>(f.get()))> {
+                    return f.then(boost::launch::deferred, [=] (boost::future<serialization::pimpl::Data> f) {
+                        return toObject<T>(f.get());
+                    });
                 }
 
                 template<typename T>
@@ -146,24 +146,12 @@ namespace hazelcast {
                     return std::shared_ptr<T>(toObject<T>(data).release());
                 }
 
-                template<typename V>
-                std::vector<V> toObjectCollection(const std::vector<serialization::pimpl::Data> &collection) {
-                    size_t size = collection.size();
-                    std::vector<V> objectArray(size);
-                    for (size_t i = 0; i < size; i++) {
-                        std::unique_ptr<V> v = toObject<V>(collection[i]);
-                        objectArray[i] = *v;
-                    }
-                    return objectArray;
-                }
-
                 template<typename T>
                 const std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T> &elements) {
-                    size_t size = elements.size();
-                    std::vector<serialization::pimpl::Data> dataCollection(size);
-                    for (size_t i = 0; i < size; ++i) {
-                        dataCollection[i] = toData(elements[i]);
-                    }
+                    std::vector<serialization::pimpl::Data> dataCollection;
+                    dataCollection.reserve(elements.sie());
+                    std::for_each(elements.begin(), elements.end(),
+                                  [&](const T &item) { dataCollection.push_back(toData(item)); });
                     return dataCollection;
                 }
 

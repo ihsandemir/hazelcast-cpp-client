@@ -17,6 +17,7 @@
 
 #include <set>
 #include <type_traits>
+#include <boost/any.hpp>
 
 #include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
 #include "hazelcast/client/serialization/Portable.h"
@@ -65,7 +66,18 @@ namespace hazelcast {
             }
 
             template<typename T>
-            struct hz_serializer {
+            struct hz_serializer {};
+
+            struct builtin_serializer {};
+
+            struct custom_serializer {};
+
+            struct global_serializer {
+                static int32_t getTypeId() {
+                    return static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_GLOBAL);
+                }
+                virtual void write(const boost::any &object, ObjectDataOutput &out) = 0;
+                virtual boost::any read(ObjectDataInput &in) = 0;
             };
 
             /**
@@ -75,8 +87,7 @@ namespace hazelcast {
              *      static int32_t writeData(ObjectDataOutput &out);
              *      static int32_t readData(ObjectDataInput &in) const;
              */
-            struct identified_data_serializer {
-            };
+            struct identified_data_serializer {};
 
             /**
              * Classes derived from this class should implement the following static methods:
@@ -85,11 +96,9 @@ namespace hazelcast {
              *      static int32_t writePortable(PortableWriter &out);
              *      static int32_t readPortable(PortableReader &in) const;
              */
-            struct portable_serializer {
-            };
+            struct portable_serializer {};
 
-            struct versioned_portable_serializer : public portable_serializer {
-            };
+            struct versioned_portable_serializer : public portable_serializer {};
 
             template<>
             struct hz_serializer<std::string> {
@@ -780,7 +789,8 @@ namespace hazelcast {
                 * Internal API. Constructor
                 */
                 ObjectDataInput(pimpl::DataInput &dataInput, pimpl::PortableSerializer &portableSer,
-                                pimpl::DataSerializer &dataSer);
+                                pimpl::DataSerializer &dataSer,
+                                const std::shared_ptr<serialization::global_serializer> &globalSerializer);
 
                 /**
                 * fills all content to given byteArray
@@ -926,6 +936,20 @@ namespace hazelcast {
                 inline readObject(int32_t typeId);
 
                 template<typename T>
+                typename std::enable_if<std::is_base_of<builtin_serializer, hz_serializer<T>>::value, boost::optional<T>>::type
+                inline readObject(int32_t typeId);
+
+                template<typename T>
+                typename std::enable_if<std::is_base_of<custom_serializer, hz_serializer<T>>::value, boost::optional<T>>::type
+                inline readObject(int32_t typeId);
+
+                /**
+                 * Global serialization
+                 * @tparam T
+                 * @param typeId
+                 * @return
+                 */
+                template<typename T>
                 inline boost::optional<T> readObject(int32_t typeId);
 
                 /**
@@ -945,10 +969,13 @@ namespace hazelcast {
                 */
                 void position(int newPos);
 
+                std::shared_ptr<serialization::global_serializer> &getGlobalSerializer() const;
+
             private:
                 pimpl::DataInput &dataInput;
                 pimpl::PortableSerializer &portableSerializer;
                 pimpl::DataSerializer &dataSerializer;
+                std::shared_ptr<serialization::global_serializer> &globalSerializer_;
 
                 ObjectDataInput(const ObjectDataInput &);
 
@@ -966,12 +993,8 @@ namespace hazelcast {
                 * Internal API Constructor
                 */
                 ObjectDataOutput(pimpl::DataOutput &dataOutput, pimpl::PortableSerializer &portableSer,
-                                 pimpl::DataSerializer &dataSer);
-
-                /**
-                * Internal API Constructor
-                */
-                ObjectDataOutput();
+                                 pimpl::DataSerializer &dataSer,
+                                 const std::shared_ptr<serialization::global_serializer> &globalSerializer);
 
                 /**
                 * @return copy of internal byte array
@@ -1089,6 +1112,10 @@ namespace hazelcast {
                 void writeObject(const T *object);
 
                 template<typename T>
+                typename std::enable_if<std::is_base_of<builtin_serializer, hz_serializer<T>>::value, void>::type
+                inline writeObject(const T &object);
+
+                template<typename T>
                 typename std::enable_if<std::is_base_of<identified_data_serializer, hz_serializer<T>>::value, void>::type
                 inline writeObject(const T &object);
 
@@ -1097,15 +1124,19 @@ namespace hazelcast {
                 inline writeObject(const T &object);
 
                 template<typename T>
+                typename std::enable_if<std::is_base_of<custom_serializer, hz_serializer<T>>::value, void>::type
+                inline writeObject(const T &object);
+
+                template<typename T>
                 inline void writeObject(const T &object);
 
                 pimpl::DataOutput *getDataOutput() const;
-
             private:
                 pimpl::DataOutput *dataOutput;
                 pimpl::PortableSerializer &portableSerializer;
                 pimpl::DataSerializer &dataSerializer;
                 bool isEmpty;
+                std::shared_ptr<serialization::global_serializer> globalSerializer_;
 
                 size_t position();
 
@@ -1561,8 +1592,8 @@ namespace hazelcast {
                     template<typename T>
                     inline Data toData(const T *object) {
                         DataOutput output;
-
-                        ObjectDataOutput dataOutput(output, portableSerializer, dataSerializer);
+                        ObjectDataOutput dataOutput(output, portableSerializer, dataSerializer,
+                                                    serializationConfig.getGlobalSerializer());
 
                         writeHash<T>(object, output);
 
@@ -1600,8 +1631,22 @@ namespace hazelcast {
                         // let usage of static member.
                         DataInput dataInput(data.toByteArray(), 8);
 
-                        ObjectDataInput objectDataInput(dataInput, portableSerializer, dataSerializer);
+                        ObjectDataInput objectDataInput(dataInput, portableSerializer, dataSerializer,
+                                                        serializationConfig.getGlobalSerializer());
                         return objectDataInput.readObject<T>(typeId);
+                    }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<T, const char *>::value, boost::optional<std::string>>::type
+                    inline toObject(const Data &data) {
+                        return toObject<std::string>(data);
+                    }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_array<T>::value &&
+                                            std::is_same<typename std::remove_all_extents<T>::type, char>::value, boost::optional<std::string>>::type
+                    inline toObject(const Data &data) {
+                        return toObject<std::string>(data);
                     }
 
                     template<typename T>
@@ -1711,31 +1756,66 @@ namespace hazelcast {
             template<typename T>
             void ObjectDataOutput::writeObject(const T *object) {
                 if (!object) {
-                    writeInt(pimpl::SerializationConstants::CONSTANT_TYPE_NULL);
+                    writeInt(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_NULL));
                     return;
                 }
 
                 writeObject<T>(*object);
             }
 
+            template<>
+            void ObjectDataOutput::writeObject(const char *object) {
+                if (!object) {
+                    writeObject<std::string>(nullptr);
+                    return;
+                }
+
+                writeObject<std::string>(std::string(object));
+            }
+
             template<typename T>
             typename std::enable_if<std::is_base_of<identified_data_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
-                writeInt(pimpl::SerializationConstants::CONSTANT_TYPE_DATA);
+                writeInt(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_DATA));
                 pimpl::DataSerializer::write<T>(object, *this);
             }
 
             template<typename T>
             typename std::enable_if<std::is_base_of<portable_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
-                writeInt(pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE);
+                writeInt(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE));
                 portableSerializer.write<T>(object, *this);
             }
 
             template<typename T>
-            inline void ObjectDataOutput::writeObject(const T &object) {
+            typename std::enable_if<std::is_base_of<builtin_serializer, hz_serializer<T>>::value, void>::type
+            inline ObjectDataOutput::writeObject(const T &object) {
                 writeInt(hz_serializer<T>::getTypeId());
                 hz_serializer<T>::write(object, *this);
+            }
+
+            template<typename T>
+            typename std::enable_if<std::is_base_of<custom_serializer, hz_serializer<T>>::value, void>::type
+            inline ObjectDataOutput::writeObject(const T &object) {
+                static_assert(hz_serializer<T>::getTypeId() > 0, "Custom serializer type id can not be negative!");
+                writeInt(hz_serializer<T>::getTypeId());
+                hz_serializer<T>::write(object, *this);
+            }
+
+            /**
+             * Global serialization if configured
+             * @tparam T
+             * @param object
+             * @return
+             */
+            template<typename T>
+            inline void ObjectDataOutput::writeObject(const T &object) {
+                if (!globalSerializer_) {
+                    throw exception::HazelcastSerializationException("ObjectDataOutput::writeObject",
+                                                                     "No serializer found for the type");
+                }
+                writeInt(global_serializer::getTypeId());
+                globalSerializer_->write(boost::any(object), *this);
             }
 
             template<typename T>
@@ -1747,7 +1827,7 @@ namespace hazelcast {
             template<typename T>
             typename std::enable_if<std::is_base_of<identified_data_serializer, hz_serializer<T>>::value, boost::optional<T>>::type
             inline ObjectDataInput::readObject(int32_t typeId) {
-                if (typeId != pimpl::SerializationConstants::CONSTANT_TYPE_DATA) {
+                if (typeId != static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_DATA)) {
                     BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
                             "ObjectDataInput::readObject<identified_data_serializer>",
                             (boost::format("The associated serializer Serializer<T> is identified_data_serializer "
@@ -1760,7 +1840,7 @@ namespace hazelcast {
             template<typename T>
             typename std::enable_if<std::is_base_of<portable_serializer, hz_serializer<T>>::value, boost::optional<T>>::type
             inline ObjectDataInput::readObject(int32_t typeId) {
-                if (typeId != pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE) {
+                if (typeId != static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE)) {
                     BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
                             "ObjectDataInput::readObject<portable_serializer>",
                             (boost::format("The associated serializer Serializer<T> is portable_serializer "
@@ -1771,7 +1851,8 @@ namespace hazelcast {
             }
 
             template<typename T>
-            inline boost::optional<T> ObjectDataInput::readObject(int32_t typeId) {
+            typename std::enable_if<std::is_base_of<custom_serializer, hz_serializer<T>>::value, boost::optional<T>>::type
+            inline ObjectDataInput::readObject(int32_t typeId) {
                 if (typeId != hz_serializer<T>::getTypeId()) {
                     BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("ObjectDataInput::readObject<>",
                                                                                      (boost::format(
@@ -1782,6 +1863,34 @@ namespace hazelcast {
                 }
 
                 return boost::optional<T>(hz_serializer<T>::read(*this));
+            }
+
+            template<typename T>
+            typename std::enable_if<std::is_base_of<builtin_serializer, hz_serializer<T>>::value, boost::optional<T>>::type
+            inline ObjectDataInput::readObject(int32_t typeId) {
+                assert(typeId == hz_serializer<T>::getTypeId());
+
+                return boost::optional<T>(hz_serializer<T>::read(*this));
+            }
+
+            template<typename T>
+            inline boost::optional<T> ObjectDataInput::readObject(int32_t typeId) {
+                if (!globalSerializer_) {
+                    throw exception::HazelcastSerializationException("ObjectDataInput::readObject",
+                                                                     (boost::format(
+                                                                             "No serializer found for the type %1%.") %
+                                                                      typeid(T).name()).str());
+                }
+
+                if (typeId != globalSerializer_->getTypeId()) {
+                    BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("ObjectDataInput::readObject<>",
+                                                                                     (boost::format(
+                                                                                             "The global serializer type id %1% does not match "
+                                                                                             "received data type id is %2%") %
+                                                                                             globalSerializer_->getTypeId() %typeId).str()));
+                }
+
+                return boost::optional<T>(boost::any_cast<T>(std::move(globalSerializer_->read(*this))));
             }
 
             namespace pimpl {

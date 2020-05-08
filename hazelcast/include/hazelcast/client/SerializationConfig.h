@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by sancar koyunlu on 25/06/14.
-//
-
-
-#ifndef HAZELCAST_SerializationConfig
-#define HAZELCAST_SerializationConfig
+#pragma once
 
 #include <memory>
-#include <vector>
-#include <map>
 
 #include "hazelcast/util/HazelcastDll.h"
-
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/serialization/serialization.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -38,7 +27,7 @@
 namespace hazelcast {
     namespace client {
         namespace serialization{
-            class SerializerBase;
+            struct global_serializer;
         }
 
         /**
@@ -48,7 +37,6 @@ namespace hazelcast {
          */
         class HAZELCAST_API SerializationConfig {
         public:
-
             /**
              * Constructor
              * default value of version is zero.
@@ -69,8 +57,13 @@ namespace hazelcast {
              * @return itself SerializationConfig
              */
             SerializationConfig& setPortableVersion(int portableVersion);
+
+            const std::shared_ptr<serialization::global_serializer> &getGlobalSerializer() const;
+
+            void setGlobalSerializer(const std::shared_ptr<serialization::global_serializer> &globalSerializer);
         private:
             int version;
+            std::shared_ptr<serialization::global_serializer> globalSerializer_;
         };
     }
 }
@@ -78,5 +71,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif 
-
-#endif //HAZELCAST_SerializationConfig

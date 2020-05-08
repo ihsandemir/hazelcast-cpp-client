@@ -455,9 +455,10 @@ namespace hazelcast {
             }
 
             ObjectDataInput::ObjectDataInput(pimpl::DataInput &dataInput, pimpl::PortableSerializer &portableSer,
-                                             pimpl::DataSerializer &dataSer)
-                    : dataInput(dataInput), portableSerializer(portableSer), dataSerializer(dataSer) {
-            }
+                                             pimpl::DataSerializer &dataSer,
+                                             const std::shared_ptr<serialization::global_serializer> &globalSerializer)
+                    : dataInput(dataInput), portableSerializer(portableSer), dataSerializer(dataSer),
+                      globalSerializer_(globalSerializer) {}
 
             void ObjectDataInput::readFully(std::vector<byte> &bytes) {
                 dataInput.readFully(bytes);
@@ -555,6 +556,10 @@ namespace hazelcast {
                 return dataInput.readUTFPointerArray();
             }
 
+            std::shared_ptr<serialization::global_serializer> &ObjectDataInput::getGlobalSerializer() const {
+                return globalSerializer_;
+            }
+
             template<>
             std::vector<std::string> *ObjectDataInput::getBackwardCompatiblePointer(void *actualData,
                                                                                     const std::vector<std::string> *typePointer) const {
@@ -606,13 +611,10 @@ namespace hazelcast {
             }
 
             ObjectDataOutput::ObjectDataOutput(pimpl::DataOutput &dataOutput, pimpl::PortableSerializer &portableSer,
-                                               pimpl::DataSerializer &dataSer)
-                    : dataOutput(&dataOutput), portableSerializer(portableSer), dataSerializer(dataSer), isEmpty(false) {
-            }
-
-            ObjectDataOutput::ObjectDataOutput()
-                    : dataOutput(NULL), serializerHolder(NULL), isEmpty(true) {
-            }
+                                               pimpl::DataSerializer &dataSer,
+                                               const std::shared_ptr<serialization::global_serializer> &globalSerializer)
+                    : dataOutput(&dataOutput), portableSerializer(portableSer), dataSerializer(dataSer), isEmpty(false),
+                    globalSerializer_(globalSerializer) {}
 
             std::unique_ptr<std::vector<byte> > ObjectDataOutput::toByteArray() {
                 if (isEmpty)
@@ -1652,7 +1654,17 @@ namespace hazelcast {
                 }
 
                 bool SerializationService::isNullData(const Data &data) {
-                    return data.dataSize() == 0 && data.getType() == SerializationConstants::CONSTANT_TYPE_NULL;
+                    return data.dataSize() == 0 &&
+                           data.getType() == static_cast<int32_t>(SerializationConstants::CONSTANT_TYPE_NULL);
+                }
+
+                template<>
+                Data SerializationService::toData(const char *object) {
+                    if (!object) {
+                        return toData<std::string>(nullptr);
+                    }
+                    std::string str(object);
+                    return toData<std::string>(&str);
                 }
 
                 const byte SerializationService::getVersion() const {

@@ -476,9 +476,8 @@ namespace hazelcast {
             * @param name name of the distributed list
             * @return distributed list instance with the specified name
             */
-            template<typename E>
-            IList<E> getList(const std::string& name) {
-                return clientImpl->getList<E>(name);
+            std::shared_ptr<IList> getList(const std::string& name) {
+                return clientImpl->getList(name);
             }
 
             /**
@@ -487,8 +486,7 @@ namespace hazelcast {
             * @param name name of the distributed topic
             * @return distributed topic instance with the specified name
             */
-            template<typename E>
-            ITopic<E> getTopic(const std::string& name) {
+            ITopic getTopic(const std::string& name) {
                 return clientImpl->getTopic<E>(name);
             };
 

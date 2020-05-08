@@ -463,27 +463,22 @@ namespace hazelcast {
         namespace test {
             class ClientListTest : public ClientTestSupport {
             protected:
-                class MyListItemListener : public ItemListener<std::string> {
+                class MyListItemListener : public ItemListener {
                 public:
-                    MyListItemListener(boost::latch &latch1)
-                            : latch1(latch1) {
+                    MyListItemListener(boost::latch &latch1) : latch1(latch1) {}
 
-                    }
-
-                    void itemAdded(const ItemEvent<std::string> &itemEvent) {
-                        int type = itemEvent.getEventType();
-                                assertEquals((int) ItemEventType::ADDED, type);
-                                assertEquals("MyList", itemEvent.getName());
+                    void itemAdded(const ItemEvent &itemEvent) {
+                        auto type = itemEvent.getEventType();
+                        ASSERT_EQ((int) ItemEventType::ADDED, type);
+                        ASSERT_EQ("MyList", itemEvent.getName());
                         std::string host = itemEvent.getMember().getAddress().getHost();
-                                assertTrue(host == "localhost" || host == "127.0.0.1");
-                                assertEquals(5701, itemEvent.getMember().getAddress().getPort());
-                        assertEquals("item-1", itemEvent.getItem());
+                        ASSERT_TRUE(host == "localhost" || host == "127.0.0.1");
+                        ASSERT_EQ(5701, itemEvent.getMember().getAddress().getPort());
+                        ASSERT_EQ("item-1", itemEvent.getItem().get<std::string>().value());
                         latch1.count_down();
                     }
 
-                    void itemRemoved(const ItemEvent<std::string>& item) {
-                    }
-
+                    void itemRemoved(const ItemEvent &item) {}
                 private:
                     boost::latch &latch1;
                 };
@@ -500,7 +495,6 @@ namespace hazelcast {
 #else
                     instance = new HazelcastServer(*g_srvFactory);
 #endif
-
                     ClientConfig clientConfig = getConfig();
 
 #ifdef HZ_BUILD_WITH_SSL
@@ -512,29 +506,26 @@ namespace hazelcast {
 #endif // HZ_BUILD_WITH_SSL
 
                     client = new HazelcastClient(clientConfig);
-                    list = new IList<std::string>(client->getList<std::string>("MyList"));
+                    list = client->getList("MyList");
                 }
 
                 static void TearDownTestCase() {
-                    delete list;
                     delete client;
                     delete instance;
                     delete sslFactory;
 
-                    list = NULL;
                     client = NULL;
                     instance = NULL;
                 }
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
-                static IList<std::string> *list;
+                static std::shared_ptr<IList> list;
                 static HazelcastServerFactory *sslFactory;
             };
 
             HazelcastServer *ClientListTest::instance = NULL;
             HazelcastClient *ClientListTest::client = NULL;
-            IList<std::string> *ClientListTest::list = NULL;
             HazelcastServerFactory *ClientListTest::sslFactory = NULL;
 
             TEST_F(ClientListTest, testAddAll) {
@@ -546,62 +537,71 @@ namespace hazelcast {
                 ASSERT_TRUE(list->addAll(1, l));
                 ASSERT_EQ(4, list->size());
 
-                ASSERT_EQ("item1", *(list->get(0)));
-                ASSERT_EQ("item1", *(list->get(1)));
-                ASSERT_EQ("item2", *(list->get(2)));
-                ASSERT_EQ("item2", *(list->get(3)));
+                auto item = list->get<std::string>(0).get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item1", item.value());
+                item = list->get<std::string>(1).get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item2", item.value());
+                item = list->get<std::string>(2).get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item2", item.value());
+                item = list->get<std::string>(3).get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item3", item.value());
             }
 
             TEST_F(ClientListTest, testAddSetRemove) {
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item2"));
-                list->add(0, "item3");
-                ASSERT_EQ(3, list->size());
-                std::shared_ptr<std::string> temp = list->set(2, "item4");
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item2").get());
+                list->add(0, "item3").get();
+                ASSERT_EQ(3, list->size().get());
+                boost:optional<std::string> temp = list->set(2, "item4").get();
                 ASSERT_EQ("item2", *temp);
 
                 ASSERT_EQ(3, list->size());
-                ASSERT_EQ("item3", *(list->get(0)));
-                ASSERT_EQ("item1", *(list->get(1)));
-                ASSERT_EQ("item4", *(list->get(2)));
+                ASSERT_EQ("item3", list->get<std::string>(0).get().value());
+                ASSERT_EQ("item1", list->get<std::string>(1).get().value());
+                ASSERT_EQ("item4", list->get<std::string>(2).get().value());
 
-                ASSERT_FALSE(list->remove("item2"));
-                ASSERT_TRUE(list->remove("item3"));
+                ASSERT_FALSE(list->remove("item2").get());
+                ASSERT_TRUE(list->remove("item3").get());
 
-                temp = list->remove(1);
-                ASSERT_EQ("item4", *temp);
+                temp = list->remove<std::string>(1).get();
+                ASSERT_TRUE(temp.has_value());
+                ASSERT_EQ("item4", temp.value());
 
                 ASSERT_EQ(1, list->size());
-                ASSERT_EQ("item1", *(list->get(0)));
+                ASSERT_EQ("item1", list->get<std::string>(0).get().value());
             }
 
             TEST_F(ClientListTest, testIndexOf) {
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item2"));
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item4"));
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item2").get());
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item4").get());
 
-                ASSERT_EQ(-1, list->indexOf("item5"));
-                ASSERT_EQ(0, list->indexOf("item1"));
+                ASSERT_EQ(-1, list->indexOf("item5").get());
+                ASSERT_EQ(0, list->indexOf("item1").get());
 
-                ASSERT_EQ(-1, list->lastIndexOf("item6"));
-                ASSERT_EQ(2, list->lastIndexOf("item1"));
+                ASSERT_EQ(-1, list->lastIndexOf("item6").get());
+                ASSERT_EQ(2, list->lastIndexOf("item1").get());
             }
 
             TEST_F(ClientListTest, testToArray) {
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item2"));
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item4"));
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item2").get());
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item4").get());
 
-                std::vector<std::string> ar = list->toArray();
+                std::vector<std::string> ar = list->toArray<std::string>().get();
 
                 ASSERT_EQ("item1", ar[0]);
                 ASSERT_EQ("item2", ar[1]);
                 ASSERT_EQ("item1", ar[2]);
                 ASSERT_EQ("item4", ar[3]);
 
-                std::vector<std::string> arr2 = list->subList(1, 3);
+                std::vector<std::string> arr2 = list->subList<std::string>(1, 3).get();
 
                 ASSERT_EQ(2, (int) arr2.size());
                 ASSERT_EQ("item2", arr2[0]);
@@ -609,69 +609,67 @@ namespace hazelcast {
             }
 
             TEST_F(ClientListTest, testContains) {
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item2"));
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item4"));
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item2").get());
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item4").get());
 
-                ASSERT_FALSE(list->contains("item3"));
-                ASSERT_TRUE(list->contains("item2"));
+                ASSERT_FALSE(list->contains("item3").get());
+                ASSERT_TRUE(list->contains("item2").get());
 
                 std::vector<std::string> l;
                 l.push_back("item4");
                 l.push_back("item3");
 
-                ASSERT_FALSE(list->containsAll(l));
-                ASSERT_TRUE(list->add("item3"));
-                ASSERT_TRUE(list->containsAll(l));
+                ASSERT_FALSE(list->containsAll(l).get());
+                ASSERT_TRUE(list->add("item3").get());
+                ASSERT_TRUE(list->containsAll(l).get());
             }
 
             TEST_F(ClientListTest, testRemoveRetainAll) {
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item2"));
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_TRUE(list->add("item4"));
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item2").get());
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_TRUE(list->add("item4").get());
 
                 std::vector<std::string> l;
                 l.push_back("item4");
                 l.push_back("item3");
 
-                ASSERT_TRUE(list->removeAll(l));
-                ASSERT_EQ(3, (int) list->size());
-                ASSERT_FALSE(list->removeAll(l));
-                ASSERT_EQ(3, (int) list->size());
+                ASSERT_TRUE(list->removeAll(l).get());
+                ASSERT_EQ(3, (int) list->size().get());
+                ASSERT_FALSE(list->removeAll(l).get());
+                ASSERT_EQ(3, (int) list->size().get());
 
                 l.clear();
                 l.push_back("item1");
                 l.push_back("item2");
-                ASSERT_FALSE(list->retainAll(l));
-                ASSERT_EQ(3, (int) list->size());
+                ASSERT_FALSE(list->retainAll(l).get());
+                ASSERT_EQ(3, (int) list->size().get());
 
                 l.clear();
-                ASSERT_TRUE(list->retainAll(l));
-                ASSERT_EQ(0, (int) list->size());
-
+                ASSERT_TRUE(list->retainAll(l).get());
+                ASSERT_EQ(0, (int) list->size().get());
             }
 
             TEST_F(ClientListTest, testListener) {
                 boost::latch latch1(1);
 
                 MyListItemListener listener(latch1);
-                std::string registrationId = list->addItemListener(listener, true);
+                std::string registrationId = list->addItemListener(listener, true).get();
 
-                list->add("item-1");
+                list->add("item-1").get();
 
                 ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(20)));
 
-                ASSERT_TRUE(list->removeItemListener(registrationId));
+                ASSERT_TRUE(list->removeItemListener(registrationId).get());
             }
 
             TEST_F(ClientListTest, testIsEmpty) {
-                ASSERT_TRUE(list->isEmpty());
-                ASSERT_TRUE(list->add("item1"));
-                ASSERT_FALSE(list->isEmpty());
+                ASSERT_TRUE(list->isEmpty().get());
+                ASSERT_TRUE(list->add("item1").get());
+                ASSERT_FALSE(list->isEmpty().get());
             }
-
         }
     }
 }
@@ -717,11 +715,11 @@ namespace hazelcast {
 
                 }
 
-                void itemAdded(const ItemEvent<std::string> &itemEvent) {
+                void itemAdded(const ItemEvent &itemEvent) {
                     latch1.count_down();
                 }
 
-                void itemRemoved(const ItemEvent<std::string> &item) {
+                void itemRemoved(const ItemEvent &item) {
                 }
 
             private:

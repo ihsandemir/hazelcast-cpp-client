@@ -61,6 +61,15 @@ namespace hazelcast {
             return *this;
         }
 
+        const std::shared_ptr<serialization::global_serializer> &SerializationConfig::getGlobalSerializer() const {
+            return globalSerializer_;
+        }
+
+        void SerializationConfig::setGlobalSerializer(
+                const std::shared_ptr<serialization::global_serializer> &globalSerializer) {
+            globalSerializer_ = globalSerializer;
+        }
+
         namespace config {
             SSLConfig::SSLConfig() : enabled(false), sslProtocol(tlsv12) {
             }

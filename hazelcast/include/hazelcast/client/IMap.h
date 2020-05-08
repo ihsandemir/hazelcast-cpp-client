@@ -63,7 +63,7 @@ namespace hazelcast {
             friend class spi::ProxyManager;
             friend class impl::HazelcastClientInstanceImpl;
         public:
-            static std::string SERVICE_NAME;
+            static constexpr const char *SERVICE_NAME = "hz:impl:mapService";
 
             /**
             * check if this map contains key.

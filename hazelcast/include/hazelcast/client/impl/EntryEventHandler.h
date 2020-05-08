@@ -38,7 +38,6 @@
 namespace hazelcast {
     namespace client {
         namespace impl {
-
             template<typename Listener, typename BaseType>
             class EntryEventHandler : public BaseType {
             public:

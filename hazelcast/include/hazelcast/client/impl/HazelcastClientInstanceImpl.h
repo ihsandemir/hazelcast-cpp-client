@@ -130,11 +130,10 @@ namespace hazelcast {
                 * @returns distributed object
                 */
                 template<typename T>
-                T getDistributedObject(const std::string& name) {
-                    T t(name, &(clientContext));
-                    return t;
+                std::shared_ptr<T> getDistributedObject(const std::string& name) {
+                    return proxyManager.getOrCreateProxy<T>(T::SERVICE_NAME, name);
                 }
-
+                
                 /**
                 *
                 * Returns the distributed map instance with the specified name.
@@ -144,9 +143,8 @@ namespace hazelcast {
                 * @param name name of the distributed map
                 * @return distributed map instance with the specified name
                 */
-                template<typename DistributedStructure>
-                std::shared_ptr<DistributedStructure> get(const std::string &name) {
-                    return proxyManager.getOrCreateProxy<DistributedStructure>(DistributedStructure::SERVICE_NAME, name);
+                std::shared_ptr<IMap> getMap(const std::string &name) {
+                    return getDistributedObject<IMap>(name);
                 }
 
                 /**
@@ -156,11 +154,11 @@ namespace hazelcast {
                 * @return distributed multimap instance with the specified name
                 */
                 std::shared_ptr<MultiMap> getMultiMap(const std::string& name) {
-                    return get<MultiMap>(name);
+                    return getDistributedObject<MultiMap>(name);
                 }
 
                 std::shared_ptr<ReplicatedMap> getReplicatedMap(const std::string &name) {
-                    return get<proxy::ClientReplicatedMapProxy>(name);
+                    return getDistributedObject<proxy::ClientReplicatedMapProxy>(name);
                 }
 
                 /**
@@ -170,7 +168,7 @@ namespace hazelcast {
                 * @return distributed queue instance with the specified name
                 */
                 std::shared_ptr<IQueue> getQueue(const std::string& name) {
-                    return get<IQueue>(name);
+                    return getDistributedObject<IQueue>(name);
                 }
 
                 /**
@@ -182,7 +180,7 @@ namespace hazelcast {
                 */
 
                 std::shared_ptr<ISet> getSet(const std::string& name) {
-                    return get<ISet>(name);
+                    return getDistributedObject<ISet>(name);
                 }
 
                 /**
@@ -193,7 +191,7 @@ namespace hazelcast {
                 * @return distributed list instance with the specified name
                 */
                 std::shared_ptr<IList> getList(const std::string& name) {
-                    return get<IList>(name);
+                    return getDistributedObject<IList>(name);
                 }
 
                 /**
@@ -203,7 +201,7 @@ namespace hazelcast {
                 * @return distributed topic instance with the specified name
                 */
                 std::shared_ptr<ITopic> getTopic(const std::string& name) {
-                    return get<ITopic>(name);
+                    return getDistributedObject<ITopic>(name);
                 };
 
                 /**
@@ -213,7 +211,7 @@ namespace hazelcast {
                 * @return distributed topic instance with the specified name
                 */
                 std::shared_ptr<ReliableTopic> getReliableTopic(const std::string& name) {
-                    return get<ReliableTopic>(name);
+                    return getDistributedObject<ReliableTopic>(name);
                 }
 
                 FlakeIdGenerator getFlakeIdGenerator(const std::string& name);
@@ -239,7 +237,7 @@ namespace hazelcast {
                  * @return distributed RingBuffer instance with the specified name
                  */
                 std::shared_ptr<Ringbuffer<E> > getRingbuffer(const std::string& name) {
-                    return get<proxy::ClientRingbufferProxy>(name);
+                    return getDistributedObject<proxy::ClientRingbufferProxy>(name);
                 }
 
                 /**
