@@ -47,7 +47,7 @@ namespace hazelcast {
             }
 
             T *poll() {
-                T *e = NULL;
+                T *e = nullptr;
                 std::lock_guard<std::mutex> lg(m);
                 if (!internalQueue.empty()) {
                     e = internalQueue.front();

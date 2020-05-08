@@ -214,8 +214,8 @@ namespace hazelcast {
                 static void TearDownTestSuite() {
                     delete instance2;
                     delete instance;
-                    instance2 = NULL;
-                    instance = NULL;
+                    instance2 = nullptr;
+                    instance = nullptr;
                 }
 
                 virtual void SetUp() {
@@ -508,8 +508,8 @@ namespace hazelcast {
             };
 
             const int BasicClientNearCacheTest::DEFAULT_RECORD_COUNT = 1000;
-            HazelcastServer *BasicClientNearCacheTest::instance = NULL;
-            HazelcastServer *BasicClientNearCacheTest::instance2 = NULL;
+            HazelcastServer *BasicClientNearCacheTest::instance = nullptr;
+            HazelcastServer *BasicClientNearCacheTest::instance2 = nullptr;
 
             /**
              * Checks that the Near Cache keys are correctly checked when {@link DataStructureAdapter#containsKey(Object)} is used.
@@ -754,8 +754,8 @@ namespace hazelcast {
                 static void TearDownTestCase() {
                     delete instance2;
                     delete instance;
-                    instance2 = NULL;
-                    instance = NULL;
+                    instance2 = nullptr;
+                    instance = nullptr;
                 }
 
 
@@ -812,8 +812,8 @@ namespace hazelcast {
             };
 
             const std::string ClientMapNearCacheTest::DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
-            HazelcastServer *ClientMapNearCacheTest::instance = NULL;
-            HazelcastServer *ClientMapNearCacheTest::instance2 = NULL;
+            HazelcastServer *ClientMapNearCacheTest::instance = nullptr;
+            HazelcastServer *ClientMapNearCacheTest::instance2 = nullptr;
 
             TEST_F(ClientMapNearCacheTest, testGetAllChecksNearCacheFirst) {
                 IMap<int, int> &map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
@@ -921,9 +921,9 @@ namespace hazelcast {
                     delete client;
                     delete instance;
 
-                    set = NULL;
-                    client = NULL;
-                    instance = NULL;
+                    set = nullptr;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 bool itemExists(const std::vector<std::string> &items, const std::string &item) const {
@@ -942,9 +942,9 @@ namespace hazelcast {
                 static ISet<std::string> *set;
             };
 
-            HazelcastServer *ClientSetTest::instance = NULL;
-            HazelcastClient *ClientSetTest::client = NULL;
-            ISet<std::string> *ClientSetTest::set = NULL;
+            HazelcastServer *ClientSetTest::instance = nullptr;
+            HazelcastClient *ClientSetTest::client = nullptr;
+            ISet<std::string> *ClientSetTest::set = nullptr;
 
             TEST_F(ClientSetTest, testAddAll) {
                 std::vector<std::string> l;
@@ -1091,7 +1091,7 @@ namespace hazelcast {
                     }
 
                     virtual ~GenericListener() {
-                        topic::Message<T> *m = NULL;
+                        topic::Message<T> *m = nullptr;
                         while ((m = messages.poll()) != NULL) {
                             delete (m);
                         }
@@ -1163,16 +1163,16 @@ namespace hazelcast {
                     delete client;
                     delete instance;
 
-                    client = NULL;
-                    instance = NULL;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
             };
 
-            HazelcastServer *ReliableTopicTest::instance = NULL;
-            HazelcastClient *ReliableTopicTest::client = NULL;
+            HazelcastServer *ReliableTopicTest::instance = nullptr;
+            HazelcastClient *ReliableTopicTest::client = nullptr;
 
             TEST_F(ReliableTopicTest, testBasics) {
                 std::shared_ptr<ReliableTopic<Employee> > rt;
@@ -1678,7 +1678,7 @@ namespace hazelcast {
                 HazelcastClient client(clientConfig);
 
                 client::IMap<int, int> map = client.getMap<int, int>("m");
-                std::unique_ptr<hazelcast::util::StartedThread> thread = NULL;
+                std::unique_ptr<hazelcast::util::StartedThread> thread = nullptr;
                 int expected = 1000;
                 for (int i = 0; i < expected; i++) {
                     if (i == 5) {

@@ -725,7 +725,7 @@ namespace hazelcast {
             void ObjectDataOutput::writeUTFArray(const std::vector<std::string *> *strings) {
                 if (isEmpty) return;
 
-                int32_t len = NULL != strings ? (int32_t) strings->size() : util::Bits::NULL_ARRAY;
+                int32_t len = nullptr != strings ? (int32_t) strings->size() : util::Bits::NULL_ARRAY;
 
                 writeInt(len);
 

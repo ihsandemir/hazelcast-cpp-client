@@ -1230,13 +1230,13 @@ namespace hazelcast {
 
                 static void TearDownTestCase() {
                     delete instance;
-                    instance = NULL;
+                    instance = nullptr;
                     delete client;
-                    client = NULL;
+                    client = nullptr;
                     delete map;
-                    map = NULL;
+                    map = nullptr;
                     delete expected;
-                    expected = NULL;
+                    expected = nullptr;
                 }
 
             protected:
@@ -1260,11 +1260,11 @@ namespace hazelcast {
                 static const int MAP_SIZE = 10000;
             };
 
-            HazelcastServer *PipeliningTest::instance = NULL;
-            HazelcastClient *PipeliningTest::client = NULL;
+            HazelcastServer *PipeliningTest::instance = nullptr;
+            HazelcastClient *PipeliningTest::client = nullptr;
             const char *PipeliningTest::MAP_NAME = "PipeliningTestMap";
-            IMap<int, int> *PipeliningTest::map = NULL;
-            std::vector<int> *PipeliningTest::expected = NULL;
+            IMap<int, int> *PipeliningTest::map = nullptr;
+            std::vector<int> *PipeliningTest::expected = nullptr;
 
             TEST_F(PipeliningTest, testConstructor_whenNegativeDepth) {
                 ASSERT_THROW(Pipelining<std::string>::create(0), exception::IllegalArgumentException);

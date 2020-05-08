@@ -821,9 +821,9 @@ namespace hazelcast {
                     delete client;
                     delete instance;
 
-                    imap = NULL;
-                    client = NULL;
-                    instance = NULL;
+                    imap = nullptr;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
@@ -831,8 +831,8 @@ namespace hazelcast {
                 static std::shared_ptr<IMap> imap;
             };
 
-            HazelcastServer *MapGlobalSerializerTest::instance = NULL;
-            HazelcastClient *MapGlobalSerializerTest::client = NULL;
+            HazelcastServer *MapGlobalSerializerTest::instance = nullptr;
+            HazelcastClient *MapGlobalSerializerTest::client = nullptr;
 
             TEST_F(MapGlobalSerializerTest, testPutGetUnserializableObject) {
                 MapGlobalSerializerTest::UnknownObject myObject(8);
@@ -872,10 +872,10 @@ namespace hazelcast {
                     delete instance2;
                     delete instance;
 
-                    imap = NULL;
-                    client = NULL;
-                    instance2 = NULL;
-                    instance = NULL;
+                    imap = nullptr;
+                    client = nullptr;
+                    instance2 = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
@@ -884,10 +884,10 @@ namespace hazelcast {
                 static std::shared_ptr<IMap> imap;
             };
 
-            HazelcastServer *ClientExpirationListenerTest::instance = NULL;
-            HazelcastServer *ClientExpirationListenerTest::instance2 = NULL;
-            HazelcastClient *ClientExpirationListenerTest::client = NULL;
-            std::shared_ptr<IMap> ClientExpirationListenerTest::imap = NULL;
+            HazelcastServer *ClientExpirationListenerTest::instance = nullptr;
+            HazelcastServer *ClientExpirationListenerTest::instance2 = nullptr;
+            HazelcastClient *ClientExpirationListenerTest::client = nullptr;
+            std::shared_ptr<IMap> ClientExpirationListenerTest::imap = nullptr;
 
             class ExpirationListener : public EntryAdapter {
             public:
@@ -1072,8 +1072,8 @@ namespace hazelcast {
                     delete instance2;
                     delete instance;
 
-                    instance2 = NULL;
-                    instance = NULL;
+                    instance2 = nullptr;
+                    instance = nullptr;
                 }
 
                 class MapGetInterceptor {
@@ -1290,8 +1290,8 @@ namespace hazelcast {
                 static HazelcastServer *instance2;
             };
 
-            HazelcastServer *ClientMapTest::instance = NULL;
-            HazelcastServer *ClientMapTest::instance2 = NULL;
+            HazelcastServer *ClientMapTest::instance = nullptr;
+            HazelcastServer *ClientMapTest::instance2 = nullptr;
 
             INSTANTIATE_TEST_SUITE_P(ClientMapTestWithDifferentConfigs, ClientMapTest,
                                      ::testing::Values(MapClientConfig(), NearCachedDataMapClientConfig(),

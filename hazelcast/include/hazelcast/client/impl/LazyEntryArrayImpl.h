@@ -40,10 +40,10 @@ namespace hazelcast {
                         item.data = &(*it);
                         item.isValueDeserialized = false;
                         item.isKeyDeserialized = false;
-                        item.key = NULL;
-                        item.value = NULL;
+                        item.key = nullptr;
+                        item.value = nullptr;
                         item.serializationService = &serializationService;
-                        item.comparator = NULL;
+                        item.comparator = nullptr;
                         deserializedEntries.push_back(item);
                     }
                 }
@@ -178,7 +178,7 @@ namespace hazelcast {
                         if (isKeyDeserialized) {
                             std::unique_ptr<K> result(key);
                             isKeyDeserialized = false;
-                            key = NULL;
+                            key = nullptr;
                             return result;
                         }
 
@@ -199,7 +199,7 @@ namespace hazelcast {
                         if (isValueDeserialized) {
                             std::unique_ptr<V> result(value);
                             isValueDeserialized = false;
-                            value = NULL;
+                            value = nullptr;
                             return result;
                         }
 

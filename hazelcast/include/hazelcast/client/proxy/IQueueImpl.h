@@ -29,68 +29,92 @@ namespace hazelcast {
         }
         namespace proxy {
             class HAZELCAST_API IQueueImpl : public ProxyImpl {
+            public:
+                /**
+                * Removes the specified item listener.
+                * Returns silently if the specified listener is not added before.
+                *
+                * @param registrationId Id of listener registration.
+                *
+                * @return true if registration is removed, false otherwise
+                */
+                boost::future<bool> removeItemListener(const std::string& registrationId);
+
+                /**
+                *
+                * @return size of this distributed queue
+                */
+                boost::future<int> size();
+
+                /**
+                *
+                * @return true if queue is empty
+                */
+                boost::future<bool> isEmpty();
+
+                /**
+                *
+                * @return remaining capacity
+                */
+                boost::future<int> remainingCapacity();
+
+                /**
+                * Removes all elements from queue.
+                */
+                boost::future<void> clear();
             protected:
                 IQueueImpl(const std::string& instanceName, spi::ClientContext *context);
 
-                boost::future<std::string>  addItemListener(impl::BaseEventHandler *handler, bool includeValue);
-
-                boost::future<bool> removeItemListener(const std::string& registrationId);
-
+                boost::future<std::string>
+                addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue);
+                
                 boost::future<bool> offer(const serialization::pimpl::Data& element, std::chrono::steady_clock::duration timeout);
 
                 boost::future<void> put(const serialization::pimpl::Data& element);
 
-                std::unique_ptr<serialization::pimpl::Data> pollData(std::chrono::steady_clock::duration timeout);
-
-                boost::future<int>  remainingCapacity();
+                boost::future<serialization::pimpl::Data> pollData(std::chrono::steady_clock::duration timeout);
 
                 boost::future<bool> remove(const serialization::pimpl::Data& element);
 
                 boost::future<bool> contains(const serialization::pimpl::Data& element);
 
-                std::vector<serialization::pimpl::Data> drainToData(size_t maxElements);
+                boost::future<std::vector<serialization::pimpl::Data>> drainToData(size_t maxElements);
 
-                std::vector<serialization::pimpl::Data> drainToData();
+                boost::future<std::vector<serialization::pimpl::Data>> drainToData();
 
-                std::unique_ptr<serialization::pimpl::Data> peekData();
+                boost::future<serialization::pimpl::Data> peekData();
 
-                boost::future<int>  size();
+                boost::future<std::vector<serialization::pimpl::Data>> toArrayData();
 
-                boost::future<bool> isEmpty();
+                boost::future<bool> containsAllData(const std::vector<serialization::pimpl::Data>& elements);
 
-                std::vector<serialization::pimpl::Data> toArrayData();
+                boost::future<bool> addAllData(const std::vector<serialization::pimpl::Data>& elements);
 
-                boost::future<bool> containsAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> removeAllData(const std::vector<serialization::pimpl::Data>& elements);
 
-                boost::future<bool> addAll(const std::vector<serialization::pimpl::Data>& elements);
+                boost::future<bool> retainAllData(const std::vector<serialization::pimpl::Data>& elements);
 
-                boost::future<bool> removeAll(const std::vector<serialization::pimpl::Data>& elements);
-
-                boost::future<bool> retainAll(const std::vector<serialization::pimpl::Data>& elements);
-
-                boost::future<void> clear();
             private:
                 class QueueListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
                     QueueListenerMessageCodec(const std::string &name, bool includeValue);
 
-                    virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
+                    std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const override;
 
-                    virtual std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const;
+                    std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const override;
 
-                    virtual std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const;
+                    std::unique_ptr<protocol::ClientMessage>
+                    encodeRemoveRequest(const std::string &realRegistrationId) const override;
 
-                    virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
-
+                    bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const override;
                 private:
-                    boost::future<std::string>  name;
+                    std::string name;
                     bool includeValue;
                 };
 
                 int partitionId;
 
-                std::shared_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec(bool includeValue);
+                std::unique_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec(bool includeValue);
             };
         }
     }

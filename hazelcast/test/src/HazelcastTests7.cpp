@@ -222,9 +222,9 @@ namespace hazelcast {
                     delete client;
                     delete instance;
 
-                    mm = NULL;
-                    client = NULL;
-                    instance = NULL;
+                    mm = nullptr;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
@@ -232,9 +232,9 @@ namespace hazelcast {
                 static MultiMap<std::string, std::string> *mm;
             };
 
-            HazelcastServer *ClientMultiMapTest::instance = NULL;
-            HazelcastClient *ClientMultiMapTest::client = NULL;
-            MultiMap<std::string, std::string> *ClientMultiMapTest::mm = NULL;
+            HazelcastServer *ClientMultiMapTest::instance = nullptr;
+            HazelcastClient *ClientMultiMapTest::client = nullptr;
+            MultiMap<std::string, std::string> *ClientMultiMapTest::mm = nullptr;
 
             TEST_F(ClientMultiMapTest, testPutGetRemove) {
                 ASSERT_TRUE(mm->put("key1", "value1"));
@@ -514,8 +514,8 @@ namespace hazelcast {
                     delete instance;
                     delete sslFactory;
 
-                    client = NULL;
-                    instance = NULL;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
@@ -524,9 +524,9 @@ namespace hazelcast {
                 static HazelcastServerFactory *sslFactory;
             };
 
-            HazelcastServer *ClientListTest::instance = NULL;
-            HazelcastClient *ClientListTest::client = NULL;
-            HazelcastServerFactory *ClientListTest::sslFactory = NULL;
+            HazelcastServer *ClientListTest::instance = nullptr;
+            HazelcastClient *ClientListTest::client = nullptr;
+            HazelcastServerFactory *ClientListTest::sslFactory = nullptr;
 
             TEST_F(ClientListTest, testAddAll) {
                 std::vector<std::string> l;
@@ -679,49 +679,48 @@ namespace hazelcast {
         namespace test {
             class ClientQueueTest : public ClientTestSupport {
             protected:
+                void offer(int numberOfItems) {
+                    for (int i = 1; i <= numberOfItems; ++i) {
+                        ASSERT_TRUE(q->offer(std::string("item") + std::to_string(i)).get());
+                    }
+                }
+                
                 virtual void TearDown() {
                     q->clear();
                 }
-
+                
                 static void SetUpTestCase() {
                     instance = new HazelcastServer(*g_srvFactory);
                     client = new HazelcastClient(getConfig());
-                    q = new IQueue<std::string>(client->getQueue<std::string>("MyQueue"));
+                    q = client->getQueue("MyQueue");
                 }
 
                 static void TearDownTestCase() {
-                    delete q;
                     delete client;
                     delete instance;
 
-                    q = NULL;
-                    client = NULL;
-                    instance = NULL;
+                    q = nullptr;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
-                static IQueue<std::string> *q;
+                static std::shared_ptr<IQueue> q;
             };
 
-            HazelcastServer *ClientQueueTest::instance = NULL;
-            HazelcastClient *ClientQueueTest::client = NULL;
-            IQueue<std::string> *ClientQueueTest::q = NULL;
+            HazelcastServer *ClientQueueTest::instance = nullptr;
+            HazelcastClient *ClientQueueTest::client = nullptr;
 
-            class QueueTestItemListener : public ItemListener<std::string> {
+            class QueueTestItemListener : public ItemListener {
             public:
-                QueueTestItemListener(boost::latch &latch1)
-                        : latch1(latch1) {
+                explicit QueueTestItemListener(boost::latch &latch1) : latch1(latch1) {}
 
-                }
-
-                void itemAdded(const ItemEvent &itemEvent) {
+                void itemAdded(const ItemEvent &itemEvent) override {
                     latch1.count_down();
                 }
 
-                void itemRemoved(const ItemEvent &item) {
-                }
-
+                void itemRemoved(const ItemEvent &item) override {}
             private:
                 boost::latch &latch1;
             };
@@ -731,161 +730,137 @@ namespace hazelcast {
 
                 boost::latch latch1(5);
 
-                QueueTestItemListener listener(latch1);
-                std::string id = q->addItemListener(listener, true);
-
-                hazelcast::util::sleep(1);
-
+                std::string id = q->addItemListener(QueueTestItemListener(latch1), true).get();
+                
                 for (int i = 0; i < 5; i++) {
-                    ASSERT_TRUE(q->offer(std::string("event_item") + hazelcast::util::IOUtil::to_string(i)));
+                    ASSERT_TRUE(q->offer(std::string("event_item") + std::to_string(i)));
                 }
 
                 ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(5)));
-                ASSERT_TRUE(q->removeItemListener(id));
+                ASSERT_TRUE(q->removeItemListener(id).get());
 
                 // added for test coverage
-                ASSERT_NO_THROW(q->destroy());
+                ASSERT_NO_THROW(q->destroy().get());
             }
 
             void testOfferPollThread2(hazelcast::util::ThreadArgs &args) {
-                IQueue<std::string> *q = (IQueue<std::string> *) args.arg0;
+                auto *q = (IQueue *) args.arg0;
                 hazelcast::util::sleep(2);
                 q->offer("item1");
             }
 
             TEST_F(ClientQueueTest, testOfferPoll) {
                 for (int i = 0; i < 10; i++) {
-                    bool result = q->offer("item");
-                    ASSERT_TRUE(result);
+                    ASSERT_TRUE(q->offer("item").get());
                 }
-                ASSERT_EQ(10, q->size());
-                q->poll();
-                bool result = q->offer("item", 5);
-                ASSERT_TRUE(result);
+                ASSERT_EQ(10, q->size().get());
+                q->poll<std::string>().get();
+                ASSERT_TRUE(q->offer("item", std::chrono::milliseconds(5)).get());
 
                 for (int i = 0; i < 10; i++) {
-                    ASSERT_NE(q->poll().get(), (std::string *) NULL);
+                    ASSERT_TRUE(q->poll<std::string>().get().has_value());
                 }
-                ASSERT_EQ(0, q->size());
+                ASSERT_EQ(0, q->size().get());
 
-                hazelcast::util::StartedThread t2(testOfferPollThread2, q);
+                hazelcast::util::StartedThread t2(testOfferPollThread2, q.get());
 
-                std::shared_ptr<std::string> item = q->poll(30 * 1000);
-                ASSERT_NE(item.get(), (std::string *) NULL);
-                ASSERT_EQ("item1", *item);
+                boost::optional<std::string> item = q->poll<std::string>(std::chrono::seconds(30)).get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item1", item.value());
                 t2.join();
             }
 
             TEST_F(ClientQueueTest, testPeek) {
-                ASSERT_TRUE(q->offer("peek 1"));
-                ASSERT_TRUE(q->offer("peek 2"));
-                ASSERT_TRUE(q->offer("peek 3"));
-
-                std::shared_ptr<std::string> item = q->peek();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 1", *item);
+                offer(3);
+                boost::optional<std::string> item = q->peek<std::string>().get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item1", item.value());
             }
 
             TEST_F(ClientQueueTest, testTake) {
-                q->put("peek 1");
-                ASSERT_TRUE(q->offer("peek 2"));
-                ASSERT_TRUE(q->offer("peek 3"));
+                q->put("peek 1").get();
+                ASSERT_TRUE(q->offer("peek 2").get());
+                ASSERT_TRUE(q->offer("peek 3").get());
 
-                std::shared_ptr<std::string> item = q->take();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 1", *item);
+                boost::optional<std::string> item = q->take<std::string>().get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("peek 1", item.value());
 
-                item = q->take();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 2", *item);
+                item = q->take<std::string>().get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("peek 2", item.value());
 
-                item = q->take();
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("peek 3", *item);
+                item = q->take<std::string>().get();
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("peek 3", item.value());
 
-                ASSERT_TRUE(q->isEmpty());
+                ASSERT_TRUE(q->isEmpty().get());
 
 // start a thread to insert an item
-                hazelcast::util::StartedThread t2(testOfferPollThread2, q);
+                hazelcast::util::StartedThread t2(testOfferPollThread2, q.get());
 
-                item = q->take();  //  should block till it gets an item
-                ASSERT_NE((std::string *) NULL, item.get());
-                ASSERT_EQ("item1", *item);
+                item = q->take<std::string>().get();  //  should block till it gets an item
+                ASSERT_TRUE(item.has_value());
+                ASSERT_EQ("item1", item.value());
 
                 t2.join();
             }
 
             TEST_F(ClientQueueTest, testRemainingCapacity) {
-                int capacity = q->remainingCapacity();
+                int capacity = q->remainingCapacity().get();
                 ASSERT_TRUE(capacity > 10000);
                 q->offer("item");
-                ASSERT_EQ(capacity - 1, q->remainingCapacity());
+                ASSERT_EQ(capacity - 1, q->remainingCapacity().get());
             }
 
 
             TEST_F(ClientQueueTest, testRemove) {
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
+                offer(3);
+                ASSERT_FALSE(q->remove("item4").get());
+                ASSERT_EQ(3, q->size().get());
 
-                ASSERT_FALSE(q->remove("item4"));
-                ASSERT_EQ(3, q->size());
+                ASSERT_TRUE(q->remove("item2").get());
 
-                ASSERT_TRUE(q->remove("item2"));
+                ASSERT_EQ(2, q->size().get());
 
-                ASSERT_EQ(2, q->size());
-
-                ASSERT_EQ("item1", *(q->poll()));
-                ASSERT_EQ("item3", *(q->poll()));
+                ASSERT_EQ("item1", q->poll<std::string>().get().value());
+                ASSERT_EQ("item3", q->poll<std::string>().get().value());
             }
 
 
             TEST_F(ClientQueueTest, testContains) {
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
-                ASSERT_TRUE(q->offer("item4"));
-                ASSERT_TRUE(q->offer("item5"));
-
-
-                ASSERT_TRUE(q->contains("item3"));
-                ASSERT_FALSE(q->contains("item"));
+                offer(5);
+                ASSERT_TRUE(q->contains("item3").get());
+                ASSERT_FALSE(q->contains("item").get());
 
                 std::vector<std::string> list;
-                list.push_back("item4");
-                list.push_back("item2");
+                list.emplace_back("item4");
+                list.emplace_back("item2");
 
-                ASSERT_TRUE(q->containsAll(list));
+                ASSERT_TRUE(q->containsAll(list).get());
 
-                list.push_back("item");
-                ASSERT_FALSE(q->containsAll(list));
+                list.emplace_back("item");
+                ASSERT_FALSE(q->containsAll(list).get());
             }
 
             TEST_F(ClientQueueTest, testDrain) {
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
-                ASSERT_TRUE(q->offer("item4"));
-                ASSERT_TRUE(q->offer("item5"));
-
+                offer(5);
                 std::vector<std::string> list;
-                size_t result = q->drainTo(list, 2);
+                size_t result = q->drainTo(list, 2).get();
                 ASSERT_EQ(2U, result);
                 ASSERT_EQ("item1", list[0]);
                 ASSERT_EQ("item2", list[1]);
 
                 std::vector<std::string> list2;
-                result = q->drainTo(list2);
+                result = q->drainTo(list2).get();
                 ASSERT_EQ(3U, result);
                 ASSERT_EQ("item3", list2[0]);
                 ASSERT_EQ("item4", list2[1]);
                 ASSERT_EQ("item5", list2[2]);
 
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
+                offer(3);
                 list2.clear();
-                result = q->drainTo(list2, 5);
+                result = q->drainTo(list2, 5).get();
                 ASSERT_EQ(3U, result);
                 ASSERT_EQ("item1", list2[0]);
                 ASSERT_EQ("item2", list2[1]);
@@ -893,13 +868,8 @@ namespace hazelcast {
             }
 
             TEST_F(ClientQueueTest, testToArray) {
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
-                ASSERT_TRUE(q->offer("item4"));
-                ASSERT_TRUE(q->offer("item5"));
-
-                std::vector<std::string> array = q->toArray();
+                offer(5);
+                std::vector<std::string> array = q->toArray<std::string>();
                 size_t size = array.size();
                 for (size_t i = 0; i < size; i++) {
                     ASSERT_EQ(std::string("item") + hazelcast::util::IOUtil::to_string(i + 1), array[i]);
@@ -908,68 +878,57 @@ namespace hazelcast {
 
             TEST_F(ClientQueueTest, testAddAll) {
                 std::vector<std::string> coll;
-                coll.push_back("item1");
-                coll.push_back("item2");
-                coll.push_back("item3");
-                coll.push_back("item4");
+                coll.emplace_back("item1");
+                coll.emplace_back("item2");
+                coll.emplace_back("item3");
+                coll.emplace_back("item4");
 
                 ASSERT_TRUE(q->addAll(coll));
-                int size = q->size();
+                int size = q->size().get();
                 ASSERT_EQ(size, (int) coll.size());
             }
 
             TEST_F(ClientQueueTest, testRemoveRetain) {
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
-                ASSERT_TRUE(q->offer("item4"));
-                ASSERT_TRUE(q->offer("item5"));
-
+                offer(5);
                 std::vector<std::string> list;
-                list.push_back("item8");
-                list.push_back("item9");
-                ASSERT_FALSE(q->removeAll(list));
+                list.emplace_back("item8");
+                list.emplace_back("item9");
+                ASSERT_FALSE(q->removeAll(list).get());
                 ASSERT_EQ(5, q->size());
 
-                list.push_back("item3");
-                list.push_back("item4");
-                list.push_back("item1");
+                list.emplace_back("item3");
+                list.emplace_back("item4");
+                list.emplace_back("item1");
                 ASSERT_TRUE(q->removeAll(list));
                 ASSERT_EQ(2, q->size());
 
                 list.clear();
-                list.push_back("item2");
-                list.push_back("item5");
-                ASSERT_FALSE(q->retainAll(list));
+                list.emplace_back("item2");
+                list.emplace_back("item5");
+                ASSERT_FALSE(q->retainAll(list).get());
                 ASSERT_EQ(2, q->size());
 
                 list.clear();
-                ASSERT_TRUE(q->retainAll(list));
-                ASSERT_EQ(0, q->size());
+                ASSERT_TRUE(q->retainAll(list).get());
+                ASSERT_EQ(0, q->size().get());
             }
 
             TEST_F(ClientQueueTest, testClear) {
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_TRUE(q->offer("item2"));
-                ASSERT_TRUE(q->offer("item3"));
-                ASSERT_TRUE(q->offer("item4"));
-                ASSERT_TRUE(q->offer("item5"));
-
-                q->clear();
-
+                offer(5);
+                q->clear().get();
                 ASSERT_EQ(0, q->size());
-                ASSERT_EQ(q->poll().get(), (std::string *) NULL);
+                ASSERT_FALSE(q->poll<std::string>().get().has_value());
             }
 
             TEST_F(ClientQueueTest, testIsEmpty) {
-                ASSERT_TRUE(q->isEmpty());
-                ASSERT_TRUE(q->offer("item1"));
-                ASSERT_FALSE(q->isEmpty());
+                ASSERT_TRUE(q->isEmpty().get());
+                ASSERT_TRUE(q->offer("item1").get());
+                ASSERT_FALSE(q->isEmpty().get());
             }
 
             TEST_F(ClientQueueTest, testPut) {
-                q->put("item1");
-                ASSERT_EQ(1, q->size());
+                q->put("item1").get();
+                ASSERT_EQ(1, q->size().get());
             }
         }
     }
@@ -1240,7 +1199,7 @@ namespace hazelcast {
                         delete server;
                     }
 
-                    client = NULL;
+                    client = nullptr;
                 }
 
                 class FailingExecutionCallback : public ExecutionCallback<std::string> {
@@ -1375,8 +1334,8 @@ namespace hazelcast {
             };
 
             std::vector<HazelcastServer *>ClientExecutorServiceTest::instances;
-            HazelcastClient *ClientExecutorServiceTest::client = NULL;
-            HazelcastServerFactory *ClientExecutorServiceTest::factory = NULL;
+            HazelcastClient *ClientExecutorServiceTest::client = nullptr;
+            HazelcastServerFactory *ClientExecutorServiceTest::factory = nullptr;
             const size_t ClientExecutorServiceTest::numberOfMembers = 4;
 
             TEST_F(ClientExecutorServiceTest, testIsTerminated) {

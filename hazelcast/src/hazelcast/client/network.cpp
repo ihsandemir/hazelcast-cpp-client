@@ -391,8 +391,8 @@ namespace hazelcast {
                                                                      serialization::pimpl::SerializationService &ss,
                                                                      const protocol::Principal *p) {
                 byte serializationVersion = ss.getVersion();
-                const std::string *uuid = NULL;
-                const std::string *ownerUuid = NULL;
+                const std::string *uuid = nullptr;
+                const std::string *ownerUuid = nullptr;
                 if (p != NULL) {
                     uuid = p->getUuid();
                     ownerUuid = p->getOwnerUuid();

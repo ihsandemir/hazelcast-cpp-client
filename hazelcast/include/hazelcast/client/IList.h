@@ -44,13 +44,13 @@ namespace hazelcast {
             */
             template<typename Listener>
             boost::future<std::string> addItemListener(Listener &listener, bool includeValue) {
-                std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>> entryEventHandler(
+                std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>> itemEventHandler(
                         new impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>(
                                 getName(), getContext().getClientClusterService(),
                                 getContext().getSerializationService(),
                                 listener,
                                 includeValue));
-                return proxy::IListImpl::addItemListener(entryEventHandler, includeValue);
+                return proxy::IListImpl::addItemListener(itemEventHandler, includeValue);
             }
 
             /**
@@ -175,7 +175,7 @@ namespace hazelcast {
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
             template<typename E>
-            auto set(int32_t index, const E &element) -> decltype(toObject<E>(proxy::IListImpl::setData(index, toData(element))))  {
+            auto set(int32_t index, const E &element) -> boost::future<decltype(toObject<E>(serialization::pimpl::Data()))> {
                 return toObject<E>(proxy::IListImpl::setData(index, toData(element)));
             }
 

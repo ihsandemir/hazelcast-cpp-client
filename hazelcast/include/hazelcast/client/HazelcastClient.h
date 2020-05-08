@@ -451,9 +451,8 @@ namespace hazelcast {
             * @param name name of the distributed queue
             * @return distributed queue instance with the specified name
             */
-            template<typename E>
-            IQueue<E> getQueue(const std::string& name) {
-                return clientImpl->getQueue<E>(name);
+            std::shared_ptr<IQueue> getQueue(const std::string& name) {
+                return clientImpl->getQueue(name);
             }
 
             /**

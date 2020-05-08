@@ -286,10 +286,10 @@ namespace hazelcast {
                     delete instance1;
                     delete factory;
 
-                    client = NULL;
-                    client2 = NULL;
-                    instance1 = NULL;
-                    factory = NULL;
+                    client = nullptr;
+                    client2 = nullptr;
+                    instance1 = nullptr;
+                    factory = nullptr;
                 }
 
                 static ClientConfig getClientConfigWithNearCacheInvalidationEnabled() {
@@ -305,10 +305,10 @@ namespace hazelcast {
                 static HazelcastServerFactory *factory;
             };
 
-            HazelcastServer *ClientReplicatedMapTest::instance1 = NULL;
-            HazelcastClient *ClientReplicatedMapTest::client = NULL;
-            HazelcastClient *ClientReplicatedMapTest::client2 = NULL;
-            HazelcastServerFactory *ClientReplicatedMapTest::factory = NULL;
+            HazelcastServer *ClientReplicatedMapTest::instance1 = nullptr;
+            HazelcastClient *ClientReplicatedMapTest::client = nullptr;
+            HazelcastClient *ClientReplicatedMapTest::client2 = nullptr;
+            HazelcastServerFactory *ClientReplicatedMapTest::factory = nullptr;
             const int ClientReplicatedMapTest::OPERATION_COUNT = 100;
 
             TEST_F(ClientReplicatedMapTest, testEmptyMapIsEmpty) {
@@ -833,10 +833,10 @@ namespace hazelcast {
                     delete instance1;
                     delete instance2;
 
-                    client = NULL;
-                    client2 = NULL;
-                    instance1 = NULL;
-                    instance2 = NULL;
+                    client = nullptr;
+                    client2 = nullptr;
+                    instance1 = nullptr;
+                    instance2 = nullptr;
                 }
 
                 static HazelcastServer *instance1;
@@ -845,10 +845,10 @@ namespace hazelcast {
                 static HazelcastClient *client2;
             };
 
-            HazelcastServer *ClientReplicatedMapListenerTest::instance1 = NULL;
-            HazelcastServer *ClientReplicatedMapListenerTest::instance2 = NULL;
-            HazelcastClient *ClientReplicatedMapListenerTest::client = NULL;
-            HazelcastClient *ClientReplicatedMapListenerTest::client2 = NULL;
+            HazelcastServer *ClientReplicatedMapListenerTest::instance1 = nullptr;
+            HazelcastServer *ClientReplicatedMapListenerTest::instance2 = nullptr;
+            HazelcastClient *ClientReplicatedMapListenerTest::client = nullptr;
+            HazelcastClient *ClientReplicatedMapListenerTest::client2 = nullptr;
 
             TEST_F(ClientReplicatedMapListenerTest, testEntryAdded) {
                 std::shared_ptr<ReplicatedMap<int, int> > replicatedMap = client->getReplicatedMap<int, int>(
@@ -931,8 +931,8 @@ namespace hazelcast {
                 static void TearDownTestSuite() {
                     delete instance2;
                     delete instance;
-                    instance2 = NULL;
-                    instance = NULL;
+                    instance2 = nullptr;
+                    instance = nullptr;
                 }
 
                 virtual void SetUp() {
@@ -1222,8 +1222,8 @@ namespace hazelcast {
             };
 
             const int BasicClientReplicatedMapNearCacheTest::DEFAULT_RECORD_COUNT = 1000;
-            HazelcastServer *BasicClientReplicatedMapNearCacheTest::instance = NULL;
-            HazelcastServer *BasicClientReplicatedMapNearCacheTest::instance2 = NULL;
+            HazelcastServer *BasicClientReplicatedMapNearCacheTest::instance = nullptr;
+            HazelcastServer *BasicClientReplicatedMapNearCacheTest::instance2 = nullptr;
 
             /**
              * Checks that the Near Cache keys are correctly checked when {@link DataStructureAdapter#containsKey(Object)} is used.
@@ -1472,8 +1472,8 @@ namespace hazelcast {
                 static void TearDownTestCase() {
                     delete instance2;
                     delete instance;
-                    instance2 = NULL;
-                    instance = NULL;
+                    instance2 = nullptr;
+                    instance = nullptr;
                 }
 
 
@@ -1530,8 +1530,8 @@ namespace hazelcast {
             };
 
             const std::string ClientReplicatedMapNearCacheTest::DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
-            HazelcastServer *ClientReplicatedMapNearCacheTest::instance = NULL;
-            HazelcastServer *ClientReplicatedMapNearCacheTest::instance2 = NULL;
+            HazelcastServer *ClientReplicatedMapNearCacheTest::instance = nullptr;
+            HazelcastServer *ClientReplicatedMapNearCacheTest::instance2 = nullptr;
 
             TEST_F(ClientReplicatedMapNearCacheTest, testGetAllChecksNearCacheFirst) {
                 std::shared_ptr<ReplicatedMap<int, int> > map = getNearCachedMapFromClient(

@@ -215,7 +215,7 @@ namespace hazelcast {
                 static void TearDownTestCase() {
                     delete instance;
 
-                    instance = NULL;
+                    instance = nullptr;
                 }
 
                 Response getClientStatsFromServer() {
@@ -340,7 +340,7 @@ namespace hazelcast {
                 static HazelcastServer *instance;
             };
 
-            HazelcastServer *ClientStatisticsTest::instance = NULL;
+            HazelcastServer *ClientStatisticsTest::instance = nullptr;
 
             TEST_F(ClientStatisticsTest, testClientStatisticsDisabledByDefault) {
 
@@ -631,9 +631,9 @@ namespace hazelcast {
                         delete client2;
                         delete instance;
 
-                        client = NULL;
-                        client2 = NULL;
-                        instance = NULL;
+                        client = nullptr;
+                        client2 = nullptr;
+                        instance = nullptr;
                     }
 
                     static HazelcastServer *instance;
@@ -648,9 +648,9 @@ namespace hazelcast {
 
                 const int64_t RingbufferTest::CAPACITY = 10;
 
-                HazelcastServer *RingbufferTest::instance = NULL;
-                HazelcastClient *RingbufferTest::client = NULL;
-                HazelcastClient *RingbufferTest::client2 = NULL;
+                HazelcastServer *RingbufferTest::instance = nullptr;
+                HazelcastClient *RingbufferTest::client = nullptr;
+                HazelcastClient *RingbufferTest::client2 = nullptr;
 
                 TEST_F(RingbufferTest, testAPI) {
                     std::shared_ptr<Ringbuffer<Employee> > rb = client->getRingbuffer<Employee>(getTestName() + "2");
@@ -929,8 +929,8 @@ namespace hazelcast {
                     delete client;
                     delete instance;
 
-                    client = NULL;
-                    instance = NULL;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
                 static HazelcastServer *instance;
@@ -939,8 +939,8 @@ namespace hazelcast {
             };
 
 
-            HazelcastServer *PolymorphicDataSerializableRingbufferTest::instance = NULL;
-            HazelcastClient *PolymorphicDataSerializableRingbufferTest::client = NULL;
+            HazelcastServer *PolymorphicDataSerializableRingbufferTest::instance = nullptr;
+            HazelcastClient *PolymorphicDataSerializableRingbufferTest::client = nullptr;
             std::shared_ptr<Ringbuffer<PolymorphicDataSerializableRingbufferTest::BaseDataSerializable> > PolymorphicDataSerializableRingbufferTest::rb;
 
             TEST_F(PolymorphicDataSerializableRingbufferTest, testPolymorhism) {
@@ -1176,11 +1176,11 @@ namespace hazelcast {
                 public:
 
                     ClientAllStatesListener(boost::latch *startingLatch,
-                                            boost::latch *startedLatch = NULL,
-                                            boost::latch *connectedLatch = NULL,
-                                            boost::latch *disconnectedLatch = NULL,
-                                            boost::latch *shuttingDownLatch = NULL,
-                                            boost::latch *shutdownLatch = NULL)
+                                            boost::latch *startedLatch = nullptr,
+                                            boost::latch *connectedLatch = nullptr,
+                                            boost::latch *disconnectedLatch = nullptr,
+                                            boost::latch *shuttingDownLatch = nullptr,
+                                            boost::latch *shutdownLatch = nullptr)
                             : startingLatch(startingLatch), startedLatch(startedLatch), connectedLatch(connectedLatch),
                               disconnectedLatch(disconnectedLatch), shuttingDownLatch(shuttingDownLatch),
                               shutdownLatch(shutdownLatch) {}
@@ -1667,16 +1667,16 @@ namespace hazelcast {
                             delete client;
                             delete instance;
 
-                            client = NULL;
-                            instance = NULL;
+                            client = nullptr;
+                            instance = nullptr;
                         }
 
                         static HazelcastServer *instance;
                         static HazelcastClient *client;
                     };
 
-                    HazelcastServer *BasicPnCounterAPITest::instance = NULL;
-                    HazelcastClient *BasicPnCounterAPITest::client = NULL;
+                    HazelcastServer *BasicPnCounterAPITest::instance = nullptr;
+                    HazelcastClient *BasicPnCounterAPITest::client = nullptr;
 
                     TEST_F(BasicPnCounterAPITest, testGetStart) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
@@ -1864,8 +1864,8 @@ namespace hazelcast {
                             delete client;
                             delete instance;
 
-                            client = NULL;
-                            instance = NULL;
+                            client = nullptr;
+                            instance = nullptr;
                         }
 
                     protected:
@@ -1873,8 +1873,8 @@ namespace hazelcast {
                         static HazelcastClient *client;
                     };
 
-                    HazelcastServer *PnCounterFunctionalityTest::instance = NULL;
-                    HazelcastClient *PnCounterFunctionalityTest::client = NULL;
+                    HazelcastServer *PnCounterFunctionalityTest::instance = nullptr;
+                    HazelcastClient *PnCounterFunctionalityTest::client = nullptr;
 
                     TEST_F(PnCounterFunctionalityTest, testSimpleReplication) {
                         const char *name = testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -2243,8 +2243,8 @@ namespace hazelcast {
                     delete client;
                     delete instance;
 
-                    client = NULL;
-                    instance = NULL;
+                    client = nullptr;
+                    instance = nullptr;
                 }
 
             protected:
@@ -2254,8 +2254,8 @@ namespace hazelcast {
                 FlakeIdGenerator flakeIdGenerator;
             };
 
-            HazelcastServer *FlakeIdGeneratorApiTest::instance = NULL;
-            HazelcastClient *FlakeIdGeneratorApiTest::client = NULL;
+            HazelcastServer *FlakeIdGeneratorApiTest::instance = nullptr;
+            HazelcastClient *FlakeIdGeneratorApiTest::client = nullptr;
 
             TEST_F (FlakeIdGeneratorApiTest, testStartingValue) {
                 flakeIdGenerator.newId();
