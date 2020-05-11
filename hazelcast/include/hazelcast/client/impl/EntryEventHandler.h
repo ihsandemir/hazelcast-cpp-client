@@ -43,7 +43,7 @@ namespace hazelcast {
             public:
                 EntryEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
                                   serialization::pimpl::SerializationService &serializationService,
-                                  Listener &&listener, bool includeValue, util::ILogger log)
+                                  Listener &&listener, bool includeValue, util::ILogger &log)
                 : instanceName(instanceName), clusterService(clusterService), serializationService(serializationService)
                 , listener(listener), includeValue(includeValue), logger(log) {}
 
@@ -68,9 +68,9 @@ namespace hazelcast {
                                       std::unique_ptr<serialization::pimpl::Data> &mergingValue,
                                       const int32_t &eventType, const std::string &uuid,
                                       const int32_t &numberOfAffectedEntries) {
-                    std::shared_ptr<Member> member = clusterService.getMember(uuid);
+                    auto member = clusterService.getMember(uuid);
                     auto mapEventType = static_cast<EntryEvent::type>(eventType);
-                    MapEvent mapEvent(*member, mapEventType, instanceName, numberOfAffectedEntries);
+                    MapEvent mapEvent(std::move(member).value(), mapEventType, instanceName, numberOfAffectedEntries);
 
                     if (mapEventType == EntryEvent::type::CLEAR_ALL) {
                         listener.mapCleared(mapEvent);
@@ -85,7 +85,7 @@ namespace hazelcast {
                                     std::unique_ptr<serialization::pimpl::Data> &mergingValue,
                                     const int32_t &eventType, const std::string &uuid,
                                     const int32_t &numberOfAffectedEntries) {
-                    TypedData val, oldVal, mergingVal;
+                    TypedData eventKey, val, oldVal, mergingVal;
                     if (includeValue) {
                         if (value) {
                             val = TypedData(std::move(*value), serializationService);
@@ -97,16 +97,15 @@ namespace hazelcast {
                             mergingVal = TypedData(std::move(*mergingValue), serializationService);
                         }
                     }
-                    TypedData eventKey;
                     if (key) {
                         eventKey = TypedData(std::move(*key), serializationService);
                     }
-                    std::shared_ptr<Member> member = clusterService.getMember(uuid);
-                    if (!member) {
-                        member.reset(new Member(uuid));
+                    auto member = clusterService.getMember(uuid);
+                    if (!member.has_value()) {
+                        member = Member(uuid);
                     }
                     auto type = static_cast<EntryEvent::type>(eventType);
-                    EntryEvent entryEvent(instanceName, *member, type, std::move(eventKey), std::move(val),
+                    EntryEvent entryEvent(instanceName, member.value(), type, std::move(eventKey), std::move(val),
                                           std::move(oldVal), std::move(mergingVal));
                     switch(type) {
                         case EntryEvent::type::ADDED:

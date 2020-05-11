@@ -23,11 +23,9 @@
 #include "hazelcast/client/crdt/pncounter/PNCounter.h"
 #include "hazelcast/client/spi/impl/sequence/CallIdSequence.h"
 #include "hazelcast/client/map/impl/ClientMapProxyFactory.h"
-#include "hazelcast/client/map/impl/ReplicatedMapProxyFactory.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/proxy/ClientRingbufferProxy.h"
 #include "hazelcast/client/ringbuffer/impl/RingbufferProxyFactory.h"
-#include "hazelcast/client/proxy/ClientReplicatedMapProxy.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/client/MultiMap.h"
 #include "hazelcast/client/ReplicatedMap.h"
@@ -158,7 +156,7 @@ namespace hazelcast {
                 }
 
                 std::shared_ptr<ReplicatedMap> getReplicatedMap(const std::string &name) {
-                    return getDistributedObject<proxy::ClientReplicatedMapProxy>(name);
+                    return getDistributedObject<ReplicatedMap>(name);
                 }
 
                 /**

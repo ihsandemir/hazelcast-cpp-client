@@ -61,9 +61,8 @@ namespace hazelcast {
             protected:
                 typedef std::unordered_map<std::shared_ptr<serialization::pimpl::Data>, bool> MARKER_MAP;
 
-                //@override
-                void onInitialize() {
-                    ClientMapProxy::onInitialize();
+                void onInitialize() override {
+                    Imap::onInitialize();
 
                     internal::nearcache::NearCacheManager &nearCacheManager = this->getContext().getNearCacheManager();
                     cacheLocalEntries = nearCacheConfig.isCacheLocalEntries();
@@ -101,21 +100,21 @@ namespace hazelcast {
                     removeNearCacheInvalidationListener();
                     spi::ClientProxy::getContext().getNearCacheManager().destroyNearCache(spi::ClientProxy::getName());
 
-                    ClientMapProxy::onShutdown();
+                    Imap::onShutdown();
                 }
 
                 boost::future<bool> containsKeyInternal(const serialization::pimpl::Data &keyData) override {
-                    std::shared_ptr<serialization::pimpl::Data> key = ClientMapProxy::toShared(keyData);
+                    std::shared_ptr<serialization::pimpl::Data> key = toShared(keyData);
                     std::shared_ptr<V> cached = nearCache->get(key);
                     if (cached) {
                         return internal::nearcache::NearCache<K, V>::NULL_OBJECT != cached;
                     }
 
-                    return ClientMapProxy::containsKeyInternal(*key);
+                    return Imap::containsKeyInternal(*key);
                 }
 
                 boost::future<serialization::pimpl::Data> getInternal(serialization::pimpl::Data &keyData) override {
-                    auto key = ClientMapProxy::toShared(keyData);
+                    auto key = toShared(keyData);
                     auto cached = nearCache->get(key);
                     if (cached) {
                         if (internal::nearcache::NearCache<K, V>::NULL_OBJECT == cached) {
@@ -127,7 +126,7 @@ namespace hazelcast {
                     bool marked = keyStateMarker->tryMark(*key);
 
                     try {
-                        auto future = ClientMapProxy::getInternal(*key);
+                        auto future = Imap::getInternal(*key);
                         if (marked) {
                             return future.then([=](boost::future<serialization::pimpl::Data> f) {
                                 tryToPutNearCache(key, std::make_shared<serialization::pimpl::Data>(std::move(f.get())));
@@ -143,7 +142,7 @@ namespace hazelcast {
                 boost::future<bool> removeInternal(
                         const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) override {
                     try {
-                        auto response = ClientMapProxy::removeInternal(key, value);
+                        auto response = Imap::removeInternal(key, value);
                         invalidateNearCache(key);
                         return response;
                     } catch (exception::IException &) {
@@ -155,7 +154,7 @@ namespace hazelcast {
                 boost::future<serialization::pimpl::Data> removeInternal(
                         const serialization::pimpl::Data &key) override {
                     try {
-                        auto response = ClientMapProxy::removeInternal(key);
+                        auto response = Imap::removeInternal(key);
                         invalidateNearCache(key);
                         return response;
                     } catch (exception::IException &) {
@@ -167,7 +166,7 @@ namespace hazelcast {
                 boost::future<protocol::ClientMessage>
                 removeAllInternal(const serialization::pimpl::Data &predicateData) override {
                     try {
-                        auto response = ClientMapProxy::removeAllInternal(predicateData);
+                        auto response = Imap::removeAllInternal(predicateData);
                         nearCache->clear();
                         return response;
                     } catch (exception::IException &) {
@@ -178,7 +177,7 @@ namespace hazelcast {
 
                 boost::future<protocol::ClientMessage> deleteInternal(const serialization::pimpl::Data &key) override {
                     try {
-                        auto response = ClientMapProxy::deleteInternal(key);
+                        auto response = Imap::deleteInternal(key);
                         invalidateNearCache(key);
                         return response;
                     } catch (exception::IException &) {
@@ -190,7 +189,7 @@ namespace hazelcast {
                 boost::future<bool> tryRemoveInternal(const serialization::pimpl::Data &keyData,
                                                               std::chrono::steady_clock::duration timeout) override {
                     try {
-                        auto response = ClientMapProxy::tryRemoveInternal(keyData, timeout);
+                        auto response = Imap::tryRemoveInternal(keyData, timeout);
                         invalidateNearCache(keyData);
                         return response;
                     } catch (exception::IException &) {
@@ -202,7 +201,7 @@ namespace hazelcast {
                 boost::future<bool> tryPutInternal(const serialization::pimpl::Data &keyData,
                         const serialization::pimpl::Data &valueData, std::chrono::steady_clock::duration timeout) override {
                     try {
-                        auto response = ClientMapProxy::tryPutInternal(keyData, valueData, timeout);
+                        auto response = Imap::tryPutInternal(keyData, valueData, timeout);
                         invalidateNearCache(keyData);
                         return response;
                     } catch (exception::IException &) {
@@ -214,7 +213,7 @@ namespace hazelcast {
                 boost::future<serialization::pimpl::Data> putInternal(const serialization::pimpl::Data &keyData,
                         const serialization::pimpl::Data &valueData, std::chrono::steady_clock::duration ttl) override {
                     try {
-                        auto previousValue = ClientMapProxy::putInternal(keyData, valueData, ttl);
+                        auto previousValue = Imap::putInternal(keyData, valueData, ttl);
                         invalidateNearCache(keyData);
                         return previousValue;
                     } catch (exception::IException &) {
@@ -228,7 +227,7 @@ namespace hazelcast {
                                         const serialization::pimpl::Data &valueData,
                                         std::chrono::steady_clock::duration ttl) override {
                     try {
-                        auto result = ClientMapProxy::tryPutTransientInternal(keyData, valueData, ttl);
+                        auto result = Imap::tryPutTransientInternal(keyData, valueData, ttl);
                         invalidateNearCache(keyData);
                         return result;
                     } catch (exception::IException &) {
@@ -242,7 +241,7 @@ namespace hazelcast {
                                     const serialization::pimpl::Data &valueData,
                                     std::chrono::steady_clock::duration ttl) override {
                     try {
-                        auto previousValue = ClientMapProxy::putIfAbsentData(keyData, valueData, ttl);
+                        auto previousValue = Imap::putIfAbsentData(keyData, valueData, ttl);
                         invalidateNearCache(keyData);
                         return previousValue;
                     } catch (exception::IException &) {
@@ -320,7 +319,7 @@ namespace hazelcast {
                             }
                         }
 
-                        return ClientMapProxy::getAllInternal(partitionId, std::move(remainingKeys)).then(
+                        return Imap::getAllInternal(partitionId, std::move(remainingKeys)).then(
                                 boost::launch::sync, std::bind(
                                         [this](boost::future<EntryVector> f, MARKER_MAP &markers, EntryVector &result) {
                             for (auto &entry : f.get()) {
@@ -354,7 +353,7 @@ namespace hazelcast {
                 executeOnKeyInternal(const serialization::pimpl::Data &keyData,
                                      const serialization::pimpl::Data &processor) override {
                     try {
-                        auto response = ClientMapProxy::executeOnKeyData(keyData, processor);
+                        auto response = Imap::executeOnKeyData(keyData, processor);
                         invalidateNearCache(keyData);
                         return response;
                     } catch (exception::IException &) {
@@ -366,7 +365,7 @@ namespace hazelcast {
                 boost::future<protocol::ClientMessage>
                 putAllInternal(int partitionId, const EntryVector &entries) override {
                     try {
-                        auto result = ClientMapProxy::putAllInternal(entries);
+                        auto result = Imap::putAllInternal(entries);
                         invalidateEntries(entries);
                         return result;
                     } catch (exception::IException &) {
@@ -377,7 +376,7 @@ namespace hazelcast {
 
                 void invalidateEntries(const EntryVector &entries) {
                     for (auto &entry : entries) {
-                        invalidateNearCache(ClientMapProxy::toShared(entry.first));
+                        invalidateNearCache(toShared(entry.first));
                     }
                 }
 
@@ -553,7 +552,7 @@ namespace hazelcast {
                  * @param key The key for which to invalidate the near cache
                  */
                 void invalidateNearCache(const serialization::pimpl::Data &key) {
-                    nearCache->invalidate(ClientMapProxy::toShared(key));
+                    nearCache->invalidate(toShared(key));
                 }
 
                 void invalidateNearCache(std::shared_ptr<serialization::pimpl::Data> key) {
@@ -565,8 +564,7 @@ namespace hazelcast {
                 impl::nearcache::KeyStateMarker *keyStateMarker;
                 const config::NearCacheConfig<K, V> &nearCacheConfig;
                 std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V>> nearCache;
-                // since we don't have atomic support in the project yet, using shared_ptr
-                util::Sync<std::string> invalidationListenerId;
+                std::string invalidationListenerId;
                 util::ILogger &logger;
             };
         }

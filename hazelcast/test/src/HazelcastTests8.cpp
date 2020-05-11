@@ -886,26 +886,27 @@ namespace hazelcast {
 namespace hazelcast {
     namespace client {
         namespace test {
-            class MySetItemListener : public ItemListener<std::string> {
+            class MySetItemListener : public ItemListener {
             public:
-                MySetItemListener(boost::latch &latch1)
-                        : latch1(latch1) {
+                MySetItemListener(boost::latch &latch1) : latch1(latch1) {}
 
-                }
-
-                void itemAdded(const ItemEvent<std::string> &itemEvent) {
+                void itemAdded(const ItemEvent &itemEvent) {
                     latch1.count_down();
                 }
 
-                void itemRemoved(const ItemEvent<std::string> &item) {
-                }
-
+                void itemRemoved(const ItemEvent &item) {}
             private:
                 boost::latch &latch1;
             };
 
             class ClientSetTest : public ClientTestSupport {
             protected:
+                void addItems(int count) {
+                    for (int i = 1; i <= count; ++i) {
+                        ASSERT_TRUE(set->add(std::string("item") + std::to_string(i)).get());
+                    }
+                }
+
                 virtual void TearDown() {
                     set->clear();
                 }
@@ -913,11 +914,10 @@ namespace hazelcast {
                 static void SetUpTestCase() {
                     instance = new HazelcastServer(*g_srvFactory);
                     client = new HazelcastClient(getConfig());
-                    set = new ISet<std::string>(client->getSet<std::string>("MySet"));
+                    set = client->getSet("MySet");
                 }
 
                 static void TearDownTestCase() {
-                    delete set;
                     delete client;
                     delete instance;
 
@@ -939,120 +939,100 @@ namespace hazelcast {
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
-                static ISet<std::string> *set;
+                static std::shared_ptr<ISet> set;
             };
 
             HazelcastServer *ClientSetTest::instance = nullptr;
             HazelcastClient *ClientSetTest::client = nullptr;
-            ISet<std::string> *ClientSetTest::set = nullptr;
 
             TEST_F(ClientSetTest, testAddAll) {
                 std::vector<std::string> l;
-                l.push_back("item1");
-                l.push_back("item2");
+                l.emplace_back("item1");
+                l.emplace_back("item2");
 
-                ASSERT_TRUE(set->addAll(l));
+                ASSERT_TRUE(set->addAll(l).get());
                 ASSERT_EQ(2, set->size());
 
-                ASSERT_FALSE(set->addAll(l));
-                ASSERT_EQ(2, set->size());
+                ASSERT_FALSE(set->addAll(l).get());
+                ASSERT_EQ(2, set->size().get());
             }
 
             TEST_F(ClientSetTest, testAddRemove) {
-                ASSERT_TRUE(set->add("item1"));
-                ASSERT_TRUE(set->add("item2"));
-                ASSERT_TRUE(set->add("item3"));
-                ASSERT_EQ(3, set->size());
+                addItems(3);
+                ASSERT_EQ(3, set->size().get());
 
-                ASSERT_FALSE(set->add("item3"));
-                ASSERT_EQ(3, set->size());
+                ASSERT_FALSE(set->add("item3").get());
+                ASSERT_EQ(3, set->size().get());
 
 
-                ASSERT_FALSE(set->remove("item4"));
-                ASSERT_TRUE(set->remove("item3"));
+                ASSERT_FALSE(set->remove("item4").get());
+                ASSERT_TRUE(set->remove("item3").get());
             }
 
             TEST_F(ClientSetTest, testContains) {
-                ASSERT_TRUE(set->add("item1"));
-                ASSERT_TRUE(set->add("item2"));
-                ASSERT_TRUE(set->add("item3"));
-                ASSERT_TRUE(set->add("item4"));
+                addItems(4);
 
-                ASSERT_FALSE(set->contains("item5"));
-                ASSERT_TRUE(set->contains("item2"));
+                ASSERT_FALSE(set->contains("item5").get());
+                ASSERT_TRUE(set->contains("item2").get());
 
                 std::vector<std::string> l;
-                l.push_back("item6");
-                l.push_back("item3");
-
-                ASSERT_FALSE(set->containsAll(l));
-                ASSERT_TRUE(set->add("item6"));
-                ASSERT_TRUE(set->containsAll(l));
+                l.emplace_back("item6");
+                l.emplace_back("item3");
+                ASSERT_FALSE(set->containsAll(l).get());
+                ASSERT_TRUE(set->add("item6").get());
+                ASSERT_TRUE(set->containsAll(l).get());
             }
 
             TEST_F(ClientSetTest, testToArray) {
-                ASSERT_TRUE(set->add("item1"));
-                ASSERT_TRUE(set->add("item2"));
-                ASSERT_TRUE(set->add("item3"));
-                ASSERT_TRUE(set->add("item4"));
-                ASSERT_FALSE(set->add("item4"));
+                addItems(4);
+                ASSERT_FALSE(set->add("item4").get());
 
-                std::vector<std::string> items = set->toArray();
+                std::vector<std::string> items = set->toArray<std::string>().get();
 
                 ASSERT_EQ((size_t) 4, items.size());
-                ASSERT_TRUE(itemExists(items, "item1"));
-                ASSERT_TRUE(itemExists(items, "item2"));
-                ASSERT_TRUE(itemExists(items, "item3"));
-                ASSERT_TRUE(itemExists(items, "item4"));
+                ASSERT_TRUE(itemExists(items, "item1").get());
+                ASSERT_TRUE(itemExists(items, "item2").get());
+                ASSERT_TRUE(itemExists(items, "item3").get());
+                ASSERT_TRUE(itemExists(items, "item4").get());
             }
 
             TEST_F(ClientSetTest, testRemoveRetainAll) {
-                ASSERT_TRUE(set->add("item1"));
-                ASSERT_TRUE(set->add("item2"));
-                ASSERT_TRUE(set->add("item3"));
-                ASSERT_TRUE(set->add("item4"));
-
+                addItems(4);
                 std::vector<std::string> l;
-                l.push_back("item4");
-                l.push_back("item3");
-
-                ASSERT_TRUE(set->removeAll(l));
-                ASSERT_EQ(2, set->size());
-                ASSERT_FALSE(set->removeAll(l));
-                ASSERT_EQ(2, set->size());
-
-                l.clear();
-                l.push_back("item1");
-                l.push_back("item2");
-                ASSERT_FALSE(set->retainAll(l));
-                ASSERT_EQ(2, set->size());
+                l.emplace_back("item4");
+                l.emplace_back("item3");
+                ASSERT_TRUE(set->removeAll(l).get());
+                ASSERT_EQ(2, set->size().get());
+                ASSERT_FALSE(set->removeAll(l).get());
+                ASSERT_EQ(2, set->size().get());
 
                 l.clear();
-                ASSERT_TRUE(set->retainAll(l));
-                ASSERT_EQ(0, set->size());
+                l.emplace_back("item1");
+                l.emplace_back("item2");
+                ASSERT_FALSE(set->retainAll(l).get());
+                ASSERT_EQ(2, set->size().get());
+
+                l.clear();
+                ASSERT_TRUE(set->retainAll(l).get());
+                ASSERT_EQ(0, set->size().get());
 
             }
 
             TEST_F(ClientSetTest, testListener) {
                 boost::latch latch1(6);
-
                 MySetItemListener listener(latch1);
-                std::string registrationId = set->addItemListener(listener, true);
+                std::string registrationId = set->addItemListener(listener, true).get();
+                addItems(5);
+                set->add("done").get();
+                ASSERT_OPEN_EVENTUALLY(latch1);
 
-                for (int i = 0; i < 5; i++) {
-                    set->add(std::string("item") + std::to_string(i));
-                }
-                set->add("done");
-
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(20)));
-
-                ASSERT_TRUE(set->removeItemListener(registrationId));
+                ASSERT_TRUE(set->removeItemListener(registrationId).get());
             }
 
             TEST_F(ClientSetTest, testIsEmpty) {
-                ASSERT_TRUE(set->isEmpty());
-                ASSERT_TRUE(set->add("item1"));
-                ASSERT_FALSE(set->isEmpty());
+                ASSERT_TRUE(set->isEmpty().get());
+                ASSERT_TRUE(set->add("item1").get());
+                ASSERT_FALSE(set->isEmpty().get());
             }
         }
     }

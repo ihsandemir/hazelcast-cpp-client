@@ -22,16 +22,40 @@ namespace hazelcast {
     namespace client {
         namespace proxy {
             class HAZELCAST_API ISetImpl : public ProxyImpl {
-            protected:
-                ISetImpl(const std::string& instanceName, spi::ClientContext *clientContext);
-
-                boost::future<std::string>  addItemListener(impl::BaseEventHandler *handler, bool includeValue);
-
+            public:
+                /**
+                * Removes the specified item listener.
+                * Returns false if the specified listener is not added before.
+                *
+                * @param registrationId Id of listener registration.
+                *
+                * @return true if registration is removed, false otherwise
+                */
                 boost::future<bool> removeItemListener(const std::string& registrationId);
 
+                /**
+                *
+                * @returns size of the distributed set
+                */
                 boost::future<int> size();
 
+                /**
+                *
+                * @returns true if empty
+                */
                 boost::future<bool> isEmpty();
+
+                /**
+                *
+                * Removes all elements from set.
+                */
+                boost::future<void> clear();
+            protected:
+
+                ISetImpl(const std::string& instanceName, spi::ClientContext *clientContext);
+
+                boost::future<std::string>
+                addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue);
 
                 boost::future<bool> contains(const serialization::pimpl::Data& element);
 
@@ -49,8 +73,6 @@ namespace hazelcast {
 
                 boost::future<bool> retainAll(const std::vector<serialization::pimpl::Data>& elements);
 
-                boost::future<void> clear();
-
             private:
                 class SetListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -66,13 +88,13 @@ namespace hazelcast {
                     virtual bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const;
 
                 private:
-                    boost::future<std::string>  name;
-                    boost::future<bool> includeValue;
+                    std::string  name;
+                    bool includeValue;
                 };
 
-                boost::future<int> partitionId;
+                int partitionId;
 
-                std::shared_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec(bool includeValue);
+                std::unique_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec(bool includeValue);
             };
         }
     }

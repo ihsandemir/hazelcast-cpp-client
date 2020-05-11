@@ -50,27 +50,27 @@ namespace hazelcast {
                 boost::future<protocol::ClientMessage> removeInterceptor(const std::string &id);
 
                 /**
-* Evicts all keys from this map except locked ones.
-* <p/>
-* If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
-* If you do want to deleteAll to be called use the #clear() method.
-* <p/>
-* The EVICT_ALL event is fired for any registered listeners.
-* See EntryListener#mapEvicted(MapEvent)}.
-*
-* @see #clear()
-*/
+                * Evicts all keys from this map except locked ones.
+                * <p/>
+                * If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
+                * If you do want to deleteAll to be called use the #clear() method.
+                * <p/>
+                * The EVICT_ALL event is fired for any registered listeners.
+                * See EntryListener#mapEvicted(MapEvent)}.
+                *
+                * @see #clear()
+                */
                 boost::future<protocol::ClientMessage> evictAll();
 
                 /**
-* Removes the specified entry listener
-* Returns silently if there is no such listener added before.
-*
-*
-* @param registrationId id of registered listener
-*
-* @return true if registration is removed, false otherwise
-*/
+                * Removes the specified entry listener
+                * Returns silently if there is no such listener added before.
+                *
+                *
+                * @param registrationId id of registered listener
+                *
+                * @return true if registration is removed, false otherwise
+                */
                 boost::future<bool> removeEntryListener(const std::string &registrationId);
 
                 /**

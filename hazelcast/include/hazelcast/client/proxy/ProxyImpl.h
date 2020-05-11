@@ -16,6 +16,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include "hazelcast/util/ExceptionUtil.h"
 #include "hazelcast/client/serialization/serialization.h"
@@ -67,6 +68,13 @@ namespace hazelcast {
                 template<typename T>
                 auto toObject(boost::future<serialization::pimpl::Data> &f) -> boost::future<decltype(toObject<T>(f.get()))> {
                     return f.then(boost::launch::deferred, [=] (boost::future<serialization::pimpl::Data> f) {
+                        return toObject<T>(f.get());
+                    });
+                }
+
+                template<typename T>
+                auto toObject(boost::future<std::unique_ptr<serialization::pimpl::Data>> &f) -> boost::future<decltype(toObject<T>(f.get()))> {
+                    return f.then(boost::launch::deferred, [=] (boost::future<std::unique_ptr<serialization::pimpl::Data>> f) {
                         return toObject<T>(f.get());
                     });
                 }
@@ -156,13 +164,12 @@ namespace hazelcast {
                 }
 
                 template<typename K, typename V>
-                EntryVector toDataEntries(std::map<K, V> const &m) {
-                    std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entries(
-                            m.size());
-                    int i = 0;
-                    for (typename std::map<K, V>::const_iterator it = m.begin(); it != m.end(); ++it) {
-                        entries[i++] = std::make_pair(toData(it->first), toData(it->second));
-                    }
+                EntryVector toDataEntries(const std::unordered_map<K, V> &m) {
+                    EntryVector entries;
+                    entries.reserve(m.size());
+                    std::for_each(m.begin(), m.end(), [&] (const typename std::unordered_map<K, V>::value_type &entry) {
+                        entries.emplace_back(toData<K>(entry.first), toData<V>(entry.second));
+                    });
                     return entries;
                 }
 

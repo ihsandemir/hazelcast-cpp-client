@@ -38,48 +38,23 @@ namespace hazelcast {
             *  @param includeValue boolean value representing value should be included in incoming ItemEvent or not.
             *  @returns registrationId that can be used to remove item listener
             */
-            std::string addItemListener(ItemListener<E> &listener, bool includeValue) {
-                impl::ItemEventHandler<E, protocol::codec::SetAddListenerCodec::AbstractEventHandler> *itemEventHandler =
-                        new impl::ItemEventHandler<E, protocol::codec::SetAddListenerCodec::AbstractEventHandler>(
-                                getName(), getContext().getClientClusterService(), getContext().getSerializationService(), listener,
-                                includeValue);
+            template<typename Listener>
+            boost::future<std::string> addItemListener(Listener &&listener, bool includeValue) {
+                std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::SetAddListenerCodec::AbstractEventHandler>> itemEventHandler(
+                        new impl::ItemEventHandler<Listener, protocol::codec::SetAddListenerCodec::AbstractEventHandler>(
+                                getName(), getContext().getClientClusterService(),
+                                getContext().getSerializationService(),
+                                listener,
+                                includeValue));
                 return proxy::ISetImpl::addItemListener(itemEventHandler, includeValue);
-            }
-
-            /**
-            * Removes the specified item listener.
-            * Returns false if the specified listener is not added before.
-            *
-            * @param registrationId Id of listener registration.
-            *
-            * @return true if registration is removed, false otherwise
-            */
-            boost::future<bool> removeItemListener(const std::string &registrationId) {
-                return proxy::ISetImpl::removeItemListener(registrationId);
-            }
-
-            /**
-            *
-            * @returns size of the distributed set
-            */
-            boost::future<int> size() {
-                return proxy::ISetImpl::size();
-            }
-
-            /**
-            *
-            * @returns true if empty
-            */
-            boost::future<bool> isEmpty() {
-                return proxy::ISetImpl::isEmpty();
             }
 
             /**
             *
             * @param element to be searched
             * @returns true if set contains element
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> contains(const E &element) {
                 return proxy::ISetImpl::contains(toData(element));
             }
@@ -88,16 +63,17 @@ namespace hazelcast {
             *
             * @returns all elements as std::vector
             */
+            template<typename E>
             boost::future<std::vector<E>> toArray() {
-                return toObjectCollection<E>(proxy::ISetImpl::toArrayData());
+                return toObjectVector<E>(proxy::ISetImpl::toArrayData());
             }
 
             /**
             *
             * @param element to be added
             * @return true if element is added successfully. If elements was already there returns false.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> add(const E &element) {
                 return proxy::ISetImpl::add(toData(element));
             }
@@ -106,8 +82,8 @@ namespace hazelcast {
             *
             * @param element to be removed
             * @return true if element is removed successfully.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> remove(const E &element) {
                 return proxy::ISetImpl::remove(toData(element));
             }
@@ -116,8 +92,8 @@ namespace hazelcast {
             *
             * @param elements std::vector<E>
             * @return true if this set contains all elements given in vector.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> containsAll(const std::vector<E> &elements) {
                 return proxy::ISetImpl::containsAll(toDataCollection(elements));
             }
@@ -126,8 +102,8 @@ namespace hazelcast {
             *
             * @param elements std::vector<E>
             * @return true if all elements given in vector can be added to set.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> addAll(const std::vector<E> &elements) {
                 std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(elements);
                 return proxy::ISetImpl::addAll(toDataCollection(elements));
@@ -137,11 +113,10 @@ namespace hazelcast {
             *
             * @param elements std::vector<E>
             * @return true if all elements are removed successfully.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> removeAll(const std::vector<E> &elements) {
-                std::vector<serialization::pimpl::Data> dataCollection = toDataCollection(elements);
-                return proxy::ISetImpl::removeAll(dataCollection);
+                return proxy::ISetImpl::removeAll(toDataCollection(elements));
             }
 
             /**
@@ -149,18 +124,10 @@ namespace hazelcast {
             * Removes the elements from this set that are not available in given "elements" vector
             * @param elements std::vector<E>
             * @return true if operation is successful.
-            * @throws IClassCastException if the type of the specified element is incompatible with the server side.
             */
+            template<typename E>
             boost::future<bool> retainAll(const std::vector<E> &elements) {
                 return proxy::ISetImpl::retainAll(toDataCollection(elements));
-            }
-
-            /**
-            *
-            * Removes all elements from set.
-            */
-            boost::future<void> clear() {
-                proxy::ISetImpl::clear();
             }
 
         private:

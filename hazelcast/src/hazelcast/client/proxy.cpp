@@ -266,7 +266,7 @@ namespace hazelcast {
 
             boost::future<void> MultiMapImpl::clear() {
                 auto request = protocol::codec::MultiMapClearCodec::encodeRequest(getName());
-                return invoke(request);
+                return toVoidFuture(invoke(request));
             }
 
             boost::future<int> MultiMapImpl::valueCount(const serialization::pimpl::Data &key) {
@@ -1376,7 +1376,6 @@ namespace hazelcast {
 
             boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetData() {
                 auto request = protocol::codec::MapKeySetCodec::encodeRequest(getName());
-
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MapKeySetCodec::ResponseParameters>(
                         request);
             }
@@ -1656,8 +1655,9 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            boost::future<std::string> ISetImpl::addItemListener(impl::BaseEventHandler *itemEventHandler, bool includeValue) {
-                return registerListener(createItemListenerCodec(includeValue), itemEventHandler);
+            boost::future<std::string>
+            ISetImpl::addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue) {
+                return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
             }
 
             boost::future<bool> ISetImpl::removeItemListener(const std::string &registrationId) {
@@ -1665,91 +1665,76 @@ namespace hazelcast {
             }
 
             boost::future<int> ISetImpl::size() {
-                auto request = protocol::codec::SetSizeCodec::encodeRequest(
-                        getName());
-
+                auto request = protocol::codec::SetSizeCodec::encodeRequest(getName());
                 return invokeAndGetFuture<int, protocol::codec::SetSizeCodec::ResponseParameters>(request, partitionId);
             }
 
             boost::future<bool> ISetImpl::isEmpty() {
-                auto request = protocol::codec::SetIsEmptyCodec::encodeRequest(
-                        getName());
-
+                auto request = protocol::codec::SetIsEmptyCodec::encodeRequest(getName());
                 return invokeAndGetFuture<bool, protocol::codec::SetIsEmptyCodec::ResponseParameters>(request,
                                                                                                       partitionId);
             }
 
             boost::future<bool> ISetImpl::contains(const serialization::pimpl::Data &element) {
                 auto request = protocol::codec::SetContainsCodec::encodeRequest(getName(), element);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetContainsCodec::ResponseParameters>(request,
                                                                                                        partitionId);
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> ISetImpl::toArrayData() {
                 auto request = protocol::codec::SetGetAllCodec::encodeRequest(getName());
-
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::SetGetAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
             boost::future<bool> ISetImpl::add(const serialization::pimpl::Data &element) {
                 auto request = protocol::codec::SetAddCodec::encodeRequest(getName(), element);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetAddCodec::ResponseParameters>(request, partitionId);
             }
 
             boost::future<bool> ISetImpl::remove(const serialization::pimpl::Data &element) {
                 auto request = protocol::codec::SetRemoveCodec::encodeRequest(getName(), element);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetRemoveCodec::ResponseParameters>(request,
                                                                                                      partitionId);
             }
 
             boost::future<bool> ISetImpl::containsAll(const std::vector<serialization::pimpl::Data> &elements) {
                 auto request = protocol::codec::SetContainsAllCodec::encodeRequest(getName(), elements);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetContainsAllCodec::ResponseParameters>(request,
                                                                                                           partitionId);
             }
 
             boost::future<bool> ISetImpl::addAll(const std::vector<serialization::pimpl::Data> &elements) {
                 auto request = protocol::codec::SetAddAllCodec::encodeRequest(getName(), elements);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetAddAllCodec::ResponseParameters>(request,
                                                                                                      partitionId);
             }
 
             boost::future<bool> ISetImpl::removeAll(const std::vector<serialization::pimpl::Data> &elements) {
                 auto request = protocol::codec::SetCompareAndRemoveAllCodec::encodeRequest(getName(), elements);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetCompareAndRemoveAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
             boost::future<bool> ISetImpl::retainAll(const std::vector<serialization::pimpl::Data> &elements) {
                 auto request = protocol::codec::SetCompareAndRetainAllCodec::encodeRequest(getName(), elements);
-
                 return invokeAndGetFuture<bool, protocol::codec::SetCompareAndRetainAllCodec::ResponseParameters>(
                         request, partitionId);
             }
 
             boost::future<void> ISetImpl::clear() {
                 auto request = protocol::codec::SetClearCodec::encodeRequest(getName());
-
                 invokeOnPartition(request, partitionId);
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec>
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
             ISetImpl::createItemListenerCodec(bool includeValue) {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
                         new SetListenerMessageCodec(getName(), includeValue));
             }
 
-            ISetImpl::SetListenerMessageCodec::SetListenerMessageCodec(const std::string &name,
-                                                                       bool includeValue) : name(name),
-                                                                                            includeValue(
-                                                                                                    includeValue) {}
+            ISetImpl::SetListenerMessageCodec::SetListenerMessageCodec(const std::string &name, bool includeValue)
+                    : name(name), includeValue(includeValue) {}
 
             std::unique_ptr<protocol::ClientMessage>
             ISetImpl::SetListenerMessageCodec::encodeAddRequest(bool localOnly) const {
@@ -1815,6 +1800,9 @@ namespace hazelcast {
                 return protocol::codec::TopicRemoveMessageListenerCodec::ResponseParameters::decode(
                         clientMessage).response;
             }
+
+            ReplicatedMapImpl::ReplicatedMapImpl(const std::string &serviceName, const std::string &objectName,
+                              spi::ClientContext *context) : ProxyImpl(serviceName, objectName, context) {}
         }
 
         namespace map {
