@@ -24,10 +24,8 @@ namespace hazelcast {
         /**
         * Concurrent, distributed client implementation of std::unordered_set.
         *
-        * @tparam E item type
         */
-        template<typename E>
-        class ISet : public proxy::ISetImpl {
+        class HAZELCAST_API ISet : public proxy::ISetImpl {
             friend class impl::HazelcastClientInstanceImpl;
         public:
             /**

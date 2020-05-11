@@ -15,12 +15,8 @@
  */
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "hazelcast/client/proxy/MultiMapImpl.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 
 namespace hazelcast {
@@ -30,8 +26,7 @@ namespace hazelcast {
         *
         * @see IMap
         */
-        template<typename K, typename V>
-        class MultiMap : public proxy::MultiMapImpl {
+        class HAZELCAST_API MultiMap : public proxy::MultiMapImpl {
             friend class impl::HazelcastClientInstanceImpl;
         public:
             /**
@@ -43,6 +38,7 @@ namespace hazelcast {
             * @return true if size of the multimap is increased, false if the multimap
             *         already contains the key-value pair.
             */
+            template<typename K, typename V>
             boost::future<bool> put(const K &key, const V &value) {
                 return proxy::MultiMapImpl::put(toData(key), toData(value));
             }
@@ -53,8 +49,9 @@ namespace hazelcast {
             * @param key the key whose associated values are to be returned
             * @return the multimap of the values associated with the key.
             */
+            template<typename K, typename V>
             boost::future<std::vector<V>> get(const K &key) {
-                return toObjectCollection<V>(proxy::MultiMapImpl::getData(toData(key)));
+                return toObjectVector<V>(proxy::MultiMapImpl::getData(toData(key)));
             }
 
             /**
@@ -64,6 +61,7 @@ namespace hazelcast {
             * @param value
             * @return true if the size of the multimap changed after the remove operation, false otherwise.
             */
+            template<typename K, typename V>
             boost::future<bool> remove(const K &key, const V &value) {
                 return proxy::MultiMapImpl::remove(toData(key), toData(value));
             }
@@ -75,8 +73,9 @@ namespace hazelcast {
             * @return the multimap of removed values associated with the given key. Returned multimap
             *         might be modifiable but it has no effect on the multimap
             */
+            template<typename K, typename V>
             boost::future<std::vector<V>> remove(const K &key) {
-                return toObjectCollection<V>(proxy::MultiMapImpl::removeData(toData(key)));
+                return toObjectVector<V>(proxy::MultiMapImpl::removeData(toData(key)));
             }
 
             /**
@@ -85,8 +84,9 @@ namespace hazelcast {
             * @return the set of keys in the multimap. Returned set might be modifiable
             *         but it has no effect on the multimap
             */
+            template<typename K>
             boost::future<std::vector<K>> keySet() {
-                return toObjectCollection<K>(proxy::MultiMapImpl::keySetData());
+                    return toObjectVector<K>(proxy::MultiMapImpl::keySetData());
             }
 
             /**
@@ -95,8 +95,9 @@ namespace hazelcast {
             * @return the multimap of values in the multimap. Returned multimap might be modifiable
             *         but it has no effect on the multimap
             */
+            template<typename V>
             boost::future<std::vector<V>> values() {
-                return toObjectCollection<V>(proxy::MultiMapImpl::valuesData());
+                return toObjectVector<V>(proxy::MultiMapImpl::valuesData());
             }
 
             /**
@@ -105,8 +106,9 @@ namespace hazelcast {
             * @return the set of key-value pairs in the multimap. Returned set might be modifiable
             *         but it has no effect on the multimap
             */
-            std::vector<std::pair<K, V> > entrySet() {
-                return toObjectEntrySet<K, V>(proxy::MultiMapImpl::entrySetData());
+            template<typename K, typename V>
+            boost::future<std::vector<std::pair<K, V>>> entrySet() {
+                return toEntryObjectVector<K, V>(proxy::MultiMapImpl::entrySetData());
             }
 
             /**
@@ -115,6 +117,7 @@ namespace hazelcast {
             * @param key the key whose existence is checked.
             * @return true if the multimap contains an entry with the key, false otherwise.
             */
+            template<typename K>
             boost::future<bool> containsKey(const K &key) {
                 return proxy::MultiMapImpl::containsKey(toData(key));
             }
@@ -125,6 +128,7 @@ namespace hazelcast {
             * @param value the value whose existence is checked.
             * @return true if the multimap contains an entry with the value, false otherwise.
             */
+            template<typename V>
             boost::future<bool> containsValue(const V &value) {
                 return proxy::MultiMapImpl::containsValue(toData(value));
             }
@@ -136,24 +140,9 @@ namespace hazelcast {
             * @param value the value whose existence is checked.
             * @return true if the multimap contains the key-value pair, false otherwise.
             */
+            template<typename K, typename V>
             boost::future<bool> containsEntry(const K &key, const V &value) {
                 return proxy::MultiMapImpl::containsEntry(toData(key), toData(value));
-            }
-
-            /**
-            * Returns the number of key-value pairs in the multimap.
-            *
-            * @return the number of key-value pairs in the multimap.
-            */
-            boost::future<int> size() {
-                return proxy::MultiMapImpl::size();
-            }
-
-            /**
-            * Clears the multimap. Removes all key-value pairs.
-            */
-            boost::future<void> clear() {
-                proxy::MultiMapImpl::clear();
             }
 
             /**
@@ -163,6 +152,7 @@ namespace hazelcast {
             * @param key the key whose values count are to be returned
             * @return number of values matching to given key in the multimap.
             */
+            template<typename K>
             boost::future<int> valueCount(const K &key) {
                 return proxy::MultiMapImpl::valueCount(toData(key));
             }
@@ -181,13 +171,13 @@ namespace hazelcast {
             *                     contain the value.
             * @return returns registration id.
             */
-            boost::future<std::string> addEntryListener(EntryListener<K, V> &listener, bool includeValue) {
-                spi::ClientClusterService &clusterService = getContext().getClientClusterService();
-                serialization::pimpl::SerializationService &ss = getContext().getSerializationService();
-                impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler> *entryEventHandler =
-                        new impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(
-                                getName(), clusterService, ss, listener, includeValue);
-                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, includeValue);
+            template<typename Listener>
+            boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue) {
+                return proxy::MultiMapImpl::addEntryListener(
+                        std::unique_ptr<impl::BaseEventHandler>(
+                                new impl::EntryEventHandler<Listener, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(
+                                        getName(), getContext().getClientClusterService(),
+                                        getContext().getSerializationService(), listener, includeValue)), includeValue);
             }
 
             /**
@@ -206,25 +196,14 @@ namespace hazelcast {
             *                     contain the value.
             * @return returns registration id.
             */
-            boost::future<std::string> addEntryListener(EntryListener<K, V> &listener, const K &key, bool includeValue) {
-                impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerToKeyCodec::AbstractEventHandler> *entryEventHandler =
-                        new impl::EntryEventHandler<K, V, protocol::codec::MultiMapAddEntryListenerToKeyCodec::AbstractEventHandler>(
-                                getName(), getContext().getClientClusterService(), getContext().getSerializationService(), listener,
-                                includeValue);
-                serialization::pimpl::Data keyData = toData(key);
-                return proxy::MultiMapImpl::addEntryListener(entryEventHandler, keyData, includeValue);
-            }
-
-            /**
-            * Removes the specified entry listener
-            * Returns silently if there is no such listener added before.
-            *
-            * @param registrationId Id of listener registration
-            *
-            * @return true if registration is removed, false otherwise
-            */
-            boost::future<bool> removeEntryListener(const std::string &registrationId) {
-                return proxy::MultiMapImpl::removeEntryListener(registrationId);
+            template<typename Listener, typename K>
+            boost::future<std::string> addEntryListener(Listener &listener, const K &key, bool includeValue) {
+                return proxy::MultiMapImpl::addEntryListener(
+                        std::unique_ptr<impl::BaseEventHandler>(
+                                new impl::EntryEventHandler<Listener, protocol::codec::MultiMapAddEntryListenerToKeyCodec::AbstractEventHandler>(
+                                        getName(), getContext().getClientClusterService(),
+                                        getContext().getSerializationService(), listener, includeValue)), includeValue,
+                        toData(key));
             }
 
             /**
@@ -242,8 +221,9 @@ namespace hazelcast {
             *
             * @param key key to lock.
             */
+            template<typename K>
             boost::future<void> lock(const K &key) {
-                proxy::MultiMapImpl::lock(toData(key));
+                return proxy::MultiMapImpl::lock(toData(key));
             }
 
             /**
@@ -260,10 +240,11 @@ namespace hazelcast {
             * Locks are re-entrant so if the key is locked N times then
             * it should be unlocked N times before another thread can acquire it.
             * @param key key to lock.
-            * @param leaseTimeInMillis time in milliseconds to wait before releasing the lock.
+            * @param leaseTime time to wait before releasing the lock.
             */
-            boost::future<void> lock(const K &key, long leaseTimeInMillis) {
-                proxy::MultiMapImpl::lock(toData(key), leaseTimeInMillis);
+            template<typename K>
+            boost::future<void> lock(const K &key, std::chrono::steady_clock::duration leaseTime) {
+                return proxy::MultiMapImpl::lock(toData(key), leaseTime);
             }
 
             /**
@@ -273,6 +254,7 @@ namespace hazelcast {
             * @param key key to lock to be checked.
             * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
             */
+            template<typename K>
             boost::future<bool> isLocked(const K &key) {
                 return proxy::MultiMapImpl::isLocked(toData(key));
             }
@@ -286,6 +268,7 @@ namespace hazelcast {
             * @param key key to lock.
             * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
             */
+            template<typename K>
             boost::future<bool> tryLock(const K &key) {
                 return proxy::MultiMapImpl::tryLock(toData(key));
             }
@@ -302,12 +285,13 @@ namespace hazelcast {
             *
             *
             * @param key to be locked.
-            * @param timeoutInMillis     the maximum time to wait for the lock
+            * @param timeout     the maximum time to wait for the lock
             * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
             *         if the waiting time elapsed before the lock was acquired.
             */
-            boost::future<bool> tryLock(const K &key, long timeoutInMillis) {
-                return proxy::MultiMapImpl::tryLock(toData(key), timeoutInMillis);
+            template<typename K>
+            boost::future<bool> tryLock(const K &key, std::chrono::steady_clock::duration timeout) {
+                return proxy::MultiMapImpl::tryLock(toData(key), timeout);
             }
 
             /**
@@ -317,6 +301,7 @@ namespace hazelcast {
             *
             * @param key key to lock.
             */
+            template<typename K>
             boost::future<void> unlock(const K &key) {
                 proxy::MultiMapImpl::unlock(toData(key));
             }
@@ -327,6 +312,7 @@ namespace hazelcast {
             * and returns immediately.
             * @param key key to lock.
             */
+            template<typename K>
             boost::future<void> forceUnlock(const K &key) {
                 proxy::MultiMapImpl::forceUnlock(toData(key));
             }

@@ -43,8 +43,7 @@ namespace hazelcast {
         * and process m1, m2, m3...mn in order.
         *
         */
-        template<typename E>
-        class ReliableTopic : public proxy::ReliableTopicImpl {
+        class HAZELCAST_API ReliableTopic : public proxy::ReliableTopicImpl {
             friend class impl::HazelcastClientInstanceImpl;
 
         public:

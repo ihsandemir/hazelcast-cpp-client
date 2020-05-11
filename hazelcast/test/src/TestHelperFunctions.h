@@ -66,7 +66,7 @@ ASSERT_EQ((expected), (*actual));                 \
 
 #define assertSizeEventually(expectedSize, container) assertSizeEventuallyWithTimeout(expectedSize, container, 120)
 #define assertSizeEventuallyWithTimeout(expectedSize, container, timeoutSeconds) do{  \
-    ASSERT_EQ_EVENTUALLY_WITH_TIMEOUT_MSG("the size of the map is not correct", expectedSize, (container).size(), timeoutSeconds);  \
+    ASSERT_EQ_EVENTUALLY_WITH_TIMEOUT_MSG("the size of the map is not correct", expectedSize, ((container)->size().get()), timeoutSeconds);  \
     } while(0)                                                                                                                      \
 
 #endif //HAZELCAST_TestHelperFunctions

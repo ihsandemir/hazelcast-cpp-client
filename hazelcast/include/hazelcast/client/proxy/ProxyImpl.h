@@ -156,20 +156,6 @@ namespace hazelcast {
                 }
 
                 template<typename K, typename V>
-                std::vector<std::pair<K, V> > toObjectEntrySet(
-                        std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > const &dataEntrySet) {
-                    size_t size = dataEntrySet.size();
-                    std::vector<std::pair<K, V> > entrySet(size);
-                    for (size_t i = 0; i < size; i++) {
-                        std::unique_ptr<K> key = toObject<K>(dataEntrySet[i].first);
-                        entrySet[i].first = *key;
-                        std::unique_ptr<V> value = toObject<V>(dataEntrySet[i].second);
-                        entrySet[i].second = *value;
-                    }
-                    return entrySet;
-                }
-
-                template<typename K, typename V>
                 EntryVector toDataEntries(std::map<K, V> const &m) {
                     std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> > entries(
                             m.size());
@@ -182,14 +168,14 @@ namespace hazelcast {
 
                 template<typename T, typename CODEC>
                 boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request) {
-                    invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                    return invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
                         return CODEC::decode(f.get()).response;
                     });
                 }
 
                 template<typename T, typename CODEC>
                 boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
-                    invokeOnPartition(request, partitionId).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                    return invokeOnPartition(request, partitionId).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
                         return (T) CODEC::decode(f.get()).response;
                     });
                 }
@@ -197,7 +183,7 @@ namespace hazelcast {
                 template<typename T, typename CODEC>
                 boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request,
                                      const serialization::pimpl::Data &key) {
-                    invokeOnKeyOwner(request, key).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                    return invokeOnKeyOwner(request, key).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
                         return CODEC::decode(f.get()).response;
                     });
                 }

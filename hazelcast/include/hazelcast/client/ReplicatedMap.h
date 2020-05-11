@@ -43,11 +43,8 @@ namespace hazelcast {
          * values from older nodes and replicate them locally.</p>
          *
          *
-         * @param <K> the type of keys maintained by this map
-         * @param <V> the type of mapped values
          */
-        template <typename K, typename V>
-        class ReplicatedMap : public virtual DistributedObject {
+        class HAZELCAST_API ReplicatedMap : public virtual DistributedObject {
         public:
             /**
              * <p>Associates a given value to the specified key and replicates it to the

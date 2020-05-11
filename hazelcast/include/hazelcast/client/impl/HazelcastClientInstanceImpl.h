@@ -178,7 +178,6 @@ namespace hazelcast {
                 * @param name name of the distributed set
                 * @return distributed set instance with the specified name
                 */
-
                 std::shared_ptr<ISet> getSet(const std::string& name) {
                     return getDistributedObject<ISet>(name);
                 }

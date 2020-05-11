@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT
-#define HAZELCAST_CLIENT
+#pragma once
 
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 
@@ -394,7 +393,7 @@ namespace hazelcast {
             * Note: ClientConfig will be copied.
             * @param config client configuration to start the client with
             */
-            HazelcastClient(const ClientConfig &config);
+            explicit HazelcastClient(const ClientConfig &config);
 
             virtual ~HazelcastClient();
 
@@ -435,14 +434,12 @@ namespace hazelcast {
             * @param name name of the distributed multimap
             * @return distributed multimap instance with the specified name
             */
-            template<typename K, typename V>
-            MultiMap<K, V> getMultiMap(const std::string& name) {
-                return clientImpl->getMultiMap<K, V>(name);
+            std::shared_ptr<MultiMap> getMultiMap(const std::string& name) {
+                return clientImpl->getMultiMap(name);
             }
 
-            template<typename K, typename V>
-            std::shared_ptr<ReplicatedMap<K, V> > getReplicatedMap(const std::string &name) {
-                return clientImpl->getReplicatedMap<K, V>(name);
+            std::shared_ptr<ReplicatedMap> getReplicatedMap(const std::string &name) {
+                return clientImpl->getReplicatedMap(name);
             }
 
             /**
@@ -462,10 +459,8 @@ namespace hazelcast {
             * @param name name of the distributed set
             * @return distributed set instance with the specified name
             */
-
-            template<typename E>
-            ISet<E> getSet(const std::string& name) {
-                return clientImpl->getSet<E>(name);
+            std::shared_ptr<ISet> getSet(const std::string& name) {
+                return clientImpl->getSet(name);
             }
 
             /**
@@ -495,9 +490,8 @@ namespace hazelcast {
             * @param name name of the distributed topic
             * @return distributed topic instance with the specified name
             */
-            template<typename E>
-            std::shared_ptr<ReliableTopic<E> > getReliableTopic(const std::string& name) {
-                return clientImpl->getReliableTopic<E>(name);
+            std::shared_ptr<ReliableTopic> getReliableTopic(const std::string& name) {
+                return clientImpl->getReliableTopic(name);
             }
 
             /**
@@ -637,5 +631,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif /* HAZELCAST_CLIENT */

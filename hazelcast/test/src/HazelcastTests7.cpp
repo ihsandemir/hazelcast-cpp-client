@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include<boost/thread/barrier.hpp>
+
 #include "HazelcastServerFactory.h"
 #include "HazelcastServer.h"
 #include "ClientTestSupport.h"
@@ -52,7 +54,7 @@
 #include <ostream>
 #include <hazelcast/util/ILogger.h>
 #include <ctime>
-#include <errno.h>
+#include <cerrno>
 #include <hazelcast/client/LifecycleListener.h>
 #include "serialization/TestRawDataPortable.h"
 #include "serialization/TestSerializationConstants.h"
@@ -65,7 +67,7 @@
 #include "serialization/TestNamedPortableV3.h"
 #include <hazelcast/client/SerializationConfig.h>
 #include <hazelcast/client/HazelcastJsonValue.h>
-#include <stdint.h>
+#include <cstdint>
 #include "customSerialization/TestCustomSerializerX.h"
 #include "customSerialization/TestCustomXSerializable.h"
 #include "customSerialization/TestCustomPersonSerializer.h"
@@ -112,7 +114,7 @@
 #include <executor/tasks/SelectAllMembers.h>
 #include <executor/tasks/MapPutPartitionAwareCallable.h>
 #include <executor/tasks/NullCallable.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <fstream>
 #include <boost/asio.hpp>
 #include <cassert>
@@ -206,7 +208,33 @@ namespace hazelcast {
         namespace test {
             class ClientMultiMapTest : public ClientTestSupport {
             protected:
-                virtual void TearDown() {
+                class MyMultiMapListener : public EntryAdapter {
+                public:
+                    MyMultiMapListener(boost::latch &addedLatch, boost::latch &removedLatch) : addedLatch(addedLatch),
+                                                                                               removedLatch(removedLatch) {}
+
+                    void entryAdded(const EntryEvent &event) override {
+                        addedLatch.count_down();
+                    }
+
+                    void entryRemoved(const EntryEvent &event) override {
+                        removedLatch.count_down();
+                    }
+
+                private:
+                    boost::latch &addedLatch;
+                    boost::latch &removedLatch;
+                };
+
+                static void fillData() {
+                    ASSERT_TRUE(mm->put("key1", "value1").get());
+                    ASSERT_TRUE(mm->put("key1", "value2").get());
+                    ASSERT_TRUE(mm->put("key1", "value3").get());
+                    ASSERT_TRUE(mm->put("key2", "value4").get());
+                    ASSERT_TRUE(mm->put("key2", "value5").get());
+                }
+                
+                void TearDown() override {
                     // clear mm
                     mm->clear();
                 }
@@ -214,11 +242,10 @@ namespace hazelcast {
                 static void SetUpTestCase() {
                     instance = new HazelcastServer(*g_srvFactory);
                     client = new HazelcastClient(getConfig());
-                    mm = new MultiMap<std::string, std::string>(client->getMultiMap<std::string, std::string>("MyMultiMap"));
+                    mm = client->getMultiMap("MyMultiMap");
                 }
 
                 static void TearDownTestCase() {
-                    delete mm;
                     delete client;
                     delete instance;
 
@@ -229,230 +256,153 @@ namespace hazelcast {
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
-                static MultiMap<std::string, std::string> *mm;
+                static std::shared_ptr<MultiMap> mm;
             };
 
             HazelcastServer *ClientMultiMapTest::instance = nullptr;
             HazelcastClient *ClientMultiMapTest::client = nullptr;
-            MultiMap<std::string, std::string> *ClientMultiMapTest::mm = nullptr;
 
             TEST_F(ClientMultiMapTest, testPutGetRemove) {
-                ASSERT_TRUE(mm->put("key1", "value1"));
-                ASSERT_TRUE(mm->put("key1", "value2"));
-                ASSERT_TRUE(mm->put("key1", "value3"));
+                fillData();
+                ASSERT_EQ(3, mm->valueCount("key1").get());
+                ASSERT_EQ(2, mm->valueCount("key2").get());
+                ASSERT_EQ(5, mm->size().get());
 
-                ASSERT_TRUE(mm->put("key2", "value4"));
-                ASSERT_TRUE(mm->put("key2", "value5"));
-
-                ASSERT_EQ(3, mm->valueCount("key1"));
-                ASSERT_EQ(2, mm->valueCount("key2"));
-                ASSERT_EQ(5, mm->size());
-
-                std::vector<std::string> coll = mm->get("key1");
+                auto coll = mm->get<std::string, std::string>("key1").get();
                 ASSERT_EQ(3, (int) coll.size());
 
-                coll = mm->remove("key2");
+                coll = mm->remove<std::string, std::string>("key2").get();
                 ASSERT_EQ(2, (int) coll.size());
-                ASSERT_EQ(0, mm->valueCount("key2"));
-                ASSERT_EQ(0, (int) mm->get("key2").size());
+                ASSERT_EQ(0, mm->valueCount("key2").get());
+                ASSERT_EQ(0, ((int) mm->get<std::string, std::string>("key2").get().size()));
 
-                ASSERT_FALSE(mm->remove("key1", "value4"));
-                ASSERT_EQ(3, mm->size());
+                ASSERT_FALSE(mm->remove("key1", "value4").get());
+                ASSERT_EQ(3, mm->size().get());
 
-                ASSERT_TRUE(mm->remove("key1", "value2"));
-                ASSERT_EQ(2, mm->size());
+                ASSERT_TRUE(mm->remove("key1", "value2").get());
+                ASSERT_EQ(2, mm->size().get());
 
-                ASSERT_TRUE(mm->remove("key1", "value1"));
-                ASSERT_EQ(1, mm->size());
-                ASSERT_EQ("value3", mm->get("key1")[0]);
+                ASSERT_TRUE(mm->remove("key1", "value1").get());
+                ASSERT_EQ(1, mm->size().get());
+                ASSERT_EQ("value3", (mm->get<std::string, std::string>("key1").get()[0]));
             }
 
 
             TEST_F(ClientMultiMapTest, testKeySetEntrySetAndValues) {
-                ASSERT_TRUE(mm->put("key1", "value1"));
-                ASSERT_TRUE(mm->put("key1", "value2"));
-                ASSERT_TRUE(mm->put("key1", "value3"));
-
-                ASSERT_TRUE(mm->put("key2", "value4"));
-                ASSERT_TRUE(mm->put("key2", "value5"));
-
-
-                ASSERT_EQ(2, (int) mm->keySet().size());
-                ASSERT_EQ(5, (int) mm->values().size());
-                ASSERT_EQ(5, (int) mm->entrySet().size());
+                fillData();
+                ASSERT_EQ(2, (int) mm->keySet<std::string>().get().size());
+                ASSERT_EQ(5, (int) mm->values<std::string>().get().size());
+                ASSERT_EQ(5, ((int) mm->entrySet<std::string, std::string>().get().size()));
             }
 
 
             TEST_F(ClientMultiMapTest, testContains) {
-                ASSERT_TRUE(mm->put("key1", "value1"));
-                ASSERT_TRUE(mm->put("key1", "value2"));
-                ASSERT_TRUE(mm->put("key1", "value3"));
+                fillData();
+                ASSERT_FALSE(mm->containsKey<std::string>("key3").get());
+                ASSERT_TRUE(mm->containsKey<std::string>("key1").get());
 
-                ASSERT_TRUE(mm->put("key2", "value4"));
-                ASSERT_TRUE(mm->put("key2", "value5"));
+                ASSERT_FALSE(mm->containsValue<std::string>("value6").get());
+                ASSERT_TRUE(mm->containsValue<std::string>("value4").get());
 
-                ASSERT_FALSE(mm->containsKey("key3"));
-                ASSERT_TRUE(mm->containsKey("key1"));
-
-                ASSERT_FALSE(mm->containsValue("value6"));
-                ASSERT_TRUE(mm->containsValue("value4"));
-
-                ASSERT_FALSE(mm->containsEntry("key1", "value4"));
-                ASSERT_FALSE(mm->containsEntry("key2", "value3"));
-                ASSERT_TRUE(mm->containsEntry("key1", "value1"));
-                ASSERT_TRUE(mm->containsEntry("key2", "value5"));
+                ASSERT_FALSE(mm->containsEntry("key1", "value4").get());
+                ASSERT_FALSE(mm->containsEntry("key2", "value3").get());
+                ASSERT_TRUE(mm->containsEntry("key1", "value1").get());
+                ASSERT_TRUE(mm->containsEntry("key2", "value5").get());
             }
-
-            class MyMultiMapListener : public EntryAdapter<std::string, std::string> {
-            public:
-                MyMultiMapListener(boost::latch &addedLatch,
-                                   boost::latch &removedLatch)
-                        : addedLatch(addedLatch), removedLatch(removedLatch) {
-                }
-
-                void entryAdded(const EntryEvent<std::string, std::string> &event) {
-                    addedLatch.count_down();
-                }
-
-                void entryRemoved(const EntryEvent<std::string, std::string> &event) {
-                    removedLatch.count_down();
-                }
-
-            private:
-                boost::latch &addedLatch;
-                boost::latch &removedLatch;
-            };
 
             TEST_F(ClientMultiMapTest, testListener) {
                 boost::latch latch1Add(8);
                 boost::latch latch1Remove(4);
-
                 boost::latch latch2Add(3);
                 boost::latch latch2Remove(3);
-
                 MyMultiMapListener listener1(latch1Add, latch1Remove);
                 MyMultiMapListener listener2(latch2Add, latch2Remove);
 
-                std::string id1 = mm->addEntryListener(listener1, true);
-                std::string id2 = mm->addEntryListener(listener2, "key3", true);
+                std::string id1 = mm->addEntryListener(listener1, true).get();
+                std::string id2 = mm->addEntryListener(listener2, "key3", true).get();
 
-                mm->put("key1", "value1");
-                mm->put("key1", "value2");
-                mm->put("key1", "value3");
-                mm->put("key2", "value4");
-                mm->put("key2", "value5");
+                fillData();
 
-                mm->remove("key1", "value2");
+                mm->remove("key1", "value2").get();
 
-                mm->put("key3", "value6");
-                mm->put("key3", "value7");
-                mm->put("key3", "value8");
+                mm->put("key3", "value6").get();
+                mm->put("key3", "value7").get();
+                mm->put("key3", "value8").get();
 
-                mm->remove("key3");
+                mm->remove<std::string, std::string>("key3").get();
 
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1Add.wait_for(boost::chrono::seconds(20)));
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1Remove.wait_for(boost::chrono::seconds(20)));
+                ASSERT_OPEN_EVENTUALLY(latch1Add);
+                ASSERT_OPEN_EVENTUALLY(latch1Remove);
+                ASSERT_OPEN_EVENTUALLY(latch2Add);
+                ASSERT_OPEN_EVENTUALLY(latch2Remove);
 
-                ASSERT_EQ(boost::cv_status::no_timeout, latch2Add.wait_for(boost::chrono::seconds(20)));
-                ASSERT_EQ(boost::cv_status::no_timeout, latch2Remove.wait_for(boost::chrono::seconds(20)));
-
-                ASSERT_TRUE(mm->removeEntryListener(id1));
-                ASSERT_TRUE(mm->removeEntryListener(id2));
-
-            }
-
-            void lockThread(hazelcast::util::ThreadArgs &args) {
-                MultiMap<std::string, std::string> *mm = (MultiMap<std::string, std::string> *) args.arg0;
-                boost::latch *latch1 = (boost::latch *) args.arg1;
-                if (!mm->tryLock("key1")) {
-                    latch1->count_down();
-                }
+                ASSERT_TRUE(mm->removeEntryListener(id1).get());
+                ASSERT_TRUE(mm->removeEntryListener(id2).get());
             }
 
             TEST_F(ClientMultiMapTest, testLock) {
-                mm->lock("key1");
+                mm->lock("key1").get();
                 boost::latch latch1(1);
-                hazelcast::util::StartedThread t(lockThread, mm, &latch1);
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(5)));
-                mm->forceUnlock("key1");
-            }
-
-            void lockTtlThread(hazelcast::util::ThreadArgs &args) {
-                MultiMap<std::string, std::string> *mm = (MultiMap<std::string, std::string> *) args.arg0;
-                boost::latch *latch1 = (boost::latch *) args.arg1;
-
-                if (!mm->tryLock("key1")) {
-                    latch1->count_down();
-                }
-
-                if (mm->tryLock("key1", 5 * 1000)) {
-                    latch1->count_down();
-                }
+                std::thread t([&]() {
+                    if (!mm->tryLock("key1").get()) {
+                        latch1.count_down();
+                    }
+                });
+                ASSERT_OPEN_EVENTUALLY(latch1);
+                mm->forceUnlock("key1").get();
             }
 
             TEST_F(ClientMultiMapTest, testLockTtl) {
-                mm->lock("key1", 3 * 1000);
+                mm->lock("key1", std::chrono::seconds(3)).get();
                 boost::latch latch1(2);
-                hazelcast::util::StartedThread t(lockTtlThread, mm, &latch1);
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(10)));
-                mm->forceUnlock("key1");
-            }
-
-
-            void tryLockThread(hazelcast::util::ThreadArgs &args) {
-                MultiMap<std::string, std::string> *mm = (MultiMap<std::string, std::string> *) args.arg0;
-                boost::latch *latch1 = (boost::latch *) args.arg1;
-                try {
-                    if (!mm->tryLock("key1", 2)) {
-                        latch1->count_down();
+                std::thread t([&]() {
+                    if (!mm->tryLock("key1").get()) {
+                        latch1.count_down();
                     }
-                } catch (...) {
-                    std::cerr << "Unexpected exception at ClientMultiMapTest tryLockThread" << std::endl;
-                }
-            }
-
-            void tryLockThread2(hazelcast::util::ThreadArgs &args) {
-                MultiMap<std::string, std::string> *mm = (MultiMap<std::string, std::string> *) args.arg0;
-                boost::latch *latch1 = (boost::latch *) args.arg1;
-                try {
-                    if (mm->tryLock("key1", 20 * 1000)) {
-                        latch1->count_down();
+                    if (mm->tryLock("key1", std::chrono::seconds(5)).get()) {
+                        latch1.count_down();
                     }
-                } catch (...) {
-                    std::cerr << "Unexpected exception at ClientMultiMapTest lockThread2" << std::endl;
-                }
+                });
+
+                ASSERT_OPEN_EVENTUALLY(latch1);
+                mm->forceUnlock("key1").get();
             }
 
             TEST_F(ClientMultiMapTest, testTryLock) {
-                ASSERT_TRUE(mm->tryLock("key1", 2 * 1000));
+                ASSERT_TRUE(mm->tryLock("key1", std::chrono::seconds(2)).get());
                 boost::latch latch1(1);
-                hazelcast::util::StartedThread t(tryLockThread, mm, &latch1);
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(100)));
-                ASSERT_TRUE(mm->isLocked("key1"));
+                std::thread t([&]() {
+                    if (!mm->tryLock("key1", std::chrono::seconds(2)).get()) {
+                        latch1.count_down();
+                    }
+                });
+                ASSERT_OPEN_EVENTUALLY(latch1);
+                ASSERT_TRUE(mm->isLocked("key1").get());
 
                 boost::latch latch2(1);
-                hazelcast::util::StartedThread t2(tryLockThread2, mm, &latch2);
-
-                hazelcast::util::sleep(1);
-                mm->unlock("key1");
-                ASSERT_EQ(boost::cv_status::no_timeout, latch2.wait_for(boost::chrono::seconds(100)));
-                ASSERT_TRUE(mm->isLocked("key1"));
-                mm->forceUnlock("key1");
-            }
-
-            void forceUnlockThread(hazelcast::util::ThreadArgs &args) {
-                MultiMap<std::string, std::string> *mm = (MultiMap<std::string, std::string> *) args.arg0;
-                boost::latch *latch1 = (boost::latch *) args.arg1;
-                mm->forceUnlock("key1");
-                latch1->count_down();
+                boost::barrier b(2);
+                std::thread t2([&]() {
+                    b.count_down_and_wait();
+                    if (!mm->tryLock("key1", std::chrono::seconds(20)).get()) {
+                        latch2.count_down();
+                    }
+                });
+                b.count_down_and_wait();
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                mm->unlock("key1").get();
+                ASSERT_OPEN_EVENTUALLY(latch2);
+                ASSERT_TRUE(mm->isLocked("key1").get());
+                mm->forceUnlock("key1").get();
             }
 
             TEST_F(ClientMultiMapTest, testForceUnlock) {
-                mm->lock("key1");
+                mm->lock("key1").get();
                 boost::latch latch1(1);
-                hazelcast::util::StartedThread t(forceUnlockThread, mm, &latch1);
-                ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(100)));
-                ASSERT_FALSE(mm->isLocked("key1"));
+                std::thread t2([&]() {
+                    mm->forceUnlock("key1").get();
+                });
+                ASSERT_OPEN_EVENTUALLY(latch1);
+                ASSERT_FALSE(mm->isLocked("key1").get());
             }
         }
     }
@@ -1863,7 +1813,7 @@ namespace hazelcast {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap(testName);
 
                 std::vector<Member> members = client->getCluster().getMembers();
                 spi::ClientContext clientContext(*client);
@@ -1899,7 +1849,7 @@ namespace hazelcast {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 std::vector<Member> allMembers = client->getCluster().getMembers();
                 std::vector<Member> members(allMembers.begin(), allMembers.begin() + 2);
@@ -1908,14 +1858,14 @@ namespace hazelcast {
 
                 service->executeOnMembers<executor::tasks::MapPutPartitionAwareCallable>(callable, members);
 
-                ASSERT_TRUE_EVENTUALLY(map.containsKey(members[0].getUuid()) && map.containsKey(members[1].getUuid()));
+                ASSERT_TRUE_EVENTUALLY(map->containsKey(members[0].getUuid()).get() && map->containsKey(members[1].getUuid()).get());
             }
 
             TEST_F(ClientExecutorServiceTest, testExecuteOnMembers_withEmptyCollection) {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+               auto map = client->getMap<std::string, std::string>(testName);
 
                 executor::tasks::MapPutPartitionAwareCallable callable(testName, "key");
 
@@ -1929,7 +1879,7 @@ namespace hazelcast {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 executor::tasks::MapPutPartitionAwareCallable callable(testName, "key");
 
@@ -1944,7 +1894,7 @@ namespace hazelcast {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap(testName);
 
                 executor::tasks::MapPutPartitionAwareCallable callable(testName, "key");
 
@@ -1959,10 +1909,6 @@ namespace hazelcast {
 
 
 #ifdef HZ_BUILD_WITH_SSL
-
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -2058,10 +2004,6 @@ namespace hazelcast {
 
 #ifdef HZ_BUILD_WITH_SSL
 
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -2074,7 +2016,7 @@ namespace hazelcast {
 
                     clientConfig.getProperties()[ClientProperties::PROP_AWS_MEMBER_PORT] = "60000";
                     clientConfig.getNetworkConfig().getAwsConfig().setEnabled(true).
-                            setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(getenv("AWS_SECRET_ACCESS_KEY")).
+                            setAccessKey(std::getenv("AWS_ACCESS_KEY_ID")).setSecretKey(std::getenv("AWS_SECRET_ACCESS_KEY")).
                             setTagKey("aws-test-tag").setTagValue("aws-tag-value-1");
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -2082,19 +2024,16 @@ namespace hazelcast {
 #else
                     clientConfig.getNetworkConfig().getAwsConfig().setInsideAws(false);
 #endif
-
                     HazelcastClient hazelcastClient(clientConfig);
-
-                    IMap<int, int> map = hazelcastClient.getMap<int, int>("myMap");
-                    map.put(5, 20);
-                    std::shared_ptr<int> val = map.get(5);
-                    ASSERT_NE((int *) NULL, val.get());
-                    ASSERT_EQ(20, *val);
+                    auto map = hazelcastClient.getMap("myMap");
+                    map->put(5, 20).get();
+                    auto val = map->get<int, int>(5).get();
+                    ASSERT_TRUE(val.has_value());
+                    ASSERT_EQ(20, val.value());
                 }
 
                 TEST_F (AwsClientTest, testClientAwsMemberWithSecurityGroupDefaultIamRole) {
                     ClientConfig clientConfig;
-
                     clientConfig.getProperties()[ClientProperties::PROP_AWS_MEMBER_PORT] = "60000";
                     clientConfig.getNetworkConfig().getAwsConfig().setEnabled(true).
                             setSecurityGroupName("launch-wizard-147");
@@ -2103,17 +2042,16 @@ namespace hazelcast {
                                                                                                                                             // The access key and secret will be retrieved from default IAM role at windows machine
                     clientConfig.getNetworkConfig().getAwsConfig().setInsideAws(true);
 #else
-                    clientConfig.getNetworkConfig().getAwsConfig().setAccessKey(getenv("AWS_ACCESS_KEY_ID")).
-                            setSecretKey(getenv("AWS_SECRET_ACCESS_KEY"));
+                    clientConfig.getNetworkConfig().getAwsConfig().setAccessKey(std::getenv("AWS_ACCESS_KEY_ID")).
+                            setSecretKey(std::getenv("AWS_SECRET_ACCESS_KEY"));
 #endif
 
                     HazelcastClient hazelcastClient(clientConfig);
-
-                    IMap<int, int> map = hazelcastClient.getMap<int, int>("myMap");
-                    map.put(5, 20);
-                    std::shared_ptr<int> val = map.get(5);
-                    ASSERT_NE((int *) NULL, val.get());
-                    ASSERT_EQ(20, *val);
+                    auto map = hazelcastClient.getMap("myMap");
+                    map->put(5, 20).get();
+                    auto val = map->get<int, int>(5).get();
+                    ASSERT_TRUE(val.has_value());
+                    ASSERT_EQ(20, val.value());
                 }
 
                 // FIPS_mode_set is not available for Mac OS X built-in openssl library

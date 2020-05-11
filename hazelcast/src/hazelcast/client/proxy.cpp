@@ -196,14 +196,12 @@ namespace hazelcast {
             boost::future<bool> MultiMapImpl::put(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MultiMapPutCodec::encodeRequest(getName(), key, value,
                                                                          util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapPutCodec::ResponseParameters>(request, key);
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::getData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MultiMapGetCodec::encodeRequest(getName(), key,
                                                                          util::getCurrentThreadId());
-
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapGetCodec::ResponseParameters>(
                         request, key);
             }
@@ -211,7 +209,6 @@ namespace hazelcast {
             boost::future<bool> MultiMapImpl::remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MultiMapRemoveEntryCodec::encodeRequest(getName(), key, value,
                                                                                  util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapRemoveEntryCodec::ResponseParameters>(request,
                                                                                                                key);
             }
@@ -219,44 +216,37 @@ namespace hazelcast {
             boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::removeData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MultiMapRemoveCodec::encodeRequest(getName(), key,
                                                                             util::getCurrentThreadId());
-
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapRemoveCodec::ResponseParameters>(
                         request, key);
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::keySetData() {
                 auto request = protocol::codec::MultiMapKeySetCodec::encodeRequest(getName());
-
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapKeySetCodec::ResponseParameters>(
                         request);
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> MultiMapImpl::valuesData() {
                 auto request = protocol::codec::MultiMapValuesCodec::encodeRequest(getName());
-
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>, protocol::codec::MultiMapValuesCodec::ResponseParameters>(
                         request);
             }
 
-            std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >
-            MultiMapImpl::entrySetData() {
+            boost::future<EntryVector> MultiMapImpl::entrySetData() {
                 auto request = protocol::codec::MultiMapEntrySetCodec::encodeRequest(getName());
-
-                return invokeAndGetFuture<std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data> >, protocol::codec::MultiMapEntrySetCodec::ResponseParameters>(
+                return invokeAndGetFuture<EntryVector, protocol::codec::MultiMapEntrySetCodec::ResponseParameters>(
                         request);
             }
 
             boost::future<bool> MultiMapImpl::containsKey(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MultiMapContainsKeyCodec::encodeRequest(getName(), key,
                                                                                  util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapContainsKeyCodec::ResponseParameters>(request,
                                                                                                                key);
             }
 
             boost::future<bool> MultiMapImpl::containsValue(const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MultiMapContainsValueCodec::encodeRequest(getName(), value);
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapContainsValueCodec::ResponseParameters>(
                         request);
             }
@@ -265,39 +255,38 @@ namespace hazelcast {
                                              const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MultiMapContainsEntryCodec::encodeRequest(getName(), key, value,
                                                                                    util::getCurrentThreadId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapContainsEntryCodec::ResponseParameters>(
                         request, key);
             }
 
             boost::future<int> MultiMapImpl::size() {
-                auto request = protocol::codec::MultiMapSizeCodec::encodeRequest(
-                        getName());
-
+                auto request = protocol::codec::MultiMapSizeCodec::encodeRequest(getName());
                 return invokeAndGetFuture<int, protocol::codec::MultiMapSizeCodec::ResponseParameters>(request);
             }
 
             boost::future<void> MultiMapImpl::clear() {
                 auto request = protocol::codec::MultiMapClearCodec::encodeRequest(getName());
-
-                invoke(request);
+                return invoke(request);
             }
 
-            int MultiMapImpl::valueCount(const serialization::pimpl::Data &key) {
+            boost::future<int> MultiMapImpl::valueCount(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MultiMapValueCountCodec::encodeRequest(getName(), key,
                                                                                 util::getCurrentThreadId());
-
                 return invokeAndGetFuture<int, protocol::codec::MultiMapValueCountCodec::ResponseParameters>(request,
                                                                                                              key);
             }
 
-            boost::future<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler, bool includeValue) {
-                return registerListener(createMultiMapEntryListenerCodec(includeValue), entryEventHandler);
+            boost::future<std::string>
+            MultiMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                                           bool includeValue) {
+                return registerListener(createMultiMapEntryListenerCodec(includeValue), std::move(entryEventHandler));
             }
 
-            boost::future<std::string> MultiMapImpl::addEntryListener(impl::BaseEventHandler *entryEventHandler,
-                                                       serialization::pimpl::Data &key, bool includeValue) {
-                return registerListener(createMultiMapEntryListenerCodec(includeValue, key), entryEventHandler);
+            boost::future<std::string>
+            MultiMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                                           bool includeValue, Data &&key) {
+                return registerListener(createMultiMapEntryListenerCodec(includeValue, std::move(key)),
+                                        std::move(entryEventHandler));
             }
 
             boost::future<bool> MultiMapImpl::removeEntryListener(const std::string &registrationId) {
@@ -305,95 +294,78 @@ namespace hazelcast {
             }
 
             boost::future<void> MultiMapImpl::lock(const serialization::pimpl::Data &key) {
-                lock(key, -1);
+                return lock(key, std::chrono::milliseconds(-1));
             }
 
-            boost::future<void> MultiMapImpl::lock(const serialization::pimpl::Data &key, long leaseTime) {
-                int partitionId = getPartitionId(key);
-
+            boost::future<void> MultiMapImpl::lock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration leaseTime) {
                 auto request = protocol::codec::MultiMapLockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(),
-                                                                          leaseTime,
+                                                                          std::chrono::duration_cast<std::chrono::milliseconds>(leaseTime).count(),
                                                                           lockReferenceIdGenerator->getNextReferenceId());
-
-                invokeOnPartition(request, partitionId);
+                return toVoidFuture(invokeOnPartition(request, getPartitionId(key)));
             }
-
 
             boost::future<bool> MultiMapImpl::isLocked(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MultiMapIsLockedCodec::encodeRequest(getName(), key);
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapIsLockedCodec::ResponseParameters>(request,
                                                                                                             key);
             }
 
             boost::future<bool> MultiMapImpl::tryLock(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MultiMapTryLockCodec::encodeRequest(getName(), key,
-                                                                             util::getCurrentThreadId(), LONG_MAX,
+                                                                             util::getCurrentThreadId(), INT64_MAX,
                                                                              0,
                                                                              lockReferenceIdGenerator->getNextReferenceId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request,
                                                                                                            key);
             }
 
-            boost::future<bool> MultiMapImpl::tryLock(const serialization::pimpl::Data &key, long timeInMillis) {
+            boost::future<bool> MultiMapImpl::tryLock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration timeout) {
                 auto request = protocol::codec::MultiMapTryLockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(),
-                                                                             LONG_MAX, timeInMillis,
+                                                                             INT64_MAX, std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count(),
                                                                              lockReferenceIdGenerator->getNextReferenceId());
-
                 return invokeAndGetFuture<bool, protocol::codec::MultiMapTryLockCodec::ResponseParameters>(request,
                                                                                                            key);
             }
 
             boost::future<void> MultiMapImpl::unlock(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 auto request = protocol::codec::MultiMapUnlockCodec::encodeRequest(getName(), key, util::getCurrentThreadId(),
                                                                             lockReferenceIdGenerator->getNextReferenceId());
-
-                invokeOnPartition(request, partitionId);
+                return toVoidFuture(invokeOnPartition(request, getPartitionId(key)));
             }
 
             boost::future<void> MultiMapImpl::forceUnlock(const serialization::pimpl::Data &key) {
-                int partitionId = getPartitionId(key);
-
                 auto request = protocol::codec::MultiMapForceUnlockCodec::encodeRequest(getName(), key,
                                                                                  lockReferenceIdGenerator->getNextReferenceId());
-
-                invokeOnPartition(request, partitionId);
+                return toVoidFuture(invokeOnPartition(request, getPartitionId(key)));
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec>
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
             MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue) {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
                         new MultiMapEntryListenerMessageCodec(getName(), includeValue));
             }
 
-            std::shared_ptr<spi::impl::ListenerMessageCodec>
-            MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &key) {
-                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
-                        new MultiMapEntryListenerToKeyCodec(getName(), includeValue, key));
+            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&key) {
+                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                        new MultiMapEntryListenerToKeyCodec(getName(), includeValue, std::move(key)));
             }
 
             void MultiMapImpl::onInitialize() {
                 ProxyImpl::onInitialize();
-
                 lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
             }
 
             MultiMapImpl::MultiMapEntryListenerMessageCodec::MultiMapEntryListenerMessageCodec(const std::string &name,
                                                                                                bool includeValue)
-                    : name(name),
-                      includeValue(
-                              includeValue) {
-            }
+                    : name(name), includeValue(includeValue) {}
 
             std::unique_ptr<protocol::ClientMessage>
             MultiMapImpl::MultiMapEntryListenerMessageCodec::encodeAddRequest(bool localOnly) const {
                 return protocol::codec::MultiMapAddEntryListenerCodec::encodeRequest(name, includeValue, localOnly);
             }
 
-            boost::future<std::string> MultiMapImpl::MultiMapEntryListenerMessageCodec::decodeAddResponse(
+            std::string MultiMapImpl::MultiMapEntryListenerMessageCodec::decodeAddResponse(
                     protocol::ClientMessage &responseMessage) const {
                 return protocol::codec::MultiMapAddEntryListenerCodec::ResponseParameters::decode(
                         responseMessage).response;
@@ -417,7 +389,7 @@ namespace hazelcast {
                                                                                           localOnly);
             }
 
-            boost::future<std::string> MultiMapImpl::MultiMapEntryListenerToKeyCodec::decodeAddResponse(
+            std::string MultiMapImpl::MultiMapEntryListenerToKeyCodec::decodeAddResponse(
                     protocol::ClientMessage &responseMessage) const {
                 return protocol::codec::MultiMapAddEntryListenerToKeyCodec::ResponseParameters::decode(
                         responseMessage).response;
@@ -437,9 +409,8 @@ namespace hazelcast {
 
             MultiMapImpl::MultiMapEntryListenerToKeyCodec::MultiMapEntryListenerToKeyCodec(const std::string &name,
                                                                                            bool includeValue,
-                                                                                           serialization::pimpl::Data &key)
+                                                                                           serialization::pimpl::Data &&key)
                     : name(name), includeValue(includeValue), key(key) {}
-
 
             std::string ReliableTopicImpl::TOPIC_RB_PREFIX = "_hz_rb_";
 
@@ -1137,7 +1108,8 @@ namespace hazelcast {
                 return getContext().getPartitionService().getPartitionId(key);
             }
 
-            boost::future<protocol::ClientMessage> ProxyImpl::invokeOnPartition(
+            boost::future<protocol::ClientMessage> ProxyImpl::
+            invokeOnPartition(
                     std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
                 try {
                     return spi::impl::ClientInvocation::create(getContext(), request, getName(), partitionId)->invoke();
