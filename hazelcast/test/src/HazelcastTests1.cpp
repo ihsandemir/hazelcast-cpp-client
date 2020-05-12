@@ -542,10 +542,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -581,22 +577,16 @@ namespace hazelcast {
                 public:
                     RingbufferTest() {
                         for (int i = 0; i < 11; ++i) {
-                            std::ostringstream out;
-                            out << i;
-                            items.push_back(out.str());
+                            items.emplace_back(std::to_string(i));
                         }
                     }
 
                 protected:
-                    class ReadOneWithLatchTask : public hazelcast::util::Runnable {
+                    class ReadOneWithLatchTask {
                     public:
-                        ReadOneWithLatchTask(const std::shared_ptr<Ringbuffer<std::string> > &clientRingbuffer,
+                        ReadOneWithLatchTask(const std::shared_ptr<Ringbuffer> &clientRingbuffer,
                                              const std::shared_ptr<boost::latch> &latch1) : clientRingbuffer(
                                 clientRingbuffer), latch1(latch1) {}
-
-                        virtual const std::string getName() const {
-                            return "ReadOneWithLatchTask";
-                        }
 
                         virtual void run() {
                             try {
@@ -609,15 +599,15 @@ namespace hazelcast {
                         }
 
                     private:
-                        const std::shared_ptr<Ringbuffer<std::string> > clientRingbuffer;
-                        const std::shared_ptr<boost::latch> latch1;
+                        std::shared_ptr<Ringbuffer> clientRingbuffer;
+                        std::shared_ptr<boost::latch> latch1;
                         static const int CAPACITY;
                     };
 
-                    virtual void SetUp() {
+                    void SetUp() override {
                         std::string testName = getTestName();
-                        clientRingbuffer = client->getRingbuffer<std::string>(testName);
-                        client2Ringbuffer = client2->getRingbuffer<std::string>(testName);
+                        clientRingbuffer = client->getRingbuffer(testName);
+                        client2Ringbuffer = client2->getRingbuffer(testName);
                     }
 
                     static void SetUpTestCase() {
@@ -639,337 +629,204 @@ namespace hazelcast {
                     static HazelcastServer *instance;
                     static HazelcastClient *client;
                     static HazelcastClient *client2;
-                    std::shared_ptr<Ringbuffer<std::string> > clientRingbuffer;
-                    std::shared_ptr<Ringbuffer<std::string> > client2Ringbuffer;
+                    std::shared_ptr<Ringbuffer> clientRingbuffer;
+                    std::shared_ptr<Ringbuffer> client2Ringbuffer;
                     std::vector<std::string> items;
 
-                    static const int64_t CAPACITY;
+                    static constexpr int64_t CAPACITY = 10;
                 };
-
-                const int64_t RingbufferTest::CAPACITY = 10;
-
+                
                 HazelcastServer *RingbufferTest::instance = nullptr;
                 HazelcastClient *RingbufferTest::client = nullptr;
                 HazelcastClient *RingbufferTest::client2 = nullptr;
 
                 TEST_F(RingbufferTest, testAPI) {
-                    std::shared_ptr<Ringbuffer<Employee> > rb = client->getRingbuffer<Employee>(getTestName() + "2");
-                    ASSERT_EQ(CAPACITY, rb->capacity());
-                    ASSERT_EQ(0, rb->headSequence());
-                    ASSERT_EQ(-1, rb->tailSequence());
-                    ASSERT_EQ(0, rb->size());
-                    ASSERT_EQ(CAPACITY, rb->remainingCapacity());
-                    ASSERT_THROW(rb->readOne(-1), exception::IllegalArgumentException);
-                    ASSERT_THROW(rb->readOne(1), exception::IllegalArgumentException);
+                    std::shared_ptr<Ringbuffer> rb = client->getRingbuffer(getTestName() + "2");
+                    ASSERT_EQ(CAPACITY, rb->capacity().get());
+                    ASSERT_EQ(0, rb->headSequence().get());
+                    ASSERT_EQ(-1, rb->tailSequence().get());
+                    ASSERT_EQ(0, rb->size().get());
+                    ASSERT_EQ(CAPACITY, rb->remainingCapacity().get());
+                    ASSERT_THROW(rb->readOne<Employee>(-1).get(), exception::IllegalArgumentException);
+                    ASSERT_THROW(rb->readOne<Employee>(1).get(), exception::IllegalArgumentException);
 
                     Employee employee1("First", 10);
                     Employee employee2("Second", 20);
 
-                    ASSERT_EQ(0, rb->add(employee1));
-                    ASSERT_EQ(CAPACITY, rb->capacity());
-                    ASSERT_EQ(CAPACITY, rb->remainingCapacity());
-                    ASSERT_EQ(0, rb->headSequence());
-                    ASSERT_EQ(0, rb->tailSequence());
-                    ASSERT_EQ(1, rb->size());
-                    ASSERT_EQ(employee1, *rb->readOne(0));
-                    ASSERT_THROW(rb->readOne(2), exception::IllegalArgumentException);
+                    ASSERT_EQ(0, rb->add(employee1).get());
+                    ASSERT_EQ(CAPACITY, rb->capacity().get());
+                    ASSERT_EQ(CAPACITY, rb->remainingCapacity().get());
+                    ASSERT_EQ(0, rb->headSequence().get());
+                    ASSERT_EQ(0, rb->tailSequence().get());
+                    ASSERT_EQ(1, rb->size().get());
+                    ASSERT_EQ(employee1, rb->readOne<Employee>(0).get().value());
+                    ASSERT_THROW(rb->readOne<Employee>(2).get(), exception::IllegalArgumentException);
 
-                    ASSERT_EQ(1, rb->add(employee2));
-                    ASSERT_EQ(CAPACITY, rb->capacity());
-                    ASSERT_EQ(CAPACITY, rb->remainingCapacity());
-                    ASSERT_EQ(0, rb->headSequence());
-                    ASSERT_EQ(1, rb->tailSequence());
-                    ASSERT_EQ(2, rb->size());
-                    ASSERT_EQ(employee1, *rb->readOne(0));
-                    ASSERT_EQ(employee2, *rb->readOne(1));
-                    ASSERT_THROW(*rb->readOne(3), exception::IllegalArgumentException);
+                    ASSERT_EQ(1, rb->add(employee2).get());
+                    ASSERT_EQ(CAPACITY, rb->capacity().get());
+                    ASSERT_EQ(CAPACITY, rb->remainingCapacity().get());
+                    ASSERT_EQ(0, rb->headSequence().get());
+                    ASSERT_EQ(1, rb->tailSequence().get());
+                    ASSERT_EQ(2, rb->size().get());
+                    ASSERT_EQ(employee1, rb->readOne<Employee>(0).get().value());
+                    ASSERT_EQ(employee2, rb->readOne<Employee>(1).get().value());
+                    ASSERT_THROW(rb->readOne<Employee>(3).get(), exception::IllegalArgumentException);
 
                     // insert many employees to fill the ringbuffer capacity
                     for (int i = 0; i < CAPACITY - 2; ++i) {
                         Employee eleman("name", 10 * (i + 2));
-                        ASSERT_EQ(i + 2, rb->add(eleman));
-                        ASSERT_EQ(CAPACITY, rb->capacity());
-                        ASSERT_EQ(CAPACITY, rb->remainingCapacity());
-                        ASSERT_EQ(0, rb->headSequence());
-                        ASSERT_EQ(i + 2, rb->tailSequence());
-                        ASSERT_EQ(i + 3, rb->size());
-                        ASSERT_EQ(eleman, *rb->readOne(i + 2));
+                        ASSERT_EQ(i + 2, rb->add(eleman).get());
+                        ASSERT_EQ(CAPACITY, rb->capacity().get());
+                        ASSERT_EQ(CAPACITY, rb->remainingCapacity().get());
+                        ASSERT_EQ(0, rb->headSequence().get());
+                        ASSERT_EQ(i + 2, rb->tailSequence().get());
+                        ASSERT_EQ(i + 3, rb->size().get());
+                        ASSERT_EQ(eleman, rb->readOne<Employee>(i+2).get().value());
                     }
 
                     // verify that the head element is overriden on the first add
                     Employee latestEmployee("latest employee", 100);
-                    ASSERT_EQ(CAPACITY, rb->add(latestEmployee));
-                    ASSERT_EQ(CAPACITY, rb->capacity());
-                    ASSERT_EQ(CAPACITY, rb->remainingCapacity());
-                    ASSERT_EQ(1, rb->headSequence());
-                    ASSERT_EQ(CAPACITY, rb->tailSequence());
-                    ASSERT_EQ(CAPACITY, rb->size());
-                    ASSERT_EQ(latestEmployee, *rb->readOne(CAPACITY));
+                    ASSERT_EQ(CAPACITY, rb->add(latestEmployee).get());
+                    ASSERT_EQ(CAPACITY, rb->capacity().get());
+                    ASSERT_EQ(CAPACITY, rb->remainingCapacity().get());
+                    ASSERT_EQ(1, rb->headSequence().get());
+                    ASSERT_EQ(CAPACITY, rb->tailSequence().get());
+                    ASSERT_EQ(CAPACITY, rb->size().get());
+                    ASSERT_EQ(latestEmployee, rb->readOne<Employee>(CAPACITY).get().value());
                 }
 
                 TEST_F(RingbufferTest, readManyAsync_whenHitsStale_shouldNotBeBlocked) {
-                    auto f = clientRingbuffer->readManyAsync<void>(0, 1, 10, NULL);
-                    client2Ringbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
+                    auto f = clientRingbuffer->readMany<std::string>(0, 1, 10);
+                    client2Ringbuffer->addAll(items, client::ringbuffer::OverflowPolicy::OVERWRITE);
                     ASSERT_THROW(f.get(), exception::StaleSequenceException);
                 }
 
                 TEST_F(RingbufferTest, readOne_whenHitsStale_shouldNotBeBlocked) {
                     std::shared_ptr<boost::latch> latch1 = std::make_shared<boost::latch>(1);
-                    std::thread t(std::packaged_task<void()>([ =] ()
-                    { ReadOneWithLatchTask(clientRingbuffer, latch1).run(); }));
-                    client2Ringbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
+                    std::thread t(std::packaged_task<void()>([=] () {
+                        try {
+                            clientRingbuffer->readOne<std::string>(0);
+                        } catch (exception::StaleSequenceException &) {
+                            latch1->count_down();
+                        } 
+                    }));
+                    client2Ringbuffer->addAll(items, client::ringbuffer::OverflowPolicy::OVERWRITE);
                     ASSERT_OPEN_EVENTUALLY(*latch1);
-                    t.join();
                 }
 
                 TEST_F(RingbufferTest, headSequence) {
                     for (int k = 0; k < 2 * CAPACITY; k++) {
-                        client2Ringbuffer->add("foo");
+                        client2Ringbuffer->add("foo").get();
                     }
 
-                    ASSERT_EQ(client2Ringbuffer->headSequence(), clientRingbuffer->headSequence());
+                    ASSERT_EQ(client2Ringbuffer->headSequence().get(), clientRingbuffer->headSequence().get());
                 }
 
                 TEST_F(RingbufferTest, tailSequence) {
                     for (int k = 0; k < 2 * CAPACITY; k++) {
-                        client2Ringbuffer->add("foo");
+                        client2Ringbuffer->add("foo").get();
                     }
 
-                    ASSERT_EQ(client2Ringbuffer->tailSequence(), clientRingbuffer->tailSequence());
+                    ASSERT_EQ(client2Ringbuffer->tailSequence().get(), clientRingbuffer->tailSequence().get());
                 }
 
                 TEST_F(RingbufferTest, size) {
-                    client2Ringbuffer->add("foo");
+                    client2Ringbuffer->add("foo").get();
 
-                    ASSERT_EQ(client2Ringbuffer->tailSequence(), clientRingbuffer->tailSequence());
+                    ASSERT_EQ(client2Ringbuffer->tailSequence().get(), clientRingbuffer->tailSequence().get());
                 }
 
                 TEST_F(RingbufferTest, capacity) {
-                    ASSERT_EQ(client2Ringbuffer->capacity(), clientRingbuffer->capacity());
+                    ASSERT_EQ(client2Ringbuffer->capacity().get(), clientRingbuffer->capacity().get());
                 }
 
                 TEST_F(RingbufferTest, remainingCapacity) {
-                    client2Ringbuffer->add("foo");
+                    client2Ringbuffer->add("foo").get();
 
-                    ASSERT_EQ(client2Ringbuffer->remainingCapacity(), clientRingbuffer->remainingCapacity());
+                    ASSERT_EQ(client2Ringbuffer->remainingCapacity().get(), clientRingbuffer->remainingCapacity().get());
                 }
 
                 TEST_F(RingbufferTest, add) {
-                    clientRingbuffer->add("foo");
-
-                    std::unique_ptr<std::string> value = client2Ringbuffer->readOne(0);
-                    ASSERT_EQ_PTR("foo", value.get(), std::string);
+                    clientRingbuffer->add("foo").get();
+                    auto value = client2Ringbuffer->readOne<std::string>(0).get();
+                    ASSERT_TRUE(value.has_value());
+                    ASSERT_EQ("foo", value.value());
                 }
 
-                TEST_F(RingbufferTest, addAsync) {
-                    auto f = clientRingbuffer->addAsync("foo", Ringbuffer<std::string>::OVERWRITE);
-                    auto result = f.get();
-
-                    ASSERT_EQ_PTR(client2Ringbuffer->headSequence(), result.get(), int64_t);
-                    ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne(0).get(), std::string);
-                    ASSERT_EQ(0, client2Ringbuffer->headSequence());
-                    ASSERT_EQ(0, client2Ringbuffer->tailSequence());
-                }
-
-                TEST_F(RingbufferTest, addAllAsync) {
+                TEST_F(RingbufferTest, addAll) {
                     std::vector<std::string> items;
                     items.push_back("foo");
                     items.push_back("bar");
-                    auto f = clientRingbuffer->addAllAsync(items, Ringbuffer<std::string>::OVERWRITE);
-                    auto result = f.get();
+                    auto result = clientRingbuffer->addAll(items, client::ringbuffer::OverflowPolicy::OVERWRITE).get();
 
-                    ASSERT_EQ_PTR(client2Ringbuffer->tailSequence(), result.get(), int64_t);
-                    ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne(0).get(), std::string);
-                    ASSERT_EQ_PTR("bar", client2Ringbuffer->readOne(1).get(), std::string);
-                    ASSERT_EQ(0, client2Ringbuffer->headSequence());
-                    ASSERT_EQ(1, client2Ringbuffer->tailSequence());
+                    ASSERT_EQ(client2Ringbuffer->tailSequence().get(), result);
+                    ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne<std::string>(0).get(), std::string);
+                    ASSERT_EQ_PTR("bar", client2Ringbuffer->readOne<std::string>(1).get(), std::string);
+                    ASSERT_EQ(0, client2Ringbuffer->headSequence().get());
+                    ASSERT_EQ(1, client2Ringbuffer->tailSequence().get());
                 }
 
                 TEST_F(RingbufferTest, readOne) {
-                    client2Ringbuffer->add("foo");
-                    ASSERT_EQ_PTR("foo", clientRingbuffer->readOne(0).get(), std::string);
+                    client2Ringbuffer->add("foo").get();
+                    auto value = clientRingbuffer->readOne<std::string>(0).get();
+                    ASSERT_TRUE(value.has_value());
+                    ASSERT_EQ("foo", value.value());
                 }
 
-                TEST_F(RingbufferTest, readManyAsync_noFilter) {
+                TEST_F(RingbufferTest, readMany_noFilter) {
                     client2Ringbuffer->add("1");
                     client2Ringbuffer->add("2");
                     client2Ringbuffer->add("3");
 
-                    auto f = clientRingbuffer->readManyAsync<void>(0, 3, 3, NULL);
-                    auto rs = f.get();
+                    auto rs = clientRingbuffer->readMany(0, 3, 3).get();
 
-                    ASSERT_EQ(3, rs->readCount());
-                    ASSERT_EQ_PTR("1", rs->getItems().get(0), std::string);
-                    ASSERT_EQ_PTR("2", rs->getItems().get(1), std::string);
-                    ASSERT_EQ_PTR("3", rs->getItems().get(2), std::string);
+                    ASSERT_EQ(3, rs.readCount());
+                    auto &items = rs.getItems();
+                    ASSERT_EQ("1", items[0].get<std::string>().value());
+                    ASSERT_EQ("2", items[1].get<std::string>().value());
+                    ASSERT_EQ("3", items[2].get<std::string>().value());
                 }
 
-// checks if the max count works. So if more results are available than needed, the surplus results should not be read.
-                TEST_F(RingbufferTest, readManyAsync_maxCount) {
-                    client2Ringbuffer->add("1");
-                    client2Ringbuffer->add("2");
-                    client2Ringbuffer->add("3");
-                    client2Ringbuffer->add("4");
-                    client2Ringbuffer->add("5");
-                    client2Ringbuffer->add("6");
+                // checks if the max count works. So if more results are available than needed, the surplus results should not be read.
+                TEST_F(RingbufferTest, readMany_maxCount) {
+                    client2Ringbuffer->add("1").get();
+                    client2Ringbuffer->add("2").get();
+                    client2Ringbuffer->add("3").get();
+                    client2Ringbuffer->add("4").get();
+                    client2Ringbuffer->add("5").get();
+                    client2Ringbuffer->add("6").get();
 
-                    auto f = clientRingbuffer->readManyAsync<void>(0, 3, 3, NULL);
-                    auto rs = f.get();
+                    client::ringbuffer::ReadResultSet rs = clientRingbuffer->readMany<std::string>(0, 3, 3).get();
 
-                    ASSERT_EQ(3, rs->readCount());
-                    DataArray <std::string> &items1 = rs->getItems();
-                    ASSERT_EQ_PTR("1", items1.get(0), std::string);
-                    ASSERT_EQ_PTR("2", items1.get(1), std::string);
-                    ASSERT_EQ_PTR("3", items1.get(2), std::string);
+                    ASSERT_EQ(3, rs.readCount());
+                    auto &items1 = rs.getItems();
+                    ASSERT_EQ("1", items1[0].get<std::string>().value());
+                    ASSERT_EQ("2", items1[1].get<std::string>().value());
+                    ASSERT_EQ("3", items1[2].get<std::string>().value());
                 }
 
                 TEST_F(RingbufferTest, readManyAsync_withFilter) {
-                    client2Ringbuffer->add("good1");
-                    client2Ringbuffer->add("bad1");
-                    client2Ringbuffer->add("good2");
-                    client2Ringbuffer->add("bad2");
-                    client2Ringbuffer->add("good3");
-                    client2Ringbuffer->add("bad3");
+                    client2Ringbuffer->add("good1").get();
+                    client2Ringbuffer->add("bad1").get();
+                    client2Ringbuffer->add("good2").get();
+                    client2Ringbuffer->add("bad2").get();
+                    client2Ringbuffer->add("good3").get();
+                    client2Ringbuffer->add("bad3").get();
 
                     StartsWithStringFilter filter("good");
-                    auto f = clientRingbuffer->readManyAsync<StartsWithStringFilter>(0, 3, 3, &filter);
-
+                    auto f = clientRingbuffer->readMany<StartsWithStringFilter>(0, 3, 3, &filter);
                     auto rs = f.get();
 
-                    ASSERT_EQ(5, rs->readCount());
-                    DataArray <std::string> &items = rs->getItems();
-                    ASSERT_EQ_PTR("good1", items.get(0), std::string);
-                    ASSERT_EQ_PTR("good2", items.get(1), std::string);
-                    ASSERT_EQ_PTR("good3", items.get(2), std::string);
+                    ASSERT_EQ(5, rs.readCount());
+                    auto const &items = rs.getItems();
+                    ASSERT_EQ("good1", items[0].get<std::string>().value());
+                    ASSERT_EQ("good2", items[1].get<std::string>().value());
+                    ASSERT_EQ("good3", items[2].get<std::string>().value());
                 }
             }
         }
     }
 }
-
-
-//
-// Created by sancar koyunlu on 9/13/13.
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            class PolymorphicDataSerializableRingbufferTest : public ClientTestSupport {
-            protected:
-                class BaseDataSerializable : public serialization::IdentifiedDataSerializable {
-                public:
-                    virtual ~BaseDataSerializable() {}
-
-                    virtual int getFactoryId() const {
-                        return 666;
-                    }
-
-                    virtual int getClassId() const {
-                        return 10;
-                    }
-
-                    virtual void writeData(serialization::ObjectDataOutput &writer) const {
-                    }
-
-                    virtual void readData(serialization::ObjectDataInput &reader) {
-                    }
-
-                    virtual bool operator<(const BaseDataSerializable &rhs) const {
-                        return getClassId() < rhs.getClassId();
-                    }
-                };
-
-                class Derived1DataSerializable : public BaseDataSerializable {
-                public:
-                    virtual int getClassId() const {
-                        return 11;
-                    }
-                };
-
-                class Derived2DataSerializable : public Derived1DataSerializable {
-                public:
-                    virtual int getClassId() const {
-                        return 12;
-                    }
-                };
-
-                class PolymorphicDataSerializableFactory : public serialization::DataSerializableFactory {
-                public:
-                    virtual std::unique_ptr<serialization::IdentifiedDataSerializable> create(int32_t typeId) {
-                        switch (typeId) {
-                            case 10:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(new BaseDataSerializable);
-                            case 11:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(new Derived1DataSerializable);
-                            case 12:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>(new Derived2DataSerializable);
-                            default:
-                                return std::unique_ptr<serialization::IdentifiedDataSerializable>();
-                        }
-                    }
-                };
-
-                virtual void TearDown() {
-                }
-
-                static void SetUpTestCase() {
-                    instance = new HazelcastServer(*g_srvFactory);
-                    ClientConfig clientConfig = getConfig();
-                    SerializationConfig &serializationConfig = clientConfig.getSerializationConfig();
-                    serializationConfig.addDataSerializableFactory(666,
-                                                                   std::shared_ptr<serialization::DataSerializableFactory>(
-                                                                           new PolymorphicDataSerializableFactory()));
-                    client = new HazelcastClient(clientConfig);
-                    rb = client->getRingbuffer<BaseDataSerializable>("rb-1");
-                }
-
-                static void TearDownTestCase() {
-                    delete client;
-                    delete instance;
-
-                    client = nullptr;
-                    instance = nullptr;
-                }
-
-                static HazelcastServer *instance;
-                static HazelcastClient *client;
-                static std::shared_ptr<Ringbuffer<BaseDataSerializable> > rb;
-            };
-
-
-            HazelcastServer *PolymorphicDataSerializableRingbufferTest::instance = nullptr;
-            HazelcastClient *PolymorphicDataSerializableRingbufferTest::client = nullptr;
-            std::shared_ptr<Ringbuffer<PolymorphicDataSerializableRingbufferTest::BaseDataSerializable> > PolymorphicDataSerializableRingbufferTest::rb;
-
-            TEST_F(PolymorphicDataSerializableRingbufferTest, testPolymorhism) {
-                BaseDataSerializable base;
-                Derived1DataSerializable derived1;
-                Derived2DataSerializable derived2;
-                rb->add(base);
-                rb->add(derived1);
-                rb->add(derived2);
-
-                int64_t sequence = rb->headSequence();
-                std::unique_ptr<BaseDataSerializable> value = rb->readOne(sequence);
-                ASSERT_NE((BaseDataSerializable *) NULL, value.get());
-                ASSERT_EQ(base.getClassId(), value->getClassId());
-
-                value = rb->readOne(sequence + 1);
-                ASSERT_NE((BaseDataSerializable *) NULL, value.get());
-                ASSERT_EQ(derived1.getClassId(), value->getClassId());
-
-                value = rb->readOne(sequence + 2);
-                ASSERT_NE((BaseDataSerializable *) NULL, value.get());
-                ASSERT_EQ(derived2.getClassId(), value->getClassId());
-            }
-        }
-    }
-}
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1516,11 +1373,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -2329,10 +2181,10 @@ namespace hazelcast {
 
                 TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
 
-                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) NULL);
+                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
                 std::shared_ptr<std::string> val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
                 context.commitTransaction();
 
@@ -2347,14 +2199,14 @@ namespace hazelcast {
 
                 TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
 
-                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) NULL);
+                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
                 std::shared_ptr<std::string> val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
-                ASSERT_EQ((std::string *) NULL, map.remove("key2").get());
+                ASSERT_EQ((std::string *) nullptr, map.remove("key2").get());
                 val = map.remove("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("value1", *val);
 
                 context.commitTransaction();
@@ -2371,12 +2223,12 @@ namespace hazelcast {
 
                 TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
 
-                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) NULL);
+                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
                 std::shared_ptr<std::string> val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
-                ASSERT_EQ((std::string *) NULL, map.remove("key2").get());
+                ASSERT_EQ((std::string *) nullptr, map.remove("key2").get());
                 ASSERT_TRUE(map.remove("key1", "value1"));
 
                 context.commitTransaction();
@@ -2395,14 +2247,14 @@ namespace hazelcast {
 
                 ASSERT_NO_THROW(map.deleteEntry("key1"));
 
-                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) NULL);
+                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
                 std::shared_ptr<std::string> val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
                 ASSERT_NO_THROW(map.deleteEntry("key1"));
                 val = map.get("key1");
-                ASSERT_EQ((std::string *) NULL, val.get());
+                ASSERT_EQ((std::string *) nullptr, val.get());
 
                 context.commitTransaction();
 
@@ -2418,10 +2270,10 @@ namespace hazelcast {
 
                 TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
 
-                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) NULL);
+                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
                 std::shared_ptr<std::string> val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
                 ASSERT_EQ("value1", *map.replace("key1", "myNewValue"));
 
@@ -2441,22 +2293,22 @@ namespace hazelcast {
                 ASSERT_NO_THROW(map.set("key1", "value1"));
 
                 std::shared_ptr<std::string> val = map.get("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("value1", *val);
 
                 val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
                 ASSERT_NO_THROW(map.set("key1", "myNewValue"));
 
                 val = map.get("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("myNewValue", *val);
 
                 context.commitTransaction();
 
                 val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("myNewValue", *val);
             }
 
@@ -2473,7 +2325,7 @@ namespace hazelcast {
                 ASSERT_NO_THROW(map.set("key1", "value1"));
 
                 std::shared_ptr<std::string> val = map.get("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("value1", *val);
 
                 ASSERT_TRUE(map.containsKey("key1"));
@@ -2492,10 +2344,10 @@ namespace hazelcast {
 
                 TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
 
-                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) NULL);
+                ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
                 std::shared_ptr<std::string> val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
                 ASSERT_FALSE(map.replace("key1", "valueNonExistent", "myNewValue"));
                 ASSERT_TRUE(map.replace("key1", "value1", "myNewValue"));
@@ -2514,21 +2366,21 @@ namespace hazelcast {
                 TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
 
                 std::shared_ptr<std::string> val = map.putIfAbsent("key1", "value1");
-                ASSERT_EQ((std::string *) NULL, val.get());
+                ASSERT_EQ((std::string *) nullptr, val.get());
                 val = map.get("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("value1", *val);
                 val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_EQ(val.get(), (std::string *) NULL);
+                ASSERT_EQ(val.get(), (std::string *) nullptr);
 
                 val = map.putIfAbsent("key1", "value1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("value1", *val);
 
                 context.commitTransaction();
 
                 val = client.getMap<std::string, std::string>(name).get("key1");
-                ASSERT_NE((std::string *) NULL, val.get());
+                ASSERT_NE((std::string *) nullptr, val.get());
                 ASSERT_EQ("value1", *val);
             }
 
@@ -2578,7 +2430,7 @@ namespace hazelcast {
                 TransactionContext context = client.newTransactionContext();
                 context.beginTransaction();
                 TransactionalMap<std::string, std::string> txMap = context.getMap<std::string, std::string>(name);
-                ASSERT_EQ(txMap.put("key3", "value3").get(), (std::string *) NULL);
+                ASSERT_EQ(txMap.put("key3", "value3").get(), (std::string *) nullptr);
 
 
                 ASSERT_EQ(3, (int) txMap.size());
@@ -2605,7 +2457,7 @@ namespace hazelcast {
                 context.beginTransaction();
 
                 TransactionalMap<Employee, Employee> txMap = context.getMap<Employee, Employee>(name);
-                ASSERT_EQ(txMap.put(emp2, emp2).get(), (Employee *) NULL);
+                ASSERT_EQ(txMap.put(emp2, emp2).get(), (Employee *) nullptr);
 
                 ASSERT_EQ(2, (int) txMap.size());
                 ASSERT_EQ(2, (int) txMap.keySet().size());
@@ -2633,7 +2485,7 @@ namespace hazelcast {
                 ASSERT_TRUE(map.isEmpty());
 
                 std::shared_ptr<std::string> oldValue = map.put("key1", "value1");
-                ASSERT_NULL("old value should be null", oldValue.get(), std::string);
+                ASSERT_nullptr("old value should be null", oldValue.get(), std::string);
 
                 ASSERT_FALSE(map.isEmpty());
 
@@ -2894,7 +2746,7 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(memberRemovedLatch);
 
                 IQueue<std::string> q = client->getQueue<std::string>(queueName);
-                ASSERT_NULL("Poll result should be null since it is rolled back", q.poll().get(), std::string);
+                ASSERT_nullptr("Poll result should be null since it is rolled back", q.poll().get(), std::string);
                 ASSERT_EQ(0, q.size());
             }
 
@@ -2923,7 +2775,7 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(memberRemovedLatch);
 
                 IQueue<std::string> q = client->getQueue<std::string>(queueName);
-                ASSERT_NULL("queue poll should return null", q.poll().get(), std::string);
+                ASSERT_nullptr("queue poll should return null", q.poll().get(), std::string);
                 ASSERT_EQ(0, q.size());
             }
         }
@@ -3247,7 +3099,7 @@ namespace hazelcast {
                     bytes.push_back('h');
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::string> utf = dataInput.readUTF();
-                    ASSERT_NE((std::string *) NULL, utf.get());
+                    ASSERT_NE((std::string *) nullptr, utf.get());
                     ASSERT_EQ("bdfh", *utf);
                 }
 
@@ -3263,7 +3115,7 @@ namespace hazelcast {
                     bytes.insert(bytes.end(), actualDataBytes.begin(), actualDataBytes.end());
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::vector<byte> > readBytes = dataInput.readByteArray();
-                    ASSERT_NE((std::vector<byte> *) NULL, readBytes.get());
+                    ASSERT_NE((std::vector<byte> *) nullptr, readBytes.get());
                     ASSERT_EQ(actualDataBytes, *readBytes);
                 }
 
@@ -3277,7 +3129,7 @@ namespace hazelcast {
                     bytes.push_back(0x01);
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::vector<bool> > booleanArray = dataInput.readBooleanArray();
-                    ASSERT_NE((std::vector<bool> *) NULL, booleanArray.get());
+                    ASSERT_NE((std::vector<bool> *) nullptr, booleanArray.get());
                     ASSERT_EQ(2U, booleanArray->size());
                     ASSERT_FALSE((*booleanArray)[0]);
                     ASSERT_TRUE((*booleanArray)[1]);
@@ -3295,7 +3147,7 @@ namespace hazelcast {
                     bytes.push_back('h');
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::vector<char> > charArray = dataInput.readCharArray();
-                    ASSERT_NE((std::vector<char> *) NULL, charArray.get());
+                    ASSERT_NE((std::vector<char> *) nullptr, charArray.get());
                     ASSERT_EQ(2U, charArray->size());
                     ASSERT_EQ('f', (*charArray)[0]);
                     ASSERT_EQ('h', (*charArray)[1]);
@@ -3313,7 +3165,7 @@ namespace hazelcast {
                     bytes.push_back(0x78);
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::vector<int16_t> > array = dataInput.readShortArray();
-                    ASSERT_NE((std::vector<int16_t> *) NULL, array.get());
+                    ASSERT_NE((std::vector<int16_t> *) nullptr, array.get());
                     ASSERT_EQ(2U, array->size());
                     ASSERT_EQ(0x1234, (*array)[0]);
                     ASSERT_EQ(0x5678, (*array)[1]);
@@ -3335,7 +3187,7 @@ namespace hazelcast {
                     bytes.push_back(0xEF);
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::vector<int32_t> > array = dataInput.readIntArray();
-                    ASSERT_NE((std::vector<int32_t> *) NULL, array.get());
+                    ASSERT_NE((std::vector<int32_t> *) nullptr, array.get());
                     ASSERT_EQ(2U, array->size());
                     ASSERT_EQ(INT32_C(0x12345678), (*array)[0]);
                     ASSERT_EQ(INT32_C(0x1ABCDEEF), (*array)[1]);
@@ -3365,7 +3217,7 @@ namespace hazelcast {
                     bytes.push_back(0xA8);
                     serialization::pimpl::DataInput dataInput(bytes);
                     std::unique_ptr<std::vector<int64_t> > array = dataInput.readLongArray();
-                    ASSERT_NE((std::vector<int64_t> *) NULL, array.get());
+                    ASSERT_NE((std::vector<int64_t> *) nullptr, array.get());
                     ASSERT_EQ(2U, array->size());
                     ASSERT_EQ(INT64_C(0x123456789ABCDEEF), (*array)[0]);
                     ASSERT_EQ(INT64_C(0x11A2A3A4A5A6A7A8), (*array)[1]);

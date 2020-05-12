@@ -40,7 +40,7 @@ namespace hazelcast {
         public:
             TypedData();
 
-            TypedData(serialization::pimpl::Data &&d,
+            TypedData(serialization::pimpl::Data d,
                       serialization::pimpl::SerializationService &serializationService);
 
             /**

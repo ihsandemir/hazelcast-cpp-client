@@ -69,7 +69,7 @@ namespace hazelcast {
         TypedData::TypedData() : ss(NULL) {
         }
 
-        TypedData::TypedData(serialization::pimpl::Data &&d,
+        TypedData::TypedData(serialization::pimpl::Data d,
                              serialization::pimpl::SerializationService &serializationService) : data(d),
                                                                                                  ss(&serializationService) {
         }

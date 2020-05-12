@@ -155,7 +155,7 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                const std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T> &elements) {
+                std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T> &elements) {
                     std::vector<serialization::pimpl::Data> dataCollection;
                     dataCollection.reserve(elements.sie());
                     std::for_each(elements.begin(), elements.end(),

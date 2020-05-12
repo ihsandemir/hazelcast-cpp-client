@@ -45,7 +45,7 @@
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/map/DataEntryView.h"
 #include "hazelcast/client/topic/impl/reliable/ReliableTopicExecutor.h"
-#include "hazelcast/client/proxy/ClientRingbufferProxy.h"
+#include "hazelcast/client/proxy/RingbufferImpl.h"
 #include "hazelcast/client/cluster/impl/VectorClock.h"
 #include "hazelcast/client/internal/partition/strategy/StringPartitioningStrategy.h"
 #include "hazelcast/util/Util.h"
@@ -1108,8 +1108,7 @@ namespace hazelcast {
                 return getContext().getPartitionService().getPartitionId(key);
             }
 
-            boost::future<protocol::ClientMessage> ProxyImpl::
-            invokeOnPartition(
+            boost::future<protocol::ClientMessage> ProxyImpl::invokeOnPartition(
                     std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
                 try {
                     return spi::impl::ClientInvocation::create(getContext(), request, getName(), partitionId)->invoke();
@@ -1912,8 +1911,8 @@ namespace hazelcast {
                                 return;
                             }
                             try {
-                                proxy::ClientRingbufferProxy<ReliableTopicMessage> &ringbufferProxy =
-                                        static_cast<proxy::ClientRingbufferProxy<ReliableTopicMessage> &>(rb);
+                                proxy::RingbufferImpl<ReliableTopicMessage> &ringbufferProxy =
+                                        static_cast<proxy::RingbufferImpl<ReliableTopicMessage> &>(rb);
                                 auto future = ringbufferProxy.readManyAsync(m.sequence, 1, m.maxCount);
                                 do {
                                     if (future.wait_for(boost::chrono::seconds(1)) == boost::future_status::ready) {
