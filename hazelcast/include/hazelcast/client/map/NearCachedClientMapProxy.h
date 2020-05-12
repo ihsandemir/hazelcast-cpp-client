@@ -62,7 +62,7 @@ namespace hazelcast {
                 typedef std::unordered_map<std::shared_ptr<serialization::pimpl::Data>, bool> MARKER_MAP;
 
                 void onInitialize() override {
-                    Imap::onInitialize();
+                    IMap::onInitialize();
 
                     internal::nearcache::NearCacheManager &nearCacheManager = this->getContext().getNearCacheManager();
                     cacheLocalEntries = nearCacheConfig.isCacheLocalEntries();
@@ -100,7 +100,7 @@ namespace hazelcast {
                     removeNearCacheInvalidationListener();
                     spi::ClientProxy::getContext().getNearCacheManager().destroyNearCache(spi::ClientProxy::getName());
 
-                    Imap::onShutdown();
+                    IMap::onShutdown();
                 }
 
                 boost::future<bool> containsKeyInternal(const serialization::pimpl::Data &keyData) override {
@@ -110,7 +110,7 @@ namespace hazelcast {
                         return internal::nearcache::NearCache<K, V>::NULL_OBJECT != cached;
                     }
 
-                    return Imap::containsKeyInternal(*key);
+                    return IMap::containsKeyInternal(*key);
                 }
 
                 boost::future<serialization::pimpl::Data> getInternal(serialization::pimpl::Data &keyData) override {
@@ -126,7 +126,7 @@ namespace hazelcast {
                     bool marked = keyStateMarker->tryMark(*key);
 
                     try {
-                        auto future = Imap::getInternal(*key);
+                        auto future = IMap::getInternal(*key);
                         if (marked) {
                             return future.then([=](boost::future<serialization::pimpl::Data> f) {
                                 tryToPutNearCache(key, std::make_shared<serialization::pimpl::Data>(std::move(f.get())));
@@ -142,7 +142,7 @@ namespace hazelcast {
                 boost::future<bool> removeInternal(
                         const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) override {
                     try {
-                        auto response = Imap::removeInternal(key, value);
+                        auto response = IMap::removeInternal(key, value);
                         invalidateNearCache(key);
                         return response;
                     } catch (exception::IException &) {
@@ -154,7 +154,7 @@ namespace hazelcast {
                 boost::future<serialization::pimpl::Data> removeInternal(
                         const serialization::pimpl::Data &key) override {
                     try {
-                        auto response = Imap::removeInternal(key);
+                        auto response = IMap::removeInternal(key);
                         invalidateNearCache(key);
                         return response;
                     } catch (exception::IException &) {
@@ -166,7 +166,7 @@ namespace hazelcast {
                 boost::future<protocol::ClientMessage>
                 removeAllInternal(const serialization::pimpl::Data &predicateData) override {
                     try {
-                        auto response = Imap::removeAllInternal(predicateData);
+                        auto response = IMap::removeAllInternal(predicateData);
                         nearCache->clear();
                         return response;
                     } catch (exception::IException &) {
@@ -177,7 +177,7 @@ namespace hazelcast {
 
                 boost::future<protocol::ClientMessage> deleteInternal(const serialization::pimpl::Data &key) override {
                     try {
-                        auto response = Imap::deleteInternal(key);
+                        auto response = IMap::deleteInternal(key);
                         invalidateNearCache(key);
                         return response;
                     } catch (exception::IException &) {
@@ -189,7 +189,7 @@ namespace hazelcast {
                 boost::future<bool> tryRemoveInternal(const serialization::pimpl::Data &keyData,
                                                               std::chrono::steady_clock::duration timeout) override {
                     try {
-                        auto response = Imap::tryRemoveInternal(keyData, timeout);
+                        auto response = IMap::tryRemoveInternal(keyData, timeout);
                         invalidateNearCache(keyData);
                         return response;
                     } catch (exception::IException &) {
@@ -201,7 +201,7 @@ namespace hazelcast {
                 boost::future<bool> tryPutInternal(const serialization::pimpl::Data &keyData,
                         const serialization::pimpl::Data &valueData, std::chrono::steady_clock::duration timeout) override {
                     try {
-                        auto response = Imap::tryPutInternal(keyData, valueData, timeout);
+                        auto response = IMap::tryPutInternal(keyData, valueData, timeout);
                         invalidateNearCache(keyData);
                         return response;
                     } catch (exception::IException &) {
@@ -213,7 +213,7 @@ namespace hazelcast {
                 boost::future<serialization::pimpl::Data> putInternal(const serialization::pimpl::Data &keyData,
                         const serialization::pimpl::Data &valueData, std::chrono::steady_clock::duration ttl) override {
                     try {
-                        auto previousValue = Imap::putInternal(keyData, valueData, ttl);
+                        auto previousValue = IMap::putInternal(keyData, valueData, ttl);
                         invalidateNearCache(keyData);
                         return previousValue;
                     } catch (exception::IException &) {
@@ -227,7 +227,7 @@ namespace hazelcast {
                                         const serialization::pimpl::Data &valueData,
                                         std::chrono::steady_clock::duration ttl) override {
                     try {
-                        auto result = Imap::tryPutTransientInternal(keyData, valueData, ttl);
+                        auto result = IMap::tryPutTransientInternal(keyData, valueData, ttl);
                         invalidateNearCache(keyData);
                         return result;
                     } catch (exception::IException &) {
@@ -241,7 +241,7 @@ namespace hazelcast {
                                     const serialization::pimpl::Data &valueData,
                                     std::chrono::steady_clock::duration ttl) override {
                     try {
-                        auto previousValue = Imap::putIfAbsentData(keyData, valueData, ttl);
+                        auto previousValue = IMap::putIfAbsentData(keyData, valueData, ttl);
                         invalidateNearCache(keyData);
                         return previousValue;
                     } catch (exception::IException &) {
@@ -319,7 +319,7 @@ namespace hazelcast {
                             }
                         }
 
-                        return Imap::getAllInternal(partitionId, std::move(remainingKeys)).then(
+                        return IMap::getAllInternal(partitionId, std::move(remainingKeys)).then(
                                 boost::launch::sync, std::bind(
                                         [this](boost::future<EntryVector> f, MARKER_MAP &markers, EntryVector &result) {
                             for (auto &entry : f.get()) {
@@ -353,7 +353,7 @@ namespace hazelcast {
                 executeOnKeyInternal(const serialization::pimpl::Data &keyData,
                                      const serialization::pimpl::Data &processor) override {
                     try {
-                        auto response = Imap::executeOnKeyData(keyData, processor);
+                        auto response = IMap::executeOnKeyData(keyData, processor);
                         invalidateNearCache(keyData);
                         return response;
                     } catch (exception::IException &) {
@@ -365,7 +365,7 @@ namespace hazelcast {
                 boost::future<protocol::ClientMessage>
                 putAllInternal(int partitionId, const EntryVector &entries) override {
                     try {
-                        auto result = Imap::putAllInternal(entries);
+                        auto result = IMap::putAllInternal(entries);
                         invalidateEntries(entries);
                         return result;
                     } catch (exception::IException &) {

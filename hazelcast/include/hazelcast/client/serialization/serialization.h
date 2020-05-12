@@ -1999,7 +1999,7 @@ namespace hazelcast {
 
                     DefaultPortableWriter dpw(*this, cd, out);
                     PortableWriter portableWriter(&dpw);
-                    hz_serializer<T>::writePortable(portableWriter);
+                    hz_serializer<T>::writePortable(object, portableWriter);
                     portableWriter.end();
                 }
 

@@ -159,7 +159,7 @@ namespace hazelcast {
              * @return A collection view of the values contained in this map.
              */
             template<typename V>
-            boost::future<boost::future<std::vector<V>>> values() {
+            boost::future<std::vector<V>> values() {
                 return toObjectVector<V>(valuesData());
             }
 
@@ -244,7 +244,7 @@ namespace hazelcast {
              * @return The value associated with the removed key.
              */
             template<typename K, typename V>
-            boost::future<boost::optional<V>>  remove(const K &key) {
+            boost::future<boost::optional<V>> remove(const K &key) {
                 return toObject<V>(removeData(toData(key)));
             }
         private:
