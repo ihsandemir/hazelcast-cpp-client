@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_PIPELINING_H_
-#define HAZELCAST_CLIENT_PIPELINING_H_
+#pragma once
 
 #include <vector>
 #include <mutex>
@@ -103,12 +102,12 @@ namespace hazelcast {
              * @return the List of results.
              * @throws IException if something fails getting the results.
              */
-            std::vector<std::shared_ptr<E> > results() {
-                std::vector<std::shared_ptr<E> > result;
+            std::vector<boost::optional<E>> results() {
+                std::vector<boost::optional<E>> result;
                 result.reserve(futures.size());
                 auto result_futures = when_all(futures.begin(), futures.end());
                 for (auto f : result_futures.get()) {
-                    result.push_back(f.get());
+                    result.emplace_back(f.get());
                 }
                 return result;
             }
@@ -123,11 +122,11 @@ namespace hazelcast {
              * @return the future added.
              * @throws NullPointerException if future is null.
              */
-            boost::shared_future<std::shared_ptr<E>>
-            add(boost::future<std::shared_ptr<E>> future) {
+            boost::shared_future<boost::optional<E>>
+            add(boost::future<boost::optional<E>> future) {
                 down();
 
-                auto new_future = future.then(boost::launch::sync, [=](boost::future<std::shared_ptr<E>> f) {
+                auto new_future = future.then(boost::launch::sync, [=](boost::future<boost::optional<E>> f) {
                     up();
                     return f.get();
                 });
@@ -159,11 +158,9 @@ namespace hazelcast {
             }
 
             int permits;
-            std::vector<boost::shared_future<std::shared_ptr<E>>> futures;
+            std::vector<boost::shared_future<boost::optional<E>>> futures;
             std::condition_variable conditionVariable;
             std::mutex mutex;
         };
     }
 }
-
-#endif //HAZELCAST_CLIENT_PIPELINING_H_

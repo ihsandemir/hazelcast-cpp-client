@@ -1006,7 +1006,7 @@ namespace hazelcast {
                     clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
                     HazelcastClient client(clientConfig);
 
-                    ASSERT_THROW((client.getMap<int, int>(randomMapName())),
+                    ASSERT_THROW((client.getMap(randomMapName())),
                                  exception::HazelcastClientOfflineException);
 
                     client.shutdown();
@@ -1016,7 +1016,7 @@ namespace hazelcast {
                     clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
                     HazelcastClient client(clientConfig);
                     client.shutdown();
-                    ASSERT_THROW((client.getMap<int, int>(randomMapName())),
+                    ASSERT_THROW((client.getMap(randomMapName())),
                                  exception::HazelcastClientOfflineException);
 
                     client.shutdown();
@@ -1041,8 +1041,8 @@ namespace hazelcast {
 
                     ASSERT_OPEN_EVENTUALLY(connectedLatch);
 
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.size();
+                    auto map = client.getMap(randomMapName());
+                    map->size().get();
 
                     client.shutdown();
                 }
@@ -1058,13 +1058,13 @@ namespace hazelcast {
                     client.addLifecycleListener(&lifecycleListener);
 
                     // no exception at this point
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.put(1, 5);
+                    auto map = client.getMap(randomMapName());
+                    map->put(1, 5).get();
 
                     hazelcastInstance.shutdown();
                     ASSERT_OPEN_EVENTUALLY(shutdownLatch);
 
-                    ASSERT_THROW(map.put(1, 5), exception::HazelcastClientNotActiveException);
+                    ASSERT_THROW(map->put(1, 5), exception::HazelcastClientNotActiveException);
 
                     client.shutdown();
                 }
@@ -1081,13 +1081,13 @@ namespace hazelcast {
                     client.addLifecycleListener(&lifecycleListener);
 
 // no exception at this point
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.put(1, 5);
+                    auto map = client.getMap(randomMapName());
+                    map->put(1, 5).get();
 
                     ownerServer.shutdown();
                     ASSERT_OPEN_EVENTUALLY(shutdownLatch);
 
-                    ASSERT_THROW(map.put(1, 5), exception::HazelcastClientNotActiveException);
+                    ASSERT_THROW(map->put(1, 5), exception::HazelcastClientNotActiveException);
 
                     client.shutdown();
                 }
@@ -1103,13 +1103,13 @@ namespace hazelcast {
                     client.addLifecycleListener(&lifecycleListener);
 
 // no exception at this point
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.put(1, 5);
+                    auto map = client.getMap(randomMapName());
+                    map->put(1, 5).get();
 
                     hazelcastInstance.shutdown();
                     ASSERT_OPEN_EVENTUALLY(shutdownLatch);
 
-                    ASSERT_THROW(map.put(1, 5), exception::HazelcastClientNotActiveException);
+                    ASSERT_THROW(map->put(1, 5), exception::HazelcastClientNotActiveException);
 
                     client.shutdown();
                 }
@@ -1127,10 +1127,10 @@ namespace hazelcast {
 
                             assertTrue(client.getLifecycleService().isRunning());
 
-                            assertOpenEventually(connectedLatch);
+                    ASSERT_OPEN_EVENTUALLY(connectedLatch);
 
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.size();
+                    auto map = client.getMap(randomMapName());
+                    map->size().get();
                 }
 
                 TEST_F(ConfiguredBehaviourTest, testReconnectModeASYNCSingleMemberStartLate) {
@@ -1158,8 +1158,8 @@ namespace hazelcast {
                     ASSERT_TRUE(client.getLifecycleService().isRunning());
                     ASSERT_OPEN_EVENTUALLY(reconnectedLatch);
 
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.size();
+                    auto map = client.getMap(randomMapName());
+                    map->size().get();
 
                     client.shutdown();
                 }
@@ -1178,14 +1178,14 @@ namespace hazelcast {
                             config::ClientConnectionStrategyConfig::ASYNC);
                     HazelcastClient client(clientConfig);
 
-                            assertTrue(client.getLifecycleService().isRunning());
+                    ASSERT_TRUE(client.getLifecycleService().isRunning());
 
-                            assertOpenEventually(connectedLatch);
+                    ASSERT_OPEN_EVENTUALLY(connectedLatch);
 
                     HazelcastServer hazelcastInstance2(*g_srvFactory);
 
-                    IMap<int, int> map = client.getMap<int, int>(randomMapName());
-                    map.put(1, 5);
+                    auto map = client.getMap(randomMapName());
+                    map->put(1, 5).get();
 
                     LifecycleStateListener disconnectListener(disconnectedLatch, LifecycleEvent::CLIENT_DISCONNECTED);
                     client.addLifecycleListener(&disconnectListener);
@@ -1195,10 +1195,10 @@ namespace hazelcast {
 
                     ownerServer.shutdown();
 
-                            assertOpenEventually(disconnectedLatch);
-                            assertOpenEventually(reconnectedLatch);
+                    ASSERT_OPEN_EVENTUALLY(disconnectedLatch);
+                    ASSERT_OPEN_EVENTUALLY(reconnectedLatch);
 
-                    map.get(1);
+                    map->get<int, int>(1).get();
 
                     client.shutdown();
                 }
@@ -1206,9 +1206,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1219,12 +1216,12 @@ namespace hazelcast {
                     instance = new HazelcastServer(*g_srvFactory);
                     client = new HazelcastClient(ClientConfig());
 
-                    map = new IMap<int, int>(client->getMap<int, int>(MAP_NAME));
+                    map = client->getMap(MAP_NAME);
                     expected = new std::vector<int>;
                     for (int k = 0; k < MAP_SIZE; ++k) {
                         int item = rand();
-                        expected->push_back(item);
-                        map->put(k, item);
+                        expected->emplace_back(item);
+                        map->put(k, item).get();
                     }
                 }
 
@@ -1233,29 +1230,28 @@ namespace hazelcast {
                     instance = nullptr;
                     delete client;
                     client = nullptr;
-                    delete map;
-                    map = nullptr;
                     delete expected;
                     expected = nullptr;
                 }
 
             protected:
-                void testPipelining(const std::shared_ptr<Pipelining<int> > &pipelining) {
+                static void testPipelining(const std::shared_ptr<Pipelining<int> > &pipelining) {
                     for (int k = 0; k < MAP_SIZE; k++) {
-                        pipelining->add(map->getAsync(k));
+                        pipelining->add(map->get<int, int>(k));
                     }
 
-                    std::vector<std::shared_ptr<int> > results = pipelining->results();
+                    auto results = pipelining->results();
                     ASSERT_EQ(expected->size(), results.size());
                     for (int k = 0; k < MAP_SIZE; ++k) {
-                        ASSERT_EQ_PTR((*expected)[k], results[k].get(), int);
+                        ASSERT_TRUE(results[k].has_value());
+                        ASSERT_EQ((*expected)[k], results[k].value());
                     }
                 }
 
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
                 static const char *MAP_NAME;
-                static IMap<int, int> *map;
+                static std::shared_ptr<IMap> map;
                 static std::vector<int> *expected;
                 static const int MAP_SIZE = 10000;
             };
@@ -1263,7 +1259,6 @@ namespace hazelcast {
             HazelcastServer *PipeliningTest::instance = nullptr;
             HazelcastClient *PipeliningTest::client = nullptr;
             const char *PipeliningTest::MAP_NAME = "PipeliningTestMap";
-            IMap<int, int> *PipeliningTest::map = nullptr;
             std::vector<int> *PipeliningTest::expected = nullptr;
 
             TEST_F(PipeliningTest, testConstructor_whenNegativeDepth) {
@@ -1281,7 +1276,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 namespace hazelcast {
     namespace client {
