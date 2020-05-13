@@ -24,9 +24,9 @@ namespace hazelcast {
             public:
                 TransactionalQueueImpl(const std::string &name, txn::TransactionProxy *transactionProxy);
 
-                boost::future<bool> offer(const serialization::pimpl::Data &e, long timeoutInMillis);
+                boost::future<bool> offer(const serialization::pimpl::Data &e, std::chrono::steady_clock::duration timeout);
 
-                boost::future<std::optional<serialization::pimpl::Data>> pollData(long timeoutInMillis);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> pollData(std::chrono::steady_clock::duration timeout);
 
                 boost::future<int> size();
             };

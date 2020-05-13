@@ -37,8 +37,8 @@
 #include "hazelcast/client/proxy/ClientPNCounterProxy.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
-#include "hazelcast/client/proxy/ClientFlakeIdGeneratorProxy.h"
-#include "hazelcast/client/flakeidgen/impl/FlakeIdGeneratorProxyFactory.h"
+#include "hazelcast/client/spi/ClientListenerService.h"
+#include "hazelcast/client/proxy/FlakeIdGeneratorImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/proxy/ReliableTopicImpl.h"
 #include "hazelcast/client/topic/impl/TopicEventHandlerImpl.h"
@@ -73,116 +73,6 @@ namespace hazelcast {
                                                                 clientContext));
                     }
                 }
-            }
-        }
-
-        namespace flakeidgen {
-            namespace impl {
-                FlakeIdGeneratorProxyFactory::FlakeIdGeneratorProxyFactory(spi::ClientContext *clientContext)
-                        : clientContext(
-                        clientContext) {}
-
-                std::shared_ptr<spi::ClientProxy> FlakeIdGeneratorProxyFactory::create(const std::string &id) {
-                    return std::shared_ptr<spi::ClientProxy>(
-                            new proxy::ClientFlakeIdGeneratorProxy(id, clientContext));
-                }
-
-
-                AutoBatcher::AutoBatcher(int32_t batchSize, int64_t validity,
-                                         const std::shared_ptr<AutoBatcher::IdBatchSupplier> &batchIdSupplier)
-                        : batchSize(batchSize), validity(validity), batchIdSupplier(batchIdSupplier),
-                          block(std::shared_ptr<Block>(new Block(IdBatch(0, 0, 0), 0))) {}
-
-                int64_t AutoBatcher::newId() {
-                    for (;;) {
-                        std::shared_ptr<Block> b = this->block;
-                        int64_t res = b->next();
-                        if (res != INT64_MIN) {
-                            return res;
-                        }
-
-                        {
-                            std::lock_guard<std::mutex> guard(lock);
-                            if (b != this->block.get()) {
-                                // new block was assigned in the meantime
-                                continue;
-                            }
-                            this->block = std::shared_ptr<Block>(
-                                    new Block(batchIdSupplier->newIdBatch(batchSize), validity));
-                        }
-                    }
-                }
-
-                AutoBatcher::Block::Block(const IdBatch &idBatch, int64_t validity) : idBatch(idBatch), numReturned(0) {
-                    invalidSince = validity > 0 ? util::currentTimeMillis() + validity : INT64_MAX;
-                }
-
-                int64_t AutoBatcher::Block::next() {
-                    if (invalidSince <= util::currentTimeMillis()) {
-                        return INT64_MIN;
-                    }
-                    int32_t index;
-                    do {
-                        index = numReturned;
-                        if (index == idBatch.getBatchSize()) {
-                            return INT64_MIN;
-                        }
-                    } while (!numReturned.compare_exchange_strong(index, index + 1));
-
-                    return idBatch.getBase() + index * idBatch.getIncrement();
-                }
-
-                IdBatch::IdIterator IdBatch::endOfBatch;
-
-                const int64_t IdBatch::getBase() const {
-                    return base;
-                }
-
-                const int64_t IdBatch::getIncrement() const {
-                    return increment;
-                }
-
-                const int32_t IdBatch::getBatchSize() const {
-                    return batchSize;
-                }
-
-                IdBatch::IdBatch(const int64_t base, const int64_t increment, const int32_t batchSize)
-                        : base(base), increment(increment), batchSize(batchSize) {}
-
-                IdBatch::IdIterator &IdBatch::end() {
-                    return endOfBatch;
-                }
-
-                IdBatch::IdIterator IdBatch::iterator() {
-                    return IdBatch::IdIterator(base, increment, batchSize);
-                }
-
-                IdBatch::IdIterator::IdIterator(int64_t base2, const int64_t increment, int32_t remaining) : base2(
-                        base2), increment(increment), remaining(remaining) {}
-
-                bool IdBatch::IdIterator::operator==(const IdBatch::IdIterator &rhs) const {
-                    return base2 == rhs.base2 && increment == rhs.increment && remaining == rhs.remaining;
-                }
-
-                bool IdBatch::IdIterator::operator!=(const IdBatch::IdIterator &rhs) const {
-                    return !(rhs == *this);
-                }
-
-                IdBatch::IdIterator::IdIterator() : base2(-1), increment(-1), remaining(-1) {
-                }
-
-                IdBatch::IdIterator &IdBatch::IdIterator::operator++() {
-                    if (remaining == 0) {
-                        return IdBatch::end();
-                    }
-
-                    --remaining;
-
-                    base2 += increment;
-
-                    return *this;
-                }
-
             }
         }
 
@@ -902,50 +792,117 @@ namespace hazelcast {
                 return protocol::codec::ListRemoveListenerCodec::ResponseParameters::decode(clientMessage).response;
             }
 
-            const std::string ClientFlakeIdGeneratorProxy::SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
+            FlakeIdGeneratorImpl::Block::Block(IdBatch &&idBatch, std::chrono::steady_clock::duration validity)
+                    : idBatch(idBatch), invalidSince(std::chrono::steady_clock::now() + validity), numReturned(0) {}
 
-            ClientFlakeIdGeneratorProxy::ClientFlakeIdGeneratorProxy(const std::string &objectName,
-                                                                     spi::ClientContext *context)
-                    : ProxyImpl(SERVICE_NAME, objectName, context) {
-                std::shared_ptr<config::ClientFlakeIdGeneratorConfig> config = getContext().getClientConfig().findFlakeIdGeneratorConfig(
-                        getName());
-                batcher.reset(
-                        new flakeidgen::impl::AutoBatcher(config->getPrefetchCount(),
-                                                          config->getPrefetchValidityMillis(),
-                                                          std::shared_ptr<flakeidgen::impl::AutoBatcher::IdBatchSupplier>(
-                                                                  new FlakeIdBatchSupplier(*this))));
+            int64_t FlakeIdGeneratorImpl::Block::next() {
+                if (invalidSince <= std::chrono::steady_clock::now()) {
+                    return INT64_MIN;
+                }
+                int32_t index;
+                do {
+                    index = numReturned;
+                    if (index == idBatch.getBatchSize()) {
+                        return INT64_MIN;
+                    }
+                } while (!numReturned.compare_exchange_strong(index, index + 1));
+
+                return idBatch.getBase() + index * idBatch.getIncrement();
             }
 
-            int64_t ClientFlakeIdGeneratorProxy::newId() {
-                return batcher->newId();
+            FlakeIdGeneratorImpl::IdBatch::IdIterator FlakeIdGeneratorImpl::IdBatch::endOfBatch;
+
+            const int64_t FlakeIdGeneratorImpl::IdBatch::getBase() const {
+                return base;
             }
 
-            flakeidgen::impl::IdBatch ClientFlakeIdGeneratorProxy::newIdBatch(int32_t batchSize) {
+            const int64_t FlakeIdGeneratorImpl::IdBatch::getIncrement() const {
+                return increment;
+            }
+
+            const int32_t FlakeIdGeneratorImpl::IdBatch::getBatchSize() const {
+                return batchSize;
+            }
+
+            FlakeIdGeneratorImpl::IdBatch::IdBatch(int64_t base, int64_t increment, int32_t batchSize)
+                    : base(base), increment(increment), batchSize(batchSize) {}
+
+            FlakeIdGeneratorImpl::IdBatch::IdIterator &FlakeIdGeneratorImpl::IdBatch::end() {
+                return endOfBatch;
+            }
+
+            FlakeIdGeneratorImpl::IdBatch::IdIterator FlakeIdGeneratorImpl::IdBatch::iterator() {
+                return FlakeIdGeneratorImpl::IdBatch::IdIterator(base, increment, batchSize);
+            }
+
+            FlakeIdGeneratorImpl::IdBatch::IdIterator::IdIterator(int64_t base2, const int64_t increment, int32_t remaining) : base2(
+                    base2), increment(increment), remaining(remaining) {}
+
+            bool FlakeIdGeneratorImpl::IdBatch::IdIterator::operator==(const FlakeIdGeneratorImpl::IdBatch::IdIterator &rhs) const {
+                return base2 == rhs.base2 && increment == rhs.increment && remaining == rhs.remaining;
+            }
+
+            bool FlakeIdGeneratorImpl::IdBatch::IdIterator::operator!=(const FlakeIdGeneratorImpl::IdBatch::IdIterator &rhs) const {
+                return !(rhs == *this);
+            }
+
+            FlakeIdGeneratorImpl::IdBatch::IdIterator::IdIterator() : base2(-1), increment(-1), remaining(-1) {
+            }
+
+            FlakeIdGeneratorImpl::IdBatch::IdIterator &FlakeIdGeneratorImpl::IdBatch::IdIterator::operator++() {
+                if (remaining == 0) {
+                    return FlakeIdGeneratorImpl::IdBatch::end();
+                }
+
+                --remaining;
+
+                base2 += increment;
+
+                return *this;
+            }
+
+
+            FlakeIdGeneratorImpl::FlakeIdGeneratorImpl(const std::string &serviceName, const std::string &objectName,
+                                                       spi::ClientContext *context)
+                    : ProxyImpl(serviceName, objectName, context), block(nullptr) {
+                auto config = context->getClientConfig().findFlakeIdGeneratorConfig(objectName);
+                batchSize = config->getPrefetchCount();
+                validity = config->getPrefetchValidityDuration();
+            }
+
+            FlakeIdGeneratorImpl::~FlakeIdGeneratorImpl() {
+                delete block;
+            }
+
+            int64_t FlakeIdGeneratorImpl::newId() {
+                for (;;) {
+                    auto b = block.load();
+                    if (b) {
+                        int64_t res = b->next();
+                        if (res != INT64_MIN) {
+                            return res;
+                        }
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> guard(lock);
+                        if (b != block.load()) {
+                            // new block was assigned in the meantime
+                            continue;
+                        }
+                        block = new Block(newIdBatch(batchSize), validity);
+                    }
+                }
+            }
+
+            FlakeIdGeneratorImpl::IdBatch FlakeIdGeneratorImpl::newIdBatch(int32_t size) {
                 std::unique_ptr<protocol::ClientMessage> requestMsg = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::encodeRequest(
-                        getName(), batchSize);
+                        getName(), size);
                 auto invocation = spi::impl::ClientInvocation::create(getContext(), requestMsg,
                                                                       getName())->invoke();
                 auto response =
                         protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(invocation.get());
-                return flakeidgen::impl::IdBatch(response.base, response.increment, response.batchSize);
-            }
-
-            boost::future<bool> ClientFlakeIdGeneratorProxy::init(int64_t id) {
-                // Add 1 hour worth of IDs as a reserve: due to long batch validity some clients might be still getting
-                // older IDs. 1 hour is just a safe enough value, not a real guarantee: some clients might have longer
-                // validity.
-                // The init method should normally be called before any client generated IDs: in this case no reserve is
-                // needed, so we don't want to increase the reserve excessively.
-                int64_t reserve =
-                        (int64_t) (3600 * 1000) /* 1 HOUR in milliseconds */ << (BITS_NODE_ID + BITS_SEQUENCE);
-                return newId() >= id + reserve;
-            }
-
-            ClientFlakeIdGeneratorProxy::FlakeIdBatchSupplier::FlakeIdBatchSupplier(ClientFlakeIdGeneratorProxy &proxy)
-                    : proxy(proxy) {}
-
-            flakeidgen::impl::IdBatch ClientFlakeIdGeneratorProxy::FlakeIdBatchSupplier::newIdBatch(int32_t batchSize) {
-                return proxy.newIdBatch(batchSize);
+                return FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize);
             }
 
             IQueueImpl::IQueueImpl(const std::string &instanceName, spi::ClientContext *context)
@@ -1280,7 +1237,7 @@ namespace hazelcast {
             }
 
             boost::future<protocol::ClientMessage> IMapImpl::lock(const serialization::pimpl::Data &key) {
-                return lock(key, -1);
+                return lock(key, std::chrono::milliseconds(-1));
             }
 
             boost::future<protocol::ClientMessage> IMapImpl::lock(const serialization::pimpl::Data &key, std::chrono::steady_clock::duration leaseTime) {
@@ -1423,7 +1380,7 @@ namespace hazelcast {
 
             boost::future<EntryVector>
             IMapImpl::valuesForPagingPredicateData(const serialization::pimpl::Data &predicate) {
-                auto request = protocol::codec::MapValuesWithPagingPredicateCodec::encodeRequest(predicate);
+                auto request = protocol::codec::MapValuesWithPagingPredicateCodec::encodeRequest(getName(), predicate);
                 return invokeAndGetFuture<EntryVector, protocol::codec::MapValuesWithPagingPredicateCodec::ResponseParameters>(
                         request);
             }
@@ -1630,11 +1587,11 @@ namespace hazelcast {
                         request);
             }
 
-            boost::future<serialization::pimpl::Data> TransactionalQueueImpl::pollData(std::chrono::steady_clock::duration timeout) {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> TransactionalQueueImpl::pollData(std::chrono::steady_clock::duration timeout) {
                 auto request = protocol::codec::TransactionalQueuePollCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count());
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::TransactionalQueuePollCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalQueuePollCodec::ResponseParameters>(
                         request);
             }
 
@@ -1911,7 +1868,7 @@ namespace hazelcast {
                             }
                             try {
                                 rb->readMany(m.sequence, 1, m.maxCount).then([=] (boost::future<ringbuffer::ReadResultSet> f) {
-                                    m.callback->onResponse(f.get());
+                                    m.callback->onResponse(std::make_shared<ringbuffer::ReadResultSet>(f.get()));
                                 }).get();
                             } catch (exception::IException &e) {
                                 m.callback->onFailure(std::current_exception());
@@ -1928,18 +1885,18 @@ namespace hazelcast {
                                                       util::AtomicBoolean &shutdown) : rb(std::move(rb)), q(q),
                                                                                        shutdown(shutdown) {}
 
-                    ReliableTopicMessage::ReliableTopicMessage() : publishTime(std::chrono::stead_clock::now()) {}
+                    ReliableTopicMessage::ReliableTopicMessage() : publishTime(std::chrono::system_clock::now()) {}
 
                     ReliableTopicMessage::ReliableTopicMessage(
                             hazelcast::client::serialization::pimpl::Data &&payloadData,
                             std::unique_ptr<Address> address)
-                            : publishTime(std::chrono::stead_clock::now()), payload(payloadData) {
+                            : publishTime(std::chrono::system_clock::now()), payload(payloadData) {
                         if (address) {
                             publisherAddress = boost::make_optional(*address);
                         }
                     }
 
-                    std::chrono::steady_clock::time_point ReliableTopicMessage::getPublishTime() const {
+                    std::chrono::system_clock::time_point ReliableTopicMessage::getPublishTime() const {
                         return publishTime;
                     }
 
@@ -1965,15 +1922,16 @@ namespace hazelcast {
 
             void hz_serializer<topic::impl::reliable::ReliableTopicMessage>::writeData(
                     const topic::impl::reliable::ReliableTopicMessage &object, ObjectDataOutput &out) {
-                out.writeLong(object.publishTime);
-                out.writeObject<Address>(object.publisherAddress.value_or(boost::none));
+                out.writeLong(std::chrono::duration_cast<std::chrono::milliseconds>(object.publishTime.time_since_epoch()).count());
+                out.writeObject<Address>(object.publisherAddress.value());
                 out.writeData(&object.payload);
             }
 
             topic::impl::reliable::ReliableTopicMessage
             hz_serializer<topic::impl::reliable::ReliableTopicMessage>::readData(ObjectDataInput &in) {
                 topic::impl::reliable::ReliableTopicMessage message;
-                message.publishTime = in.readLong();
+                auto now = std::chrono::system_clock::now();
+                message.publishTime = now + std::chrono::milliseconds(in.readLong()) - now.time_since_epoch();
                 message.publisherAddress = in.readObject<Address>();
                 message.payload = in.readData();
                 return message;
@@ -2029,14 +1987,7 @@ namespace hazelcast {
         ItemEventBase::~ItemEventBase() {
         }
 
-        FlakeIdGenerator::FlakeIdGenerator(const std::shared_ptr<proxy::ClientFlakeIdGeneratorProxy> &impl) : impl_(impl) {}
-
-        int64_t FlakeIdGenerator::newId() {
-            return impl_->newId();
-        }
-
-        boost::future<bool> FlakeIdGenerator::init(int64_t id) {
-            return impl_->init(id);
-        }
+        FlakeIdGenerator::FlakeIdGenerator(const std::string &objectName, spi::ClientContext *context)
+                : FlakeIdGeneratorImpl(SERVICE_NAME, objectName, context) {}
     }
 }

@@ -64,8 +64,7 @@
 #include "hazelcast/client/spi/impl/DefaultAddressTranslator.h"
 #include "hazelcast/client/LoadBalancer.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/flakeidgen/impl/FlakeIdGeneratorProxyFactory.h"
-#include "hazelcast/client/proxy/ClientFlakeIdGeneratorProxy.h"
+#include "hazelcast/client/proxy/FlakeIdGeneratorImpl.h"
 
 #ifndef HAZELCAST_VERSION
 #define HAZELCAST_VERSION "NOT_FOUND"
@@ -243,14 +242,6 @@ namespace hazelcast {
 
             void HazelcastClientInstanceImpl::shutdown() {
                 lifecycleService.shutdown();
-            }
-
-            FlakeIdGenerator HazelcastClientInstanceImpl::getFlakeIdGenerator(const std::string &name) {
-                flakeidgen::impl::FlakeIdGeneratorProxyFactory factory(&clientContext);
-                std::shared_ptr<spi::ClientProxy> proxy =
-                        getDistributedObjectForService(proxy::ClientFlakeIdGeneratorProxy::SERVICE_NAME, name, factory);
-
-                return FlakeIdGenerator(std::static_pointer_cast<proxy::ClientFlakeIdGeneratorProxy>(proxy));
             }
 
             TransactionContext HazelcastClientInstanceImpl::newTransactionContext() {

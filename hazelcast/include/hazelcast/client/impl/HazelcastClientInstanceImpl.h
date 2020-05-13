@@ -130,8 +130,6 @@ namespace hazelcast {
                 std::shared_ptr<T> getDistributedObject(const std::string& name) {
                     return proxyManager.getOrCreateProxy<T>(T::SERVICE_NAME, name);
                 }
-                
-                FlakeIdGenerator getFlakeIdGenerator(const std::string& name);
 
                 std::shared_ptr<crdt::pncounter::PNCounter> getPNCounter(const std::string& name);
 

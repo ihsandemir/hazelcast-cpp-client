@@ -80,19 +80,19 @@ namespace hazelcast {
                  * Sets how many IDs are pre-fetched on the background when one call to
                  * {@link FlakeIdGenerator#newId()} is made. Default is 100.
                  *
-                 * @param prefetchCount the desired prefetch count, in the range 1..MAXIMUM_PREFETCH_COUNT.
+                 * @param count the desired prefetch count, in the range 1..MAXIMUM_PREFETCH_COUNT.
                  * @return this instance for fluent API
                  */
-                ClientFlakeIdGeneratorConfig &setPrefetchCount(int32_t prefetchCount);
+                ClientFlakeIdGeneratorConfig &setPrefetchCount(int32_t count);
 
                 /**
-                 * @see #setPrefetchValidityMillis(long)
+                 * @see #setPrefetchValidityDuration(std::chrono::steady_clock::duration)
                  */
-                int64_t getPrefetchValidityMillis() const;
+                std::chrono::steady_clock::duration getPrefetchValidityDuration() const;
 
                 /**
                  * Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs will be
-                 * fetched. Time unit is milliseconds, default is 600,000 (10 minutes).
+                 * fetched. Time unit resolution is milliseconds, default is 600,000msecs (10 minutes).
                  * <p>
                  * The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
                  * is assigned to an object that was created much later, it will be much out of order. If you don't care
@@ -101,17 +101,17 @@ namespace hazelcast {
                  * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
                  * that configured it.
                  *
-                 * @param prefetchValidityMs the desired ID validity or unlimited, if configured to 0.
+                 * @param durations the desired ID validity or unlimited, if configured to 0.
                  * @return this instance for fluent API
                  *
-                 * @throws client::exception::IllegalArgumentException if prefetchValidityMillis is negative.
+                 * @throws client::exception::IllegalArgumentException if duration is negative.
                  */
-                ClientFlakeIdGeneratorConfig &setPrefetchValidityMillis(int64_t prefetchValidityMillis);
+                ClientFlakeIdGeneratorConfig &setPrefetchValidityDuration(std::chrono::steady_clock::duration duration);
 
             private:
                 std::string name;
                 int32_t prefetchCount;
-                int64_t prefetchValidityMillis;
+                std::chrono::steady_clock::duration prefetchValidityDuration;
             };
         }
     }

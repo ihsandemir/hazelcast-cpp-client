@@ -113,7 +113,7 @@ namespace hazelcast {
 
             ClientFlakeIdGeneratorConfig::ClientFlakeIdGeneratorConfig(const std::string &name)
                     : name(name), prefetchCount(DEFAULT_PREFETCH_COUNT),
-                      prefetchValidityMillis(DEFAULT_PREFETCH_VALIDITY_MILLIS) {}
+                      prefetchValidityDuration(DEFAULT_PREFETCH_VALIDITY_MILLIS) {}
 
             const std::string &ClientFlakeIdGeneratorConfig::getName() const {
                 return name;
@@ -128,23 +128,23 @@ namespace hazelcast {
                 return prefetchCount;
             }
 
-            ClientFlakeIdGeneratorConfig &ClientFlakeIdGeneratorConfig::setPrefetchCount(int32_t prefetchCount) {
+            ClientFlakeIdGeneratorConfig &ClientFlakeIdGeneratorConfig::setPrefetchCount(int32_t count) {
                 std::ostringstream out;
-                out << "prefetch-count must be 1.." << MAXIMUM_PREFETCH_COUNT << ", not " << prefetchCount;
-                util::Preconditions::checkTrue(prefetchCount > 0 && prefetchCount <= MAXIMUM_PREFETCH_COUNT, out.str());
-                ClientFlakeIdGeneratorConfig::prefetchCount = prefetchCount;
+                out << "prefetch-count must be 1.." << MAXIMUM_PREFETCH_COUNT << ", not " << count;
+                util::Preconditions::checkTrue(count > 0 && count <= MAXIMUM_PREFETCH_COUNT, out.str());
+                prefetchCount = count;
                 return *this;
             }
 
-            int64_t ClientFlakeIdGeneratorConfig::getPrefetchValidityMillis() const {
-                return prefetchValidityMillis;
+            std::chrono::steady_clock::duration ClientFlakeIdGeneratorConfig::getPrefetchValidityDuration() const {
+                return prefetchValidityDuration;
             }
 
             ClientFlakeIdGeneratorConfig &
-            ClientFlakeIdGeneratorConfig::setPrefetchValidityMillis(int64_t prefetchValidityMillis) {
-                util::Preconditions::checkNotNegative(prefetchValidityMillis,
+            ClientFlakeIdGeneratorConfig::setPrefetchValidityDuration(std::chrono::steady_clock::duration duration) {
+                util::Preconditions::checkNotNegative(duration.count(),
                                                       "prefetchValidityMs must be non negative");
-                ClientFlakeIdGeneratorConfig::prefetchValidityMillis = prefetchValidityMillis;
+                prefetchValidityDuration = duration;
                 return *this;
             }
 
@@ -152,15 +152,14 @@ namespace hazelcast {
 
             ClientNetworkConfig::ClientNetworkConfig()
                     : connectionTimeout(5000), smartRouting(true), connectionAttemptLimit(-1),
-                      connectionAttemptPeriod(CONNECTION_ATTEMPT_PERIOD) {
-            }
+                      connectionAttemptPeriod(CONNECTION_ATTEMPT_PERIOD) {}
 
             SSLConfig &ClientNetworkConfig::getSSLConfig() {
                 return sslConfig;
             }
 
-            ClientNetworkConfig &ClientNetworkConfig::setSSLConfig(const config::SSLConfig &sslConfig) {
-                this->sslConfig = sslConfig;
+            ClientNetworkConfig &ClientNetworkConfig::setSSLConfig(const config::SSLConfig &config) {
+                sslConfig = config;
                 return *this;
             }
 

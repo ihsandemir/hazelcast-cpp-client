@@ -2064,7 +2064,7 @@ namespace hazelcast {
                     ClientConfig clientConfig = getConfig();
                     std::shared_ptr<config::ClientFlakeIdGeneratorConfig> flakeIdConfig(
                             new config::ClientFlakeIdGeneratorConfig("test*"));
-                    flakeIdConfig->setPrefetchCount(10).setPrefetchValidityMillis(20000);
+                    flakeIdConfig->setPrefetchCount(10).setPrefetchValidityDuration(std::chrono::seconds(20));
                     clientConfig.addFlakeIdGeneratorConfig(flakeIdConfig);
                     client = new HazelcastClient(clientConfig);
                 }

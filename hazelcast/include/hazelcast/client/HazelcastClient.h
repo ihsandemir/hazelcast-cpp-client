@@ -510,7 +510,7 @@ namespace hazelcast {
              * @param name name of the {@link FlakeIdGenerator}
              * @return FlakeIdGenerator for the given name
              */
-            FlakeIdGenerator getFlakeIdGenerator(const std::string& name) {
+            std::shared_ptr<FlakeIdGenerator> getFlakeIdGenerator(const std::string& name) {
                 return clientImpl->getDistributedObject<FlakeIdGenerator>(name);
             }
 

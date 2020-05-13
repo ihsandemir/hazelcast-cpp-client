@@ -2145,7 +2145,7 @@ namespace hazelcast {
             }
 
             int32_t hz_serializer<std::string>::getTypeId() {
-                return pimpl::SerializationConstants::CONSTANT_TYPE_STRING;
+                return static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_STRING);
             }
             void hz_serializer<std::string>::write(const std::string &object, ObjectDataOutput &out) {
                 out.writeUTF(&object);
