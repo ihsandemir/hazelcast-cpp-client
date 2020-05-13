@@ -2044,12 +2044,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -2081,20 +2075,14 @@ namespace hazelcast {
                 static HazelcastServer *instance;
                 static HazelcastClient *client;
 
-                FlakeIdGenerator flakeIdGenerator;
+                std::shared_ptr<FlakeIdGenerator> flakeIdGenerator;
             };
 
             HazelcastServer *FlakeIdGeneratorApiTest::instance = nullptr;
             HazelcastClient *FlakeIdGeneratorApiTest::client = nullptr;
 
             TEST_F (FlakeIdGeneratorApiTest, testStartingValue) {
-                flakeIdGenerator.newId();
-            }
-
-            TEST_F (FlakeIdGeneratorApiTest, testInit) {
-                int64_t currentId = flakeIdGenerator.newId();
-                        ASSERT_TRUE(flakeIdGenerator.init(currentId / 2));
-                        ASSERT_FALSE(flakeIdGenerator.init(currentId * 2));
+                ASSERT_NO_THROW(flakeIdGenerator->newId().get());
             }
 
             TEST_F (FlakeIdGeneratorApiTest, testSmoke) {
@@ -2108,7 +2096,7 @@ namespace hazelcast {
                         std::set<int64_t> localIds;
                         startLatch.wait();
                         for (size_t j = 0; j < NUM_IDS_PER_THREAD; ++j) {
-                            localIds.insert(flakeIdGenerator.newId());
+                            localIds.insert(flakeIdGenerator->newId().get());
                         }
 
                         return localIds;
@@ -2123,7 +2111,7 @@ namespace hazelcast {
                     allIds.insert(ids.begin(), ids.end());
                 }
 
-// if there were duplicate IDs generated, there will be less items in the set than expected
+                // if there were duplicate IDs generated, there will be less items in the set than expected
                 ASSERT_EQ(4 * NUM_IDS_PER_THREAD, allIds.size());
             }
         }

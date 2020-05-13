@@ -42,7 +42,7 @@ namespace hazelcast {
                  * @throws NodeIdOutOfRangeException if node ID for all members in the cluster is out of valid range.
                  *      See "Node ID overflow" in {@link FlakeIdGenerator class documentation} for more details.
                  */
-                int64_t newId();
+                boost::future<int64_t> newId();
 
             protected:
                 FlakeIdGeneratorImpl(const std::string &serviceName, const std::string &objectName, spi::ClientContext *context);
@@ -128,7 +128,7 @@ namespace hazelcast {
                     std::atomic<int32_t> numReturned;
                 };
 
-                IdBatch newIdBatch(int32_t size);
+                boost::future<FlakeIdGeneratorImpl::IdBatch> newIdBatch(int32_t size);
 
                 int32_t batchSize;
                 std::chrono::steady_clock::duration validity;

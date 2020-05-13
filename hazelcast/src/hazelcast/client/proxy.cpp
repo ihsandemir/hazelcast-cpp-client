@@ -871,16 +871,16 @@ namespace hazelcast {
             }
 
             FlakeIdGeneratorImpl::~FlakeIdGeneratorImpl() {
-                delete block;
+                delete block.load();
             }
 
-            int64_t FlakeIdGeneratorImpl::newId() {
+            boost::future<int64_t> FlakeIdGeneratorImpl::newId() {
                 for (;;) {
                     auto b = block.load();
                     if (b) {
                         int64_t res = b->next();
                         if (res != INT64_MIN) {
-                            return res;
+                            return boost::make_ready_future(res);
                         }
                     }
 
@@ -890,19 +890,28 @@ namespace hazelcast {
                             // new block was assigned in the meantime
                             continue;
                         }
-                        block = new Block(newIdBatch(batchSize), validity);
                     }
+
+                    return newIdBatch(batchSize).then(boost::launch::deferred,
+                                                      [=](boost::future<FlakeIdGeneratorImpl::IdBatch> f) {
+                                                          std::lock_guard<std::mutex> guard(lock);
+                                                          if (b != block) {
+                                                              block = new Block(f.get(), validity);
+                                                          }
+                                                          auto newBlock = block.load();
+                                                          return newBlock->next();
+                                                      });
+
                 }
             }
 
-            FlakeIdGeneratorImpl::IdBatch FlakeIdGeneratorImpl::newIdBatch(int32_t size) {
-                std::unique_ptr<protocol::ClientMessage> requestMsg = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::encodeRequest(
+            boost::future<FlakeIdGeneratorImpl::IdBatch> FlakeIdGeneratorImpl::newIdBatch(int32_t size) {
+                std::unique_ptr<protocol::ClientMessage> request = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::encodeRequest(
                         getName(), size);
-                auto invocation = spi::impl::ClientInvocation::create(getContext(), requestMsg,
-                                                                      getName())->invoke();
-                auto response =
-                        protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(invocation.get());
-                return FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize);
+                return invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
+                    auto response = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(f.get());
+                    return FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize);
+                });
             }
 
             IQueueImpl::IQueueImpl(const std::string &instanceName, spi::ClientContext *context)
