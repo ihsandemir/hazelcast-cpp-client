@@ -1125,7 +1125,7 @@ namespace hazelcast {
                             config::ClientConnectionStrategyConfig::ASYNC);
                     HazelcastClient client(clientConfig);
 
-                            assertTrue(client.getLifecycleService().isRunning());
+                            ASSERT_TRUE(client.getLifecycleService().isRunning());
 
                     ASSERT_OPEN_EVENTUALLY(connectedLatch);
 
@@ -1833,7 +1833,7 @@ namespace hazelcast {
                 serialization::pimpl::Data data = ss1.toData<Parent>(&parent);
 
                 // cached class definition of Child and the class definition from data coming from ss1 should be compatible
-                        assertEquals(parent, *ss2.toObject<Parent>(data));
+                        ASSERT_EQ(parent, *ss2.toObject<Parent>(data));
 
             }
         }

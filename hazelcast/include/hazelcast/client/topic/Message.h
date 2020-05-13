@@ -49,7 +49,7 @@ namespace hazelcast {
                     return name;
                 }
 
-                std::string &getName() const {
+                const std::string &getName() const {
                     return name;
                 }
 

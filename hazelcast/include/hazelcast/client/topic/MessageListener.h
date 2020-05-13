@@ -39,8 +39,7 @@ namespace hazelcast {
              *
              * @param message the message that is received for the added topic
              */
-            template <typename E>
-            class MessageListener {
+            class HAZELCAST_API MessageListener {
             public:
                 virtual ~MessageListener() { }
 
@@ -51,7 +50,7 @@ namespace hazelcast {
                 *
                 * @param message the message that is received for the added topic
                 */
-                virtual void onMessage(std::unique_ptr<Message<E> > &&message) = 0;
+                virtual void onMessage(Message &&message) = 0;
             };
 
         }

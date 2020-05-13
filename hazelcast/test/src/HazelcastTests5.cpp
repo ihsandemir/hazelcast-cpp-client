@@ -1115,7 +1115,7 @@ namespace hazelcast {
                 }
 
                 static void tryPutThread(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     bool result = pMap->tryPut("key1", "value3", std::chrono::seconds(1)).get();
                     if (!result) {
@@ -1124,7 +1124,7 @@ namespace hazelcast {
                 }
 
                 static void tryRemoveThread(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     bool result = pMap->tryRemove("key2", std::chrono::seconds(1)).get();
                     if (!result) {
@@ -1133,21 +1133,21 @@ namespace hazelcast {
                 }
 
                 static void testLockThread(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     pMap->tryPut("key1", "value2", std::chrono::milliseconds(1)).get();
                     latch1->count_down();
                 }
 
                 static void testLockTTLThread(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     pMap->tryPut("key1", "value2", std::chrono::seconds(5)).get();
                     latch1->count_down();
                 }
 
                 static void testLockTTL2Thread(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     if (!pMap->tryLock("key1").get()) {
                         latch1->count_down();
@@ -1158,7 +1158,7 @@ namespace hazelcast {
                 }
 
                 static void testMapTryLockThread1(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     if (!pMap->tryLock("key1", std::chrono::milliseconds(2)).get()) {
                         latch1->count_down();
@@ -1166,7 +1166,7 @@ namespace hazelcast {
                 }
 
                 static void testMapTryLockThread2(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     if (pMap->tryLock("key1", std::chrono::seconds(20)).get()) {
                         latch1->count_down();
@@ -1174,7 +1174,7 @@ namespace hazelcast {
                 }
 
                 static void testMapForceUnlockThread(hazelcast::util::ThreadArgs &args) {
-                    boost::latch *latch1 = (boost::latch *) args.arg0;
+                    auto *latch1 = (boost::latch *) args.arg0;
                     IMap *pMap = (IMap *) args.arg1;
                     pMap->forceUnlock("key1").get();
                     latch1->count_down();

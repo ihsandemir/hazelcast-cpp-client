@@ -412,19 +412,18 @@ namespace hazelcast {
                                                                                            serialization::pimpl::Data &&key)
                     : name(name), includeValue(includeValue), key(key) {}
 
-            std::string ReliableTopicImpl::TOPIC_RB_PREFIX = "_hz_rb_";
 
             ReliableTopicImpl::ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context)
-                    : proxy::ProxyImpl("hz:impl:topicService", instanceName, context),
+                    : proxy::ProxyImpl(ReliableTopic::SERVICE_NAME, instanceName, context),
                       logger(context->getLogger()),
                       config(context->getClientConfig().getReliableTopicConfig(instanceName)) {
-                ringbuffer = context->getHazelcastClientImplementation()->getRingbuffer<topic::impl::reliable::ReliableTopicMessage>(TOPIC_RB_PREFIX + name);
+                ringbuffer = context->getHazelcastClientImplementation()->getDistributedObject<Ringbuffer>(
+                        std::string(TOPIC_RB_PREFIX) + name);
             }
 
-            boost::future<void> ReliableTopicImpl::publish(const serialization::pimpl::Data &data) {
-                std::unique_ptr<Address> nullAddress;
-                topic::impl::reliable::ReliableTopicMessage message(data, nullAddress);
-                ringbuffer->add(message);
+            boost::future<void> ReliableTopicImpl::publish(serialization::pimpl::Data &&data) {
+                topic::impl::reliable::ReliableTopicMessage message(std::move(data), nullptr);
+                return toVoidFuture(ringbuffer->add(message));
             }
 
             const std::string ClientPNCounterProxy::SERVICE_NAME = "hz:impl:PNCounterService";
@@ -1872,7 +1871,7 @@ namespace hazelcast {
         namespace topic {
             namespace impl {
                 namespace reliable {
-                    ReliableTopicExecutor::ReliableTopicExecutor(Ringbuffer<ReliableTopicMessage> &rb,
+                    ReliableTopicExecutor::ReliableTopicExecutor(const std::shared_ptr<Ringbuffer> &rb,
                                                                  util::ILogger &logger)
                             : ringbuffer(rb), q(10), shutdown(false) {
                         runnerThread = std::thread([&]() { Task(ringbuffer, q, shutdown).run(); });
@@ -1882,13 +1881,12 @@ namespace hazelcast {
                         stop();
                     }
 
-                    void ReliableTopicExecutor::start() {
-                    }
+                    void ReliableTopicExecutor::start() {}
 
-                    void ReliableTopicExecutor::stop() {
+                    bool ReliableTopicExecutor::stop() {
                         bool expected = false;
                         if (!shutdown.compare_exchange_strong(expected, true)) {
-                            return;
+                            return false;
                         }
 
                         topic::impl::reliable::ReliableTopicExecutor::Message m;
@@ -1897,9 +1895,10 @@ namespace hazelcast {
                         m.sequence = -1;
                         execute(m);
                         runnerThread.join();
+                        return true;
                     }
 
-                    void ReliableTopicExecutor::execute(const Message &m) {
+                    void ReliableTopicExecutor::execute(Message m) {
                         q.push(m);
                     }
 
@@ -1911,18 +1910,9 @@ namespace hazelcast {
                                 return;
                             }
                             try {
-                                proxy::RingbufferImpl<ReliableTopicMessage> &ringbufferProxy =
-                                        static_cast<proxy::RingbufferImpl<ReliableTopicMessage> &>(rb);
-                                auto future = ringbufferProxy.readManyAsync(m.sequence, 1, m.maxCount);
-                                do {
-                                    if (future.wait_for(boost::chrono::seconds(1)) == boost::future_status::ready) {
-                                        std::shared_ptr<DataArray<ReliableTopicMessage> > allMessages(
-                                                ringbufferProxy.getReadManyAsyncResponseObject(future.get()));
-
-                                        m.callback->onResponse(allMessages);
-                                        break;
-                                    }
-                                } while (!shutdown);
+                                rb->readMany(m.sequence, 1, m.maxCount).then([=] (boost::future<ringbuffer::ReadResultSet> f) {
+                                    m.callback->onResponse(f.get());
+                                }).get();
                             } catch (exception::IException &e) {
                                 m.callback->onFailure(std::current_exception());
                             }
@@ -1933,22 +1923,23 @@ namespace hazelcast {
                         return "ReliableTopicExecutor Task";
                     }
 
-                    ReliableTopicExecutor::Task::Task(Ringbuffer<ReliableTopicMessage> &rb,
+                    ReliableTopicExecutor::Task::Task(std::shared_ptr<Ringbuffer> rb,
                                                       util::BlockingConcurrentQueue<ReliableTopicExecutor::Message> &q,
-                                                      util::AtomicBoolean &shutdown) : rb(rb), q(q),
+                                                      util::AtomicBoolean &shutdown) : rb(std::move(rb)), q(q),
                                                                                        shutdown(shutdown) {}
 
-                    ReliableTopicMessage::ReliableTopicMessage() {
-                    }
+                    ReliableTopicMessage::ReliableTopicMessage() : publishTime(std::chrono::stead_clock::now()) {}
 
                     ReliableTopicMessage::ReliableTopicMessage(
-                            hazelcast::client::serialization::pimpl::Data payloadData,
-                            std::unique_ptr<Address> &address)
-                            : publishTime(util::currentTimeMillis()), publisherAddress(std::move(*address)),
-                              payload(payloadData) {
+                            hazelcast::client::serialization::pimpl::Data &&payloadData,
+                            std::unique_ptr<Address> address)
+                            : publishTime(std::chrono::stead_clock::now()), payload(payloadData) {
+                        if (address) {
+                            publisherAddress = boost::make_optional(*address);
+                        }
                     }
 
-                    int64_t ReliableTopicMessage::getPublishTime() const {
+                    std::chrono::steady_clock::time_point ReliableTopicMessage::getPublishTime() const {
                         return publishTime;
                     }
 
@@ -1956,7 +1947,7 @@ namespace hazelcast {
                         return publisherAddress;
                     }
 
-                    const serialization::pimpl::Data &ReliableTopicMessage::getPayload() const {
+                    serialization::pimpl::Data &ReliableTopicMessage::getPayload() {
                         return payload;
                     }
                 }

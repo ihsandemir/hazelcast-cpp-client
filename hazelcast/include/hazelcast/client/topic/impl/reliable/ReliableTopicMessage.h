@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-// Created by ihsan demir on 27 May 2016.
 
-#ifndef HAZELCAST_CLIENT_TOPIC_IMPL_RELIABLE_RELIABLETOPICMESSAGE_H_
-#define HAZELCAST_CLIENT_TOPIC_IMPL_RELIABLE_RELIABLETOPICMESSAGE_H_
+#=pragma once
 
 #include <memory>
 
@@ -42,15 +39,15 @@ namespace hazelcast {
                     public:
                         ReliableTopicMessage();
 
-                        ReliableTopicMessage(serialization::pimpl::Data payloadData, std::unique_ptr<Address> &address);
+                        ReliableTopicMessage(serialization::pimpl::Data &&payloadData, std::unique_ptr<Address> address);
 
-                        int64_t getPublishTime() const;
+                        std::chrono::steady_clock::time_point getPublishTime() const;
 
                         const boost::optional<Address> &getPublisherAddress() const;
 
-                        const serialization::pimpl::Data &getPayload() const;
+                        serialization::pimpl::Data &getPayload();
                     private:
-                        int64_t publishTime;
+                        std::chrono::steady_clock::time_point publishTime{}{};
                         boost::optional<Address> publisherAddress;
                         serialization::pimpl::Data payload;
                     };
@@ -79,5 +76,4 @@ namespace hazelcast {
 #pragma warning(pop)
 #endif
 
-#endif //HAZELCAST_CLIENT_TOPIC_IMPL_RELIABLE_RELIABLETOPICMESSAGE_H_
 

@@ -582,28 +582,6 @@ namespace hazelcast {
                     }
 
                 protected:
-                    class ReadOneWithLatchTask {
-                    public:
-                        ReadOneWithLatchTask(const std::shared_ptr<Ringbuffer> &clientRingbuffer,
-                                             const std::shared_ptr<boost::latch> &latch1) : clientRingbuffer(
-                                clientRingbuffer), latch1(latch1) {}
-
-                        virtual void run() {
-                            try {
-                                clientRingbuffer->readOne(0);
-                            } catch (exception::StaleSequenceException &) {
-                                latch1->count_down();
-                            } catch (std::exception &e) {
-                                std::cerr << e.what();
-                            }
-                        }
-
-                    private:
-                        std::shared_ptr<Ringbuffer> clientRingbuffer;
-                        std::shared_ptr<boost::latch> latch1;
-                        static const int CAPACITY;
-                    };
-
                     void SetUp() override {
                         std::string testName = getTestName();
                         clientRingbuffer = client->getRingbuffer(testName);
@@ -1533,71 +1511,71 @@ namespace hazelcast {
                     TEST_F(BasicPnCounterAPITest, testGetStart) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(0, pnCounter->get());
+                                ASSERT_EQ(0, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndAdd) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(0, pnCounter->getAndAdd(5));
+                                ASSERT_EQ(0, pnCounter->getAndAdd(5));
                     }
 
                     TEST_F(BasicPnCounterAPITest, testAddAndGet) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(5, pnCounter->addAndGet(5));
+                                ASSERT_EQ(5, pnCounter->addAndGet(5));
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndAddExisting) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
 
-                                assertEquals(0, pnCounter->getAndAdd(2));
-                                assertEquals(2, pnCounter->getAndAdd(3));
-                                assertEquals(5, pnCounter->get());
+                                ASSERT_EQ(0, pnCounter->getAndAdd(2));
+                                ASSERT_EQ(2, pnCounter->getAndAdd(3));
+                                ASSERT_EQ(5, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndIncrement) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(0, pnCounter->getAndIncrement());
-                                assertEquals(1, pnCounter->getAndIncrement());
-                                assertEquals(2, pnCounter->get());
+                                ASSERT_EQ(0, pnCounter->getAndIncrement());
+                                ASSERT_EQ(1, pnCounter->getAndIncrement());
+                                ASSERT_EQ(2, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testIncrementAndGet) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(1, pnCounter->incrementAndGet());
-                                assertEquals(1, pnCounter->get());
+                                ASSERT_EQ(1, pnCounter->incrementAndGet());
+                                ASSERT_EQ(1, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndDecrementFromDefault) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(0, pnCounter->getAndDecrement());
-                                assertEquals(-1, pnCounter->get());
+                                ASSERT_EQ(0, pnCounter->getAndDecrement());
+                                ASSERT_EQ(-1, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndDecrement) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(1, pnCounter->incrementAndGet());
-                                assertEquals(1, pnCounter->getAndDecrement());
-                                assertEquals(0, pnCounter->get());
+                                ASSERT_EQ(1, pnCounter->incrementAndGet());
+                                ASSERT_EQ(1, pnCounter->getAndDecrement());
+                                ASSERT_EQ(0, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndSubtract) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(0, pnCounter->getAndSubtract(2));
-                                assertEquals(-2, pnCounter->get());
+                                ASSERT_EQ(0, pnCounter->getAndSubtract(2));
+                                ASSERT_EQ(-2, pnCounter->get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testSubtractAndGet) {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                assertEquals(-3, pnCounter->subtractAndGet(3));
+                                ASSERT_EQ(-3, pnCounter->subtractAndGet(3));
                     }
 
                     TEST_F(BasicPnCounterAPITest, testReset) {
@@ -1657,7 +1635,7 @@ namespace hazelcast {
 
                         pnCounter->addAndGet(5);
 
-                                assertEquals(5, pnCounter->get());
+                                ASSERT_EQ(5, pnCounter->get());
 
                         std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
 
@@ -1679,7 +1657,7 @@ namespace hazelcast {
 
                         pnCounter->addAndGet(5);
 
-                                assertEquals(5, pnCounter->get());
+                                ASSERT_EQ(5, pnCounter->get());
 
                         std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
 
@@ -1733,7 +1711,7 @@ namespace hazelcast {
                         std::shared_ptr<client::crdt::pncounter::PNCounter> counter1 = client->getPNCounter(name);
                         std::shared_ptr<client::crdt::pncounter::PNCounter> counter2 = client->getPNCounter(name);
 
-                                assertEquals(5, counter1->addAndGet(5));
+                                ASSERT_EQ(5, counter1->addAndGet(5));
 
                         ASSERT_EQ_EVENTUALLY(5, counter1->get());
                         ASSERT_EQ_EVENTUALLY(5, counter2->get());
@@ -1814,38 +1792,38 @@ namespace hazelcast {
                 SimpleListenerTest() {}
 
             protected:
-                class MyEntryListener : public EntryListener<int, int> {
+                class MyEntryListener : public EntryListener {
                 public:
                     MyEntryListener(boost::latch &mapClearedLatch) : mapClearedLatch(mapClearedLatch) {}
 
-                    virtual void entryAdded(const EntryEvent<int, int> &event) {
+                    virtual void entryAdded(const EntryEvent &event) {
                     }
 
-                    virtual void entryRemoved(const EntryEvent<int, int> &event) {
+                    virtual void entryRemoved(const EntryEvent &event) {
                     }
 
-                    virtual void entryUpdated(const EntryEvent<int, int> &event) {
+                    virtual void entryUpdated(const EntryEvent &event) {
                     }
 
-                    virtual void entryEvicted(const EntryEvent<int, int> &event) {
+                    virtual void entryEvicted(const EntryEvent &event) {
                     }
 
-                    virtual void entryExpired(const EntryEvent<int, int> &event) {
+                    virtual void entryExpired(const EntryEvent &event) {
                     }
 
-                    virtual void entryMerged(const EntryEvent<int, int> &event) {
+                    virtual void entryMerged(const EntryEvent &event) {
                     }
 
                     virtual void mapEvicted(const MapEvent &event) {
                     }
 
                     virtual void mapCleared(const MapEvent &event) {
-                        assertEquals("testDeregisterListener", event.getName());
-                        assertEquals(EntryEventType::CLEAR_ALL, event.getEventType());
+                        ASSERT_EQ("testDeregisterListener", event.getName());
+                        ASSERT_EQ(EntryEvent::type::CLEAR_ALL, event.getEventType());
                         std::string hostName = event.getMember().getAddress().getHost();
-                        assertTrue(hostName == "127.0.0.1" || hostName == "localhost");
-                        assertEquals(5701, event.getMember().getAddress().getPort());
-                        assertEquals(1, event.getNumberOfEntriesAffected());
+                        ASSERT_TRUE(hostName == "127.0.0.1" || hostName == "localhost");
+                        ASSERT_EQ(5701, event.getMember().getAddress().getPort());
+                        ASSERT_EQ(1, event.getNumberOfEntriesAffected());
                         std::cout << "Map cleared event received:" << event << std::endl;
                         mapClearedLatch.count_down();
                     }
@@ -2056,7 +2034,7 @@ namespace hazelcast {
 
                         assertOpenEventually(mapClearedLatch);
 
-                        assertTrue(map.removeEntryListener(listenerRegistrationId));
+                        ASSERT_TRUE(map.removeEntryListener(listenerRegistrationId));
             }
 
             INSTANTIATE_TEST_SUITE_P(All,
@@ -2115,8 +2093,8 @@ namespace hazelcast {
 
             TEST_F (FlakeIdGeneratorApiTest, testInit) {
                 int64_t currentId = flakeIdGenerator.newId();
-                        assertTrue(flakeIdGenerator.init(currentId / 2));
-                        assertFalse(flakeIdGenerator.init(currentId * 2));
+                        ASSERT_TRUE(flakeIdGenerator.init(currentId / 2));
+                        ASSERT_FALSE(flakeIdGenerator.init(currentId * 2));
             }
 
             TEST_F (FlakeIdGeneratorApiTest, testSmoke) {
@@ -2416,9 +2394,9 @@ namespace hazelcast {
 //                    return true;
 //                }
 //            });
-//            assertTrue(b);
-//            assertTrue(pass.get());
-//            assertTrue(map.tryPut("var", 1, 0, TimeUnit.SECONDS));
+//            ASSERT_TRUE(b);
+//            ASSERT_TRUE(pass.get());
+//            ASSERT_TRUE(map.tryPut("var", 1, 0, TimeUnit.SECONDS));
 //        }
 
             TEST_F(ClientTxnMapTest, testKeySetValues) {
