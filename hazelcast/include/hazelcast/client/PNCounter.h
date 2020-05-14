@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "hazelcast/client/proxy/ClientPNCounterProxy.h"
+#include "hazelcast/client/proxy/PNCounterImpl.h"
 
 namespace hazelcast {
     namespace client {
@@ -68,12 +68,12 @@ namespace hazelcast {
  *
  * @since 3.10
  */
-        class HAZELCAST_API PNCounter : public proxy::ClientPNCounterProxy {
+        class HAZELCAST_API PNCounter : public proxy::PNCounterImpl {
             friend class impl::HazelcastClientInstanceImpl;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:PNCounterService";
         private:
-            PNCounter(const std::string &objectName, spi::ClientContext *context) : ClientPNCounterProxy(
+            PNCounter(const std::string &objectName, spi::ClientContext *context) : PNCounterImpl(
                     SERVICE_NAME, objectName, context) {}
         };
     }

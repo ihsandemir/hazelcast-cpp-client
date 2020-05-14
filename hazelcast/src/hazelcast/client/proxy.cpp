@@ -33,7 +33,7 @@
 #include <limits.h>
 
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
-#include "hazelcast/client/proxy/ClientPNCounterProxy.h"
+#include "hazelcast/client/proxy/PNCounterImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/spi/ClientListenerService.h"
@@ -300,22 +300,22 @@ namespace hazelcast {
                 return toVoidFuture(ringbuffer->add(message));
             }
 
-            const std::shared_ptr<std::set<Address> > ClientPNCounterProxy::EMPTY_ADDRESS_LIST(
+            const std::shared_ptr<std::set<Address> > PNCounterImpl::EMPTY_ADDRESS_LIST(
                     new std::unordered_set<Address>());
 
-            ClientPNCounterProxy::ClientPNCounterProxy(const std::string &serviceName, const std::string &objectName,
-                                                       spi::ClientContext *context)
+            PNCounterImpl::PNCounterImpl(const std::string &serviceName, const std::string &objectName,
+                                         spi::ClientContext *context)
                     : ProxyImpl(serviceName, objectName, context), maxConfiguredReplicaCount(0),
                       observedClock(std::shared_ptr<cluster::impl::VectorClock>(new cluster::impl::VectorClock())),
                       logger(context->getLogger()) {
             }
 
-            std::ostream &operator<<(std::ostream &os, const ClientPNCounterProxy &proxy) {
+            std::ostream &operator<<(std::ostream &os, const PNCounterImpl &proxy) {
                 os << "PNCounter{name='" << proxy.getName() << "\'}";
                 return os;
             }
 
-            int64_t ClientPNCounterProxy::get() {
+            int64_t PNCounterImpl::get() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
@@ -330,7 +330,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::getAndAdd(int64_t delta) {
+            int64_t PNCounterImpl::getAndAdd(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
@@ -346,7 +346,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::addAndGet(int64_t delta) {
+            int64_t PNCounterImpl::addAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
@@ -363,7 +363,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::getAndSubtract(int64_t delta) {
+            int64_t PNCounterImpl::getAndSubtract(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
@@ -381,7 +381,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::subtractAndGet(int64_t delta) {
+            int64_t PNCounterImpl::subtractAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
@@ -399,7 +399,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::decrementAndGet() {
+            int64_t PNCounterImpl::decrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
@@ -416,7 +416,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::incrementAndGet() {
+            int64_t PNCounterImpl::incrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
@@ -433,7 +433,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::getAndDecrement() {
+            int64_t PNCounterImpl::getAndDecrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
@@ -450,7 +450,7 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            int64_t ClientPNCounterProxy::getAndIncrement() {
+            int64_t PNCounterImpl::getAndIncrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
@@ -467,12 +467,12 @@ namespace hazelcast {
                 return resultParameters.value;
             }
 
-            void ClientPNCounterProxy::reset() {
+            void PNCounterImpl::reset() {
                 observedClock = std::shared_ptr<cluster::impl::VectorClock>(new cluster::impl::VectorClock());
             }
 
             std::shared_ptr<Address>
-            ClientPNCounterProxy::getCRDTOperationTarget(const std::set<Address> &excludedAddresses) {
+            PNCounterImpl::getCRDTOperationTarget(const std::set<Address> &excludedAddresses) {
                 if (currentTargetReplicaAddress.get().get() != NULL &&
                     excludedAddresses.find(*currentTargetReplicaAddress.get()) == excludedAddresses.end()) {
                     return currentTargetReplicaAddress;
@@ -489,7 +489,7 @@ namespace hazelcast {
             }
 
             std::shared_ptr<Address>
-            ClientPNCounterProxy::chooseTargetReplica(const std::set<Address> &excludedAddresses) {
+            PNCounterImpl::chooseTargetReplica(const std::set<Address> &excludedAddresses) {
                 std::vector<Address> replicaAddresses = getReplicaAddresses(excludedAddresses);
                 if (replicaAddresses.empty()) {
                     return std::shared_ptr<Address>();
@@ -499,7 +499,7 @@ namespace hazelcast {
                 return std::shared_ptr<Address>(new Address(replicaAddresses[randomReplicaIndex]));
             }
 
-            std::vector<Address> ClientPNCounterProxy::getReplicaAddresses(const std::set<Address> &excludedAddresses) {
+            std::vector<Address> PNCounterImpl::getReplicaAddresses(const std::set<Address> &excludedAddresses) {
                 std::vector<Member> dataMembers = getContext().getClientClusterService().getMembers(
                         *cluster::memberselector::MemberSelectors::DATA_MEMBER_SELECTOR);
                 int32_t replicaCount = getMaxConfiguredReplicaCount();
@@ -515,7 +515,7 @@ namespace hazelcast {
                 return replicaAddresses;
             }
 
-            int32_t ClientPNCounterProxy::getMaxConfiguredReplicaCount() {
+            int32_t PNCounterImpl::getMaxConfiguredReplicaCount() {
                 if (maxConfiguredReplicaCount > 0) {
                     return maxConfiguredReplicaCount;
                 } else {
@@ -528,9 +528,9 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            ClientPNCounterProxy::invokeGetInternal(std::shared_ptr<std::set<Address> > excludedAddresses,
-                                                    std::exception_ptr lastException,
-                                                    const std::shared_ptr<Address> &target) {
+            PNCounterImpl::invokeGetInternal(std::shared_ptr<std::set<Address> > excludedAddresses,
+                                             std::exception_ptr lastException,
+                                             const std::shared_ptr<Address> &target) {
                 if (target.get() == NULL) {
                     if (lastException) {
                         std::rethrow_exception(lastException);
@@ -559,10 +559,10 @@ namespace hazelcast {
 
 
             protocol::ClientMessage
-            ClientPNCounterProxy::invokeAddInternal(int64_t delta, bool getBeforeUpdate,
-                                                    std::shared_ptr<std::set<Address> > excludedAddresses,
-                                                    std::exception_ptr lastException,
-                                                    const std::shared_ptr<Address> &target) {
+            PNCounterImpl::invokeAddInternal(int64_t delta, bool getBeforeUpdate,
+                                             std::shared_ptr<std::set<Address> > excludedAddresses,
+                                             std::exception_ptr lastException,
+                                             const std::shared_ptr<Address> &target) {
                 if (target.get() == NULL) {
                     if (lastException) {
                         std::rethrow_exception(lastException);
@@ -591,7 +591,7 @@ namespace hazelcast {
                 }
             }
 
-            void ClientPNCounterProxy::updateObservedReplicaTimestamps(
+            void PNCounterImpl::updateObservedReplicaTimestamps(
                     const std::vector<std::pair<std::string, int64_t> > &receivedLogicalTimestamps) {
                 std::shared_ptr<cluster::impl::VectorClock> received = toVectorClock(receivedLogicalTimestamps);
                 for (;;) {
@@ -605,13 +605,13 @@ namespace hazelcast {
                 }
             }
 
-            std::shared_ptr<cluster::impl::VectorClock> ClientPNCounterProxy::toVectorClock(
+            std::shared_ptr<cluster::impl::VectorClock> PNCounterImpl::toVectorClock(
                     const std::vector<std::pair<std::string, int64_t> > &replicaLogicalTimestamps) {
                 return std::shared_ptr<cluster::impl::VectorClock>(
                         new cluster::impl::VectorClock(replicaLogicalTimestamps));
             }
 
-            std::shared_ptr<Address> ClientPNCounterProxy::getCurrentTargetReplicaAddress() {
+            std::shared_ptr<Address> PNCounterImpl::getCurrentTargetReplicaAddress() {
                 return currentTargetReplicaAddress.get();
             }
 

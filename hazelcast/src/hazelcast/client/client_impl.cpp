@@ -46,7 +46,7 @@
 #include <hazelcast/client/executor/impl/ExecutorServiceProxyFactory.h>
 #include <hazelcast/client/cluster/impl/ClusterDataSerializerHook.h>
 #include <hazelcast/client/exception/ProtocolExceptions.h>
-#include "hazelcast/client/proxy/ClientPNCounterProxy.h"
+#include "hazelcast/client/proxy/PNCounterImpl.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
 #include "hazelcast/client/spi/impl/SmartClientInvocationService.h"

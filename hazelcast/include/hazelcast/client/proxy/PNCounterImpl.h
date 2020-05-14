@@ -30,9 +30,9 @@ namespace hazelcast {
             }
         }
         namespace proxy {
-            class ClientPNCounterProxy : public ProxyImpl {
+            class PNCounterImpl : public ProxyImpl {
             public:
-                friend std::ostream &operator<<(std::ostream &os, const ClientPNCounterProxy &proxy);
+                friend std::ostream &operator<<(std::ostream &os, const PNCounterImpl &proxy);
 
                 /**
                  * Returns the current value of the counter.
@@ -178,8 +178,8 @@ namespace hazelcast {
                 std::shared_ptr<Address> HAZELCAST_API getCurrentTargetReplicaAddress();
 
             protected:
-                ClientPNCounterProxy(const std::string &serviceName, const std::string &objectName,
-                                     spi::ClientContext *context);
+                PNCounterImpl(const std::string &serviceName, const std::string &objectName,
+                              spi::ClientContext *context);
 
                 static const std::shared_ptr<std::unordered_set<Address> > EMPTY_ADDRESS_LIST;
 

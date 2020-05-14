@@ -38,7 +38,7 @@
 #include <hazelcast/client/connection/Connection.h>
 #include <ClientTestSupport.h>
 #include <memory>
-#include <hazelcast/client/proxy/ClientPNCounterProxy.h>
+#include <hazelcast/client/proxy/PNCounterImpl.h>
 #include <hazelcast/client/serialization/pimpl/DataInput.h>
 #include <hazelcast/util/AddressUtil.h>
 #include <hazelcast/util/RuntimeAvailableProcessors.h>
