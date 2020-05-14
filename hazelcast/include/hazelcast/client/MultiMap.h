@@ -29,6 +29,8 @@ namespace hazelcast {
         class HAZELCAST_API MultiMap : public proxy::MultiMapImpl {
             friend class impl::HazelcastClientInstanceImpl;
         public:
+            static constexpr const char *SERVICE_NAME = "hz:impl:multiMapService";
+
             /**
             * Stores a key-value pair in the multimap.
             *

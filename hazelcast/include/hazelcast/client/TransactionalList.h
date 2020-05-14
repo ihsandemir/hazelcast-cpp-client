@@ -19,22 +19,20 @@
 
 namespace hazelcast {
     namespace client {
-
         /**
          * Transactional implementation of IList.
          */
-        template <typename E>
         class TransactionalList : public proxy::TransactionalListImpl {
             friend class TransactionContext;
-
         public:
             /**
              * Add new item to transactional list
              * @param e item
              * @return true if item is added successfully
              */
+            template<typename E>
             boost::future<bool> add(const E &e) {
-                return proxy::TransactionalListImpl::add(toData(&e));
+                return proxy::TransactionalListImpl::add(toData(e));
             }
 
             /**
@@ -42,23 +40,14 @@ namespace hazelcast {
              * @param e item
              * @return true if item is remove successfully
              */
+            template<typename E>
             boost::future<bool> remove(const E &e) {
-                return proxy::TransactionalListImpl::remove(toData(&e));
-            }
-
-            /**
-             * Returns the size of the list
-             * @return size
-             */
-            boost::future<int>  size() {
-                return proxy::TransactionalListImpl::size();
+                return proxy::TransactionalListImpl::remove(toData(e));
             }
 
         private:
-            TransactionalList(const std::string &instanceName, txn::TransactionProxy *context)
-            : proxy::TransactionalListImpl(instanceName, context) {
-
-            }
+            TransactionalList(const std::string &instanceName, txn::TransactionProxy &context)
+                    : proxy::TransactionalListImpl(instanceName, context) {}
         };
     }
 }

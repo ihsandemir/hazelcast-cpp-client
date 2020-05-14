@@ -315,7 +315,7 @@ namespace hazelcast {
                 }
 
                 void produceSomeStats(HazelcastClient &client) {
-                    IMap<int, int> map = client.getMap<int, int>(getTestName());
+                    auto map = client.getMap(getTestName());
                     produceSomeStats(map);
                 }
 
@@ -394,7 +394,7 @@ namespace hazelcast {
                 HazelcastClient client(clientConfig);
 
                 // initialize near cache
-                client.getMap<int, int>(mapName);
+                client.getMap(mapName);
 
                 // sleep twice the collection period
                 sleepSeconds(2);
@@ -493,7 +493,7 @@ namespace hazelcast {
                                             << "lastStatisticsCollectionTime value is not in correct (" << stats << ")";
 
                 // this creates empty map statistics
-                IMap<int, int> map = client->getMap<int, int>(getTestName());
+                auto map = client->getMap(getTestName());
 
                 statsMap = getStats();
                 lastStatisticsCollectionTimeString = statsMap["lastStatisticsCollectionTime"];
@@ -1973,7 +1973,7 @@ namespace hazelcast {
                 ClientConfig &clientConfig = *const_cast<ParamType &>(GetParam());
                 HazelcastClient hazelcastClient(clientConfig);
 
-                IMap<int, int> map = hazelcastClient.getMap<int, int>("testDeregisterListener");
+                auto map = hazelcastClient.getMap("testDeregisterListener");
 
                 ASSERT_FALSE(map.removeEntryListener("Unknown"));
 
@@ -2098,7 +2098,7 @@ namespace hazelcast {
                 TransactionContext context = client.newTransactionContext();
                 context.beginTransaction();
 
-                TransactionalMap<std::string, std::string> map = context.getMap<std::string, std::string>(name);
+                TransactionalMap<std::string, std::string> map = context.getMap(name);
 
                 ASSERT_EQ(map.put("key1", "value1").get(), (std::string *) nullptr);
                 ASSERT_EQ("value1", *(map.get("key1")));
@@ -2130,7 +2130,7 @@ namespace hazelcast {
 
                 context.commitTransaction();
 
-                IMap<std::string, std::string> regularMap = client.getMap<std::string, std::string>(name);
+                auto regularMap = client.getMap<std::string, std::string>(name);
                 ASSERT_TRUE(regularMap.isEmpty());
             }
 
@@ -2152,7 +2152,7 @@ namespace hazelcast {
 
                 context.commitTransaction();
 
-                IMap<std::string, std::string> regularMap = client.getMap<std::string, std::string>(name);
+                auto regularMap = client.getMap<std::string, std::string>(name);
                 ASSERT_TRUE(regularMap.isEmpty());
             }
 
@@ -2177,7 +2177,7 @@ namespace hazelcast {
 
                 context.commitTransaction();
 
-                IMap<std::string, std::string> regularMap = client.getMap<std::string, std::string>(name);
+                auto regularMap = client.getMap<std::string, std::string>(name);
                 ASSERT_TRUE(regularMap.isEmpty());
             }
 
@@ -2251,7 +2251,7 @@ namespace hazelcast {
 
                 context.commitTransaction();
 
-                IMap<std::string, std::string> regularMap = client.getMap<std::string, std::string>(name);
+                auto regularMap = client.getMap<std::string, std::string>(name);
                 ASSERT_TRUE(regularMap.containsKey("key1"));
             }
 
@@ -2305,7 +2305,7 @@ namespace hazelcast {
 
 //            @Test MTODO
 //            public void testGetForUpdate() throws TransactionException {
-//            final IMap<String, Integer> map = hz.getMap("testTxnGetForUpdate");
+//            final auto map = hz.getMap("testTxnGetForUpdate");
 //            final CountDownLatch latch1 = new CountDownLatch(1);
 //            final CountDownLatch latch2 = new CountDownLatch(1);
 //            map.put("var", 0);
@@ -2342,7 +2342,7 @@ namespace hazelcast {
 
             TEST_F(ClientTxnMapTest, testKeySetValues) {
                 std::string name = "testKeySetValues";
-                IMap<std::string, std::string> map = client.getMap<std::string, std::string>(name);
+                auto map = client.getMap<std::string, std::string>(name);
                 map.put("key1", "value1");
                 map.put("key2", "value2");
 
@@ -2365,7 +2365,7 @@ namespace hazelcast {
 
             TEST_F(ClientTxnMapTest, testKeySetAndValuesWithPredicates) {
                 std::string name = "testKeysetAndValuesWithPredicates";
-                IMap<Employee, Employee> map = client.getMap<Employee, Employee>(name);
+                auto map = client.getMap<Employee, Employee>(name);
 
                 Employee emp1("abc-123-xvz", 34);
                 Employee emp2("abc-123-xvz", 20);
@@ -2410,7 +2410,7 @@ namespace hazelcast {
 
                 context.commitTransaction();
 
-                IMap<std::string, std::string> regularMap = client.getMap<std::string, std::string>(name);
+                auto regularMap = client.getMap(name);
                 ASSERT_FALSE(regularMap.isEmpty());
             }
 

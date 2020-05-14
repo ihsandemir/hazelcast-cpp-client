@@ -23,10 +23,8 @@ namespace hazelcast {
         * Transactional implementation of IQueue.
         *
         * @see IQueue
-        * @param <E> element type
         */
-        template<typename E>
-        class TransactionalQueue : public proxy::TransactionalQueueImpl {
+        class HAZELCAST_API TransactionalQueue : public proxy::TransactionalQueueImpl {
             friend class TransactionContext;
         public:
             /**
@@ -34,17 +32,19 @@ namespace hazelcast {
             *
             * @see IQueue::offer(const E &e)
             */
-            boost::future<bool> offer(const E& e) {
-                return offer(e, 0);
+            template<typename E>
+            boost::future<bool> offer(const E &e) {
+                return offer(e, std::chrono::steady_clock::duration::zero());
             }
 
             /**
-            * Transactional implementation of IQueue::offer(const E &e, long timeoutInMillis)
+            * Transactional implementation of IQueue::offer(const E &e, std::chrono::steady_clock::duration timeout)
             *
-            * @see IQueue::offer(const E &e, long timeoutInMillis)
+            * @see IQueue::offer(const E &e, std::chrono::steady_clock::duration timeout)
             */
-            boost::future<bool> offer(const E& e, long timeoutInMillis) {
-                return proxy::TransactionalQueueImpl::offer(toData(&e), timeoutInMillis);
+            template<typename E>
+            boost::future<bool> offer(const E &e, std::chrono::steady_clock::duration timeout) {
+                return proxy::TransactionalQueueImpl::offer(toData(e), timeout);
             }
 
             /**
@@ -52,31 +52,24 @@ namespace hazelcast {
             *
             * @see IQueue::poll()
             */
+            template<typename E>
             boost::future<boost::optional<E>> poll() {
-                return poll(0);
+                return poll<E>(std::chrono::steady_clock::duration::zero());
             }
 
             /**
-            * Transactional implementation of IQueue::poll(long timeoutInMillis)
+            * Transactional implementation of IQueue::poll(std::chrono::steady_clock::duration timeout)
             *
-            * @see IQueue::poll(long timeoutInMillis)
+            * @see IQueue::poll(std::chrono::steady_clock::duration timeout)
             */
-            boost::future<boost::optional<E>> poll(long timeoutInMillis) {
-                return std::shared_ptr<E>(toObject<E>(proxy::TransactionalQueueImpl::pollData(timeoutInMillis)));
-            }
-
-            /**
-            * Transactional implementation of IQueue::size()
-            *
-            * @see IQueue::size()
-            */
-            boost::future<int>  size() {
-                return proxy::TransactionalQueueImpl::size();
+            template<typename E>
+            boost::future<boost::optional<E>> poll(std::chrono::steady_clock::duration timeout) {
+                return toObject<E>(proxy::TransactionalQueueImpl::pollData(timeout));
             }
 
         private:
-            TransactionalQueue(const std::string& name, txn::TransactionProxy *transactionProxy)
-            : proxy::TransactionalQueueImpl(name, transactionProxy) {
+            TransactionalQueue(const std::string &name, txn::TransactionProxy &transactionProxy)
+                    : proxy::TransactionalQueueImpl(name, transactionProxy) {
 
             }
         };

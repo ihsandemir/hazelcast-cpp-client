@@ -28,6 +28,8 @@ namespace hazelcast {
         class HAZELCAST_API ISet : public proxy::ISetImpl {
             friend class impl::HazelcastClientInstanceImpl;
         public:
+            static constexpr const char *SERVICE_NAME = "hz:impl:setService";
+
             /**
             * Warning 1: If listener should do a time consuming operation, off-load the operation to another thread.
             * otherwise it will slow down the system.

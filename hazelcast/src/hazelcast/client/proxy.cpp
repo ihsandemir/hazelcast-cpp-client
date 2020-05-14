@@ -61,11 +61,8 @@ namespace hazelcast {
         }
 
         namespace proxy {
-            PNCounter::PNCounter(const std::string &objectName, spi::ClientContext *context) : ClientPNCounterProxy(
-                    SERVICE_NAME, objectName, context) {}
-
             MultiMapImpl::MultiMapImpl(const std::string &instanceName, spi::ClientContext *context)
-                    : ProxyImpl("hz:impl:multiMapService", instanceName, context) {
+                    : ProxyImpl(MultiMap::SERVICE_NAME, instanceName, context) {
                 // TODO: remove this line once the client instance getDistributedObject works as expected in Java for this proxy type
                 lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
             }
@@ -1051,33 +1048,46 @@ namespace hazelcast {
 
             ProxyImpl::ProxyImpl(const std::string &serviceName, const std::string &objectName,
                                  spi::ClientContext *context)
-                    : ClientProxy(objectName, serviceName, *context) {}
+                    : ClientProxy(objectName, serviceName, *context), SerializingProxy(*context, objectName) {}
 
             ProxyImpl::~ProxyImpl() {}
 
-            int ProxyImpl::getPartitionId(const serialization::pimpl::Data &key) {
-                return getContext().getPartitionService().getPartitionId(key);
+            SerializingProxy::SerializingProxy(spi::ClientContext &context, const std::string &objectName)
+                    : serializationService_(context.getSerializationService()),
+                      partitionService_(context.getPartitionService()), name_(objectName), context_(context) {}
+
+            int SerializingProxy::getPartitionId(const serialization::pimpl::Data &key) {
+                return partitionService_.getPartitionId(key);
             }
 
-            boost::future<protocol::ClientMessage> ProxyImpl::invokeOnPartition(
+            boost::future<protocol::ClientMessage> SerializingProxy::invokeOnPartition(
                     std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
                 try {
-                    return spi::impl::ClientInvocation::create(getContext(), request, getName(), partitionId)->invoke();
+                    return spi::impl::ClientInvocation::create(context_, request, name_, partitionId)->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
                 }
             }
 
-            boost::future<protocol::ClientMessage> ProxyImpl::invoke(std::unique_ptr<protocol::ClientMessage> &request) {
+            boost::future<protocol::ClientMessage> SerializingProxy::invoke(std::unique_ptr<protocol::ClientMessage> &request) {
                 try {
-                    return spi::impl::ClientInvocation::create(getContext(), request, getName())->invoke();
+                    return spi::impl::ClientInvocation::create(context_, request, name_)->invoke();
+                } catch (exception::IException &) {
+                    util::ExceptionUtil::rethrow(std::current_exception());
+                }
+            }
+
+            boost::future<protocol::ClientMessage> SerializingProxy::invokeOnConnection(std::unique_ptr<protocol::ClientMessage> &request,
+                                                                      std::shared_ptr<connection::Connection> connection) {
+                try {
+                    return spi::impl::ClientInvocation::create(context_, request, name_, connection)->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
                 }
             }
 
             boost::future<protocol::ClientMessage>
-            ProxyImpl::invokeOnKeyOwner(std::unique_ptr<protocol::ClientMessage> &request,
+            SerializingProxy::invokeOnKeyOwner(std::unique_ptr<protocol::ClientMessage> &request,
                                         const serialization::pimpl::Data &keyData) {
                 try {
                     return invokeOnPartition(request, getPartitionId(keyData));
@@ -1087,9 +1097,9 @@ namespace hazelcast {
             }
 
             boost::future<protocol::ClientMessage>
-            ProxyImpl::invokeOnAddress(std::unique_ptr<protocol::ClientMessage> &request, const Address &address) {
+            SerializingProxy::invokeOnAddress(std::unique_ptr<protocol::ClientMessage> &request, const Address &address) {
                 try {
-                    auto invocation = spi::impl::ClientInvocation::create(getContext(), request, getName(), address);
+                    auto invocation = spi::impl::ClientInvocation::create(context_, request, name_, address);
                     return invocation->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
@@ -1569,10 +1579,8 @@ namespace hazelcast {
             }
 
             TransactionalQueueImpl::TransactionalQueueImpl(const std::string &name,
-                                                           txn::TransactionProxy *transactionProxy)
-                    : TransactionalObject("hz:impl:queueService", name, transactionProxy) {
-
-            }
+                                                           txn::TransactionProxy &transactionProxy)
+                    : TransactionalObject(IQueue::SERVICE_NAME, name, transactionProxy) {}
 
             boost::future<bool> TransactionalQueueImpl::offer(const serialization::pimpl::Data &e, std::chrono::steady_clock::duration timeout) {
                 auto request = protocol::codec::TransactionalQueueOfferCodec::encodeRequest(
@@ -1599,7 +1607,7 @@ namespace hazelcast {
             }
 
             ISetImpl::ISetImpl(const std::string &instanceName, spi::ClientContext *clientContext)
-                    : ProxyImpl("hz:impl:setService", instanceName, clientContext) {
+                    : ProxyImpl(ISet::SERVICE_NAME, instanceName, clientContext) {
                 serialization::pimpl::Data keyData = getContext().getSerializationService().toData<std::string>(
                         &instanceName);
                 partitionId = getPartitionId(keyData);

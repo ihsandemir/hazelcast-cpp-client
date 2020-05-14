@@ -26,21 +26,29 @@ namespace hazelcast {
         }
         namespace proxy {
             class HAZELCAST_API TransactionalMultiMapImpl : public TransactionalObject {
+            public:
+                /**
+                * Transactional implementation of Multimap#size().
+                *
+                * @see Multimap#size()
+                */
+                boost::future<int> size();
+
             protected:
-                TransactionalMultiMapImpl(const std::string &name, txn::TransactionProxy *transactionProxy);
+                TransactionalMultiMapImpl(const std::string &name, txn::TransactionProxy &transactionProxy);
 
-                boost::future<bool> put(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
+                boost::future<bool>
+                putData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                std::vector<serialization::pimpl::Data> getData(const serialization::pimpl::Data &key);
+                boost::future<std::vector<serialization::pimpl::Data>> getData(const serialization::pimpl::Data &key);
 
                 boost::future<bool>
                 remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                boost::future<std::vector<serialization::pimpl::Data>> removeData(const serialization::pimpl::Data &key);
+                boost::future<std::vector<serialization::pimpl::Data>>
+                removeData(const serialization::pimpl::Data &key);
 
                 boost::future<int> valueCount(const serialization::pimpl::Data &key);
-
-                boost::future<int> size();
             };
         }
     }

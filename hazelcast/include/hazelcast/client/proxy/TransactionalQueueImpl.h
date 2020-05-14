@@ -22,13 +22,19 @@ namespace hazelcast {
         namespace proxy {
             class HAZELCAST_API TransactionalQueueImpl : public TransactionalObject {
             public:
-                TransactionalQueueImpl(const std::string &name, txn::TransactionProxy *transactionProxy);
+                /**
+                * Transactional implementation of IQueue::size()
+                *
+                * @see IQueue::size()
+                */
+                boost::future<int> size();
+
+            public:
+                TransactionalQueueImpl(const std::string &name, txn::TransactionProxy &transactionProxy);
 
                 boost::future<bool> offer(const serialization::pimpl::Data &e, std::chrono::steady_clock::duration timeout);
 
                 boost::future<std::unique_ptr<serialization::pimpl::Data>> pollData(std::chrono::steady_clock::duration timeout);
-
-                boost::future<int> size();
             };
         }
     }

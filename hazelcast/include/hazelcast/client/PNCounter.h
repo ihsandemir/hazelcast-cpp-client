@@ -16,12 +16,11 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "hazelcast/client/proxy/ClientPNCounterProxy.h"
 
-#include "hazelcast/client/spi/ClientProxy.h"
-#include "hazelcast/client/DistributedObject.h"
-
-/**
+namespace hazelcast {
+    namespace client {
+        /**
  * PN (Positive-Negative) CRDT counter.
  * <p>
  * The counter supports adding and subtracting values as well as
@@ -69,16 +68,13 @@
  *
  * @since 3.10
  */
-#include "hazelcast/client/proxy/ClientPNCounterProxy.h"
-
-namespace hazelcast {
-    namespace client {
         class HAZELCAST_API PNCounter : public proxy::ClientPNCounterProxy {
+            friend class impl::HazelcastClientInstanceImpl;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:PNCounterService";
-
         private:
-            PNCounter(const std::string &objectName, spi::ClientContext *context);
+            PNCounter(const std::string &objectName, spi::ClientContext *context) : ClientPNCounterProxy(
+                    SERVICE_NAME, objectName, context) {}
         };
     }
 }

@@ -85,14 +85,6 @@ namespace hazelcast {
             return clientImpl->getName();
         }
 
-        FlakeIdGenerator HazelcastClient::getFlakeIdGenerator(const std::string &name) {
-            return clientImpl->getFlakeIdGenerator(name);
-        }
-
-        std::shared_ptr<crdt::pncounter::PNCounter> HazelcastClient::getPNCounter(const std::string &name) {
-            return clientImpl->getPNCounter(name);
-        }
-
         ClientConfig &HazelcastClient::getClientConfig() {
             return clientImpl->getClientConfig();
         }

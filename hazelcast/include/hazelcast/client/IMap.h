@@ -247,8 +247,8 @@ namespace hazelcast {
             * @param newValue
             * @return <tt>true</tt> if the value was replaced
             */
-            template<typename K, typename V>
-            boost::future<bool> replace(const K &key, const V &oldValue, const V &newValue) {
+            template<typename K, typename V, typename N>
+            boost::future<bool> replace(const K &key, const V &oldValue, const N &newValue) {
                 return replaceIfSameInternal(toData(key), toData(oldValue), toData(newValue));
             }
 

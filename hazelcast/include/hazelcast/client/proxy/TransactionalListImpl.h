@@ -22,13 +22,17 @@ namespace hazelcast {
         namespace proxy {
             class HAZELCAST_API TransactionalListImpl : public proxy::TransactionalObject {
             public:
-                TransactionalListImpl(const std::string& objectName, txn::TransactionProxy *context);
+                /**
+                 * Returns the size of the list
+                 * @return size
+                 */
+                boost::future<int> size();
+            public:
+                TransactionalListImpl(const std::string& objectName, txn::TransactionProxy &context);
 
                 boost::future<bool> add(const serialization::pimpl::Data& e);
 
                 boost::future<bool> remove(const serialization::pimpl::Data& e);
-
-                boost::future<int>  size();
             };
         }
     }

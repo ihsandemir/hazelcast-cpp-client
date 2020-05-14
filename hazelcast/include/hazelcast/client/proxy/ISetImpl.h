@@ -51,7 +51,6 @@ namespace hazelcast {
                 */
                 boost::future<void> clear();
             protected:
-
                 ISetImpl(const std::string& instanceName, spi::ClientContext *clientContext);
 
                 boost::future<std::string>

@@ -22,7 +22,6 @@ namespace hazelcast {
         /**
         * Transactional implementation of ISet.
         */
-        template<typename E>
         class TransactionalSet : public proxy::TransactionalSetImpl {
             friend class TransactionContext;
         public:
@@ -31,8 +30,9 @@ namespace hazelcast {
             * @param e item
             * @return true if item is added successfully
             */
-            boost::future<bool> add(const E& e) {
-                return proxy::TransactionalSetImpl::add(toData(&e));
+            template<typename E>
+            boost::future<bool> add(const E &e) {
+                return proxy::TransactionalSetImpl::addData(toData(e));
             }
 
             /**
@@ -40,25 +40,15 @@ namespace hazelcast {
             * @param e item
             * @return true if item is remove successfully
             */
-            boost::future<bool> remove(const E& e) {
-                return proxy::TransactionalSetImpl::remove(toData(&e));
-            }
-
-            /**
-            * Returns the size of the set
-            * @return size
-            */
-            boost::future<int>  size() {
-                return proxy::TransactionalSetImpl::size();
+            template<typename E>
+            boost::future<bool> remove(const E &e) {
+                return proxy::TransactionalSetImpl::removeData(toData(e));
             }
 
         private:
-            TransactionalSet(const std::string& name, txn::TransactionProxy *transactionProxy)
-            : TransactionalSetImpl(name, transactionProxy) {
-
-            }
+            TransactionalSet(const std::string &name, txn::TransactionProxy &transactionProxy)
+                    : TransactionalSetImpl(name, transactionProxy) {}
         };
-
     }
 }
 
