@@ -158,7 +158,7 @@ namespace hazelcast {
                 auto key = std::make_pair(serviceName, name);
                 std::shared_ptr<T> obj = std::static_pointer_cast<T>(txnObjectMap.get(key));
                 if (!obj) {
-                    obj = std::make_shared<T>(name, transaction);
+                    obj = std::shared_ptr<T>(new T(name, transaction));
                     txnObjectMap.put(key, obj);
                 }
 
