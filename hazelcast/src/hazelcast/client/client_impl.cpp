@@ -46,8 +46,6 @@
 #include <hazelcast/client/executor/impl/ExecutorServiceProxyFactory.h>
 #include <hazelcast/client/cluster/impl/ClusterDataSerializerHook.h>
 #include <hazelcast/client/exception/ProtocolExceptions.h>
-
-#include "hazelcast/client/crdt/pncounter/impl/PNCounterProxyFactory.h"
 #include "hazelcast/client/proxy/ClientPNCounterProxy.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
@@ -364,11 +362,6 @@ namespace hazelcast {
                 return lockReferenceIdGenerator;
             }
 
-            std::shared_ptr<crdt::pncounter::PNCounter>
-            HazelcastClientInstanceImpl::getPNCounter(const std::string &name) {
-                return get<proxy::ClientPNCounterProxy>(name);
-            }
-
             spi::ProxyManager &HazelcastClientInstanceImpl::getProxyManager() {
                 return proxyManager;
             }
@@ -376,11 +369,6 @@ namespace hazelcast {
             void HazelcastClientInstanceImpl::initalizeNearCacheManager() {
                 nearCacheManager.reset(
                         new internal::nearcache::NearCacheManager(executionService, serializationService, *logger));
-            }
-
-            std::shared_ptr<IExecutorService>
-            HazelcastClientInstanceImpl::getExecutorService(const std::string &name) {
-                return get<IExecutorService>(name);
             }
 
             Client HazelcastClientInstanceImpl::getLocalEndpoint() const {

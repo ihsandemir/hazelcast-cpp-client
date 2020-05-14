@@ -33,7 +33,6 @@
 #include <limits.h>
 
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
-#include "hazelcast/client/crdt/pncounter/impl/PNCounterProxyFactory.h"
 #include "hazelcast/client/proxy/ClientPNCounterProxy.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
@@ -61,22 +60,10 @@ namespace hazelcast {
             }
         }
 
-        namespace crdt {
-            namespace pncounter {
-                namespace impl {
-                    PNCounterProxyFactory::PNCounterProxyFactory(spi::ClientContext *clientContext) : clientContext(
-                            clientContext) {}
-
-                    std::shared_ptr<spi::ClientProxy> PNCounterProxyFactory::create(const std::string &id) {
-                        return std::shared_ptr<spi::ClientProxy>(
-                                new proxy::ClientPNCounterProxy(proxy::ClientPNCounterProxy::SERVICE_NAME, id,
-                                                                clientContext));
-                    }
-                }
-            }
-        }
-
         namespace proxy {
+            PNCounter::PNCounter(const std::string &objectName, spi::ClientContext *context) : ClientPNCounterProxy(
+                    SERVICE_NAME, objectName, context) {}
+
             MultiMapImpl::MultiMapImpl(const std::string &instanceName, spi::ClientContext *context)
                     : ProxyImpl("hz:impl:multiMapService", instanceName, context) {
                 // TODO: remove this line once the client instance getDistributedObject works as expected in Java for this proxy type
@@ -316,9 +303,8 @@ namespace hazelcast {
                 return toVoidFuture(ringbuffer->add(message));
             }
 
-            const std::string ClientPNCounterProxy::SERVICE_NAME = "hz:impl:PNCounterService";
             const std::shared_ptr<std::set<Address> > ClientPNCounterProxy::EMPTY_ADDRESS_LIST(
-                    new std::set<Address>());
+                    new std::unordered_set<Address>());
 
             ClientPNCounterProxy::ClientPNCounterProxy(const std::string &serviceName, const std::string &objectName,
                                                        spi::ClientContext *context)

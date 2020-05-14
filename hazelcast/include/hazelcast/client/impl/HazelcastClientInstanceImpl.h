@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <vector>
 
-#include "hazelcast/client/crdt/pncounter/PNCounter.h"
 #include "hazelcast/client/spi/impl/sequence/CallIdSequence.h"
 #include "hazelcast/client/map/impl/ClientMapProxyFactory.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
@@ -32,6 +31,7 @@
 #include "hazelcast/client/ISet.h"
 #include "hazelcast/client/IList.h"
 #include "hazelcast/client/ITopic.h"
+#include "hazelcast/client/PNCounter.h"
 #include "hazelcast/client/TransactionOptions.h"
 #include "hazelcast/client/TransactionContext.h"
 #include "hazelcast/client/Cluster.h"
@@ -130,8 +130,6 @@ namespace hazelcast {
                 std::shared_ptr<T> getDistributedObject(const std::string& name) {
                     return proxyManager.getOrCreateProxy<T>(T::SERVICE_NAME, name);
                 }
-
-                std::shared_ptr<crdt::pncounter::PNCounter> getPNCounter(const std::string& name);
 
                 /**
                 *

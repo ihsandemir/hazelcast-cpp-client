@@ -139,9 +139,9 @@ namespace hazelcast {
                     });
                 }
 
-                boost::future<void> toVoidFuture(boost::future<protocol::ClientMessage> messageFuture) {
-                    return messageFuture.then(boost::launch::deferred,
-                                              [](boost::future<protocol::ClientMessage> f) { f.get(); });
+                template<typename T>
+                boost::future<void> toVoidFuture(boost::future<T> messageFuture) {
+                    return messageFuture.then(boost::launch::deferred, [](boost::future<T> f) { f.get(); });
                 }
 
                 template <typename T>

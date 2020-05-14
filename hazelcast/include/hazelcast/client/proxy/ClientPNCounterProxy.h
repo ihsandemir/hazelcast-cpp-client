@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HAZELCAST_CLIENT_PROXY_CLIENTPNCOUNTERPROXY_H_
-#define HAZELCAST_CLIENT_PROXY_CLIENTPNCOUNTERPROXY_H_
+#pragma once
 
 #include <ostream>
 #include <set>
 #include <memory>
 #include <atomic>
 
-#include "hazelcast/client/crdt/pncounter/PNCounter.h"
 #include "hazelcast/client/proxy/ProxyImpl.h"
 
 namespace hazelcast {
@@ -32,37 +30,145 @@ namespace hazelcast {
             }
         }
         namespace proxy {
-            /**
-             * Client proxy implementation for a {@link PNCounter}.
-             */
-            class ClientPNCounterProxy : public crdt::pncounter::PNCounter, public ProxyImpl {
+            class ClientPNCounterProxy : public ProxyImpl {
             public:
-                static const std::string SERVICE_NAME;
-
-                ClientPNCounterProxy(const std::string &serviceName, const std::string &objectName,
-                                     spi::ClientContext *context);
-
                 friend std::ostream &operator<<(std::ostream &os, const ClientPNCounterProxy &proxy);
 
-                virtual int64_t get();
+                /**
+                 * Returns the current value of the counter.
+                 *
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> get();
 
-                virtual int64_t getAndAdd(int64_t delta);
+                /**
+                 * Adds the given value to the current value.
+                 *
+                 * @param delta the value to add
+                 * @return the previous value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> getAndAdd(int64_t delta);
 
-                virtual int64_t addAndGet(int64_t delta);
+                /**
+                 * Adds the given value to the current value.
+                 *
+                 * @param delta the value to add
+                 * @return the updated value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> addAndGet(int64_t delta);
 
-                virtual int64_t getAndSubtract(int64_t delta);
+                /**
+                 * Subtracts the given value from the current value.
+                 *
+                 * @param delta the value to add
+                 * @return the previous value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> getAndSubtract(int64_t delta);
 
-                virtual int64_t subtractAndGet(int64_t delta);
+                /**
+                 * Subtracts the given value from the current value.
+                 *
+                 * @param delta the value to subtract
+                 * @return the updated value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> subtractAndGet(int64_t delta);
 
-                virtual int64_t decrementAndGet();
+                /**
+                 * Decrements by one the current value.
+                 *
+                 * @return the updated value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> decrementAndGet();
 
-                virtual int64_t incrementAndGet();
+                /**
+                 * Increments by one the current value.
+                 *
+                 * @return the updated value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> incrementAndGet();
 
-                virtual int64_t getAndDecrement();
+                /**
+                 * Decrements by one the current value.
+                 *
+                 * @return the previous value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        been lost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> getAndDecrement();
 
-                virtual int64_t getAndIncrement();
+                /**
+                 * Increments by one the current value.
+                 *
+                 * @return the previous value
+                 * @throws NoDataMemberInClusterException if the cluster does not contain
+                 *                                        any data members
+                 * @throws UnsupportedOperationException  if the cluster version is less
+                 *                                        than 3.10
+                 * @throws ConsistencyLostException       if the session guarantees have
+                 *                                        beenlost (see class level javadoc)
+                 * @see ClusterService#getClusterVersion()
+                 */
+                boost::future<int64_t> getAndIncrement();
 
-                virtual void reset();
+                /**
+                 * Resets the observed state by this PN counter. This method may be used
+                 * after a method invocation has thrown a {@link ConsistencyLostException}
+                 * to reset the proxy and to be able to start a new session.
+                 */
+                boost::future<void> reset();
 
                 /**
                  * Returns the current target replica address to which this proxy is
@@ -71,8 +177,11 @@ namespace hazelcast {
                 // public for testing purposes
                 std::shared_ptr<Address> HAZELCAST_API getCurrentTargetReplicaAddress();
 
-            private:
-                static const std::shared_ptr<std::set<Address> > EMPTY_ADDRESS_LIST;
+            protected:
+                ClientPNCounterProxy(const std::string &serviceName, const std::string &objectName,
+                                     spi::ClientContext *context);
+
+                static const std::shared_ptr<std::unordered_set<Address> > EMPTY_ADDRESS_LIST;
 
                 /**
                  * Returns the target on which this proxy should invoke a CRDT operation.
@@ -88,7 +197,7 @@ namespace hazelcast {
                  * @return a CRDT replica address or {@code null} if there are no viable
                  * addresses
                  */
-                std::shared_ptr<Address> getCRDTOperationTarget(const std::set<Address> &excludedAddresses);
+                std::shared_ptr<Address> getCRDTOperationTarget(const std::unordered_set<Address> &excludedAddresses);
 
                 /**
                  * Chooses and returns a CRDT replica address. Replicas with addresses
@@ -101,7 +210,7 @@ namespace hazelcast {
                  *                          address
                  * @return a CRDT replica address or {@code null} if there are no viable addresses
                  */
-                std::shared_ptr<Address> chooseTargetReplica(const std::set<Address> &excludedAddresses);
+                std::shared_ptr<Address> chooseTargetReplica(const std::unordered_set<Address> &excludedAddresses);
 
                 /**
                  * Returns the addresses of the CRDT replicas from the current state of the
@@ -112,7 +221,7 @@ namespace hazelcast {
                  *                          address
                  * @return list of possible CRDT replica addresses
                  */
-                std::vector<Address> getReplicaAddresses(const std::set<Address> &excludedAddresses);
+                std::vector<Address> getReplicaAddresses(const std::unordered_set<Address> &excludedAddresses);
 
                 /**
                  * Returns the max configured replica count.
@@ -142,7 +251,7 @@ namespace hazelcast {
                  *                                        {@code lastException} is false
                  */
                 protocol::ClientMessage
-                invokeGetInternal(std::shared_ptr<std::set<Address> > excludedAddresses,
+                invokeGetInternal(std::shared_ptr<std::unordered_set<Address> > excludedAddresses,
                                   std::exception_ptr lastException,
                                   const std::shared_ptr<Address> &target);
 
@@ -173,7 +282,7 @@ namespace hazelcast {
                  */
                 protocol::ClientMessage
                 invokeAddInternal(int64_t delta, bool getBeforeUpdate,
-                                  std::shared_ptr<std::set<Address> > excludedAddresses,
+                                  std::shared_ptr<std::unordered_set<Address> > excludedAddresses,
                                   std::exception_ptr lastException, const std::shared_ptr<Address> &target);
 
                 /**
@@ -210,4 +319,3 @@ namespace hazelcast {
     }
 }
 
-#endif //HAZELCAST_CLIENT_PROXY_CLIENTPNCOUNTERPROXY_H_

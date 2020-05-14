@@ -524,10 +524,10 @@ namespace hazelcast {
              * converge to the same value.
              *
              * @param name the name of the PN counter
-             * @return a {@link com.hazelcast.crdt.pncounter.PNCounter}
+             * @return a {@link PNCounter}
              */
-            std::shared_ptr<crdt::pncounter::PNCounter> getPNCounter(const std::string& name) {
-                return clientImpl->getDistributedObject<crdt::pncounter::PNCounter>(name);
+            std::shared_ptr<PNCounter> getPNCounter(const std::string& name) {
+                return clientImpl->getDistributedObject<PNCounter>(name);
             }
 
             /**

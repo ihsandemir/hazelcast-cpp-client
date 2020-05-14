@@ -1478,9 +1478,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -1509,180 +1506,81 @@ namespace hazelcast {
                     HazelcastClient *BasicPnCounterAPITest::client = nullptr;
 
                     TEST_F(BasicPnCounterAPITest, testGetStart) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        std::shared_ptr<PNCounter> pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(0, pnCounter->get());
+                        ASSERT_EQ(0, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndAdd) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(0, pnCounter->getAndAdd(5));
+                        ASSERT_EQ(0, pnCounter->getAndAdd(5).get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testAddAndGet) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(5, pnCounter->addAndGet(5));
+                        ASSERT_EQ(5, pnCounter->addAndGet(5).get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndAddExisting) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
 
-                                ASSERT_EQ(0, pnCounter->getAndAdd(2));
-                                ASSERT_EQ(2, pnCounter->getAndAdd(3));
-                                ASSERT_EQ(5, pnCounter->get());
+                        ASSERT_EQ(0, pnCounter->getAndAdd(2).get());
+                        ASSERT_EQ(2, pnCounter->getAndAdd(3).get());
+                        ASSERT_EQ(5, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndIncrement) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(0, pnCounter->getAndIncrement());
-                                ASSERT_EQ(1, pnCounter->getAndIncrement());
-                                ASSERT_EQ(2, pnCounter->get());
+                        ASSERT_EQ(0, pnCounter->getAndIncrement().get());
+                        ASSERT_EQ(1, pnCounter->getAndIncrement().get());
+                        ASSERT_EQ(2, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testIncrementAndGet) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(1, pnCounter->incrementAndGet());
-                                ASSERT_EQ(1, pnCounter->get());
+                        ASSERT_EQ(1, pnCounter->incrementAndGet().get());
+                        ASSERT_EQ(1, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndDecrementFromDefault) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(0, pnCounter->getAndDecrement());
-                                ASSERT_EQ(-1, pnCounter->get());
+                        ASSERT_EQ(0, pnCounter->getAndDecrement().get());
+                        ASSERT_EQ(-1, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndDecrement) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(1, pnCounter->incrementAndGet());
-                                ASSERT_EQ(1, pnCounter->getAndDecrement());
-                                ASSERT_EQ(0, pnCounter->get());
+                        ASSERT_EQ(1, pnCounter->incrementAndGet().get());
+                        ASSERT_EQ(1, pnCounter->getAndDecrement().get());
+                        ASSERT_EQ(0, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testGetAndSubtract) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(0, pnCounter->getAndSubtract(2));
-                                ASSERT_EQ(-2, pnCounter->get());
+                        ASSERT_EQ(0, pnCounter->getAndSubtract(2).get());
+                        ASSERT_EQ(-2, pnCounter->get().get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testSubtractAndGet) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                                ASSERT_EQ(-3, pnCounter->subtractAndGet(3));
+                        ASSERT_EQ(-3, pnCounter->subtractAndGet(3));
                     }
 
                     TEST_F(BasicPnCounterAPITest, testReset) {
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client->getPNCounter(
+                        auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                        pnCounter->reset();
-                    }
-                }
-            }
-
-        }
-    }
-}
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            namespace crdt {
-                namespace pncounter {
-                    /**
-                     * Client implementation for testing behaviour of {@link ConsistencyLostException}
-                     */
-                    class ClientPNCounterConsistencyLostTest : public ClientTestSupport {
-                    protected:
-                        std::shared_ptr<Address> getCurrentTargetReplicaAddress(
-                                const std::shared_ptr<client::crdt::pncounter::PNCounter> &pnCounter) {
-                            return std::static_pointer_cast<proxy::ClientPNCounterProxy>(pnCounter)->getCurrentTargetReplicaAddress();
-                        }
-
-                        void terminateMember(const Address &address, HazelcastServer &server1, HazelcastServer &server2) {
-                            auto member1 = server1.getMember();
-                            if (address == Address(member1.host, member1.port)) {
-                                server1.terminate();
-                                return;
-                            }
-
-                            auto member2 = server2.getMember();
-                            if (address == Address(member2.host, member2.port)) {
-                                server2.terminate();
-                                return;
-                            }
-                        }
-                    };
-
-                    TEST_F(ClientPNCounterConsistencyLostTest, consistencyLostExceptionIsThrownWhenTargetReplicaDisappears) {
-                        HazelcastServerFactory factory(
-                                "hazelcast/test/resources/hazelcast-pncounter-consistency-lost-test.xml");
-                        HazelcastServer instance(factory);
-                        HazelcastServer instance2(factory);
-
-                        HazelcastClient client;
-
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client.getPNCounter(
-                                testing::UnitTest::GetInstance()->current_test_info()->name());
-
-                        pnCounter->addAndGet(5);
-
-                                ASSERT_EQ(5, pnCounter->get());
-
-                        std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
-
-                        terminateMember(*currentTarget, instance, instance2);
-
-                        ASSERT_THROW(pnCounter->addAndGet(5), exception::ConsistencyLostException);
+                        pnCounter->reset().get();
                     }
 
-                    TEST_F(ClientPNCounterConsistencyLostTest, driverCanContinueSessionByCallingReset) {
-                        HazelcastServerFactory factory(
-                                "hazelcast/test/resources/hazelcast-pncounter-consistency-lost-test.xml");
-                        HazelcastServer instance(factory);
-                        HazelcastServer instance2(factory);
-
-                        HazelcastClient client;
-
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client.getPNCounter(
-                                testing::UnitTest::GetInstance()->current_test_info()->name());
-
-                        pnCounter->addAndGet(5);
-
-                                ASSERT_EQ(5, pnCounter->get());
-
-                        std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
-
-                        terminateMember(*currentTarget, instance, instance2);
-
-                        pnCounter->reset();
-
-                        pnCounter->addAndGet(5);
-                    }
-                }
-            }
-
-        }
-    }
-}
-
-
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            namespace crdt {
-                namespace pncounter {
                     class PnCounterFunctionalityTest : public ClientTestSupport {
                     public:
                         static void SetUpTestCase() {
@@ -1708,19 +1606,19 @@ namespace hazelcast {
 
                     TEST_F(PnCounterFunctionalityTest, testSimpleReplication) {
                         const char *name = testing::UnitTest::GetInstance()->current_test_info()->name();
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> counter1 = client->getPNCounter(name);
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> counter2 = client->getPNCounter(name);
+                        std::shared_ptr<PNCounter> counter1 = client->getPNCounter(name);
+                        std::shared_ptr<PNCounter> counter2 = client->getPNCounter(name);
 
-                                ASSERT_EQ(5, counter1->addAndGet(5));
+                        ASSERT_EQ(5, counter1->addAndGet(5).get());
 
-                        ASSERT_EQ_EVENTUALLY(5, counter1->get());
-                        ASSERT_EQ_EVENTUALLY(5, counter2->get());
+                        ASSERT_EQ_EVENTUALLY(5, counter1->get().get());
+                        ASSERT_EQ_EVENTUALLY(5, counter2->get().get());
                     }
 
                     TEST_F(PnCounterFunctionalityTest, testParallelism) {
                         const char *name = testing::UnitTest::GetInstance()->current_test_info()->name();
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> counter1 = client->getPNCounter(name);
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> counter2 = client->getPNCounter(name);
+                        std::shared_ptr<PNCounter> counter1 = client->getPNCounter(name);
+                        std::shared_ptr<PNCounter> counter2 = client->getPNCounter(name);
 
                         int parallelism = 5;
                         int loopsPerThread = 100;
@@ -1730,7 +1628,7 @@ namespace hazelcast {
                         for (int i = 0; i < parallelism; i++) {
                             futures.push_back(std::async([&]() {
                                 for (int j = 0; j < loopsPerThread; j++) {
-                                    counter1->addAndGet(5);
+                                    counter1->addAndGet(5).get();
                                     finalValue += 5;
                                     counter2->addAndGet(-2);
                                     finalValue += -2;
@@ -1741,23 +1639,10 @@ namespace hazelcast {
                         boost::wait_for_all(futures.begin(), futures.end());
 
                         int64_t finalExpectedValue = 3 * (int64_t) loopsPerThread * parallelism;
-                        ASSERT_EQ_EVENTUALLY(finalExpectedValue, counter1->get());
-                        ASSERT_EQ_EVENTUALLY(finalExpectedValue, counter2->get());
+                        ASSERT_EQ_EVENTUALLY(finalExpectedValue, counter1->get().get());
+                        ASSERT_EQ_EVENTUALLY(finalExpectedValue, counter2->get().get());
                     }
-                }
-            }
 
-        }
-    }
-}
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            namespace crdt {
-                namespace pncounter {
                     class ClientPNCounterNoDataMemberTest : public ClientTestSupport {
                     };
 
@@ -1767,22 +1652,90 @@ namespace hazelcast {
 
                         HazelcastClient client;
 
-                        std::shared_ptr<client::crdt::pncounter::PNCounter> pnCounter = client.getPNCounter(
+                        auto pnCounter = client.getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
 
-                        ASSERT_THROW(pnCounter->addAndGet(5), exception::NoDataMemberInClusterException);
+                        ASSERT_THROW(pnCounter->addAndGet(5).get(), exception::NoDataMemberInClusterException);
                     }
 
+                    /**
+                     * Client implementation for testing behaviour of {@link ConsistencyLostException}
+                     */
+                    class ClientPNCounterConsistencyLostTest : public ClientTestSupport {
+                    protected:
+                        std::shared_ptr<Address> getCurrentTargetReplicaAddress(
+                                const std::shared_ptr<PNCounter> &pnCounter) {
+                            return pnCounter->getCurrentTargetReplicaAddress();
+                        }
+
+                        void
+                        terminateMember(const Address &address, HazelcastServer &server1, HazelcastServer &server2) {
+                            auto member1 = server1.getMember();
+                            if (address == Address(member1.host, member1.port)) {
+                                server1.terminate();
+                                return;
+                            }
+
+                            auto member2 = server2.getMember();
+                            if (address == Address(member2.host, member2.port)) {
+                                server2.terminate();
+                                return;
+                            }
+                        }
+                    };
+
+                    TEST_F(ClientPNCounterConsistencyLostTest,
+                           consistencyLostExceptionIsThrownWhenTargetReplicaDisappears) {
+                        HazelcastServerFactory factory(
+                                "hazelcast/test/resources/hazelcast-pncounter-consistency-lost-test.xml");
+                        HazelcastServer instance(factory);
+                        HazelcastServer instance2(factory);
+
+                        HazelcastClient client;
+
+                        auto pnCounter = client.getPNCounter(
+                                testing::UnitTest::GetInstance()->current_test_info()->name());
+
+                        pnCounter->addAndGet(5).get();
+
+                        ASSERT_EQ(5, pnCounter->get().get());
+
+                        std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
+
+                        terminateMember(*currentTarget, instance, instance2);
+
+                        ASSERT_THROW(pnCounter->addAndGet(5).get(), exception::ConsistencyLostException);
+                    }
+
+                    TEST_F(ClientPNCounterConsistencyLostTest, driverCanContinueSessionByCallingReset) {
+                        HazelcastServerFactory factory(
+                                "hazelcast/test/resources/hazelcast-pncounter-consistency-lost-test.xml");
+                        HazelcastServer instance(factory);
+                        HazelcastServer instance2(factory);
+
+                        HazelcastClient client;
+
+                        auto pnCounter = client.getPNCounter(
+                                testing::UnitTest::GetInstance()->current_test_info()->name());
+
+                        pnCounter->addAndGet(5).get();
+
+                        ASSERT_EQ(5, pnCounter->get().get());
+
+                        std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
+
+                        terminateMember(*currentTarget, instance, instance2);
+
+                        pnCounter->reset().get();
+
+                        pnCounter->addAndGet(5).get();
+                    }
                 }
             }
 
         }
     }
 }
-
-
-
-
 
 namespace hazelcast {
     namespace client {
