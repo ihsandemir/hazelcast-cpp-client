@@ -1941,13 +1941,11 @@ namespace hazelcast {
             }
         }
 
-        MapEvent::MapEvent(const Member &member, EntryEvent::type eventType, const std::string &name,
+        MapEvent::MapEvent(Member &&member, EntryEvent::type eventType, const std::string &name,
                            int numberOfEntriesAffected)
-                : member(member), eventType(eventType), name(name), numberOfEntriesAffected(numberOfEntriesAffected) {
+                : member(member), eventType(eventType), name(name), numberOfEntriesAffected(numberOfEntriesAffected) {}
 
-        }
-
-        Member MapEvent::getMember() const {
+        const Member &MapEvent::getMember() const {
             return member;
         }
 
@@ -1970,12 +1968,9 @@ namespace hazelcast {
         }
 
         ItemEventBase::ItemEventBase(const std::string &name, const Member &member, const ItemEventType &eventType)
-                : name(name),
-                  member(member),
-                  eventType(
-                          eventType) {}
+                : name(name), member(member), eventType(eventType) {}
 
-        Member ItemEventBase::getMember() const {
+        const Member &ItemEventBase::getMember() const {
             return member;
         }
 
@@ -1983,12 +1978,11 @@ namespace hazelcast {
             return eventType;
         }
 
-        std::string ItemEventBase::getName() const {
+        const std::string &ItemEventBase::getName() const {
             return name;
         }
 
-        ItemEventBase::~ItemEventBase() {
-        }
+        ItemEventBase::~ItemEventBase() {}
 
         FlakeIdGenerator::FlakeIdGenerator(const std::string &objectName, spi::ClientContext *context)
                 : FlakeIdGeneratorImpl(SERVICE_NAME, objectName, context) {}

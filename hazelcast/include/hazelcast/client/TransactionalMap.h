@@ -54,9 +54,9 @@ namespace hazelcast {
             *
             * @see IMap#put(key, value)
             */
-            template<typename K, typename V>
-            boost::future<boost::optional<V>> put(const K &key, const V &value) {
-                return toObject<V>(putData(toData(key), toData(value)));
+            template<typename K, typename V, typename R=V>
+            boost::future<boost::optional<R>> put(const K &key, const V &value) {
+                return toObject<R>(putData(toData(key), toData(value)));
             }
 
             /**
@@ -90,9 +90,9 @@ namespace hazelcast {
             *
             * @see IMap#replace(key, value)
             */
-            template<typename K, typename V>
-            boost::future<boost::optional<V>> replace(const K &key, const V &value) {
-                return toObject<V>(replaceData(toData(key), toData(value)));
+            template<typename K, typename V, typename R=V>
+            boost::future<boost::optional<R>> replace(const K &key, const V &value) {
+                return toObject<R>(replaceData(toData(key), toData(value)));
             }
 
             /**

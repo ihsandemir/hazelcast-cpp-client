@@ -42,14 +42,14 @@ namespace hazelcast {
             /**
             * Constructor
             */
-            MapEvent(const Member &&member, EntryEvent::type eventType, const std::string& name, int numberOfEntriesAffected);
+            MapEvent(Member &&member, EntryEvent::type eventType, const std::string& name, int numberOfEntriesAffected);
 
             /**
             * Returns the member fired this event.
             *
             * @return the member fired this event.
             */
-            Member getMember() const;
+            const Member &getMember() const;
 
             /**
             * Return the event type

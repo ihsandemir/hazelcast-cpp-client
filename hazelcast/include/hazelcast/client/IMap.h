@@ -101,8 +101,8 @@ namespace hazelcast {
             * @param value
             * @return the previous value. if there is no mapping for key, then returns boost::none.
             */
-            template<typename K, typename V>
-            boost::future<boost::optional<V>> put(const K &key, const V &value) {
+            template<typename K, typename V, typename R=V>
+            boost::future<boost::optional<R>> put(const K &key, const V &value) {
                 return put(key, value, UNSET);
             }
 
@@ -116,9 +116,9 @@ namespace hazelcast {
             * @param ttl      maximum time for this entry to stay in the map. 0 means infinite.
             * @return the previous value. if there is no mapping for key, then returns boost::none.
             */
-            template<typename K, typename V>
-            boost::future<boost::optional<V>> put(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
-                return toObject<V>(putInternal(toData(key), toData(value), ttl));
+            template<typename K, typename V, typename R=V>
+            boost::future<boost::optional<R>> put(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
+                return toObject<R>(putInternal(toData(key), toData(value), ttl));
             }
 
             /**
@@ -259,9 +259,9 @@ namespace hazelcast {
             * @return the previous value of the entry, if there is no mapping for key
             * then returns boost::none.
             */
-            template<typename K, typename V>
-            boost::future<boost::optional<V>> replace(const K &key, const V &value) {
-                return toObject<V>(replaceInternal(toData(key), toData(value)));
+            template<typename K, typename V, typename R=V>
+            boost::future<boost::optional<R>> replace(const K &key, const V &value) {
+                return toObject<R>(replaceInternal(toData(key), toData(value)));
             }
 
             /**
