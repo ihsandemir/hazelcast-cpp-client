@@ -260,7 +260,7 @@ namespace hazelcast {
 
                     ASSERT_EQ(source, ioException.getSource());
                     ASSERT_EQ(
-                            originalMessage + extendedMessage + std::to_string<int>(messageNumber),
+                            originalMessage + extendedMessage + std::to_string(messageNumber),
                             ioException.getMessage());
                 }
             }

@@ -23,6 +23,7 @@
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/AtomicBoolean.h"
+#include "SerializationConstants.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -46,9 +47,7 @@ namespace hazelcast {
 
                     Data();
 
-                    Data(std::unique_ptr<std::vector<byte> > &buffer);
-
-                    Data(std::unique_ptr<std::vector<byte> > &&buffer);
+                    Data(std::vector<byte> &&buffer);
 
                     size_t dataSize() const;
 
@@ -64,14 +63,14 @@ namespace hazelcast {
 
                     bool hasPartitionHash() const;
 
-                    std::vector<byte> &toByteArray() const;
+                    const std::vector<byte> &toByteArray() const;
 
-                    int32_t getType() const;
+                    SerializationConstants getType() const;
 
                     bool operator<(const Data &rhs) const;
 
                 private:
-                    std::shared_ptr<std::vector<byte> > data;
+                    std::vector<byte> data;
                     int cachedHashValue;
 
                     inline int calculateHash() const;

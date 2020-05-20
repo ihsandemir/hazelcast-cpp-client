@@ -18,6 +18,7 @@
 #include <set>
 #include <type_traits>
 #include <boost/any.hpp>
+#include <hazelcast/client/HazelcastJsonValue.h>
 
 #include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
 #include "hazelcast/client/serialization/Portable.h"
@@ -73,10 +74,12 @@ namespace hazelcast {
             struct custom_serializer {};
 
             struct global_serializer {
-                static int32_t getTypeId() {
-                    return static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_GLOBAL);
+                static pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_GLOBAL;
                 }
+
                 virtual void write(const boost::any &object, ObjectDataOutput &out) = 0;
+
                 virtual boost::any read(ObjectDataInput &in) = 0;
             };
 
@@ -87,7 +90,8 @@ namespace hazelcast {
              *      static int32_t writeData(ObjectDataOutput &out);
              *      static int32_t readData(ObjectDataInput &in) const;
              */
-            struct identified_data_serializer {};
+            struct identified_data_serializer {
+            };
 
             /**
              * Classes derived from this class should implement the following static methods:
@@ -96,60 +100,179 @@ namespace hazelcast {
              *      static int32_t writePortable(PortableWriter &out);
              *      static int32_t readPortable(PortableReader &in) const;
              */
-            struct portable_serializer {};
+            struct portable_serializer {
+            };
 
-            struct versioned_portable_serializer : public portable_serializer {};
+            struct versioned_portable_serializer : public portable_serializer {
+            };
 
             template<>
-            struct hz_serializer<std::string> {
-                static int32_t getTypeId();
-                static void write(const std::string &object, ObjectDataOutput &out);
-                static std::string read(ObjectDataInput &in);
-            };
-
-            class HAZELCAST_API FieldType {
+            struct HAZELCAST_API hz_serializer<byte> : public builtin_serializer {
             public:
-                FieldType();
-
-                FieldType(int type);
-
-                FieldType(FieldType const &rhs);
-
-                const byte getId() const;
-
-                FieldType &operator=(FieldType const &rhs);
-
-                bool operator==(FieldType const &rhs) const;
-
-                bool operator!=(FieldType const &rhs) const;
-
-                friend std::ostream &operator<<(std::ostream &os, const FieldType &type);
-
-                byte id;
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_BYTE;
+                }
             };
 
-            namespace FieldTypes {
-                static const FieldType TYPE_PORTABLE(0);
-                static const FieldType TYPE_BYTE(1);
-                static const FieldType TYPE_BOOLEAN(2);
-                static const FieldType TYPE_CHAR(3);
-                static const FieldType TYPE_SHORT(4);
-                static const FieldType TYPE_INT(5);
-                static const FieldType TYPE_LONG(6);
-                static const FieldType TYPE_FLOAT(7);
-                static const FieldType TYPE_DOUBLE(8);
-                static const FieldType TYPE_UTF(9);
-                static const FieldType TYPE_PORTABLE_ARRAY(10);
-                static const FieldType TYPE_BYTE_ARRAY(11);
-                static const FieldType TYPE_BOOLEAN_ARRAY(12);
-                static const FieldType TYPE_CHAR_ARRAY(13);
-                static const FieldType TYPE_SHORT_ARRAY(14);
-                static const FieldType TYPE_INT_ARRAY(15);
-                static const FieldType TYPE_LONG_ARRAY(16);
-                static const FieldType TYPE_FLOAT_ARRAY(17);
-                static const FieldType TYPE_DOUBLE_ARRAY(18);
-                static const FieldType TYPE_UTF_ARRAY(19);
-            }
+            template<>
+            struct HAZELCAST_API hz_serializer<bool> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_BOOLEAN;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<char> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_CHAR;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<int16_t> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_SHORT;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<int32_t> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_INTEGER;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<int64_t> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_LONG;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<float> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_FLOAT;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<double> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_DOUBLE;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::string> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_STRING;
+                }
+            };
+
+
+            template<>
+            struct HAZELCAST_API hz_serializer<HazelcastJsonValue> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::JAVASCRIPT_JSON_SERIALIZATION_TYPE;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<byte>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_BYTE_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<bool>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_BOOLEAN_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<char>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_CHAR_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<int16_t>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_SHORT_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<int32_t>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_INTEGER_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<int64_t>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_LONG_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<double>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_DOUBLE_ARRAY;
+                }
+            };
+
+            template<>
+            struct HAZELCAST_API hz_serializer<std::vector<std::string>> : public builtin_serializer {
+            public:
+                static inline pimpl::SerializationConstants getTypeId() {
+                    return pimpl::SerializationConstants::CONSTANT_TYPE_STRING_ARRAY;
+                }
+            };
+
+            enum struct FieldType {
+                TYPE_PORTABLE = 0,
+                TYPE_BYTE = 1,
+                TYPE_BOOLEAN = 2,
+                TYPE_CHAR = 3,
+                TYPE_SHORT = 4,
+                TYPE_INT = 5,
+                TYPE_LONG = 6,
+                TYPE_FLOAT = 7,
+                TYPE_DOUBLE = 8,
+                TYPE_UTF = 9,
+                TYPE_PORTABLE_ARRAY = 10,
+                TYPE_BYTE_ARRAY = 11,
+                TYPE_BOOLEAN_ARRAY = 12,
+                TYPE_CHAR_ARRAY = 13,
+                TYPE_SHORT_ARRAY = 14,
+                TYPE_INT_ARRAY = 15,
+                TYPE_LONG_ARRAY = 16,
+                TYPE_FLOAT_ARRAY = 17,
+                TYPE_DOUBLE_ARRAY = 18,
+                TYPE_UTF_ARRAY = 19
+            };
 
             /**
             * ClassDefinition defines a class schema for Portable classes. It allows to query field names, types, class id etc.
@@ -258,21 +381,21 @@ namespace hazelcast {
                 * @param fieldName field name
                 * @return true if this class definition contains a field named by given name
                 */
-                bool hasField(char const *fieldName) const;
+                bool hasField(const std::string &fieldName) const;
 
                 /**
                 * @param fieldName name of the field
                 * @return field definition by given name
                 * @throws IllegalArgumentException when field not found
                 */
-                const FieldDefinition &getField(const char *fieldName) const;
+                const FieldDefinition &getField(const std::string &fieldName) const;
 
                 /**
                 * @param fieldName name of the field
                 * @return type of given field
                 * @throws IllegalArgumentException
                 */
-                FieldType getFieldType(const char *fieldName) const;
+                FieldType getFieldType(const std::string &fieldName) const;
 
                 /**
                 * @return total field count
@@ -296,9 +419,9 @@ namespace hazelcast {
 
                 /**
                 * Internal API
-                * @param version portable version
+                * @param newVersion portable version
                 */
-                void setVersionIfNotSet(int version);
+                void setVersionIfNotSet(int newVersion);
 
                 /**
                 * Internal API
@@ -327,7 +450,7 @@ namespace hazelcast {
 
                 ClassDefinition &operator=(const ClassDefinition &rhs);
 
-                std::map<std::string, FieldDefinition> fieldDefinitionsMap;
+                std::unordered_map<std::string, FieldDefinition> fieldDefinitionsMap;
 
                 std::unique_ptr<std::vector<byte> > binary;
 
@@ -344,40 +467,6 @@ namespace hazelcast {
             public:
                 ClassDefinitionBuilder(int factoryId, int classId, int version);
 
-                ClassDefinitionBuilder &addIntField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addLongField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addUTFField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addBooleanField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addByteField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addCharField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addDoubleField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addFloatField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addShortField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addByteArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addBooleanArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addCharArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addIntArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addLongArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addDoubleArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addFloatArrayField(const std::string &fieldName);
-
-                ClassDefinitionBuilder &addShortArrayField(const std::string &fieldName);
-
                 ClassDefinitionBuilder &
                 addPortableField(const std::string &fieldName, std::shared_ptr<ClassDefinition> def);
 
@@ -386,6 +475,8 @@ namespace hazelcast {
 
                 ClassDefinitionBuilder &addField(FieldDefinition &fieldDefinition);
 
+                void addField(const std::string &fieldName, FieldType const &fieldType);
+
                 std::shared_ptr<ClassDefinition> build();
 
                 int getFactoryId();
@@ -393,16 +484,14 @@ namespace hazelcast {
                 int getClassId();
 
                 int getVersion();
-
             private:
                 int factoryId;
                 int classId;
                 int version;
                 int index;
                 bool done;
-                std::vector<FieldDefinition> fieldDefinitions;
 
-                void addField(const std::string &fieldName, FieldType const &fieldType);
+                std::vector<FieldDefinition> fieldDefinitions;
 
                 void check();
             };
@@ -416,507 +505,24 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                static inline int getVersion(int defaultVersion) {
+                static inline typename std::enable_if<!std::is_base_of<versioned_portable_serializer, hz_serializer<T>>::value, int>::type
+                getVersion(int defaultVersion) {
                     return defaultVersion;
                 }
-            };
-
-            /**
-            * Provides a mean of reading portable fields from a binary in form of java primitives
-            * arrays of java primitives , nested portable fields and array of portable fields.
-            */
-            class HAZELCAST_API PortableReader {
-            public:
-                PortableReader(pimpl::PortableSerializer &portableSer, ObjectDataInput &dataInput,
-                               std::shared_ptr<ClassDefinition> cd, bool isDefaultReader);
-
-                PortableReader(const PortableReader &reader);
-
-                PortableReader &operator=(const PortableReader &reader);
-
-                /**
-                * @param fieldName name of the field
-                * @return the int32_t value read
-                * @throws IOException
-                */
-                int32_t readInt(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the int64_t value read
-                * @throws IOException
-                */
-                int64_t readLong(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the boolean value read
-                * @throws IOException
-                */
-                bool readBoolean(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the byte value read
-                * @throws IOException
-                */
-                byte readByte(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the char value read
-                * @throws IOException
-                */
-                char readChar(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the double value read
-                * @throws IOException
-                */
-                double readDouble(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the float value read
-                * @throws IOException
-                */
-                float readFloat(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the int32_t value read
-                * @throws IOException
-                */
-                int16_t readShort(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the utf string value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::string> readUTF(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the byte array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<byte> > readByteArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the bool array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<bool> > readBooleanArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the char array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<char> > readCharArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the int32_t array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<int32_t> > readIntArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the int64_t array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<int64_t> > readLongArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the double array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<double> > readDoubleArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the float array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<float> > readFloatArray(const char *fieldName);
-
-                /**
-                * @param fieldName name of the field
-                * @return the int16_t array value read
-                * @throws IOException
-                */
-                std::unique_ptr<std::vector<int16_t> > readShortArray(const char *fieldName);
-
-                /**
-                * @tparam type of the portable class
-                * @param fieldName name of the field
-                * @return the portable value read
-                * @throws IOException
-                */
-                template<typename T>
-                std::shared_ptr<T> readPortable(const char *fieldName);
-
-                /**
-                * @tparam type of the portable class in array
-                * @param fieldName name of the field
-                * @return the portable array value read
-                * @throws IOException
-                */
-                template<typename T>
-                std::vector<boost::optional<T>> readPortableArray(const char *fieldName);
-
-                /**
-                * @see PortableWriter#getRawDataOutput
-                *
-                * Note that portable fields can not read after getRawDataInput() is called. In case this happens,
-                * IOException will be thrown.
-                *
-                * @return rawDataInput
-                * @throws IOException
-                */
-                ObjectDataInput &getRawDataInput();
-
-                /**
-                * Internal Api. Should not be called by end user.
-                */
-                void end();
-
-            private:
-                bool isDefaultReader;
-                mutable std::unique_ptr<pimpl::DefaultPortableReader> defaultPortableReader;
-                mutable std::unique_ptr<pimpl::MorphingPortableReader> morphingPortableReader;
-
-            };
-
-            /**
-* Provides a mean of writing portable fields to a binary in form of java primitives
-* arrays of java primitives , nested portable fields and array of portable fields.
-*/
-            class HAZELCAST_API PortableWriter {
-            public:
-                /**
-                * Internal api constructor
-                */
-                PortableWriter(pimpl::DefaultPortableWriter *defaultPortableWriter);
-
-                /**
-                * Internal api constructor
-                */
-                PortableWriter(pimpl::ClassDefinitionWriter *classDefinitionWriter);
-
-                /**
-                * @param fieldName name of the field
-                * @param value     int32_t value to be written
-                * @throws IOException
-                */
-                void writeInt(const char *fieldName, int32_t value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value int64_t value to be written
-                * @throws IOException
-                */
-                void writeLong(const char *fieldName, int64_t value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value boolean value to be written
-                * @throws IOException
-                */
-                void writeBoolean(const char *fieldName, bool value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value byte value to be written
-                * @throws IOException
-                */
-                void writeByte(const char *fieldName, byte value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value  char value to be written
-                * @throws IOException
-                */
-                void writeChar(const char *fieldName, int32_t value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value double value to be written
-                * @throws IOException
-                */
-                void writeDouble(const char *fieldName, double value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value float value to be written
-                * @throws IOException
-                */
-                void writeFloat(const char *fieldName, float value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value int16_t value to be written
-                * @throws IOException
-                */
-                void writeShort(const char *fieldName, int16_t value);
-
-                /**
-                * @param fieldName name of the field
-                * @param value utf string value to be written
-                * @throws IOException
-                */
-                void writeUTF(const char *fieldName, const std::string *value);
-
-                /**
-                * @param fieldName name of the field
-                * @param values byte array to be written
-                * @throws IOException
-                */
-                void writeByteArray(const char *fieldName, const std::vector<byte> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values bool array to be written
-                * @throws IOException
-                */
-                void writeBooleanArray(const char *fieldName, const std::vector<bool> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values     char array to be written
-                * @throws IOException
-                */
-                void writeCharArray(const char *fieldName, const std::vector<char> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values int16_t array to be written
-                * @throws IOException
-                */
-                void writeShortArray(const char *fieldName, const std::vector<int16_t> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values int32_t array to be written
-                * @throws IOException
-                */
-                void writeIntArray(const char *fieldName, const std::vector<int32_t> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values     int64_t array to be written
-                * @throws IOException
-                */
-                void writeLongArray(const char *fieldName, const std::vector<int64_t> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values    float array to be written
-                * @throws IOException
-                */
-                void writeFloatArray(const char *fieldName, const std::vector<float> *values);
-
-                /**
-                * @param fieldName name of the field
-                * @param values    double array to be written
-                * @throws IOException
-                */
-                void writeDoubleArray(const char *fieldName, const std::vector<double> *values);
-
-                /**
-                * Internal api , should not be called by end user.
-                */
-                void end();
-
-                /**
-                * To write a null portable value.
-                *
-                * @tparam type of the portable field
-                * @param fieldName name of the field
-                *
-                * @throws IOException
-                */
-                template<typename T>
-                void writeNullPortable(const char *fieldName);
-
-                /**
-                * @tparam type of the portable class
-                * @param fieldName name of the field
-                * @param portable  Portable to be written
-                * @throws IOException
-                */
-                template<typename T>
-                void writePortable(const char *fieldName, const T *portable);
-
-                /**
-                * @tparam type of the portable class
-                * @param fieldName name of the field
-                * @param values portable array to be written
-                * @throws IOException
-                */
-                template<typename T>
-                void writePortableArray(const char *fieldName, const std::vector<T> *values);
-
-                /**
-                * After writing portable fields, one can write remaining fields in old fashioned way consecutively at the end
-                * of stream. User should not that after getting rawDataOutput trying to write portable fields will result
-                * in IOException
-                *
-                * @return ObjectDataOutput
-                * @throws IOException
-                */
-                ObjectDataOutput &getRawDataOutput();
-
-            private:
-                pimpl::DefaultPortableWriter *defaultPortableWriter;
-                pimpl::ClassDefinitionWriter *classDefinitionWriter;
-                bool isDefaultWriter;
             };
 
             /**
             * Provides deserialization methods for primitives types, arrays of primitive types
             * Portable, IdentifiedDataSerializable and custom serializable types
             */
-            class HAZELCAST_API ObjectDataInput {
+            class HAZELCAST_API ObjectDataInput : public pimpl::DataInput {
             public:
                 /**
                 * Internal API. Constructor
                 */
-                ObjectDataInput(pimpl::DataInput &dataInput, pimpl::PortableSerializer &portableSer,
+                ObjectDataInput(std::vector<byte> buffer, int offset, pimpl::PortableSerializer &portableSer,
                                 pimpl::DataSerializer &dataSer,
                                 const std::shared_ptr<serialization::global_serializer> &globalSerializer);
-
-                /**
-                * fills all content to given byteArray
-                * @param byteArray to fill the data in
-                */
-                void readFully(std::vector<byte> &byteArray);
-
-                /**
-                *
-                * @param i number of bytes to skip
-                */
-                int skipBytes(int i);
-
-                /**
-                * @return the boolean read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                bool readBoolean();
-
-                /**
-                * @return the byte read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                byte readByte();
-
-                /**
-                * @return the int16_t read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                int16_t readShort();
-
-                /**
-                * @return the char read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                char readChar();
-
-                /**
-                * @return the int32_t read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                int32_t readInt();
-
-                /**
-                * @return the int64_t read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                int64_t readLong();
-
-                /**
-                * @return the boolean read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                float readFloat();
-
-                /**
-                * @return the double read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                double readDouble();
-
-                /**
-                * @return the utf string read as an ascii string
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::string> readUTF();
-
-                /**
-                * @return the byte array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<byte> > readByteArray();
-
-                /**
-                * @return the boolean array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<bool> > readBooleanArray();
-
-                /**
-                * @return the char array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<char> > readCharArray();
-
-                /**
-                * @return the int32_t array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<int32_t> > readIntArray();
-
-                /**
-                * @return the int64_t array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<int64_t> > readLongArray();
-
-                /**
-                * @return the double array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<double> > readDoubleArray();
-
-                /**
-                * @return the float array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<float> > readFloatArray();
-
-                /**
-                * @return the int16_t array read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<int16_t> > readShortArray();
-
-                /**
-                * @return the array of strings
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<std::string> > readUTFArray();
-
-                /**
-                * @return the array of strings
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                std::unique_ptr<std::vector<std::string *> > readUTFPointerArray();
 
                 /**
                 * Object can be Portable, IdentifiedDataSerializable or custom serializable
@@ -969,13 +575,10 @@ namespace hazelcast {
                 */
                 void position(int newPos);
 
-                std::shared_ptr<serialization::global_serializer> &getGlobalSerializer() const;
-
             private:
-                pimpl::DataInput &dataInput;
                 pimpl::PortableSerializer &portableSerializer;
                 pimpl::DataSerializer &dataSerializer;
-                std::shared_ptr<serialization::global_serializer> &globalSerializer_;
+                std::shared_ptr<serialization::global_serializer> globalSerializer_;
 
                 ObjectDataInput(const ObjectDataInput &);
 
@@ -987,126 +590,14 @@ namespace hazelcast {
             * IdentifiedDataSerializable and custom serializables.
             * For custom serialization @see Serializer
             */
-            class HAZELCAST_API ObjectDataOutput {
+            class HAZELCAST_API ObjectDataOutput : public pimpl::DataOutput {
             public:
                 /**
                 * Internal API Constructor
                 */
-                ObjectDataOutput(pimpl::DataOutput &dataOutput, pimpl::PortableSerializer &portableSer,
-                                 pimpl::DataSerializer &dataSer,
-                                 const std::shared_ptr<serialization::global_serializer> &globalSerializer);
-
-                /**
-                * @return copy of internal byte array
-                */
-                std::unique_ptr<std::vector<byte> > toByteArray();
-
-                /**
-                * Writes all the bytes in array to stream
-                * @param bytes to be written
-                */
-                void write(const std::vector<byte> &bytes);
-
-                /**
-                * @param value the bool value to be written
-                */
-                void writeBoolean(bool value);
-
-                /**
-                * @param value the byte value to be written
-                */
-                void writeByte(int32_t value);
-
-                /**
-                 * @param bytes The data bytes to be written
-                 * @param len Number of bytes to write
-                 */
-                void writeBytes(const byte *bytes, size_t len);
-
-                /**
-                * @param value the int16_t value to be written
-                */
-                void writeShort(int32_t value);
-
-                /**
-                * @param value the char value to be written
-                */
-                void writeChar(int32_t value);
-
-                /**
-                * @param value the int32_t value to be written
-                */
-                void writeInt(int32_t value);
-
-                /**
-                * @param value the int64_t  value to be written
-                */
-                void writeLong(int64_t value);
-
-                /**
-                * @param value the float value to be written
-                */
-                void writeFloat(float value);
-
-                /**
-                * @param value the double value to be written
-                */
-                void writeDouble(double value);
-
-                /**
-                * @param value the UTF string value to be written
-                */
-                void writeUTF(const std::string *value);
-
-                /**
-                * @param value the bytes to be written
-                */
-                void writeByteArray(const std::vector<byte> *value);
-
-                /**
-                * @param value the characters to be written
-                */
-                void writeCharArray(const std::vector<char> *value);
-
-                /**
-                * @param value the boolean values to be written
-                */
-                void writeBooleanArray(const std::vector<bool> *value);
-
-                /**
-                * @param value the int16_t array value to be written
-                */
-                void writeShortArray(const std::vector<int16_t> *value);
-
-                /**
-                * @param value the int32_t array value to be written
-                */
-                void writeIntArray(const std::vector<int32_t> *value);
-
-                /**
-                * @param value the int16_t array value to be written
-                */
-                void writeLongArray(const std::vector<int64_t> *value);
-
-                /**
-                * @param value the float array value to be written
-                */
-                void writeFloatArray(const std::vector<float> *value);
-
-                /**
-                * @param value the double array value to be written
-                */
-                void writeDoubleArray(const std::vector<double> *value);
-
-                /**
-                 * @param strings the array of strings to be serialized
-                 */
-                void writeUTFArray(const std::vector<std::string *> *strings);
-
-                /**
-                * @param value the data value to be written
-                */
-                void writeData(const pimpl::Data *value);
+                ObjectDataOutput(bool dontWrite, pimpl::PortableSerializer *portableSer = nullptr,
+                                 pimpl::DataSerializer *dataSer = nullptr,
+                                 std::shared_ptr<serialization::global_serializer> globalSerializer = nullptr);
 
                 template<typename T>
                 void writeObject(const T *object);
@@ -1128,23 +619,17 @@ namespace hazelcast {
                 inline writeObject(const T &object);
 
                 template<typename T>
-                inline void writeObject(const T &object);
-
-                pimpl::DataOutput *getDataOutput() const;
+                typename std::enable_if<!(std::is_base_of<custom_serializer, hz_serializer<T>>::value ||
+                                          std::is_base_of<builtin_serializer, hz_serializer<T>>::value ||
+                                          std::is_base_of<identified_data_serializer, hz_serializer<T>>::value ||
+                                          std::is_base_of<portable_serializer, hz_serializer<T>>::value ||
+                                          std::is_base_of<custom_serializer, hz_serializer<T>>::value), void>::type
+                inline writeObject(const T &object);
+                
             private:
-                pimpl::DataOutput *dataOutput;
-                pimpl::PortableSerializer &portableSerializer;
-                pimpl::DataSerializer &dataSerializer;
-                bool isEmpty;
+                pimpl::PortableSerializer *portableSerializer;
+                pimpl::DataSerializer *dataSerializer;
                 std::shared_ptr<serialization::global_serializer> globalSerializer_;
-
-                size_t position();
-
-                void position(size_t newPos);
-
-                ObjectDataOutput(const ObjectDataOutput &);
-
-                void operator=(const ObjectDataOutput &);
             };
 
             namespace pimpl {
@@ -1169,6 +654,79 @@ namespace hazelcast {
                                                                          int version);
 
                     const SerializationConfig &getSerializationConfig() const;
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_BYTE; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<char, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_CHAR; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<bool, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_BOOLEAN; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<int16_t, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_SHORT; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<int32_t, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_INT; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<int64_t, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_LONG; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<float, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_FLOAT; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<double, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_DOUBLE; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_UTF; }
+
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_BYTE_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_CHAR_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_BOOLEAN_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_SHORT_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<int32_t>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_INT_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<int64_t>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_LONG_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<float>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_FLOAT_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_DOUBLE_ARRAY; }
+
+                    template<typename T>
+                    typename std::enable_if<std::is_same<std::vector<std::string>, typename std::remove_cv<T>::type>::value, FieldType>::type
+                    static getType() { return FieldType::TYPE_UTF_ARRAY; }
 
                 private:
                     PortableContext(const PortableContext &);
@@ -1207,43 +765,38 @@ namespace hazelcast {
                 public:
                     ClassDefinitionWriter(PortableContext &portableContext, ClassDefinitionBuilder &builder);
 
-                    void writeInt(const char *fieldName, int32_t value);
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
+                    write(const std::string &fieldName, T value) {
+                        builder.addField(fieldName, PortableContext::getType<T>());
+                    }
 
-                    void writeLong(const char *fieldName, int64_t value);
+                    void write(const std::string &fieldName, const std::string *value) {
+                        builder.addField(fieldName, FieldType::TYPE_UTF);
+                    }
 
-                    void writeBoolean(const char *fieldName, bool value);
-
-                    void writeByte(const char *fieldName, byte value);
-
-                    void writeChar(const char *fieldName, int32_t value);
-
-                    void writeDouble(const char *fieldName, double value);
-
-                    void writeFloat(const char *fieldName, float value);
-
-                    void writeShort(const char *fieldName, int16_t value);
-
-                    void writeUTF(const char *fieldName, const std::string *str);
-
-                    void writeByteArray(const char *fieldName, const std::vector<byte> *values);
-
-                    void writeBooleanArray(const char *fieldName, const std::vector<bool> *values);
-
-                    void writeCharArray(const char *fieldName, const std::vector<char> *data);
-
-                    void writeShortArray(const char *fieldName, const std::vector<int16_t> *data);
-
-                    void writeIntArray(const char *fieldName, const std::vector<int32_t> *data);
-
-                    void writeLongArray(const char *fieldName, const std::vector<int64_t> *data);
-
-                    void writeFloatArray(const char *fieldName, const std::vector<float> *data);
-
-                    void writeDoubleArray(const char *fieldName, const std::vector<double> *data);
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
+                    write(const std::string &fieldName, const std::vector<T> &value) {
+                        builder.addField(fieldName, PortableContext::getType<std::vector<T>>());
+                    }
 
                     template<typename T>
                     void writeNullPortable(const char *fieldName) {
-
                         T portable;
                         int32_t factoryId = portable.getFactoryId();
                         int32_t classId = portable.getClassId();
@@ -1288,12 +841,21 @@ namespace hazelcast {
                     void end();
 
                 private:
-                    std::shared_ptr<ClassDefinition> createNestedClassDef(const Portable &portable);
+                    template<typename T>
+                    std::shared_ptr<ClassDefinition> createNestedClassDef(const T &portable) {
+                        int version = PortableVersionHelper::getVersion<T>(context.getVersion());
+                        ClassDefinitionBuilder definitionBuilder(portable.getFactoryId(), portable.getClassId(),
+                                                                 version);
 
-                    ObjectDataOutput emptyDataOutput;
+                        ClassDefinitionWriter nestedWriter(context, definitionBuilder);
+                        PortableWriter portableWriter(&nestedWriter);
+                        portable.writePortable(portableWriter);
+                        return context.registerClassDefinition(definitionBuilder.build());
+                    }
+
                     ClassDefinitionBuilder &builder;
                     PortableContext &context;
-
+                    ObjectDataOutput emptyDataOutput;
                 };
 
                 class HAZELCAST_API PortableReaderBase {
@@ -1302,52 +864,47 @@ namespace hazelcast {
                                        ObjectDataInput &input,
                                        std::shared_ptr<ClassDefinition> cd);
 
-                    virtual ~PortableReaderBase();
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, T>::type
+                        read(const std::string &fieldName) {
+                        setPosition(fieldName, PortableContext::getType<T>());
+                        return dataInput.read<T>();
+                    }
 
-                    virtual int32_t readInt(const char *fieldName);
-
-                    virtual int64_t readLong(const char *fieldName);
-
-                    virtual bool readBoolean(const char *fieldName);
-
-                    virtual byte readByte(const char *fieldName);
-
-                    virtual char readChar(const char *fieldName);
-
-                    virtual double readDouble(const char *fieldName);
-
-                    virtual float readFloat(const char *fieldName);
-
-                    virtual int16_t readShort(const char *fieldName);
-
-                    virtual std::unique_ptr<std::string> readUTF(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<byte> > readByteArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<bool> > readBooleanArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<char> > readCharArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<int32_t> > readIntArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<int64_t> > readLongArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<double> > readDoubleArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<float> > readFloatArray(const char *fieldName);
-
-                    virtual std::unique_ptr<std::vector<int16_t> > readShortArray(const char *fieldName);
+                    template <typename T>
+                    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<int32_t>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<int64_t>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<float>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<std::string>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<boost::optional<std::string>>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
+                                    read(const std::string &fieldName) {
+                        setPosition(fieldName, PortableContext::getType<T>());
+                        return dataInput.read<T>();
+                    }
 
                     ObjectDataInput &getRawDataInput();
 
                     void end();
 
                 protected:
-                    void setPosition(char const *, FieldType const &fieldType);
+                    void setPosition(const std::string &fieldName, FieldType const &fieldType);
 
                     void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) const;
 
-                    int readPosition(const char *, FieldType const &fieldType);
+                    int readPosition(const std::string &fieldName, FieldType const &fieldType);
 
                     template<typename T>
                     boost::optional<T> getPortableInstance(char const *fieldName);
@@ -1379,43 +936,109 @@ namespace hazelcast {
                     MorphingPortableReader(PortableSerializer &portableSer, ObjectDataInput &input,
                                            std::shared_ptr<ClassDefinition> cd);
 
-                    int32_t readInt(const char *fieldName);
+                    template <typename T>
+                    typename std::enable_if<std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, T>::type
+                    read(const std::string &fieldName) {
+                        if (!cd->hasField(fieldName)) {
+                            return 0;
+                        }
+                        const FieldType &currentFieldType = cd->getFieldType(fieldName);
+                        return readMorphing<T>(currentFieldType, fieldName);
+                    }
 
-                    int64_t readLong(const char *fieldName);
-
-                    bool readBoolean(const char *fieldName);
-
-                    byte readByte(const char *fieldName);
-
-                    char readChar(const char *fieldName);
-
-                    double readDouble(const char *fieldName);
-
-                    float readFloat(const char *fieldName);
-
-                    int16_t readShort(const char *fieldName);
-
-                    std::unique_ptr<std::string> readUTF(const char *fieldName);
-
-                    std::unique_ptr<std::vector<byte> > readByteArray(const char *fieldName);
-
-                    std::unique_ptr<std::vector<char> > readCharArray(const char *fieldName);
-
-                    std::unique_ptr<std::vector<int32_t> > readIntArray(const char *fieldName);
-
-                    std::unique_ptr<std::vector<int64_t> > readLongArray(const char *fieldName);
-
-                    std::unique_ptr<std::vector<double> > readDoubleArray(const char *fieldName);
-
-                    std::unique_ptr<std::vector<float> > readFloatArray(const char *fieldName);
-
-                    std::unique_ptr<std::vector<int16_t> > readShortArray(const char *fieldName);
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::string, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<int32_t>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<int64_t>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<float>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::vector<boost::optional<std::string>>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
+                    read(const std::string &fieldName) {
+                        if (!cd->hasField(fieldName)) {
+                            return boost::none;
+                        }
+                        return PortableReaderBase::read<T>();
+                    }
 
                     template<typename T>
                     std::shared_ptr<T> readPortable(const char *fieldName);
 
                     template<typename T>
                     std::vector<boost::optional<T>> readPortableArray(const char *fieldName);
+
+                private:
+                    template <typename T>
+                    typename std::enable_if<std::is_same<int16_t, typename std::remove_cv<T>::type>::value, T>::type
+                    readMorphing(FieldType currentFieldType, const std::string &fieldName) {
+                        switch(currentFieldType) {
+                            case FieldType::TYPE_BYTE:
+                                return PortableReaderBase::read<byte>(fieldName);
+                            case FieldType::TYPE_SHORT:
+                                return PortableReaderBase::read<int16_t>(fieldName);
+                            default:
+                                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("MorphingPortableReader::*",
+                                                                                                 "IncompatibleClassChangeError"));
+                        }
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<int32_t, typename std::remove_cv<T>::type>::value, T>::type
+                    readMorphing(FieldType currentFieldType, const std::string &fieldName) {
+                        switch(currentFieldType) {
+                            case FieldType::TYPE_INT:
+                                return PortableReaderBase::read<int32_t>(fieldName);
+                            case FieldType::TYPE_CHAR:
+                                return PortableReaderBase::read<char>(fieldName);
+                            default:
+                                return readMorphing<int16_t>(currentFieldType, fieldName);
+                        }
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<int64_t, typename std::remove_cv<T>::type>::value, T>::type
+                    readMorphing(FieldType currentFieldType, const std::string &fieldName) {
+                        switch(currentFieldType) {
+                            case FieldType::TYPE_LONG:
+                                return PortableReaderBase::read<int64_t>(fieldName);
+                            default:
+                                return readMorphing<int32_t>(currentFieldType, fieldName);
+                        }
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<float, typename std::remove_cv<T>::type>::value, T>::type
+                    readMorphing(FieldType currentFieldType, const std::string &fieldName) {
+                        switch(currentFieldType) {
+                            case FieldType::TYPE_FLOAT:
+                                return PortableReaderBase::read<float>(fieldName);
+                            default:
+                                return static_cast<float>(readMorphing<int32_t>(currentFieldType, fieldName));
+                        }
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<double, typename std::remove_cv<T>::type>::value, T>::type
+                    readMorphing(FieldType currentFieldType, const std::string &fieldName) {
+                        switch(currentFieldType) {
+                            case FieldType::TYPE_DOUBLE:
+                                return PortableReaderBase::read<double>(fieldName);
+                            case FieldType::TYPE_FLOAT:
+                                return PortableReaderBase::read<float>(fieldName);
+                            default:
+                                return static_cast<double>(readMorphing<int64_t>(currentFieldType, fieldName));
+                        }
+                    }
                 };
 
                 class HAZELCAST_API PortableSerializer {
@@ -1436,6 +1059,7 @@ namespace hazelcast {
 
                     template<typename T>
                     std::shared_ptr<ClassDefinition> lookupOrRegisterClassDefinition();
+
                 private:
                     PortableContext &context;
 
@@ -1454,21 +1078,21 @@ namespace hazelcast {
 
                     ~DataSerializer();
 
-                    virtual int32_t getHazelcastTypeId() const;
+                    virtual int32_t getTypeId() const;
 
                     template<typename T>
                     static boost::optional<T> readObject(ObjectDataInput &in) {
-                        bool identified = in.readBoolean();
+                        bool identified = in.read<bool>();
                         if (!identified) {
                             BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
-                                    "ObjectDataInput::readObject<identified_data_serializer>",
-                                    "Received data is not identified data serialized."));
+                                                          "ObjectDataInput::readObject<identified_data_serializer>",
+                                                                  "Received data is not identified data serialized."));
                         }
 
                         int32_t expectedFactoryId = hz_serializer<T>::getFactoryId();
                         int32_t expectedClassId = hz_serializer<T>::getClassId();
-                        int32_t factoryId = in.readInt();
-                        int32_t classId = in.readInt();
+                        int32_t factoryId = in.read<int32_t>();
+                        int32_t classId = in.read<int32_t>();
                         if (expectedFactoryId != factoryId || expectedClassId != classId) {
                             BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
                                                           "ObjectDataInput::readObject<identified_data_serializer>",
@@ -1497,39 +1121,57 @@ namespace hazelcast {
                     DefaultPortableWriter(PortableSerializer &portableSer, std::shared_ptr<ClassDefinition> cd,
                                           ObjectDataOutput &output);
 
-                    void writeInt(const char *fieldName, int32_t value);
+                    /**
+                    * @param value to be written
+                    */
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
+                    write(const std::string &fieldName, T value) {
+                        setPosition(fieldName, PortableContext::getType<T>());
+                        objectDataOutput.write(value);
+                    }
 
-                    void writeLong(const char *fieldName, int64_t value);
+                    void write(const std::string &fieldName, const std::string *value) {
+                        setPosition(fieldName, PortableContext::getType<std::string>());
+                        objectDataOutput.write(value);
+                    }
 
-                    void writeBoolean(const char *fieldName, bool value);
+                    /**
+                    * @param value to vector of values to be written. Only supported built-in values can be written.
+                    */
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
+                    write(const std::string &fieldName, const std::vector<T> *value) {
+                        setPosition(fieldName, PortableContext::getType<std::vector<T>>());
+                        objectDataOutput.write(value);
+                    }
 
-                    void writeByte(const char *fieldName, byte value);
-
-                    void writeChar(const char *fieldName, int32_t value);
-
-                    void writeDouble(const char *fieldName, double value);
-
-                    void writeFloat(const char *fieldName, float value);
-
-                    void writeShort(const char *fieldName, int32_t value);
-
-                    void writeUTF(const char *fieldName, const std::string *str);
-
-                    void writeByteArray(const char *fieldName, const std::vector<byte> *x);
-
-                    void writeBooleanArray(const char *fieldName, const std::vector<bool> *x);
-
-                    void writeCharArray(const char *fieldName, const std::vector<char> *data);
-
-                    void writeShortArray(const char *fieldName, const std::vector<int16_t> *data);
-
-                    void writeIntArray(const char *fieldName, const std::vector<int32_t> *data);
-
-                    void writeLongArray(const char *fieldName, const std::vector<int64_t> *data);
-
-                    void writeFloatArray(const char *fieldName, const std::vector<float> *data);
-
-                    void writeDoubleArray(const char *fieldName, const std::vector<double> *data);
+                    template <typename T>
+                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
+                    write(const std::string &fieldName, const T &value) {
+                        write<T>(fieldName, &value);
+                    }
 
                     void end();
 
@@ -1543,16 +1185,14 @@ namespace hazelcast {
                     void writePortableArray(const char *fieldName, const std::vector<T> *values);
 
                     ObjectDataOutput &getRawDataOutput();
-                private:
-                    FieldDefinition const &setPosition(const char *fieldName, FieldType fieldType);
 
-                    void write(const Portable &p);
+                private:
+                    FieldDefinition const &setPosition(const std::string &fieldName, FieldType fieldType);
 
                     void checkPortableAttributes(const FieldDefinition &fd, const Portable &portable);
 
                     bool raw;
                     PortableSerializer &portableSerializer;
-                    DataOutput &dataOutput;
                     ObjectDataOutput &objectDataOutput;
                     size_t begin;
                     size_t offset;
@@ -1577,7 +1217,7 @@ namespace hazelcast {
                 struct HAZELCAST_API ObjectType {
                     ObjectType();
 
-                    int32_t typeId;
+                    SerializationConstants typeId;
                     int32_t factoryId;
                     int32_t classId;
 
@@ -1591,13 +1231,12 @@ namespace hazelcast {
 
                     template<typename T>
                     inline Data toData(const T *object) {
-                        DataOutput output;
-                        ObjectDataOutput dataOutput(output, portableSerializer, dataSerializer,
-                                                    serializationConfig.getGlobalSerializer());
+                        ObjectDataOutput output(false, &portableSerializer, &dataSerializer,
+                                serializationConfig.getGlobalSerializer());
 
                         writeHash<T>(object, output);
 
-                        dataOutput.writeObject<T>(object);
+                        output.writeObject<T>(object);
 
                         Data data(output.toByteArray());
                         return data;
@@ -1613,7 +1252,7 @@ namespace hazelcast {
 
                     template<typename T>
                     inline boost::optional<T> toObject(const Data *data) {
-                        if (NULL == data) {
+                        if (!data) {
                             return boost::optional<T>();
                         }
                         return toObject<T>(*data);
@@ -1625,13 +1264,11 @@ namespace hazelcast {
                             return boost::optional<T>();
                         }
 
-                        int32_t typeId = data.getType();
+                        int32_t typeId = static_cast<int32_t>(data.getType());
 
                         // Constant 8 is Data::DATA_OFFSET. Windows DLL export does not
                         // let usage of static member.
-                        DataInput dataInput(data.toByteArray(), 8);
-
-                        ObjectDataInput objectDataInput(dataInput, portableSerializer, dataSerializer,
+                        ObjectDataInput objectDataInput(data.toByteArray(), 8, portableSerializer, dataSerializer,
                                                         serializationConfig.getGlobalSerializer());
                         return objectDataInput.readObject<T>(typeId);
                     }
@@ -1669,7 +1306,6 @@ namespace hazelcast {
                     void dispose();
 
                 private:
-
                     SerializationService(const SerializationService &);
 
                     SerializationService &operator=(const SerializationService &);
@@ -1688,16 +1324,221 @@ namespace hazelcast {
                         const PK_TYPE *pk = partitionAwareObj->getPartitionKey();
                         if (pk != NULL) {
                             Data partitionKey = toData<PK_TYPE>(pk);
-                            out.writeInt(partitionKey.getPartitionHash());
+                            out.write<int32_t>(partitionKey.getPartitionHash());
                         }
                     }
 
                     template<typename T>
                     void writeHash(const void *obj, DataOutput &out) {
-                        out.writeInt(0);
+                        out.write<int32_t>(0);
                     }
                 };
             }
+
+            /**
+* Provides a mean of reading portable fields from a binary in form of java primitives
+* arrays of java primitives , nested portable fields and array of portable fields.
+*/
+            class HAZELCAST_API PortableReader {
+            public:
+                PortableReader(pimpl::PortableSerializer &portableSer, ObjectDataInput &dataInput,
+                               std::shared_ptr<ClassDefinition> cd, bool isDefaultReader);
+
+                PortableReader(const PortableReader &reader);
+
+                PortableReader &operator=(const PortableReader &reader);
+
+                /**
+                * @param fieldName name of the field
+                * @return the value read
+                */
+                template <typename T>
+                typename std::enable_if<std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<double, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::string, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<int32_t>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<int64_t>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<float>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::vector<boost::optional<std::string>>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
+                read(const std::string &fieldName) {
+                    if (isDefaultReader)
+                        return defaultPortableReader->read<T>(fieldName);
+                    return morphingPortableReader->read<T>(fieldName);
+                }
+
+                /**
+                * @tparam type of the portable class
+                * @param fieldName name of the field
+                * @return the portable value read
+                */
+                template<typename T>
+                std::shared_ptr<T> readPortable(const char *fieldName);
+
+                /**
+                * @tparam type of the portable class in array
+                * @param fieldName name of the field
+                * @return the portable array value read
+                */
+                template<typename T>
+                std::vector<boost::optional<T>> readPortableArray(const char *fieldName);
+
+                /**
+                * @see PortableWriter#getRawDataOutput
+                *
+                * Note that portable fields can not read after getRawDataInput() is called. In case this happens,
+                * IOException will be thrown.
+                *
+                * @return rawDataInput
+                * @throws IOException
+                */
+                ObjectDataInput &getRawDataInput();
+
+                /**
+                * Internal Api. Should not be called by end user.
+                */
+                void end();
+
+            private:
+                bool isDefaultReader;
+                boost::optional<pimpl::DefaultPortableReader> defaultPortableReader;
+                boost::optional<pimpl::MorphingPortableReader> morphingPortableReader;
+            };
+
+            /**
+            * Provides a mean of writing portable fields to a binary in form of java primitives
+            * arrays of java primitives , nested portable fields and array of portable fields.
+            */
+            class HAZELCAST_API PortableWriter {
+            public:
+                /**
+                * Internal api constructor
+                */
+                PortableWriter(pimpl::DefaultPortableWriter *defaultPortableWriter);
+
+                /**
+                * Internal api constructor
+                */
+                PortableWriter(pimpl::ClassDefinitionWriter *classDefinitionWriter);
+
+                /**
+                * @param value to be written
+                */
+                template <typename T>
+                typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
+                write(const std::string &fieldName, T value) {
+                    if(isDefaultWriter) {
+                        defaultPortableWriter->write(fieldName, value);
+                    } else {
+                        classDefinitionWriter->write(value);
+                    }
+                }
+
+                void write(const std::string &fieldName, const std::string *value) {
+                    if(isDefaultWriter) {
+                        defaultPortableWriter->write(fieldName, value);
+                    } else {
+                        classDefinitionWriter->write(fieldName, value);
+                    }
+                }
+
+                template <typename T>
+                typename std::enable_if<std::is_same<std::string, T>::value>::type
+                write(const std::string &fieldName, const T &value) {
+                    if(isDefaultWriter) {
+                        defaultPortableWriter->write(fieldName, value);
+                    } else {
+                        classDefinitionWriter->write(fieldName, value);
+                    }
+                }
+
+                /**
+                * @param value to vector of values to be written. Only supported built-in values can be written.
+                */
+                template <typename T>
+                void write(const std::string &fieldName, const std::vector<T> &value) {
+                    if(isDefaultWriter) {
+                        defaultPortableWriter->write(fieldName, value);
+                    } else {
+                        classDefinitionWriter->write(fieldName, value);
+                    }
+                }
+
+                template <typename T>
+                void write(const std::string &fieldName, const std::vector<T> *value) {
+                    if(isDefaultWriter) {
+                        defaultPortableWriter->write(fieldName, value);
+                    } else {
+                        classDefinitionWriter->write(fieldName, value);
+                    }
+                }
+
+                /**
+                * Internal api , should not be called by end user.
+                */
+                void end();
+
+                /**
+                * To write a null portable value.
+                *
+                * @tparam type of the portable field
+                * @param fieldName name of the field
+                *
+                * @throws IOException
+                */
+                template<typename T>
+                void writeNullPortable(const char *fieldName);
+
+                /**
+                * @tparam type of the portable class
+                * @param fieldName name of the field
+                * @param portable  Portable to be written
+                * @throws IOException
+                */
+                template<typename T>
+                void writePortable(const char *fieldName, const T *portable);
+
+                /**
+                * @tparam type of the portable class
+                * @param fieldName name of the field
+                * @param values portable array to be written
+                * @throws IOException
+                */
+                template<typename T>
+                void writePortableArray(const char *fieldName, const std::vector<T> *values);
+
+                /**
+                * After writing portable fields, one can write remaining fields in old fashioned way consecutively at the end
+                * of stream. User should not that after getting rawDataOutput trying to write portable fields will result
+                * in IOException
+                *
+                * @return ObjectDataOutput
+                * @throws IOException
+                */
+                ObjectDataOutput &getRawDataOutput();
+
+            private:
+                pimpl::DefaultPortableWriter *defaultPortableWriter;
+                pimpl::ClassDefinitionWriter *classDefinitionWriter;
+                bool isDefaultWriter;
+            };
 
             template<typename T>
             std::shared_ptr<T> PortableReader::readPortable(const char *fieldName) {
@@ -1755,8 +1596,9 @@ namespace hazelcast {
 
             template<typename T>
             void ObjectDataOutput::writeObject(const T *object) {
+                if (isNoWrite) { return; }
                 if (!object) {
-                    writeInt(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_NULL));
+                    write<int32_t>(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_NULL));
                     return;
                 }
 
@@ -1765,6 +1607,7 @@ namespace hazelcast {
 
             template<>
             void ObjectDataOutput::writeObject(const char *object) {
+                if (isNoWrite) { return; }
                 if (!object) {
                     writeObject<std::string>(nullptr);
                     return;
@@ -1776,29 +1619,33 @@ namespace hazelcast {
             template<typename T>
             typename std::enable_if<std::is_base_of<identified_data_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
-                writeInt(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_DATA));
+                if (isNoWrite) { return; }
+                write<int32_t>(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_DATA));
                 pimpl::DataSerializer::write<T>(object, *this);
             }
 
             template<typename T>
             typename std::enable_if<std::is_base_of<portable_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
-                writeInt(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE));
-                portableSerializer.write<T>(object, *this);
+                if (isNoWrite) { return; }
+                write<int32_t>(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE));
+                portableSerializer->write<T>(object, *this);
             }
 
             template<typename T>
             typename std::enable_if<std::is_base_of<builtin_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
-                writeInt(hz_serializer<T>::getTypeId());
-                hz_serializer<T>::write(object, *this);
+                if (isNoWrite) { return; }
+                write<int32_t>(static_cast<int32_t>((hz_serializer<T>::getTypeId())));
+                write < T > (object);
             }
 
             template<typename T>
             typename std::enable_if<std::is_base_of<custom_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
+                if (isNoWrite) { return; }
                 static_assert(hz_serializer<T>::getTypeId() > 0, "Custom serializer type id can not be negative!");
-                writeInt(hz_serializer<T>::getTypeId());
+                write<int32_t>(hz_serializer<T>::getTypeId());
                 hz_serializer<T>::write(object, *this);
             }
 
@@ -1809,18 +1656,27 @@ namespace hazelcast {
              * @return
              */
             template<typename T>
-            inline void ObjectDataOutput::writeObject(const T &object) {
+            typename std::enable_if<!(std::is_base_of<custom_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<builtin_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<identified_data_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<portable_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<custom_serializer, hz_serializer<T>>::value), void>::type
+            inline ObjectDataOutput::writeObject(const T &object) {
                 if (!globalSerializer_) {
                     throw exception::HazelcastSerializationException("ObjectDataOutput::writeObject",
                                                                      "No serializer found for the type");
                 }
-                writeInt(global_serializer::getTypeId());
+                if (isNoWrite) { return; }
+                write<int32_t>(static_cast<int32_t>(global_serializer::getTypeId()));
                 globalSerializer_->write(boost::any(object), *this);
             }
 
             template<typename T>
             inline boost::optional<T> ObjectDataInput::readObject() {
-                int32_t typeId = readInt();
+                int32_t typeId = read<int32_t>();
+                if (static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_NULL) == typeId) {
+                    return boost::none;
+                }
                 return readObject<T>(typeId);
             }
 
@@ -1829,9 +1685,10 @@ namespace hazelcast {
             inline ObjectDataInput::readObject(int32_t typeId) {
                 if (typeId != static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_DATA)) {
                     BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
-                            "ObjectDataInput::readObject<identified_data_serializer>",
-                            (boost::format("The associated serializer Serializer<T> is identified_data_serializer "
-                                           "but received data type id is %1%") % typeId).str()));
+                                                  "ObjectDataInput::readObject<identified_data_serializer>",
+                                                          (boost::format(
+                                                                  "The associated serializer Serializer<T> is identified_data_serializer "
+                                                                  "but received data type id is %1%") % typeId).str()));
                 }
 
                 return dataSerializer.readObject<T>(*this);
@@ -1842,9 +1699,10 @@ namespace hazelcast {
             inline ObjectDataInput::readObject(int32_t typeId) {
                 if (typeId != static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_PORTABLE)) {
                     BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
-                            "ObjectDataInput::readObject<portable_serializer>",
-                            (boost::format("The associated serializer Serializer<T> is portable_serializer "
-                                           "but received data type id is %1%") % typeId).str()));
+                                                  "ObjectDataInput::readObject<portable_serializer>",
+                                                          (boost::format(
+                                                                  "The associated serializer Serializer<T> is portable_serializer "
+                                                                  "but received data type id is %1%") % typeId).str()));
                 }
 
                 return portableSerializer.readObject<T>(*this);
@@ -1870,7 +1728,7 @@ namespace hazelcast {
             inline ObjectDataInput::readObject(int32_t typeId) {
                 assert(typeId == hz_serializer<T>::getTypeId());
 
-                return boost::optional<T>(hz_serializer<T>::read(*this));
+                return boost::optional<T>(read < T > (*this));
             }
 
             template<typename T>
@@ -1882,12 +1740,13 @@ namespace hazelcast {
                                                                       typeid(T).name()).str());
                 }
 
-                if (typeId != globalSerializer_->getTypeId()) {
+                if (typeId != static_cast<int32_t>(globalSerializer_->getTypeId())) {
                     BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("ObjectDataInput::readObject<>",
                                                                                      (boost::format(
                                                                                              "The global serializer type id %1% does not match "
                                                                                              "received data type id is %2%") %
-                                                                                             globalSerializer_->getTypeId() %typeId).str()));
+                                                                                             static_cast<int32_t>(globalSerializer_->getTypeId()) %
+                                                                                      typeId).str()));
                 }
 
                 return boost::optional<T>(boost::any_cast<T>(std::move(globalSerializer_->read(*this))));
@@ -1904,16 +1763,16 @@ namespace hazelcast {
 
                 template<typename T>
                 std::vector<boost::optional<T>> DefaultPortableReader::readPortableArray(const char *fieldName) {
-                    PortableReaderBase::setPosition(fieldName, FieldTypes::TYPE_PORTABLE_ARRAY);
+                    PortableReaderBase::setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
-                    dataInput.readInt();
+                    dataInput.read<int32_t>();
                     std::vector<boost::optional<T>> portables;
 
-                    setPosition(fieldName, FieldTypes::TYPE_PORTABLE_ARRAY);
+                    setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
-                    int32_t len = dataInput.readInt();
-                    int32_t factoryId = dataInput.readInt();
-                    int32_t classId = dataInput.readInt();
+                    int32_t len = dataInput.read<int32_t>();
+                    int32_t factoryId = dataInput.read<int32_t>();
+                    int32_t classId = dataInput.read<int32_t>();
 
                     checkFactoryAndClass(cd->getField(fieldName), factoryId, classId);
 
@@ -1921,7 +1780,7 @@ namespace hazelcast {
                         int offset = dataInput.position();
                         for (int i = 0; i < len; i++) {
                             dataInput.position(offset + i * util::Bits::INT_SIZE_IN_BYTES);
-                            int32_t start = dataInput.readInt();
+                            int32_t start = dataInput.read<int32_t>();
                             dataInput.position(start);
 
                             portables.push_back(portableSerializer.read<T>(dataInput, factoryId, classId));
@@ -1937,16 +1796,16 @@ namespace hazelcast {
 
                 template<typename T>
                 std::vector<boost::optional<T>> MorphingPortableReader::readPortableArray(const char *fieldName) {
-                    PortableReaderBase::setPosition(fieldName, FieldTypes::TYPE_PORTABLE_ARRAY);
+                    PortableReaderBase::setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
-                    dataInput.readInt();
+                    dataInput.read<int32_t>();
                     std::vector<boost::optional<T>> portables;
 
-                    setPosition(fieldName, FieldTypes::TYPE_PORTABLE_ARRAY);
+                    setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
-                    int32_t len = dataInput.readInt();
-                    int32_t factoryId = dataInput.readInt();
-                    int32_t classId = dataInput.readInt();
+                    int32_t len = dataInput.read<int32_t>();
+                    int32_t factoryId = dataInput.read<int32_t>();
+                    int32_t classId = dataInput.read<int32_t>();
 
                     checkFactoryAndClass(cd->getField(fieldName), factoryId, classId);
 
@@ -1954,7 +1813,7 @@ namespace hazelcast {
                         int offset = dataInput.position();
                         for (int i = 0; i < len; i++) {
                             dataInput.position(offset + i * util::Bits::INT_SIZE_IN_BYTES);
-                            int32_t start = dataInput.readInt();
+                            int32_t start = dataInput.read<int32_t>();
                             dataInput.position(start);
 
                             portables.push_back(portableSerializer.read<T>(dataInput, factoryId, classId));
@@ -1974,7 +1833,7 @@ namespace hazelcast {
 
                 template<typename T>
                 boost::optional<T> PortableSerializer::read(ObjectDataInput &in, int32_t factoryId, int32_t classId) {
-                    int version = in.readInt();
+                    int version = in.read<int32_t>();
 
                     int portableVersion = findPortableVersion<T>(factoryId, classId);
 
@@ -1986,16 +1845,17 @@ namespace hazelcast {
 
                 template<typename T>
                 void PortableSerializer::write(const T &object, ObjectDataOutput &out) {
-                    out.writeInt(hz_serializer<T>::getFactoryId());
-                    out.writeInt(hz_serializer<T>::getClassId());
+                    out.write<int32_t>(hz_serializer<T>::getFactoryId());
+                    out.write<int32_t>(hz_serializer<T>::getClassId());
 
                     std::shared_ptr<ClassDefinition> cd = context.lookupOrRegisterClassDefinition<T>();
                     write<T>(object, cd, out);
                 }
 
                 template<typename T>
-                void PortableSerializer::write(const T &object, std::shared_ptr<ClassDefinition> &cd, ObjectDataOutput &out) {
-                    out.writeInt(cd->getVersion());
+                void PortableSerializer::write(const T &object, std::shared_ptr<ClassDefinition> &cd,
+                                               ObjectDataOutput &out) {
+                    out.write<int32_t>(cd->getVersion());
 
                     DefaultPortableWriter dpw(*this, cd, out);
                     PortableWriter portableWriter(&dpw);
@@ -2022,9 +1882,9 @@ namespace hazelcast {
 
                 template<typename T>
                 void DataSerializer::write(const T &object, ObjectDataOutput &out) {
-                    out.writeBoolean(true);
-                    out.writeInt(hz_serializer<T>::getFactoryId());
-                    out.writeInt(hz_serializer<T>::getClassId());
+                    out.write<bool>(true);
+                    out.write<int32_t>(hz_serializer<T>::getFactoryId());
+                    out.write<int32_t>(hz_serializer<T>::getClassId());
                     hz_serializer<T>::writeData(object, out);
                 }
 
@@ -2049,11 +1909,11 @@ namespace hazelcast {
 
                 template<typename T>
                 boost::optional<T> PortableReaderBase::getPortableInstance(char const *fieldName) {
-                    setPosition(fieldName, FieldTypes::TYPE_PORTABLE);
+                    setPosition(fieldName, FieldType::TYPE_PORTABLE);
 
-                    bool isNull = dataInput.readBoolean();
-                    int32_t factoryId = dataInput.readInt();
-                    int32_t classId = dataInput.readInt();
+                    bool isNull = dataInput.read<bool>();
+                    int32_t factoryId = dataInput.read<int32_t>();
+                    int32_t classId = dataInput.read<int32_t>();
 
                     checkFactoryAndClass(cd->getField(fieldName), factoryId, classId);
 
@@ -2066,24 +1926,23 @@ namespace hazelcast {
 
                 template<typename T>
                 void DefaultPortableWriter::writeNullPortable(const char *fieldName) {
-                    setPosition(fieldName, FieldTypes::TYPE_PORTABLE);
-                    dataOutput.writeBoolean(true);
-
-                    dataOutput.writeInt(hz_serializer<T>::getFactoryId());
-                    dataOutput.writeInt(hz_serializer<T>::getClassId());
+                    setPosition(fieldName, FieldType::TYPE_PORTABLE);
+                    objectDataOutput.write<bool>(true);
+                    objectDataOutput.write<int32_t>(hz_serializer<T>::getFactoryId());
+                    objectDataOutput.write<int32_t>(hz_serializer<T>::getClassId());
                 }
 
                 template<typename T>
                 void DefaultPortableWriter::writePortable(const char *fieldName, const T *portable) {
                     bool isNull = (NULL == portable);
-                    dataOutput.writeBoolean(isNull);
+                    objectDataOutput.write<bool>(isNull);
                     if (isNull) {
-                        dataOutput.writeInt(hz_serializer<T>::getFactoryId());
-                        dataOutput.writeInt(hz_serializer<T>::getClassId());
+                        objectDataOutput.write<int32_t>(hz_serializer<T>::getFactoryId());
+                        objectDataOutput.write<int32_t>(hz_serializer<T>::getClassId());
                         return;
                     }
 
-                    FieldDefinition const &fd = setPosition(fieldName, FieldTypes::TYPE_PORTABLE);
+                    FieldDefinition const &fd = setPosition(fieldName, FieldType::TYPE_PORTABLE);
                     if (fd.getFactoryId() != hz_serializer<T>::getFactoryId()) {
                         std::stringstream errorMessage;
                         errorMessage << "Wrong Portable type! Templated portable types are not supported! "
@@ -2101,12 +1960,12 @@ namespace hazelcast {
                                                       "DefaultPortableWriter::::checkPortableAttributes", errorMessage.str()));
                     }
 
-                    portableSerializer.write(*portable, dataOutput);
+                    portableSerializer.write(*portable, objectDataOutput);
                 }
 
                 template<typename T>
                 void DefaultPortableWriter::writePortableArray(const char *fieldName, const std::vector<T> *values) {
-                    FieldDefinition const &fd = setPosition(fieldName, FieldTypes::TYPE_PORTABLE_ARRAY);
+                    FieldDefinition const &fd = setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
                     if (fd.getFactoryId() != hz_serializer<T>::getFactoryId()) {
                         std::stringstream errorMessage;
@@ -2126,34 +1985,24 @@ namespace hazelcast {
                     }
 
                     int32_t len = (NULL == values ? util::Bits::NULL_ARRAY : (int32_t) values->size());
-                    dataOutput.writeInt(len);
+                    objectDataOutput.write<int32_t>(len);
 
-                    dataOutput.writeInt(fd.getFactoryId());
-                    dataOutput.writeInt(fd.getClassId());
+                    objectDataOutput.write<int32_t>(fd.getFactoryId());
+                    objectDataOutput.write<int32_t>(fd.getClassId());
                     std::shared_ptr<ClassDefinition> classDefinition = portableSerializer.lookupOrRegisterClassDefinition<T>();
                     if (len > 0) {
-                        size_t currentOffset = dataOutput.position();
-                        dataOutput.position(currentOffset + len * util::Bits::INT_SIZE_IN_BYTES);
+                        size_t currentOffset = objectDataOutput.position();
+                        objectDataOutput.position(currentOffset + len * util::Bits::INT_SIZE_IN_BYTES);
                         for (int32_t i = 0; i < len; i++) {
-                            size_t position = dataOutput.position();
-                            dataOutput.writeInt((int32_t) (currentOffset + i * util::Bits::INT_SIZE_IN_BYTES),
-                                                (int32_t) position);
-                            portableSerializer.write((*values)[i], classDefinition, dataOutput);
+                            size_t position = objectDataOutput.position();
+                            objectDataOutput.position(currentOffset + i * util::Bits::INT_SIZE_IN_BYTES);
+                            objectDataOutput.write<int32_t>((int32_t) position);
+                            objectDataOutput.position(position);
+                            portableSerializer.write((*values)[i], classDefinition, objectDataOutput);
                         }
                     }
                 }
             }
-
-            int32_t hz_serializer<std::string>::getTypeId() {
-                return static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_STRING);
-            }
-            void hz_serializer<std::string>::write(const std::string &object, ObjectDataOutput &out) {
-                out.writeUTF(&object);
-            }
-            std::string hz_serializer<std::string>::read(ObjectDataInput &in) {
-                return *in.readUTF();
-            }
-
         }
     }
 }
