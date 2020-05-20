@@ -558,23 +558,6 @@ namespace hazelcast {
                 template<typename T>
                 inline boost::optional<T> readObject(int32_t typeId);
 
-                /**
-                * @return the data read
-                * @throws IOException if it reaches end of file before finish reading
-                */
-                pimpl::Data readData();
-
-                /**
-                * @return current position index
-                */
-                int position();
-
-                /**
-                * Move cursor to given index
-                * @param newPos new position index to be set
-                */
-                void position(int newPos);
-
             private:
                 pimpl::PortableSerializer &portableSerializer;
                 pimpl::DataSerializer &dataSerializer;
@@ -842,16 +825,7 @@ namespace hazelcast {
 
                 private:
                     template<typename T>
-                    std::shared_ptr<ClassDefinition> createNestedClassDef(const T &portable) {
-                        int version = PortableVersionHelper::getVersion<T>(context.getVersion());
-                        ClassDefinitionBuilder definitionBuilder(portable.getFactoryId(), portable.getClassId(),
-                                                                 version);
-
-                        ClassDefinitionWriter nestedWriter(context, definitionBuilder);
-                        PortableWriter portableWriter(&nestedWriter);
-                        portable.writePortable(portableWriter);
-                        return context.registerClassDefinition(definitionBuilder.build());
-                    }
+                    std::shared_ptr<ClassDefinition> createNestedClassDef(const T &portable);
 
                     ClassDefinitionBuilder &builder;
                     PortableContext &context;
@@ -1067,7 +1041,7 @@ namespace hazelcast {
                     int findPortableVersion(int factoryId, int classId) const;
 
                     PortableReader createReader(ObjectDataInput &input, int factoryId, int classId, int version,
-                                                int portableVersion) const;
+                                                int portableVersion);
 
                     int32_t readInt(ObjectDataInput &in) const;
                 };
@@ -1077,8 +1051,6 @@ namespace hazelcast {
                     DataSerializer(const SerializationConfig &serializationConfig);
 
                     ~DataSerializer();
-
-                    virtual int32_t getTypeId() const;
 
                     template<typename T>
                     static boost::optional<T> readObject(ObjectDataInput &in) {
@@ -1264,7 +1236,7 @@ namespace hazelcast {
                             return boost::optional<T>();
                         }
 
-                        int32_t typeId = static_cast<int32_t>(data.getType());
+                        int32_t typeId = data.getType();
 
                         // Constant 8 is Data::DATA_OFFSET. Windows DLL export does not
                         // let usage of static member.
@@ -1343,10 +1315,6 @@ namespace hazelcast {
             public:
                 PortableReader(pimpl::PortableSerializer &portableSer, ObjectDataInput &dataInput,
                                std::shared_ptr<ClassDefinition> cd, bool isDefaultReader);
-
-                PortableReader(const PortableReader &reader);
-
-                PortableReader &operator=(const PortableReader &reader);
 
                 /**
                 * @param fieldName name of the field
@@ -1545,7 +1513,7 @@ namespace hazelcast {
                 if (isDefaultReader)
                     return defaultPortableReader->readPortable<T>(fieldName);
                 return morphingPortableReader->readPortable<T>(fieldName);
-            };
+            }
 
             /**
             * @tparam type of the portable class in array
@@ -2001,6 +1969,18 @@ namespace hazelcast {
                             portableSerializer.write((*values)[i], classDefinition, objectDataOutput);
                         }
                     }
+                }
+
+                template<typename T>
+                std::shared_ptr<ClassDefinition> ClassDefinitionWriter::createNestedClassDef(const T &portable) {
+                    int version = PortableVersionHelper::getVersion<T>(context.getVersion());
+                    ClassDefinitionBuilder definitionBuilder(portable.getFactoryId(), portable.getClassId(),
+                                                             version);
+
+                    ClassDefinitionWriter nestedWriter(context, definitionBuilder);
+                    PortableWriter portableWriter(&nestedWriter);
+                    portable.writePortable(portableWriter);
+                    return context.registerClassDefinition(definitionBuilder.build());
                 }
             }
         }

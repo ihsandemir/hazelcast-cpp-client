@@ -65,7 +65,7 @@ namespace hazelcast {
 
                     const std::vector<byte> &toByteArray() const;
 
-                    SerializationConstants getType() const;
+                    int32_t getType() const;
 
                     bool operator<(const Data &rhs) const;
 

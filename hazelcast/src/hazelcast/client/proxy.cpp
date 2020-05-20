@@ -1927,16 +1927,16 @@ namespace hazelcast {
                     const topic::impl::reliable::ReliableTopicMessage &object, ObjectDataOutput &out) {
                 out.writeLong(std::chrono::duration_cast<std::chrono::milliseconds>(object.publishTime.time_since_epoch()).count());
                 out.writeObject<Address>(object.publisherAddress.value());
-                out.writeData(&object.payload);
+                out.write(object.payload.toByteArray());
             }
 
             topic::impl::reliable::ReliableTopicMessage
             hz_serializer<topic::impl::reliable::ReliableTopicMessage>::readData(ObjectDataInput &in) {
                 topic::impl::reliable::ReliableTopicMessage message;
                 auto now = std::chrono::system_clock::now();
-                message.publishTime = now + std::chrono::milliseconds(in.readLong()) - now.time_since_epoch();
+                message.publishTime = now + std::chrono::milliseconds(in.read<int64_t>()) - now.time_since_epoch();
                 message.publisherAddress = in.readObject<Address>();
-                message.payload = in.readData();
+                message.payload = serialization::pimpl::Data(in.read<std::vector<byte>>().value());
                 return message;
             }
         }

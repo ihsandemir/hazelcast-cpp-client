@@ -228,7 +228,7 @@ namespace hazelcast {
             void FieldDefinition::writeData(pimpl::DataOutput &dataOutput) {
                 dataOutput.write<int32_t>(index);
                 dataOutput.write<std::string>(fieldName);
-                dataOutput.write<byte>(type.getId());
+                dataOutput.write<byte>(static_cast<int32_t>(type));
                 dataOutput.write<int32_t>(factoryId);
                 dataOutput.write<int32_t>(classId);
             }
@@ -236,7 +236,7 @@ namespace hazelcast {
             void FieldDefinition::readData(pimpl::DataInput &dataInput) {
                 index = dataInput.read<int32_t>();
                 fieldName = dataInput.read<std::string>();
-                type.id = dataInput.read<byte>();
+                type = static_cast<FieldType>(dataInput.read<byte>());
                 factoryId = dataInput.read<int32_t>();
                 classId = dataInput.read<int32_t>();
             }
@@ -255,61 +255,16 @@ namespace hazelcast {
 
             std::ostream &operator<<(std::ostream &os, const FieldDefinition &definition) {
                 os << "FieldDefinition{" << "index: " << definition.index << " fieldName: " << definition.fieldName
-                   << " type: " << definition.type << " classId: " << definition.classId << " factoryId: "
+                   << " type: " << static_cast<int32_t>(definition.type) << " classId: " << definition.classId << " factoryId: "
                    << definition.factoryId << " version: " << definition.version;
                 return os;
             }
 
-            ObjectDataInput::ObjectDataInput(std::vector<byte> buffer, int offset, pimpl::DataInput &dataInput,
+            ObjectDataInput::ObjectDataInput(std::vector<byte> buffer, int offset,
                     pimpl::PortableSerializer &portableSer, pimpl::DataSerializer &dataSer,
                     const std::shared_ptr<serialization::global_serializer> &globalSerializer)
                     : pimpl::DataInput(std::move(buffer), offset), portableSerializer(portableSer), dataSerializer(dataSer),
                       globalSerializer_(globalSerializer) {}
-
-            pimpl::Data ObjectDataInput::readData() {
-                return pimpl::Data(dataInput.read<byte>Array());
-            }
-
-            int ObjectDataInput::position() {
-                return dataInput.position();
-            }
-
-            void ObjectDataInput::position(int newPos) {
-                dataInput.position(newPos);
-            }
-
-            FieldType::FieldType() : id(0) {
-            }
-
-            FieldType::FieldType(int type) : id((byte) type) {
-            }
-
-            FieldType::FieldType(FieldType const &rhs) : id(rhs.id) {
-            }
-
-            byte FieldType::getId() const {
-                return id;
-            }
-
-            FieldType &FieldType::operator=(FieldType const &rhs) {
-                this->id = rhs.id;
-                return (*this);
-            }
-
-            bool FieldType::operator==(FieldType const &rhs) const {
-                if (id != rhs.id) return false;
-                return true;
-            }
-
-            bool FieldType::operator!=(FieldType const &rhs) const {
-                if (id == rhs.id) return false;
-                return true;
-            }
-
-            std::ostream &operator<<(std::ostream &os, const FieldType &type) {
-                os << "FieldType{id: " << type.id << "}";
-                return os;
-            }
 
             ObjectDataOutput::ObjectDataOutput(bool dontWrite, pimpl::PortableSerializer *portableSer,
                                                pimpl::DataSerializer *dataSer,
@@ -321,125 +276,10 @@ namespace hazelcast {
                                            std::shared_ptr<ClassDefinition> cd, bool isDefaultReader)
                     : isDefaultReader(isDefaultReader) {
                 if (isDefaultReader) {
-                    defaultPortableReader.reset(new pimpl::DefaultPortableReader(portableSer, input, cd));
+                    defaultPortableReader = pimpl::DefaultPortableReader(portableSer, input, cd);
                 } else {
-                    morphingPortableReader.reset(new pimpl::MorphingPortableReader(portableSer, input, cd));
+                    morphingPortableReader = pimpl::MorphingPortableReader(portableSer, input, cd);
                 }
-            }
-
-            PortableReader::PortableReader(const PortableReader &reader)
-                    : isDefaultReader(reader.isDefaultReader),
-                      defaultPortableReader(reader.defaultPortableReader.release()),
-                      morphingPortableReader(reader.morphingPortableReader.release()) {}
-
-            PortableReader &PortableReader::operator=(const PortableReader &reader) {
-                this->isDefaultReader = reader.isDefaultReader;
-                this->defaultPortableReader.reset(reader.defaultPortableReader.release());
-                this->morphingPortableReader.reset(reader.morphingPortableReader.release());
-                return *this;
-            }
-
-            int32_t PortableReader::readInt(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readInt(fieldName);
-                return morphingPortableReader->readInt(fieldName);
-            }
-
-            int64_t PortableReader::readLong(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readLong(fieldName);
-                return morphingPortableReader->readLong(fieldName);
-            }
-
-            bool PortableReader::readBoolean(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readBoolean(fieldName);
-                return morphingPortableReader->readBoolean(fieldName);
-            }
-
-            byte PortableReader::readByte(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readByte(fieldName);
-                return morphingPortableReader->readByte(fieldName);
-            }
-
-            char PortableReader::readChar(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readChar(fieldName);
-                return morphingPortableReader->readChar(fieldName);
-            }
-
-            double PortableReader::readDouble(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readDouble(fieldName);
-                return morphingPortableReader->readDouble(fieldName);
-            }
-
-            float PortableReader::readFloat(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readFloat(fieldName);
-                return morphingPortableReader->readFloat(fieldName);
-            }
-
-            int16_t PortableReader::readShort(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readShort(fieldName);
-                return morphingPortableReader->readShort(fieldName);
-            }
-
-            std::unique_ptr<std::string> PortableReader::readUTF(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readUTF(fieldName);
-                return morphingPortableReader->readUTF(fieldName);
-            }
-
-            std::unique_ptr<std::vector<byte> > PortableReader::readByteArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readByteArray(fieldName);
-                return morphingPortableReader->readByteArray(fieldName);
-            }
-
-
-            std::unique_ptr<std::vector<bool> > PortableReader::readBooleanArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readBooleanArray(fieldName);
-                return morphingPortableReader->readBooleanArray(fieldName);
-            }
-
-            std::unique_ptr<std::vector<char> > PortableReader::readCharArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readCharArray(fieldName);
-                return morphingPortableReader->readCharArray(fieldName);
-            }
-
-            std::unique_ptr<std::vector<int32_t> > PortableReader::readIntArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readIntArray(fieldName);
-                return morphingPortableReader->readIntArray(fieldName);
-            }
-
-            std::unique_ptr<std::vector<int64_t> > PortableReader::readLongArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readLongArray(fieldName);
-                return morphingPortableReader->readLongArray(fieldName);
-            }
-
-            std::unique_ptr<std::vector<double> > PortableReader::readDoubleArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readDoubleArray(fieldName);
-                return morphingPortableReader->readDoubleArray(fieldName);
-            }
-
-            std::unique_ptr<std::vector<float> > PortableReader::readFloatArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readFloatArray(fieldName);
-                return morphingPortableReader->readFloatArray(fieldName);
-            }
-
-            std::unique_ptr<std::vector<int16_t> > PortableReader::readShortArray(const char *fieldName) {
-                if (isDefaultReader)
-                    return defaultPortableReader->readShortArray(fieldName);
-                return morphingPortableReader->readShortArray(fieldName);
             }
 
             ObjectDataInput &PortableReader::getRawDataInput() {
@@ -514,7 +354,7 @@ namespace hazelcast {
                 dataOutput.write<int32_t>(factoryId);
                 dataOutput.write<int32_t>(classId);
                 dataOutput.write<int32_t>(version);
-                dataOutput.writeShort(fieldDefinitionsMap.size());
+                dataOutput.write<int16_t>(fieldDefinitionsMap.size());
                 for (std::map<std::string, FieldDefinition>::iterator it = fieldDefinitionsMap.begin();
                      it != fieldDefinitionsMap.end(); ++it) {
                     it->second.writeData(dataOutput);
@@ -657,9 +497,9 @@ namespace hazelcast {
                     if (isNoWrite) { return; }
                     int32_t len = util::UTFUtil::isValidUTF8(str);
                     if (len < 0) {
-                        throw (exception::ExceptionBuilder<exception::UTFDataFormatException>(
-                                "DataOutput::writeUTF")
-                                << "String \"" << (*str) << "\" is not UTF-8 formatted !!!").build();
+                        BOOST_THROW_EXCEPTION((exception::ExceptionBuilder<exception::UTFDataFormatException>(
+                                "DataOutput::write")
+                                << "String \"" << str << "\" is not UTF-8 formatted !!!").build());
                     }
 
                     write<int32_t>(len);
@@ -734,50 +574,50 @@ namespace hazelcast {
                     ClassDefinitionBuilder builder(factoryId, classId, version);
 
                     // final position after portable is read
-                    in.readInt();
+                    in.read<int32_t>();
 
                     // field count
-                    int fieldCount = in.readInt();
+                    int fieldCount = in.read<int32_t>();
                     int offset = in.position();
                     for (int i = 0; i < fieldCount; i++) {
                         in.position(offset + i * util::Bits::INT_SIZE_IN_BYTES);
-                        int pos = in.readInt();
+                        int pos = in.read<int32_t>();
                         in.position(pos);
 
-                        short len = in.readShort();
+                        short len = in.read<int16_t>();
                         std::vector<byte> chars(len);
                         in.readFully(chars);
                         chars.push_back('\0');
 
-                        FieldType type(in.readByte());
+                        FieldType type(static_cast<FieldType>(in.read<byte>()));
                         std::string name((char *) &(chars[0]));
                         int fieldFactoryId = 0;
                         int fieldClassId = 0;
                         int fieldVersion = version;
                         if (type == FieldType::TYPE_PORTABLE) {
                             // is null
-                            if (in.readBoolean()) {
+                            if (in.read<bool>()) {
                                 shouldRegister = false;
                             }
-                            fieldFactoryId = in.readInt();
-                            fieldClassId = in.readInt();
+                            fieldFactoryId = in.read<int32_t>();
+                            fieldClassId = in.read<int32_t>();
 
                             // TODO: what if there's a null inner Portable field
                             if (shouldRegister) {
-                                fieldVersion = in.readInt();
+                                fieldVersion = in.read<int32_t>();
                                 readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
                             }
                         } else if (type == FieldType::TYPE_PORTABLE_ARRAY) {
-                            int k = in.readInt();
+                            int k = in.read<int32_t>();
                             if (k > 0) {
-                                fieldFactoryId = in.readInt();
-                                fieldClassId = in.readInt();
+                                fieldFactoryId = in.read<int32_t>();
+                                fieldClassId = in.read<int32_t>();
 
-                                int p = in.readInt();
+                                int p = in.read<int32_t>();
                                 in.position(p);
 
                                 // TODO: what if there's a null inner Portable field
-                                fieldVersion = in.readInt();
+                                fieldVersion = in.read<int32_t>();
                                 readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
                             } else {
                                 shouldRegister = false;
@@ -945,7 +785,7 @@ namespace hazelcast {
                         return type;
                     }
 
-                    type.typeId = data->getType();
+                    type.typeId = static_cast<SerializationConstants>(data->getType());
 
                     if (SerializationConstants::CONSTANT_TYPE_DATA == type.typeId ||
                         SerializationConstants::CONSTANT_TYPE_PORTABLE == type.typeId) {
@@ -1032,11 +872,11 @@ namespace hazelcast {
                     return data;
                 }
 
-                SerializationConstants Data::getType() const {
+                int32_t Data::getType() const {
                     if (totalSize() == 0) {
-                        return SerializationConstants::CONSTANT_TYPE_NULL;
+                        return static_cast<int32_t>(SerializationConstants::CONSTANT_TYPE_NULL);
                     }
-                    return SerializationConstants(util::Bits::readIntB(data, Data::TYPE_OFFSET));
+                    return util::Bits::readIntB(data, Data::TYPE_OFFSET);
                 }
 
                 int Data::hash() const {
@@ -1232,596 +1072,15 @@ namespace hazelcast {
                     }
                 }
 
-                int32_t ByteSerializer::getHazelcastTypeId() const {
-
-                }
-
-                void ByteSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeByte(*(static_cast<const byte *>(object)));
-                }
-
-                void *ByteSerializer::read(ObjectDataInput &in) {
-                    return new byte(in.readByte());
-                }
-
-                template<>
-                SerializationConstants hz_serializer<byte>::getTypeId() {
-                    return SerializationConstants::CONSTANT_TYPE_BYTE;
-                }
-
-                template<>
-                void hz_serializer<byte>::write(byte object, ObjectDataOutput &out) {
-                    out.writeByte(object);
-                }
-
-                template<>
-                byte hz_serializer<byte>::read(ObjectDataInput &in) {
-                    return in.read
-                }
-
-                template<>
-                struct HAZELCAST_API hz_serializer<bool> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId();
-                    
-                    template<>
-                    void hz_serializer<bool>::write(bool object, ObjectDataOutput &out);
-
-                    template<>
-                    bool hz_serializer<bool>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<char> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                    }
-
-                    template<>
-                    void hz_serializer<char>::write(char object, ObjectDataOutput &out);
-
-                    template<>
-                    char hz_serializer<char>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<int16_t> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                    }
-                    template<>
-                    void hz_serializer<int16_t>::write(int16_t object, ObjectDataOutput &out);
-
-                    int16_t hz_serializer<t>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<long> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                         
-                    }
-                    
-                    template<>
-                    void hz_serializer<long>::write(long object, ObjectDataOutput &out);
-
-                    template<>
-                    long hz_serializer<long>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<int32_t> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                         
-                    }
-                    
-                    template<>
-                    void hz_serializer<int32_t>::write(int32_t object, ObjectDataOutput &out);
-
-                    int32_t hz_serializer<t>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<int64_t> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                         
-                    }
-                    
-                    template<>
-                    void hz_serializer<int64_t>::write(int64_t object, ObjectDataOutput &out);
-
-                    int64_t hz_serializer<t>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<float> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                         
-                    }
-                    
-                    template<>
-                    void hz_serializer<float>::write(float object, ObjectDataOutput &out);
-
-                    template<>
-                    float hz_serializer<float>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<double> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                         
-                    }
-                    
-                    template<>
-                    void hz_serializer<double>::write(double object, ObjectDataOutput &out);
-
-                    template<>
-                    double hz_serializer<double>::read(ObjectDataInput &in);
-                };
-
-                template<>
-                struct HAZELCAST_API hz_serializer<std::string> : public builtin_serializer {
-                public:
-                    template<>
-                    SerializationConstants hz_serializer<byte>::getTypeId() {
-                         
-                    }
-                    
-                    void write(const std::string &object, ObjectDataOutput &out);
-
-                    std::string hz_serializer<string>::read(ObjectDataInput &in);
-                };
-                
-                
-                int32_t IntegerSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_INTEGER;
-                }
-
-                void IntegerSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeInt(*(static_cast<const int32_t *>(object)));
-                }
-
-                void *IntegerSerializer::read(ObjectDataInput &in) {
-                    return new int32_t(in.readInt());
-                }
-
-
-                int32_t BooleanSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_BOOLEAN;
-                }
-
-                void BooleanSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeBoolean(*(static_cast<const bool *>(object)));
-                }
-
-                void *BooleanSerializer::read(ObjectDataInput &in) {
-                    return new bool(in.readBoolean());
-                }
-
-                int32_t CharSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_CHAR;
-                }
-
-                void CharSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeChar(*(static_cast<const char *>(object)));
-                }
-
-                void *CharSerializer::read(ObjectDataInput &in) {
-                    return new char(in.readChar());
-                }
-
-                int32_t ShortSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_SHORT;
-                }
-
-                void ShortSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeShort(*(static_cast<const int16_t *>(object)));
-                }
-
-                void *ShortSerializer::read(ObjectDataInput &in) {
-                    return new int16_t(in.readShort());
-                }
-
-                int32_t LongSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_LONG;
-                }
-
-                void LongSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeLong(*(static_cast<const int64_t *>(object)));
-                }
-
-                void *LongSerializer::read(ObjectDataInput &in) {
-                    return new int64_t(in.readLong());;
-                }
-
-                int32_t FloatSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_FLOAT;
-                }
-
-                void FloatSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeFloat(*(static_cast<const float *>(object)));
-                }
-
-                void *FloatSerializer::read(ObjectDataInput &in) {
-                    return new float(in.readFloat());
-                }
-
-
-                int32_t DoubleSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_DOUBLE;
-                }
-
-                void DoubleSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeDouble(*(static_cast<const double *>(object)));
-                }
-
-                void *DoubleSerializer::read(ObjectDataInput &in) {
-                    return new double(in.readDouble());
-                }
-
-                int32_t StringSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_STRING;
-                }
-
-                void StringSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeUTF(static_cast<const std::string *>(object));
-                }
-
-                void *StringSerializer::read(ObjectDataInput &in) {
-                    return in.readUTF().release();
-                }
-
-                int32_t NullSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_NULL;
-                }
-
-                void *NullSerializer::read(ObjectDataInput &in) {
-                    return NULL;
-                }
-
-                void NullSerializer::write(ObjectDataOutput &out, const void *object) {
-                }
-
-                int32_t TheByteArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_BYTE_ARRAY;
-                }
-
-                void TheByteArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeByteArray(static_cast<const std::vector<byte> *>(object));
-                }
-
-                void *TheByteArraySerializer::read(ObjectDataInput &in) {
-                    return in.readByteArray().release();
-                }
-
-                int32_t BooleanArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_BOOLEAN_ARRAY;
-                }
-
-                void BooleanArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeBooleanArray(static_cast<const std::vector<bool> *>(object));
-                }
-
-                void *BooleanArraySerializer::read(ObjectDataInput &in) {
-                    return in.readBooleanArray().release();
-                }
-
-                int32_t CharArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_CHAR_ARRAY;
-                }
-
-                void CharArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeCharArray(static_cast<const std::vector<char> *>(object));
-                }
-
-                void *CharArraySerializer::read(ObjectDataInput &in) {
-                    return in.readCharArray().release();
-                }
-
-                int32_t ShortArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_SHORT_ARRAY;
-                }
-
-                void ShortArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeShortArray(static_cast<const std::vector<int16_t> *>(object));
-                }
-
-                void *ShortArraySerializer::read(ObjectDataInput &in) {
-                    return in.readShortArray().release();
-                }
-
-                int32_t IntegerArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_INTEGER_ARRAY;
-                }
-
-                void IntegerArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeIntArray(static_cast<const std::vector<int32_t> *>(object));
-                }
-
-                void *IntegerArraySerializer::read(ObjectDataInput &in) {
-                    return in.readIntArray().release();
-                }
-
-                int32_t LongArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_LONG_ARRAY;
-                }
-
-                void LongArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeLongArray(static_cast<const std::vector<int64_t> *>(object));
-                }
-
-                void *LongArraySerializer::read(ObjectDataInput &in) {
-                    return in.readLongArray().release();
-                }
-
-                int32_t FloatArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_FLOAT_ARRAY;
-                }
-
-                void FloatArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeFloatArray(static_cast<const std::vector<float> *>(object));
-                }
-
-                void *FloatArraySerializer::read(ObjectDataInput &in) {
-                    return in.readFloatArray().release();
-                }
-
-                int32_t DoubleArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_DOUBLE_ARRAY;
-                }
-
-                void DoubleArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeDoubleArray(static_cast<const std::vector<double> *>(object));
-                }
-
-                void *DoubleArraySerializer::read(ObjectDataInput &in) {
-                    return in.readDoubleArray().release();
-                }
-
-                int32_t StringArraySerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::CONSTANT_TYPE_STRING_ARRAY;
-                }
-
-                void StringArraySerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeUTFArray(static_cast<const std::vector<std::string *> *>(object));
-                }
-
-                void *StringArraySerializer::read(ObjectDataInput &in) {
-                    return in.readUTFPointerArray().release();
-                }
-
-                int32_t HazelcastJsonValueSerializer::getHazelcastTypeId() const {
-                    return SerializationConstants::JAVASCRIPT_JSON_SERIALIZATION_TYPE;
-                }
-
-                void HazelcastJsonValueSerializer::write(ObjectDataOutput &out, const void *object) {
-                    out.writeUTF(&(static_cast<const HazelcastJsonValue *>(object)->toString()));
-                }
-
-                void *HazelcastJsonValueSerializer::read(ObjectDataInput &in) {
-                    return new HazelcastJsonValue(*in.readUTF());
-                }
-
                 MorphingPortableReader::MorphingPortableReader(PortableSerializer &portableSer, ObjectDataInput &input,
                                                                std::shared_ptr<ClassDefinition> cd)
                         : PortableReaderBase(portableSer, input, cd) {}
 
-                int32_t MorphingPortableReader::readInt(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0;
-                    }
-                    const FieldType &currentFieldType = cd->getFieldType(fieldName);
-
-                    if (currentFieldType == FieldType::TYPE_INT) {
-                        return PortableReaderBase::readInt(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_BYTE) {
-                        return PortableReaderBase::readByte(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_CHAR) {
-                        return PortableReaderBase::readChar(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_SHORT) {
-                        return PortableReaderBase::readShort(fieldName);
-                    } else {
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("MorphingPortableReader::*",
-                                                                                         "IncompatibleClassChangeError"));
-                    }
-                }
-
-                int64_t MorphingPortableReader::readLong(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0;
-                    }
-                    const FieldType &currentFieldType = cd->getFieldType(fieldName);
-
-                    if (currentFieldType == FieldType::TYPE_LONG) {
-                        return PortableReaderBase::readLong(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_INT) {
-                        return PortableReaderBase::readInt(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_BYTE) {
-                        return PortableReaderBase::readByte(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_CHAR) {
-                        return PortableReaderBase::readChar(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_SHORT) {
-                        return PortableReaderBase::readShort(fieldName);
-                    } else {
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("MorphingPortableReader::*",
-                                                                                         "IncompatibleClassChangeError"));
-                    }
-                }
-
-                bool MorphingPortableReader::readBoolean(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return false;
-                    }
-                    return PortableReaderBase::readBoolean(fieldName);
-                }
-
-                byte MorphingPortableReader::readByte(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0;
-                    }
-                    return PortableReaderBase::readByte(fieldName);
-                }
-
-                char MorphingPortableReader::readChar(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0;
-                    }
-
-                    return PortableReaderBase::readChar(fieldName);
-                }
-
-                double MorphingPortableReader::readDouble(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0.0;
-                    }
-                    const FieldType &currentFieldType = cd->getFieldType(fieldName);
-
-                    if (currentFieldType == FieldType::TYPE_FLOAT) {
-                        return PortableReaderBase::readFloat(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_DOUBLE) {
-                        return PortableReaderBase::readDouble(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_LONG) {
-                        return PortableReaderBase::readLong(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_INT) {
-                        return PortableReaderBase::readInt(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_BYTE) {
-                        return PortableReaderBase::readByte(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_CHAR) {
-                        return PortableReaderBase::readChar(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_SHORT) {
-                        return PortableReaderBase::readShort(fieldName);
-                    } else {
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("MorphingPortableReader::*",
-                                                                                         "IncompatibleClassChangeError"));
-                    }
-                }
-
-                float MorphingPortableReader::readFloat(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0.0;
-                    }
-                    const FieldType &currentFieldType = cd->getFieldType(fieldName);
-
-                    if (currentFieldType == FieldType::TYPE_FLOAT) {
-                        return PortableReaderBase::readFloat(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_INT) {
-                        return (float) PortableReaderBase::readInt(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_BYTE) {
-                        return (float) PortableReaderBase::readByte(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_CHAR) {
-                        return (float) PortableReaderBase::readChar(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_SHORT) {
-                        return (float) PortableReaderBase::readShort(fieldName);
-                    } else {
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("MorphingPortableReader::*",
-                                                                                         "IncompatibleClassChangeError"));
-                    }
-                }
-
-                int16_t MorphingPortableReader::readShort(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return 0;
-                    }
-                    const FieldType &currentFieldType = cd->getFieldType(fieldName);
-
-                    if (currentFieldType == FieldType::TYPE_BYTE) {
-                        return PortableReaderBase::readByte(fieldName);
-                    } else if (currentFieldType == FieldType::TYPE_SHORT) {
-                        return PortableReaderBase::readShort(fieldName);
-                    } else {
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("MorphingPortableReader::*",
-                                                                                         "IncompatibleClassChangeError"));
-                    }
-                }
-
-                std::unique_ptr<std::string> MorphingPortableReader::readUTF(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::string>(new std::string(""));
-                    }
-                    return PortableReaderBase::readUTF(fieldName);
-                }
-
-                std::unique_ptr<std::vector<byte> > MorphingPortableReader::readByteArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<byte> >(new std::vector<byte>(1, 0));
-                    }
-                    return PortableReaderBase::readByteArray(fieldName);
-                }
-
-                std::unique_ptr<std::vector<char> > MorphingPortableReader::readCharArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<char> >(new std::vector<char>(1, 0));
-                    }
-                    return PortableReaderBase::readCharArray(fieldName);
-                }
-
-                std::unique_ptr<std::vector<int32_t> > MorphingPortableReader::readIntArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<int32_t> >(new std::vector<int32_t>(1, 0));
-                    }
-                    return PortableReaderBase::readIntArray(fieldName);
-                }
-
-                std::unique_ptr<std::vector<int64_t> > MorphingPortableReader::readLongArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<int64_t> >(new std::vector<int64_t>(1, 0));
-                    }
-                    return PortableReaderBase::readLongArray(fieldName);
-                }
-
-                std::unique_ptr<std::vector<double> > MorphingPortableReader::readDoubleArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<double> >(new std::vector<double>(1, 0));
-                    }
-                    return PortableReaderBase::readDoubleArray(fieldName);
-                }
-
-                std::unique_ptr<std::vector<float> > MorphingPortableReader::readFloatArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<float> >(new std::vector<float>(1, 0));
-                    }
-                    return PortableReaderBase::readFloatArray(fieldName);
-                }
-
-                std::unique_ptr<std::vector<int16_t> > MorphingPortableReader::readShortArray(char const *fieldName) {
-                    if (!cd->hasField(fieldName)) {
-                        return std::unique_ptr<std::vector<int16_t> >(new std::vector<int16_t>(1, 0));
-                    }
-                    return PortableReaderBase::readShortArray(fieldName);
-                }
-
-                int PortableVersionHelper::getVersion(const Portable *portable, int defaultVersion) {
-                    int version = defaultVersion;
-                    if (const VersionedPortable *versionedPortable = dynamic_cast<const VersionedPortable *>(portable)) {
-                        version = versionedPortable->getClassVersion();
-                        if (version < 0) {
-                            BOOST_THROW_EXCEPTION(
-                                    exception::IllegalArgumentException("PortableVersionHelper:getVersion",
-                                                                        "Version cannot be negative!"));
-                        }
-                    }
-                    return version;
-                }
-
-                PortableSerializer::PortableSerializer(PortableContext &portableContext)
-                        : context(portableContext) {
-                }
+                PortableSerializer::PortableSerializer(PortableContext &portableContext) : context(portableContext) {}
 
                 PortableReader
                 PortableSerializer::createReader(ObjectDataInput &input, int factoryId, int classId, int version,
-                                                 int portableVersion) const {
+                                                 int portableVersion) {
 
                     int effectiveVersion = version;
                     if (version < 0) {
@@ -1830,25 +1089,18 @@ namespace hazelcast {
 
                     std::shared_ptr<ClassDefinition> cd = context.lookupClassDefinition(factoryId, classId,
                                                                                         effectiveVersion);
-                    if (cd == NULL) {
+                    if (cd == nullptr) {
                         int begin = input.position();
                         cd = context.readClassDefinition(input, factoryId, classId, effectiveVersion);
                         input.position(begin);
                     }
 
-                    if (portableVersion == effectiveVersion) {
-                        PortableReader reader(*this, input, cd, true);
-                        return reader;
-                    } else {
-                        PortableReader reader(*this, input, cd, false);
-                        return reader;
-                    }
+                    return PortableReader(*this, input, cd, effectiveVersion == portableVersion);
                 }
 
                 int32_t PortableSerializer::readInt(ObjectDataInput &in) const {
-                    return in.readInt();
+                    return in.read<int32_t>();
                 }
-
             }
         }
     }
