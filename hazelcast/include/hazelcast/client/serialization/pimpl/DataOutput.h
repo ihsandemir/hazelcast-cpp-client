@@ -67,15 +67,7 @@ namespace hazelcast {
                             std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
                     write(T) { if (isNoWrite) { return; } }
 
-                    void write(const std::string *value) {
-                        if (isNoWrite) { return; }
-                        if (!value) {
-                            write<int32_t>(util::Bits::NULL_ARRAY);
-                            return;
-                        }
-
-                        write(*value);
-                    }
+                    void write(const std::string *value);
 
                     template <typename T>
                     typename std::enable_if<std::is_same<std::string, T>::value ||
@@ -86,27 +78,10 @@ namespace hazelcast {
                     * @param value to vector of values to be written. Only supported built-in values can be written.
                     */
                     template <typename T>
-                    void write(const std::vector<T> &value) {
-                        if (isNoWrite) { return; }
-                        int32_t len = (int32_t) value->size();
-                        write<int32_t>(len);
-                        if (len > 0) {
-                            for (auto &item : *value) {
-                                write(item);
-                            }
-                        }
-                    }
+                    void write(const std::vector<T> &value);
 
                     template <typename T>
-                    void write(const std::vector<T> *value) {
-                        if (isNoWrite) { return; }
-                        if (!value) {
-                            write<int32_t>(util::Bits::NULL_ARRAY);
-                            return;
-                        }
-
-                        write(*value);
-                    }
+                    void write(const std::vector<T> *value);
 
                 protected:
                     bool isNoWrite;
@@ -144,6 +119,39 @@ namespace hazelcast {
 
                 template <>
                 HAZELCAST_API void DataOutput::write(const HazelcastJsonValue &value);
+
+                void DataOutput::write(const std::string *value) {
+                    if (isNoWrite) { return; }
+                    if (!value) {
+                        write<int32_t>(util::Bits::NULL_ARRAY);
+                        return;
+                    }
+
+                    write(*value);
+                }
+
+                template <typename T>
+                void DataOutput::write(const std::vector<T> &value) {
+                    if (isNoWrite) { return; }
+                    int32_t len = (int32_t) value->size();
+                    write<int32_t>(len);
+                    if (len > 0) {
+                        for (auto &item : *value) {
+                            write(item);
+                        }
+                    }
+                }
+
+                template <typename T>
+                void DataOutput::write(const std::vector<T> *value) {
+                    if (isNoWrite) { return; }
+                    if (!value) {
+                        write<int32_t>(util::Bits::NULL_ARRAY);
+                        return;
+                    }
+
+                    write(*value);
+                }
             }
         }
     }

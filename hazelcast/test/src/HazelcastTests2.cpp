@@ -435,17 +435,11 @@ namespace hazelcast {
                 }
 
                 TEST_F(UTFUtilTest, readValidUTF8) {
-                    std::vector<byte> strBytes;
-                    for (char b : VALID_UTF_STRING) {
-                        strBytes.push_back((byte) b);
-                    }
-                    serialization::pimpl::DataInput in(strBytes);
-                    std::vector<char> utfBuffer;
-                    utfBuffer.reserve(
-                            client::serialization::pimpl::DataInput::MAX_UTF_CHAR_SIZE * VALID_UTF_STRING.size());
+                    serialization::pimpl::DataInput<std::string> in(VALID_UTF_STRING);
+                    std::string utfBuffer;
                     int numberOfUtfChars = hazelcast::util::UTFUtil::isValidUTF8(VALID_UTF_STRING);
                     for (int i = 0; i < numberOfUtfChars; ++i) {
-                        byte c = in.readByte();
+                        byte c = in.read<byte>();
                         hazelcast::util::UTFUtil::readUTF8Char(in, c, utfBuffer);
                     }
 
@@ -454,17 +448,11 @@ namespace hazelcast {
                 }
 
                 TEST_F(UTFUtilTest, readInvalidUTF8) {
-                    std::vector<byte> strBytes;
-                    for (char b : INVALID_UTF_STRING_INSUFFICIENT_BYTES) {
-                        strBytes.push_back((byte) b);
-                    }
-                    serialization::pimpl::DataInput in(strBytes);
-                    std::vector<char> utfBuffer;
-                    utfBuffer.reserve(
-                            client::serialization::pimpl::DataInput::MAX_UTF_CHAR_SIZE * VALID_UTF_STRING.size());
+                    serialization::pimpl::DataInput<std::string> in(INVALID_UTF_STRING_INSUFFICIENT_BYTES);
+                    std::string utfBuffer;
                     for (int i = 0; i < 5; ++i) {
-                        byte c = in.readByte();
-// The 4th utf character is missing one byte intentionally in the invalid utf string
+                        byte c = in.read<byte>();
+                        // The 4th utf character is missing one byte intentionally in the invalid utf string
                         if (i == 4) {
                             ASSERT_THROW(hazelcast::util::UTFUtil::readUTF8Char(in, c, utfBuffer),
                                          exception::UTFDataFormatException);
@@ -773,7 +761,7 @@ namespace hazelcast {
                             // poll items
                             for (int i = 0; i < numItems; ++i) {
                                 values[i] = i;
-                                ASSERT_NE((int *) NULL, q.poll());
+                                ASSERT_NE((int *) nullptr, q.poll());
                             }
                         }
 
@@ -792,7 +780,7 @@ namespace hazelcast {
                 TEST_F(ConcurentQueueTest, testSingleThread) {
                     hazelcast::util::ConcurrentQueue<int> q;
 
-                    ASSERT_EQ((int *) NULL, q.poll());
+                    ASSERT_EQ((int *) nullptr, q.poll());
 
                     int val1, val2;
 
@@ -800,7 +788,7 @@ namespace hazelcast {
 
                     ASSERT_EQ(&val1, q.poll());
 
-                    ASSERT_EQ((int *) NULL, q.poll());
+                    ASSERT_EQ((int *) nullptr, q.poll());
 
                     q.offer(&val1);
                     q.offer(&val2);
@@ -813,7 +801,7 @@ namespace hazelcast {
                     ASSERT_EQ(&val1, q.poll());
                     ASSERT_EQ(&val1, q.poll());
 
-                    ASSERT_EQ((int *) NULL, q.poll());
+                    ASSERT_EQ((int *) nullptr, q.poll());
                 }
 
                 TEST_F(ConcurentQueueTest, testMultiThread) {
@@ -842,7 +830,7 @@ namespace hazelcast {
                     int numRemaining = numThreads - numRemoved;
 
                     for (int j = 0; j < numRemaining; ++j) {
-                        ASSERT_NE((int *) NULL, q.poll());
+                        ASSERT_NE((int *) nullptr, q.poll());
                     }
                     ASSERT_EQ(0, q.removeAll(&removalValue));
 
@@ -1292,25 +1280,25 @@ namespace hazelcast {
 
 
             void TestRawDataPortable::writePortable(serialization::PortableWriter &writer) const {
-                writer.writeLong("l", l);
-                writer.writeCharArray("c", &c);
+                writer.write<int64_t>("l", l);
+                writer.write("c", &c);
                 writer.writePortable("p", &p);
                 serialization::ObjectDataOutput &out = writer.getRawDataOutput();
-                out.writeInt(k);
-                out.writeUTF(&s);
+                out.write<int32_t>(k);
+                out.write<std::string>(&s);
                 ds.writeData(out);
             }
 
 
             void TestRawDataPortable::readPortable(serialization::PortableReader &reader) {
-                l = reader.readLong("l");
-                c = *reader.readCharArray("c");
+                l = reader.read<int64_t>("l");
+                c = *reader.read<std::vector<char>>("c");
                 std::shared_ptr<TestNamedPortable> ptr = reader.readPortable<TestNamedPortable>("p");
-                if (ptr != NULL)
+                if (ptr != nullptr)
                     p = *ptr;
                 serialization::ObjectDataInput &in = reader.getRawDataInput();
-                k = in.readInt();
-                s = *in.readUTF();
+                k = in.read<int32_t>();
+                s = *in.read<std::string>();
                 ds.readData(in);
             }
 
@@ -1411,27 +1399,27 @@ namespace hazelcast {
             }
 
             void Employee::writePortable(serialization::PortableWriter &writer) const {
-                writer.writeUTF("n", &name);
-                writer.writeInt("a", age);
+                writer.write<std::string>("n", &name);
+                writer.write<int32_t>("a", age);
 
-                writer.writeByte("b", by);
-                writer.writeChar("c", c);
-                writer.writeBoolean("bo", boolean);
-                writer.writeShort("s", s);
-                writer.writeInt("i", i);
-                writer.writeLong("l", l);
-                writer.writeFloat("f", f);
-                writer.writeDouble("d", d);
-                writer.writeUTF("str", &str);
-                writer.writeUTF("utfstr", &utfStr);
+                writer.write<byte>("b", by);
+                writer.write("c", c);
+                writer.write("bo", boolean);
+                writer.write<int16_t>("s", s);
+                writer.write<int32_t>("i", i);
+                writer.write<int64_t>("l", l);
+                writer.write<float>("f", f);
+                writer.write<double>("d", d);
+                writer.write("str", &str);
+                writer.write("utfstr", &utfStr);
 
-                writer.writeByteArray("bb", &byteVec);
-                writer.writeCharArray("cc", &cc);
-                writer.writeBooleanArray("ba", &ba);
-                writer.writeShortArray("ss", &ss);
-                writer.writeIntArray("ii", &ii);
-                writer.writeFloatArray("ff", &ff);
-                writer.writeDoubleArray("dd", &dd);
+                write("bb", &byteVec);
+                write("cc", &cc);
+                write("ba", &ba);
+                write("ss", &ss);
+                write("ii", &ii);
+                write("ff", &ff);
+                write("dd", &dd);
 
                 serialization::ObjectDataOutput &out = writer.getRawDataOutput();
                 out.writeObject<byte>(&by);
@@ -1446,27 +1434,27 @@ namespace hazelcast {
             }
 
             void Employee::readPortable(serialization::PortableReader &reader) {
-                name = *reader.readUTF("n");
-                age = reader.readInt("a");
+                name = *reader.read<std::string>("n");
+                age = reader.read<int32_t>("a");
 
-                by = reader.readByte("b");;
+                by = reader.read<byte>("b");;
                 c = reader.readChar("c");;
-                boolean = reader.readBoolean("bo");;
-                s = reader.readShort("s");;
-                i = reader.readInt("i");;
-                l = reader.readLong("l");;
-                f = reader.readFloat("f");;
-                d = reader.readDouble("d");;
-                str = *reader.readUTF("str");;
-                utfStr = *reader.readUTF("utfstr");;
+                boolean = reader.read<bool>("bo");;
+                s = reader.read<int16_t>("s");;
+                i = reader.read<int32_t>("i");;
+                l = reader.read<int64_t>("l");;
+                f = reader.read<float>("f");;
+                d = reader.read<double>("d");;
+                str = *reader.read<std::string>("str");;
+                utfStr = *reader.read<std::string>("utfstr");;
 
-                byteVec = *reader.readByteArray("bb");;
-                cc = *reader.readCharArray("cc");;
-                ba = *reader.readBooleanArray("ba");;
-                ss = *reader.readShortArray("ss");;
-                ii = *reader.readIntArray("ii");;
-                ff = *reader.readFloatArray("ff");;
-                dd = *reader.readDoubleArray("dd");;
+                byteVec = *reader.read<std::vector<byte>>("bb");;
+                cc = *reader.read<std::vector<char>>("cc");;
+                ba = *reader.read<std::vector<bool>>("ba");;
+                ss = *reader.read<std::vector<int16_t>>("ss");;
+                ii = *reader.read<std::vector<int32_t>>("ii");;
+                ff = *reader.read<std::vector<float>>("ff");;
+                dd = *reader.read<std::vector<double>>("dd");;
 
                 serialization::ObjectDataInput &in = reader.getRawDataInput();
                 by = *in.readObject<byte>();
@@ -1511,7 +1499,7 @@ namespace hazelcast {
                 const Employee *lv = lhs->second;
                 const Employee *rv = rhs->second;
 
-                if (NULL == lv && NULL == rv) {
+                if (nullptr == lv && nullptr == rv) {
                     // order by key
                     const int32_t leftKey = *lhs->first;
                     const int32_t rightKey = *rhs->first;
@@ -1527,11 +1515,11 @@ namespace hazelcast {
                     return 1;
                 }
 
-                if (NULL == lv) {
+                if (nullptr == lv) {
                     return -1;
                 }
 
-                if (NULL == rv) {
+                if (nullptr == rv) {
                     return 1;
                 }
 
@@ -1555,11 +1543,11 @@ namespace hazelcast {
                 const int32_t *key1 = lhs->first;
                 const int32_t *key2 = rhs->first;
 
-                if (NULL == key1) {
+                if (nullptr == key1) {
                     return -1;
                 }
 
-                if (NULL == key2) {
+                if (nullptr == key2) {
                     return 1;
                 }
 
@@ -1639,32 +1627,32 @@ namespace hazelcast {
             }
 
             void TestMainPortable::writePortable(serialization::PortableWriter &writer) const {
-                writer.writeByte("b", b);
+                writer.write<byte>("b", b);
                 writer.writeBoolean("bool", boolean);
                 writer.writeChar("c", c);
-                writer.writeShort("s", s);
-                writer.writeInt("i", i);
-                writer.writeLong("l", l);
-                writer.writeFloat("f", f);
-                writer.writeDouble("d", d);
-                writer.writeUTF("str", &str);
+                writer.write<int16_t>("s", s);
+                writer.write<int32_t>("i", i);
+                writer.write<int64_t>("l", l);
+                writer.write<float>("f", f);
+                writer.write<double>("d", d);
+                writer.write<std::string>("str", &str);
                 writer.writePortable("p", &p);
             }
 
 
             void TestMainPortable::readPortable(serialization::PortableReader &reader) {
                 null = false;
-                b = reader.readByte("b");
-                boolean = reader.readBoolean("bool");
+                b = reader.read<byte>("b");
+                boolean = reader.read<bool>("bool");
                 c = reader.readChar("c");
-                s = reader.readShort("s");
-                i = reader.readInt("i");
-                l = reader.readLong("l");
-                f = reader.readFloat("f");
-                d = reader.readDouble("d");
-                str = *reader.readUTF("str");
+                s = reader.read<int16_t>("s");
+                i = reader.read<int32_t>("i");
+                l = reader.read<int64_t>("l");
+                f = reader.read<float>("f");
+                d = reader.read<double>("d");
+                str = *reader.read<std::string>("str");
                 std::shared_ptr<TestInnerPortable> ptr = reader.readPortable<TestInnerPortable>("p");
-                if (ptr != NULL)
+                if (ptr != nullptr)
                     p = *ptr;
             }
 
@@ -1693,14 +1681,14 @@ namespace hazelcast {
             }
 
             void TestNamedPortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.writeUTF("name", &name);
-                writer.writeInt("myint", k);
+                writer.write<std::string>("name", &name);
+                writer.write<int32_t>("myint", k);
             }
 
 
             void TestNamedPortable::readPortable(serialization::PortableReader& reader) {
-                name = *reader.readUTF("name");
-                k =  reader.readInt("myint");
+                name = *reader.read<std::string>("name");
+                k =  reader.read<int32_t>("myint");
             }
 
             bool TestNamedPortable::operator ==(const TestNamedPortable& m) const {
@@ -1746,11 +1734,11 @@ namespace hazelcast {
                     }
 
                     virtual void writePortable(serialization::PortableWriter &writer) const {
-                        writer.writeUTF("name", &name);
+                        writer.write<std::string>("name", &name);
                     }
 
                     virtual void readPortable(serialization::PortableReader &reader) {
-                        name = *reader.readUTF("name");
+                        name = *reader.read<std::string>("name");
                     }
 
                     bool operator==(const Child &rhs) const {
@@ -1861,17 +1849,17 @@ namespace hazelcast {
             }
 
             void TestInvalidReadPortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.writeLong("l", l);
-                writer.writeInt("i", i);
-                writer.writeUTF("s", &s);
+                writer.write<int64_t>("l", l);
+                writer.write<int32_t>("i", i);
+                writer.write<std::string>("s", &s);
             }
 
 
             void TestInvalidReadPortable::readPortable(serialization::PortableReader& reader) {
-                l = reader.readLong("l");
+                l = reader.read<int64_t>("l");
                 serialization::ObjectDataInput &in = reader.getRawDataInput();
-                i = in.readInt();
-                s = *reader.readUTF("s");
+                i = in.read<int32_t>();
+                s = *reader.read<std::string>("s");
             }
         }
     }
@@ -1900,16 +1888,16 @@ namespace hazelcast {
             }
 
             void TestInvalidWritePortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.writeLong("l", l);
+                writer.write<int64_t>("l", l);
                 serialization::ObjectDataOutput& out = writer.getRawDataOutput();
-                out.writeInt(i);
-                writer.writeUTF("s", &s);
+                out.write<int32_t>(i);
+                writer.write<std::string>("s", &s);
             }
 
             void TestInvalidWritePortable::readPortable(serialization::PortableReader& reader) {
-                l = reader.readLong("l");
-                i = reader.readInt("i");
-                s = *reader.readUTF("s");
+                l = reader.read<int64_t>("l");
+                i = reader.read<int32_t>("i");
+                s = *reader.read<std::string>("s");
             }
         }
     }
@@ -1983,26 +1971,26 @@ namespace hazelcast {
             }
 
             void TestInnerPortable::writePortable(serialization::PortableWriter &writer) const {
-                writer.writeByteArray("b", &bb);
-                writer.writeBooleanArray("ba", &ba);
-                writer.writeCharArray("c", &cc);
-                writer.writeShortArray("s", &ss);
-                writer.writeIntArray("i", &ii);
-                writer.writeLongArray("l", &ll);
-                writer.writeFloatArray("f", &ff);
-                writer.writeDoubleArray("d", &dd);
-                writer.writePortableArray("nn", &nn);
+                write("b", &bb);
+                write("ba", &ba);
+                write("c", &cc);
+                write("s", &ss);
+                write("i", &ii);
+                write("l", &ll);
+                write("f", &ff);
+                write("d", &dd);
+                write("nn", &nn);
             }
 
             void TestInnerPortable::readPortable(serialization::PortableReader &reader) {
-                bb = *reader.readByteArray("b");
-                ba = *reader.readBooleanArray("ba");
-                cc = *reader.readCharArray("c");
-                ss = *reader.readShortArray("s");
-                ii = *reader.readIntArray("i");
+                bb = *reader.read<std::vector<byte>>("b");
+                ba = *reader.read<std::vector<bool>>("ba");
+                cc = *reader.read<std::vector<char>>("c");
+                ss = *reader.read<std::vector<int16_t>>("s");
+                ii = *reader.read<std::vector<int32_t>>("i");
                 ll = *reader.readLongArray("l");
-                ff = *reader.readFloatArray("f");
-                dd = *reader.readDoubleArray("d");
+                ff = *reader.read<std::vector<float>>("f");
+                dd = *reader.read<std::vector<double>>("d");
                 nn = reader.readPortableArray<TestNamedPortable>("nn");
             }
 
@@ -2032,16 +2020,16 @@ namespace hazelcast {
 
 
             void TestNamedPortableV2::writePortable(serialization::PortableWriter& writer) const {
-                writer.writeInt("v", v);
-                writer.writeUTF("name", &name);
-                writer.writeInt("myint", k);
+                writer.write<int32_t>("v", v);
+                writer.write<std::string>("name", &name);
+                writer.write<int32_t>("myint", k);
             }
 
 
             void TestNamedPortableV2::readPortable(serialization::PortableReader& reader) {
-                v = reader.readInt("v");
-                name = *reader.readUTF("name");
-                k = reader.readInt("myint");
+                v = reader.read<int32_t>("v");
+                name = *reader.read<std::string>("name");
+                k = reader.read<int32_t>("myint");
             }
 
         }
@@ -2072,14 +2060,14 @@ namespace hazelcast {
             }
 
             void TestNamedPortableV3::writePortable(serialization::PortableWriter& writer) const {
-                writer.writeUTF("name", &name);
-                writer.writeShort("myint", k);
+                writer.write<std::string>("name", &name);
+                writer.write<int16_t>("myint", k);
             }
 
 
             void TestNamedPortableV3::readPortable(serialization::PortableReader& reader) {
-                name = *reader.readUTF("name");
-                k = reader.readShort("myint");
+                name = *reader.read<std::string>("name");
+                k = reader.read<int16_t>("myint");
             }
 
             bool TestNamedPortableV3::operator ==(const TestNamedPortableV3& m) const {
@@ -2213,11 +2201,11 @@ namespace hazelcast {
 
                     virtual void write(serialization::ObjectDataOutput &out, const void *object) {
                         std::string value("Dummy string");
-                        out.writeUTF(&value);
+                        out.write<std::string>(&value);
                     }
 
                     virtual void *read(serialization::ObjectDataInput &in) {
-                        return in.readUTF().release();
+                        return in.read<std::string>().release();
                     }
                 };
 
@@ -2757,7 +2745,7 @@ namespace hazelcast {
                 SerializationConfig serializationConfig;
                 serialization::pimpl::SerializationService ss(serializationConfig);
                 std::unique_ptr<int32_t> ptr = ss.toObject<int32_t>(data);
-                ASSERT_EQ(ptr.get(), (int32_t *) NULL);
+                ASSERT_EQ(ptr.get(), (int32_t *) nullptr);
             }
 
             TEST_F(ClientSerializationTest, testMorphingWithDifferentTypes_differentVersions) {
@@ -2818,25 +2806,25 @@ namespace hazelcast {
                     stringVector.push_back(new std::string(stringArray[j]));
                 }
 
-                out.writeByte(by);
+                out.write<byte>(by);
                 out.writeChar(c);
                 out.writeBoolean(boolean);
-                out.writeShort(s);
-                out.writeInt(i);
-                out.writeLong(l);
-                out.writeFloat(f);
-                out.writeDouble(d);
-                out.writeUTF(&str);
-                out.writeUTF(&utfStr);
+                out.write<int16_t>(s);
+                out.write<int32_t>(i);
+                out.write<int64_t>(l);
+                out.write<float>(f);
+                out.write<double>(d);
+                out.write<std::string>(&str);
+                out.write<std::string>(&utfStr);
 
-                out.writeByteArray(&byteVec);
-                out.writeCharArray(&cc);
-                out.writeBooleanArray(&ba);
-                out.writeShortArray(&ss);
-                out.writeIntArray(&ii);
-                out.writeFloatArray(&ff);
-                out.writeDoubleArray(&dd);
-                out.writeUTFArray(&stringVector);
+                out.write(&byteVec);
+                out.write(&cc);
+                out.write(&ba);
+                out.write(&ss);
+                out.write(&ii);
+                out.write(&ff);
+                out.write(&dd);
+                out.write(&stringVector);
 
                 out.writeObject<byte>(&by);
                 out.writeObject<char>(&c);
@@ -2847,34 +2835,33 @@ namespace hazelcast {
                 out.writeObject<double>(&d);
                 out.writeObject<std::string>(&str);
                 out.writeObject<std::string>(&utfStr);
-                out.writeInt(5);
-                out.writeUTF(NULL);
-                out.writeUTFArray(NULL);
+                out.write<int32_t>(5);
+                out.write<std::string>(nullptr);
+                out.write<std::vector<std::string>>(nullptr);
 
-                std::unique_ptr<std::vector<byte> > buffer = dataOutput.toByteArray();
-                serialization::pimpl::DataInput dataInput(*buffer);
+                serialization::pimpl::DataInput dataInput(dataOutput.toByteArray());
                 serialization::ObjectDataInput in(dataInput, serializationService.getSerializerHolder());
 
-                ASSERT_EQ(by, in.readByte());
-                ASSERT_EQ(c, in.readChar());
-                ASSERT_EQ(boolean, in.readBoolean());
-                ASSERT_EQ(s, in.readShort());
-                ASSERT_EQ(i, in.readInt());
-                ASSERT_EQ(l, in.readLong());
-                ASSERT_FLOAT_EQ(f, in.readFloat());
-                ASSERT_DOUBLE_EQ(d, in.readDouble());
-                ASSERT_EQ(str, *in.readUTF());
-                ASSERT_EQ(utfStr, *in.readUTF());
+                ASSERT_EQ(by, in.read<byte>());
+                ASSERT_EQ(c, in.read<char>());
+                ASSERT_EQ(boolean, in.read<bool>());
+                ASSERT_EQ(s, in.read<int16_t>());
+                ASSERT_EQ(i, in.read<int32_t>());
+                ASSERT_EQ(l, in.read<int64_t>());
+                ASSERT_FLOAT_EQ(f, in.read<float>());
+                ASSERT_DOUBLE_EQ(d, in.read<double>());
+                ASSERT_EQ(str, in.read<std::string>());
+                ASSERT_EQ(utfStr, in.read<std::string>());
 
-                ASSERT_EQ(byteVec, *in.readByteArray());
-                ASSERT_EQ(cc, *in.readCharArray());
-                ASSERT_EQ(ba, *in.readBooleanArray());
-                ASSERT_EQ(ss, *in.readShortArray());
-                ASSERT_EQ(ii, *in.readIntArray());
-                ASSERT_EQ(ff, *in.readFloatArray());
-                ASSERT_EQ(dd, *in.readDoubleArray());
-                std::unique_ptr<std::vector<std::string> > strArrRead = in.readUTFArray();
-                ASSERT_NE((std::vector<std::string> *) NULL, strArrRead.get());
+                ASSERT_EQ(byteVec, *in.read<std::vector<byte>>());
+                ASSERT_EQ(cc, *in.read<std::vector<char>>());
+                ASSERT_EQ(ba, *in.read<std::vector<bool>>());
+                ASSERT_EQ(ss, *in.read<std::vector<int16_t>>());
+                ASSERT_EQ(ii, *in.read<std::vector<int32_t>>());
+                ASSERT_EQ(ff, *in.read<std::vector<float>>());
+                ASSERT_EQ(dd, *in.read<std::vector<double>>());
+                auto strArrRead = in.read<std::vector<std::string>>();
+                ASSERT_TRUE(strArrRead.has_value());
                 ASSERT_EQ(stringVector.size(), strArrRead->size());
                 for (size_t j = 0; j < stringVector.size(); ++j) {
                     ASSERT_EQ((*strArrRead)[j], *(stringVector[j]));
@@ -2890,8 +2877,8 @@ namespace hazelcast {
                 ASSERT_EQ(str, *in.readObject<std::string>());
                 ASSERT_EQ(utfStr, *in.readObject<std::string>());
                 ASSERT_EQ(4, in.skipBytes(4));
-                ASSERT_NULL("Expected null string", in.readUTF().get(), std::string);
-                ASSERT_NULL("Expected null string array", in.readUTFArray().get(), std::vector<std::string>);
+                ASSERT_nullptr("Expected null string", in.read<std::string>().get(), std::string);
+                ASSERT_nullptr("Expected null string array", in.read<std::vector<std::string>>().get(), std::vector<std::string>);
             }
 
             TEST_F(ClientSerializationTest, testGetUTF8CharCount) {
@@ -2904,7 +2891,7 @@ namespace hazelcast {
                 serialization::pimpl::DataOutput dataOutput;
                 serialization::ObjectDataOutput out(dataOutput, &serializationService.getSerializerHolder());
 
-                out.writeUTF(&utfStr);
+                out.write<std::string>(&utfStr);
                 std::unique_ptr<std::vector<byte> > byteArray = out.toByteArray();
                 int strLen = hazelcast::util::Bits::readIntB(*byteArray, 0);
                 ASSERT_EQ(7, strLen);
@@ -2942,7 +2929,7 @@ namespace hazelcast {
                 serialization::pimpl::Data data = serializationService.toData<NonSerializableObject>(&obj);
 
                 std::unique_ptr<std::string> deserializedValue = serializationService.toObject<std::string>(data);
-                ASSERT_NE((std::string *) NULL, deserializedValue.get());
+                ASSERT_NE((std::string *) nullptr, deserializedValue.get());
                 ASSERT_EQ("Dummy string", *deserializedValue);
             }
         }
@@ -2984,12 +2971,12 @@ namespace hazelcast {
 
             void TestDataSerializable::writeData(serialization::ObjectDataOutput& writer) const {
                 writer.writeChar(c);
-                writer.writeInt(i);
+                writer.write<int32_t>(i);
             }
 
             void TestDataSerializable::readData(serialization::ObjectDataInput &reader) {
-                c = reader.readChar();
-                i = reader.readInt();
+                c = reader.read<char>();
+                i = reader.read<int32_t>();
             }
 
             std::unique_ptr<serialization::IdentifiedDataSerializable>
@@ -3047,7 +3034,7 @@ namespace hazelcast {
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 std::shared_ptr<std::string> value = nearCacheRecordStore->get(getSharedKey(i));
-                                ASSERT_NOTNULL(value.get(), std::string);
+                                ASSERT_NOTnullptr(value.get(), std::string);
                                 ASSERT_EQ(*getSharedValue(i), *value);
                             }
                         }
@@ -3065,7 +3052,7 @@ namespace hazelcast {
                                 nearCacheRecordStore->put(key, getSharedValue(i));
 
                                 // ensure that they are stored
-                                ASSERT_NOTNULL(nearCacheRecordStore->get(key).get(), std::string);
+                                ASSERT_NOTnullptr(nearCacheRecordStore->get(key).get(), std::string);
                             }
 
                             ASSERT_EQ(DEFAULT_RECORD_COUNT, nearCacheRecordStore->size());
@@ -3073,7 +3060,7 @@ namespace hazelcast {
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 std::shared_ptr<serialization::pimpl::Data> key = getSharedKey(i);
                                 ASSERT_TRUE(nearCacheRecordStore->invalidate(key));
-                                ASSERT_NULL("Should not exist", nearCacheRecordStore->get(key).get(), std::string);
+                                ASSERT_nullptr("Should not exist", nearCacheRecordStore->get(key).get(), std::string);
                             }
 
                             ASSERT_EQ(0, nearCacheRecordStore->size());
@@ -3092,7 +3079,7 @@ namespace hazelcast {
                                 nearCacheRecordStore->put(key, getSharedValue(i));
 
                                 // ensure that they are stored
-                                ASSERT_NOTNULL(nearCacheRecordStore->get(key).get(), std::string);
+                                ASSERT_NOTnullptr(nearCacheRecordStore->get(key).get(), std::string);
                             }
 
                             if (destroy) {
@@ -3126,7 +3113,7 @@ namespace hazelcast {
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 int selectedKey = i * 3;
-                                if (nearCacheRecordStore->get(getSharedKey(selectedKey)) != NULL) {
+                                if (nearCacheRecordStore->get(getSharedKey(selectedKey)) != nullptr) {
                                     expectedHits++;
                                 } else {
                                     expectedMisses++;
@@ -3194,13 +3181,13 @@ namespace hazelcast {
                             }
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                                ASSERT_NOTNULL(nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
+                                ASSERT_NOTnullptr(nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
                             }
 
                             hazelcast::util::sleep(ttlSeconds + 1);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                                ASSERT_NULL("", nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
+                                ASSERT_nullptr("", nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
                             }
                         }
 
@@ -3221,13 +3208,13 @@ namespace hazelcast {
                             }
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                                ASSERT_NOTNULL(nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
+                                ASSERT_NOTnullptr(nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
                             }
 
                             hazelcast::util::sleep(maxIdleSeconds + 1);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                                ASSERT_NULL("", nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
+                                ASSERT_nullptr("", nearCacheRecordStore->get(getSharedKey(i)).get(), std::string);
                             }
                         }
 

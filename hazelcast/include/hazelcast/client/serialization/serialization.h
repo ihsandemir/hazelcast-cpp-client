@@ -515,7 +515,7 @@ namespace hazelcast {
             * Provides deserialization methods for primitives types, arrays of primitive types
             * Portable, IdentifiedDataSerializable and custom serializable types
             */
-            class HAZELCAST_API ObjectDataInput : public pimpl::DataInput {
+            class HAZELCAST_API ObjectDataInput : public pimpl::DataInput<std::vector<byte>> {
             public:
                 /**
                 * Internal API. Constructor

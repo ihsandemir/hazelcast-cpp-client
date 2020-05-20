@@ -900,10 +900,6 @@ namespace hazelcast {
                     return cachedHashValue < rhs.cachedHashValue;
                 }
 
-                DataInput::DataInput(std::vector<byte> &&buf) : buffer(buf), pos(0) {}
-
-                DataInput::DataInput(std::vector<byte> &&buf, int offset) : buffer(buf), pos(offset) {}
-
                 int DataInput::position() {
                     return pos;
                 }

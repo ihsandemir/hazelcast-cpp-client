@@ -41,13 +41,14 @@ namespace hazelcast {
     namespace client {
         namespace serialization {
             namespace pimpl {
-                class HAZELCAST_API DataInput {
+                template<typename Container>
+                class DataInput {
                 public:
                     static constexpr const int MAX_UTF_CHAR_SIZE = 4;
 
-                    DataInput(std::vector<byte> &&buffer);
+                    explicit DataInput(Container buf) : buffer(std::move(buf)), pos(0) {}
 
-                    DataInput(std::vector<byte> &&buffer, int offset);
+                    DataInput(Container buf, int offset) : buffer(std::move(buf)), pos(offset) {}
 
                     inline void readFully(std::vector<byte> &bytes) {
                         size_t length = bytes.size();
@@ -200,7 +201,7 @@ namespace hazelcast {
                     void position(int position);
 
                 private:
-                    std::vector<byte> buffer;
+                    Container buffer;
                     int pos;
 
                     void inline checkAvailable(size_t requestedLength) {
@@ -215,7 +216,7 @@ namespace hazelcast {
 
                     inline std::string readUTF(int charCount) {
                         std::string result;
-                        result.reserve((size_t) MAX_UTF_CHAR_SIZE * charCount));
+                        result.reserve((size_t) MAX_UTF_CHAR_SIZE * charCount);
                         byte b;
                         for (int i = 0; i < charCount; ++i) {
                             b = read<byte>();
