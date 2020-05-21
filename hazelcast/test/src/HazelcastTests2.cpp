@@ -268,11 +268,6 @@ namespace hazelcast {
     }
 }
 
-//
-// Created by İhsan Demir on 6 June 2016.
-//
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -406,11 +401,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -465,8 +455,6 @@ namespace hazelcast {
         }
     }
 }
-
-
 
 namespace hazelcast {
     namespace client {
@@ -615,8 +603,6 @@ namespace hazelcast {
     }
 }
 
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -713,13 +699,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-//
-// Created by İhsan Demir on Mar 6 2016.
-//
-
-
 
 namespace hazelcast {
     namespace client {
@@ -840,13 +819,6 @@ namespace hazelcast {
     }
 }
 
-//
-// Created by sancar koyunlu on 22/08/14.
-//
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -951,9 +923,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1266,42 +1235,6 @@ namespace hazelcast {
 namespace hazelcast {
     namespace client {
         namespace test {
-            TestRawDataPortable::TestRawDataPortable() {
-
-            }
-
-            int TestRawDataPortable::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestRawDataPortable::getClassId() const {
-                return TestSerializationConstants::TEST_RAW_DATA_PORTABLE;
-            }
-
-
-            void TestRawDataPortable::writePortable(serialization::PortableWriter &writer) const {
-                writer.write<int64_t>("l", l);
-                writer.write("c", &c);
-                writer.writePortable("p", &p);
-                serialization::ObjectDataOutput &out = writer.getRawDataOutput();
-                out.write<int32_t>(k);
-                out.write<std::string>(&s);
-                ds.writeData(out);
-            }
-
-
-            void TestRawDataPortable::readPortable(serialization::PortableReader &reader) {
-                l = reader.read<int64_t>("l");
-                c = *reader.read<std::vector<char>>("c");
-                std::shared_ptr<TestNamedPortable> ptr = reader.readPortable<TestNamedPortable>("p");
-                if (ptr != nullptr)
-                    p = *ptr;
-                serialization::ObjectDataInput &in = reader.getRawDataInput();
-                k = in.read<int32_t>();
-                s = *in.read<std::string>();
-                ds.readData(in);
-            }
-
             TestRawDataPortable::TestRawDataPortable(int64_t l, std::vector<char> c, TestNamedPortable p, int32_t k,
                                                      std::string s, TestDataSerializable ds) {
                 this->l = l;
@@ -1311,29 +1244,39 @@ namespace hazelcast {
                 this->s = s;
                 this->ds = ds;
             }
+        }
 
-            bool TestRawDataPortable::operator==(const TestRawDataPortable &m) const {
-                if (this == &m)
-                    return true;
-                if (l != m.l) return false;
-                if (c != m.c) return false;
-                if (p != m.p) return false;
-                if (k != m.k) return false;
-                if (ds != m.ds) return false;
-                if (s.compare(m.s) != 0) return false;
-                return true;
+        namespace serialization {
+            int32_t hz_serializer<test::TestRawDataPortable>::getFactoryId() {
+                return test::TestSerializationConstants::TEST_PORTABLE_FACTORY;
             }
 
-            bool TestRawDataPortable::operator!=(const TestRawDataPortable &m) const {
-                return !(*this == m);
+            int32_t hz_serializer<test::TestRawDataPortable>::getClassId() {
+                return test::TestSerializationConstants::TEST_RAW_DATA_PORTABLE;
             }
 
-            std::unique_ptr<serialization::Portable> TestDataPortableFactory::create(int32_t classId) const {
-                if (classId == TestRawDataPortable::CLASS_ID) {
-                    return std::unique_ptr<serialization::Portable>(new TestRawDataPortable());
-                }
+            void hz_serializer<test::TestRawDataPortable>::writePortable(const test::TestRawDataPortable &object,
+                    serialization::PortableWriter &writer) {
+                writer.write("l", object.l);
+                writer.write("c", object.c);
+                writer.writePortable("p", &object.p);
+                serialization::ObjectDataOutput &out = writer.getRawDataOutput();
+                out.write<int32_t>(object.k);
+                out.write(object.s);
+                hz_serializer<test::TestDataSerializable>::writeData(object.ds, out);
+            }
 
-                return std::unique_ptr<serialization::Portable>();
+            test::TestRawDataPortable hz_serializer<test::TestRawDataPortable>::readPortable(serialization::PortableReader &reader) {
+                test::TestRawDataPortable object;
+                object.l = reader.read<int64_t>("l");
+                object.c = std::move(reader.read<std::vector<char>>("c")).value();
+                auto namedPortable = reader.readPortable<test::TestNamedPortable>("p");
+                if (namedPortable.has_value())
+                    object.p = namedPortable.value();
+                serialization::ObjectDataInput &in = reader.getRawDataInput();
+                object.k = in.read<int32_t>();
+                object.s = in.read<std::string>();
+                object.ds = hz_serializer<test::TestDataSerializable>::readData(in).value();
             }
         }
     }
@@ -1399,7 +1342,7 @@ namespace hazelcast {
             }
 
             void Employee::writePortable(serialization::PortableWriter &writer) const {
-                writer.write<std::string>("n", &name);
+                writer.write("n", name);
                 writer.write<int32_t>("a", age);
 
                 writer.write<byte>("b", by);
@@ -1410,16 +1353,16 @@ namespace hazelcast {
                 writer.write<int64_t>("l", l);
                 writer.write<float>("f", f);
                 writer.write<double>("d", d);
-                writer.write("str", &str);
+                writer.write("str", str);
                 writer.write("utfstr", &utfStr);
 
-                write("bb", &byteVec);
-                write("cc", &cc);
-                write("ba", &ba);
-                write("ss", &ss);
-                write("ii", &ii);
-                write("ff", &ff);
-                write("dd", &dd);
+                writer.write("bb", &byteVec);
+                writer.write("cc", &cc);
+                writer.write("ba", &ba);
+                writer.write("ss", &ss);
+                writer.write("ii", &ii);
+                writer.write("ff", &ff);
+                writer.write("dd", &dd);
 
                 serialization::ObjectDataOutput &out = writer.getRawDataOutput();
                 out.writeObject<byte>(&by);
@@ -1438,7 +1381,7 @@ namespace hazelcast {
                 age = reader.read<int32_t>("a");
 
                 by = reader.read<byte>("b");;
-                c = reader.readChar("c");;
+                c = reader.read<char>("c");;
                 boolean = reader.read<bool>("bo");;
                 s = reader.read<int16_t>("s");;
                 i = reader.read<int32_t>("i");;
@@ -1628,14 +1571,14 @@ namespace hazelcast {
 
             void TestMainPortable::writePortable(serialization::PortableWriter &writer) const {
                 writer.write<byte>("b", b);
-                writer.writeBoolean("bool", boolean);
-                writer.writeChar("c", c);
+                writer.write("bool", boolean);
+                writer.write("c", c);
                 writer.write<int16_t>("s", s);
                 writer.write<int32_t>("i", i);
                 writer.write<int64_t>("l", l);
                 writer.write<float>("f", f);
                 writer.write<double>("d", d);
-                writer.write<std::string>("str", &str);
+                writer.write("str", &str);
                 writer.writePortable("p", &p);
             }
 
@@ -1644,16 +1587,16 @@ namespace hazelcast {
                 null = false;
                 b = reader.read<byte>("b");
                 boolean = reader.read<bool>("bool");
-                c = reader.readChar("c");
+                c = reader.read<char>("c");
                 s = reader.read<int16_t>("s");
                 i = reader.read<int32_t>("i");
                 l = reader.read<int64_t>("l");
                 f = reader.read<float>("f");
                 d = reader.read<double>("d");
                 str = *reader.read<std::string>("str");
-                std::shared_ptr<TestInnerPortable> ptr = reader.readPortable<TestInnerPortable>("p");
-                if (ptr != nullptr)
-                    p = *ptr;
+                auto innerPortable = reader.readPortable<TestInnerPortable>("p");
+                if (innerPortable.has_value())
+                    p = std::move(innerPortable.value());
             }
 
         }
@@ -1666,11 +1609,9 @@ namespace hazelcast {
     namespace client {
         namespace test {
 
-            TestNamedPortable::TestNamedPortable() {
-            }
+            TestNamedPortable::TestNamedPortable() {}
 
-            TestNamedPortable::TestNamedPortable(std::string name, int k):name(name), k(k) {
-            }
+            TestNamedPortable::TestNamedPortable(std::string name, int k):name(name), k(k) {}
 
             int TestNamedPortable::getFactoryId() const {
                 return TestSerializationConstants::TEST_PORTABLE_FACTORY;
@@ -1681,7 +1622,7 @@ namespace hazelcast {
             }
 
             void TestNamedPortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.write<std::string>("name", &name);
+                writer.write("name", &name);
                 writer.write<int32_t>("myint", k);
             }
 
@@ -1716,99 +1657,41 @@ namespace hazelcast {
     namespace client {
         namespace test {
             class PortableVersionTest : public ::testing::Test {
-            protected:
-                class Child : public serialization::Portable {
+            public:
+                class Child {
                 public:
-                    Child() {
-                    }
+                    Child() {}
 
-                    Child(const std::string &name) : name (name) {
-                    }
+                    Child(std::string name) : name (name) {}
 
-                    virtual int getFactoryId() const {
-                        return 1;
+                    const std::string &getName() const {
+                        return name;
                     }
-
-                    virtual int getClassId() const {
-                        return 2;
-                    }
-
-                    virtual void writePortable(serialization::PortableWriter &writer) const {
-                        writer.write<std::string>("name", &name);
-                    }
-
-                    virtual void readPortable(serialization::PortableReader &reader) {
-                        name = *reader.read<std::string>("name");
-                    }
-
-                    bool operator==(const Child &rhs) const {
-                        return name == rhs.name;
-                    }
-
                 private:
                     std::string name;
-
                 };
 
-                class Parent : public serialization::Portable {
+                class Parent {
                 public:
                     Parent() {}
 
-                    Parent(const Child &child) : child(child) {}
+                    Parent(Child child) : child(child) {}
 
-                    virtual int getFactoryId() const {
-                        return 1;
+                    const Child &getChild() const {
+                        return child;
                     }
-
-                    virtual int getClassId() const {
-                        return 1;
-                    }
-
-                    virtual void writePortable(serialization::PortableWriter &writer) const {
-                        writer.writePortable<Child>("child", &child);
-                    }
-
-                    virtual void readPortable(serialization::PortableReader &reader) {
-                        child = *reader.readPortable<Child>("child");
-                    }
-
-                    bool operator==(const Parent &rhs) const {
-                        return child == rhs.child;
-                    }
-
-                    bool operator!=(const Parent &rhs) const {
-                        return !(rhs == *this);
-                    }
-
                 private:
                     Child child;
-                };
-
-                class MyPortableFactory : public serialization::PortableFactory {
-                public:
-                    virtual std::unique_ptr<serialization::Portable> create(int32_t classId) const {
-                        if (classId == 1) {
-                            return std::unique_ptr<serialization::Portable>(new Parent());
-                        } else if (classId == 2) {
-                            return std::unique_ptr<serialization::Portable>(new Child());
-                        }
-
-                        return std::unique_ptr<serialization::Portable>();
-                    }
                 };
             };
 
             // Test for issue https://github.com/hazelcast/hazelcast/issues/12733
             TEST_F(PortableVersionTest, test_nestedPortable_versionedSerializer) {
                 SerializationConfig serializationConfig;
-                serializationConfig.addPortableFactory(1, std::shared_ptr<serialization::PortableFactory>(
-                        new MyPortableFactory));
                 serialization::pimpl::SerializationService ss1(serializationConfig);
 
                 SerializationConfig serializationConfig2;
-                serializationConfig2.setPortableVersion(6).addPortableFactory(1,
-                                                                              std::shared_ptr<serialization::PortableFactory>(
-                                                                                      new MyPortableFactory));
+                serializationConfig2.setPortableVersion(6);
                 serialization::pimpl::SerializationService ss2(serializationConfig2);
 
                 //make sure ss2 cached class definition of Child
@@ -1823,9 +1706,48 @@ namespace hazelcast {
 
             }
         }
+        namespace serialization {
+            template<>
+            struct hz_serializer<test::PortableVersionTest::Child> : public portable_serializer {
+                static int32_t getFactoryId() {
+                    return 1;
+                }
+
+                static int getClassId() {
+                    return 2;
+                }
+
+                static void writePortable(const test::PortableVersionTest::Child &object,
+                        serialization::PortableWriter &writer) {
+                    writer.write("name", object.getName());
+                }
+
+                static test::PortableVersionTest::Child readPortable(serialization::PortableReader &reader) {
+                    return test::PortableVersionTest::Child(reader.read<std::string>("name").value());
+                }
+            };
+
+            template<>
+            struct hz_serializer<test::PortableVersionTest::Parent> : public portable_serializer {
+                static int32_t getFactoryId() {
+                    return 1;
+                }
+
+                static int32_t getClassId() {
+                    return 1;
+                }
+
+                void writePortable(const test::PortableVersionTest::Parent &object, serialization::PortableWriter &writer) {
+                    writer.writePortable<test::PortableVersionTest::Child>("child", &object.getChild());
+                }
+
+                virtual test::PortableVersionTest::Parent readPortable(serialization::PortableReader &reader) {
+                    return test::PortableVersionTest::Parent(reader.readPortable<test::PortableVersionTest::Child>("child").value());
+                }
+            };
+        }
     }
 }
-
 
 namespace hazelcast {
     namespace client {
@@ -1851,7 +1773,7 @@ namespace hazelcast {
             void TestInvalidReadPortable::writePortable(serialization::PortableWriter& writer) const {
                 writer.write<int64_t>("l", l);
                 writer.write<int32_t>("i", i);
-                writer.write<std::string>("s", &s);
+                writer.write("s", &s);
             }
 
 
@@ -1891,7 +1813,7 @@ namespace hazelcast {
                 writer.write<int64_t>("l", l);
                 serialization::ObjectDataOutput& out = writer.getRawDataOutput();
                 out.write<int32_t>(i);
-                writer.write<std::string>("s", &s);
+                writer.write("s", &s);
             }
 
             void TestInvalidWritePortable::readPortable(serialization::PortableReader& reader) {
@@ -1971,15 +1893,15 @@ namespace hazelcast {
             }
 
             void TestInnerPortable::writePortable(serialization::PortableWriter &writer) const {
-                write("b", &bb);
-                write("ba", &ba);
-                write("c", &cc);
-                write("s", &ss);
-                write("i", &ii);
-                write("l", &ll);
-                write("f", &ff);
-                write("d", &dd);
-                write("nn", &nn);
+                writer.write("b", &bb);
+                writer.write("ba", &ba);
+                writer.write("c", &cc);
+                writer.write("s", &ss);
+                writer.write("i", &ii);
+                writer.write("l", &ll);
+                writer.write("f", &ff);
+                writer.write("d", &dd);
+                writer.write("nn", &nn);
             }
 
             void TestInnerPortable::readPortable(serialization::PortableReader &reader) {
@@ -1988,12 +1910,11 @@ namespace hazelcast {
                 cc = *reader.read<std::vector<char>>("c");
                 ss = *reader.read<std::vector<int16_t>>("s");
                 ii = *reader.read<std::vector<int32_t>>("i");
-                ll = *reader.readLongArray("l");
+                ll = *reader.read<std::vector<int64_t>>("l");
                 ff = *reader.read<std::vector<float>>("f");
                 dd = *reader.read<std::vector<double>>("d");
                 nn = reader.readPortableArray<TestNamedPortable>("nn");
             }
-
         }
     }
 }
@@ -2003,12 +1924,9 @@ namespace hazelcast {
 namespace hazelcast {
     namespace client {
         namespace test {
-            TestNamedPortableV2::TestNamedPortableV2() {
+            TestNamedPortableV2::TestNamedPortableV2() {}
 
-            }
-
-            TestNamedPortableV2::TestNamedPortableV2(std::string name, int v) : name(name), k(v * 10), v(v) {
-            }
+            TestNamedPortableV2::TestNamedPortableV2(std::string name, int v) : name(name), k(v * 10), v(v) {}
 
             int TestNamedPortableV2::getFactoryId() const {
                 return TestSerializationConstants::TEST_PORTABLE_FACTORY;
@@ -2018,13 +1936,11 @@ namespace hazelcast {
                 return TestSerializationConstants::TEST_NAMED_PORTABLE_2;
             }
 
-
             void TestNamedPortableV2::writePortable(serialization::PortableWriter& writer) const {
                 writer.write<int32_t>("v", v);
-                writer.write<std::string>("name", &name);
+                writer.write("name", &name);
                 writer.write<int32_t>("myint", k);
             }
-
 
             void TestNamedPortableV2::readPortable(serialization::PortableReader& reader) {
                 v = reader.read<int32_t>("v");
@@ -2060,7 +1976,7 @@ namespace hazelcast {
             }
 
             void TestNamedPortableV3::writePortable(serialization::PortableWriter& writer) const {
-                writer.write<std::string>("name", &name);
+                writer.write("name", &name);
                 writer.write<int16_t>("myint", k);
             }
 
@@ -2201,7 +2117,7 @@ namespace hazelcast {
 
                     virtual void write(serialization::ObjectDataOutput &out, const void *object) {
                         std::string value("Dummy string");
-                        out.write<std::string>(&value);
+                        out.write(&value);
                     }
 
                     virtual void *read(serialization::ObjectDataInput &in) {
@@ -2807,15 +2723,15 @@ namespace hazelcast {
                 }
 
                 out.write<byte>(by);
-                out.writeChar(c);
-                out.writeBoolean(boolean);
+                out.write(c);
+                out.write(boolean);
                 out.write<int16_t>(s);
                 out.write<int32_t>(i);
                 out.write<int64_t>(l);
                 out.write<float>(f);
                 out.write<double>(d);
-                out.write<std::string>(&str);
-                out.write<std::string>(&utfStr);
+                out.write(&str);
+                out.write(&utfStr);
 
                 out.write(&byteVec);
                 out.write(&cc);
@@ -2836,7 +2752,7 @@ namespace hazelcast {
                 out.writeObject<std::string>(&str);
                 out.writeObject<std::string>(&utfStr);
                 out.write<int32_t>(5);
-                out.write<std::string>(nullptr);
+                out.write(nullptr);
                 out.write<std::vector<std::string>>(nullptr);
 
                 serialization::pimpl::DataInput dataInput(dataOutput.toByteArray());
@@ -2891,7 +2807,7 @@ namespace hazelcast {
                 serialization::pimpl::DataOutput dataOutput;
                 serialization::ObjectDataOutput out(dataOutput, &serializationService.getSerializerHolder());
 
-                out.write<std::string>(&utfStr);
+                out.write(&utfStr);
                 std::unique_ptr<std::vector<byte> > byteArray = out.toByteArray();
                 int strLen = hazelcast::util::Bits::readIntB(*byteArray, 0);
                 ASSERT_EQ(7, strLen);
@@ -2970,7 +2886,7 @@ namespace hazelcast {
             }
 
             void TestDataSerializable::writeData(serialization::ObjectDataOutput& writer) const {
-                writer.writeChar(c);
+                writer.write(c);
                 writer.write<int32_t>(i);
             }
 

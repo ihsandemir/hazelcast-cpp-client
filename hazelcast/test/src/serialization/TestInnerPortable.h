@@ -66,8 +66,7 @@ namespace hazelcast {
                 std::vector<int64_t> ll;
                 std::vector<float> ff;
                 std::vector<double> dd;
-                std::vector< TestNamedPortable > nn;
-
+                std::vector<boosT::optional<TestNamedPortable>> nn;
             };
         }
     }

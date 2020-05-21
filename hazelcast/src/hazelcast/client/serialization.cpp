@@ -233,7 +233,7 @@ namespace hazelcast {
                 dataOutput.write<int32_t>(classId);
             }
 
-            void FieldDefinition::readData(pimpl::DataInput &dataInput) {
+            void FieldDefinition::readData(ObjectDataInput &dataInput) {
                 index = dataInput.read<int32_t>();
                 fieldName = dataInput.read<std::string>();
                 type = static_cast<FieldType>(dataInput.read<byte>());
@@ -263,7 +263,7 @@ namespace hazelcast {
             ObjectDataInput::ObjectDataInput(std::vector<byte> buffer, int offset,
                     pimpl::PortableSerializer &portableSer, pimpl::DataSerializer &dataSer,
                     const std::shared_ptr<serialization::global_serializer> &globalSerializer)
-                    : pimpl::DataInput(std::move(buffer), offset), portableSerializer(portableSer), dataSerializer(dataSer),
+                    : pimpl::DataInput<std::vector<byte>>(std::move(buffer), offset), portableSerializer(portableSer), dataSerializer(dataSer),
                       globalSerializer_(globalSerializer) {}
 
             ObjectDataOutput::ObjectDataOutput(bool dontWrite, pimpl::PortableSerializer *portableSer,
@@ -361,7 +361,7 @@ namespace hazelcast {
                 }
             }
 
-            void ClassDefinition::readData(pimpl::DataInput &dataInput) {
+            void ClassDefinition::readData(ObjectDataInput &dataInput) {
                 factoryId = dataInput.read<int32_t>();
                 classId = dataInput.read<int32_t>();
                 version = dataInput.read<int32_t>();
@@ -793,7 +793,7 @@ namespace hazelcast {
                         // let usage of static member.
                         const std::vector<byte> &bytes = data->toByteArray();
                         auto start = bytes.begin() + 4;
-                        DataInput dataInput(std::vector<byte>(start, start + 3 * util::Bits::INT_SIZE_IN_BYTES +
+                        DataInput<std::vector<byte>> dataInput(std::vector<byte>(start, start + 3 * util::Bits::INT_SIZE_IN_BYTES +
                                                                      util::Bits::BOOLEAN_SIZE_IN_BYTES));
 
                         auto objectTypeId = SerializationConstants(dataInput.read<int32_t>());
@@ -900,11 +900,13 @@ namespace hazelcast {
                     return cachedHashValue < rhs.cachedHashValue;
                 }
 
-                int DataInput::position() {
+                template<typename T>
+                int DataInput<T>::position() {
                     return pos;
                 }
 
-                void DataInput::position(int position) {
+                template<typename T>
+                void DataInput<T>::position(int position) {
                     if (position > pos) {
                         checkAvailable((size_t) (position - pos));
                     }
@@ -912,8 +914,7 @@ namespace hazelcast {
                 }
 
                 ClassDefinitionContext::ClassDefinitionContext(int factoryId, PortableContext *portableContext)
-                        : factoryId(factoryId), portableContext(portableContext) {
-                }
+                        : factoryId(factoryId), portableContext(portableContext) {}
 
                 int ClassDefinitionContext::getClassVersion(int classId) {
                     std::shared_ptr<int> version = currentClassVersions.get(classId);

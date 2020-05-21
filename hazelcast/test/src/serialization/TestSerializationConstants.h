@@ -26,7 +26,6 @@ namespace hazelcast {
     namespace client {
         namespace test {
             namespace TestSerializationConstants {
-
                 int const TEST_PORTABLE_FACTORY = 1;
                 int const TEST_DATA_FACTORY = 1;
 

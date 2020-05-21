@@ -21,31 +21,13 @@
 
 #include "TestNamedPortable.h"
 #include "TestDataSerializable.h"
-#include "hazelcast/client/serialization/serialization.h>
+#include "TestSerializationConstants.h"
+#include <hazelcast/client/serialization/serialization.h>
 
 namespace hazelcast {
     namespace client {
         namespace test {
-            class TestRawDataPortable : public serialization::Portable {
-            public:
-                static const int32_t CLASS_ID = TestSerializationConstants::TEST_RAW_DATA_PORTABLE;
-
-                TestRawDataPortable(int64_t l, std::vector<char> c, TestNamedPortable p, int32_t k, std::string s, TestDataSerializable ds);
-
-                TestRawDataPortable();
-
-                int getFactoryId() const;
-
-                int getClassId() const;
-
-                void writePortable(serialization::PortableWriter &writer) const;
-
-                void readPortable(serialization::PortableReader &reader);
-
-                bool operator ==(const TestRawDataPortable &m) const;
-
-                bool operator !=(const TestRawDataPortable &m) const;
-
+            struct TestRawDataPortable {
                 int64_t l;
                 std::vector<char> c;
                 TestNamedPortable p;
@@ -53,10 +35,20 @@ namespace hazelcast {
                 std::string s;
                 TestDataSerializable ds;
             };
+        }
 
-            class TestDataPortableFactory : public serialization::PortableFactory {
-            public:
-                virtual std::unique_ptr<serialization::Portable> create(int32_t classId) const;
+        namespace serialization {
+            template<>
+            struct hz_serializer<test::TestRawDataPortable> : public portable_serializer {
+                static const int32_t CLASS_ID = test::TestSerializationConstants::TEST_RAW_DATA_PORTABLE;
+
+                static int32_t getFactoryId();
+
+                static int32_t getClassId();
+
+                static void writePortable(const test::TestRawDataPortable &object, serialization::PortableWriter &writer);
+
+                static test::TestRawDataPortable readPortable(serialization::PortableReader &reader);
             };
         }
     }
