@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <gtest/gtest.h>
 #include "Serializables.h"
 
 namespace hazelcast {
@@ -482,6 +483,40 @@ namespace hazelcast {
             hz_serializer<test::TestInvalidReadPortable>::readPortable(PortableReader &reader) {
                 return test::TestInvalidReadPortable{reader.read<int64_t>("l"), reader.read<int32_t>("i"),
                                                       reader.read<std::string>("s")};
+            }
+
+            int32_t hz_serializer<test::TestCustomPerson>::getTypeId() {
+                return 666;
+            }
+
+            void hz_serializer<test::TestCustomPerson>::write(const test::TestCustomPerson &object, ObjectDataOutput &out) {
+                out.write<int32_t>(999);
+                out.write(object.name);
+                out.write<int32_t>(999);
+            }
+
+            test::TestCustomPerson hz_serializer<test::TestCustomPerson>::read(ObjectDataInput &in) {
+                ASSERT_EQ(999, in.read<int32_t>());
+                test::TestCustomPerson object{in.read<std::string>()};
+                assert(999 == in.read<int32_t>());
+                return object;
+            }
+
+            int32_t hz_serializer<test::TestCustomXSerializable>::getTypeId() {
+                return 666;
+            }
+
+            void hz_serializer<test::TestCustomXSerializable>::write(const test::TestCustomXSerializable &object, ObjectDataOutput &out) {
+                out.write<int32_t>(666);
+                out.write(object.id);
+                out.write<int32_t>(666);
+            }
+
+            test::TestCustomXSerializable hz_serializer<test::TestCustomXSerializable>::read(ObjectDataInput &in) {
+                ASSERT_EQ(666, in.read<int32_t>());
+                test::TestCustomXSerializable object{in.read<int32_t>()};
+                ASSERT_EQ(666, in.read<int32_t>());
+                return object;
             }
         }
     }

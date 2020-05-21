@@ -173,6 +173,19 @@ namespace hazelcast {
                 std::string name;
                 short k;
             };
+
+            struct TestCustomXSerializable {
+                int32_t id;
+            };
+
+            struct TestCustomPerson {
+                std::string name;
+            };
+
+            template<typename P>
+            struct ObjectCarryingPortable {
+                P carriedObject;
+            };
         }
 
         namespace serialization {
@@ -306,6 +319,45 @@ namespace hazelcast {
                 static void writePortable(const test::TestInvalidReadPortable &object, PortableWriter &writer);
 
                 static test::TestInvalidReadPortable readPortable(PortableReader &reader);
+            };
+
+            template<typename P>
+            struct hz_serializer<test::ObjectCarryingPortable<P>> : public portable_serializer {
+                static int32_t getFactoryId() {
+                    return static_cast<int32_t>(test::TestSerializationConstants::TEST_PORTABLE_FACTORY);
+                }
+
+                static int32_t getClassId() {
+                    return static_cast<int32_t>(test::TestSerializationConstants::OBJECT_CARRYING_PORTABLE);
+                }
+
+                static void writePortable(const test::ObjectCarryingPortable<P> &object, PortableWriter &writer) {
+                    auto &output = writer.getRawDataOutput();
+                    output.writeObject<P>(object.carriedObject);
+                }
+
+                static test::ObjectCarryingPortable<P> readPortable(PortableReader &reader) {
+                    serialization::ObjectDataInput& input = reader.getRawDataInput();
+                    return test::ObjectCarryingPortable<P>{input.readObject<P>().value()};
+                }
+            };
+
+            template<>
+            struct serialization::hz_serializer<test::TestCustomPerson> : public custom_serializer {
+                static int32_t getTypeId();
+
+                static void write(const test::TestCustomPerson &object, ObjectDataOutput & out);
+
+                static test::TestCustomPerson read(ObjectDataInput &in);
+            };
+
+            template<>
+            struct serialization::hz_serializer<test::TestCustomXSerializable> : public custom_serializer {
+                static int32_t getTypeId();
+
+                void write(const test::TestCustomXSerializable &object, serialization::ObjectDataOutput & out);
+
+                test::TestCustomXSerializable read(serialization::ObjectDataInput &in);
             };
         }
     }

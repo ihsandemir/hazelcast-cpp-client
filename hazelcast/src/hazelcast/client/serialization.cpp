@@ -819,6 +819,14 @@ namespace hazelcast {
                 void SerializationService::dispose() {
                 }
 
+                PortableSerializer &SerializationService::getPortableSerializer() {
+                    return portableSerializer;
+                }
+
+                DataSerializer &SerializationService::getDataSerializer() {
+                    return dataSerializer;
+                }
+
                 template<>
                 Data SerializationService::toData(const TypedData *object) {
                     if (!object) {

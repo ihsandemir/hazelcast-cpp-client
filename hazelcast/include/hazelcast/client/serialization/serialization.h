@@ -569,7 +569,7 @@ namespace hazelcast {
                 /**
                 * Internal API Constructor
                 */
-                ObjectDataOutput(bool dontWrite, pimpl::PortableSerializer *portableSer = nullptr,
+                ObjectDataOutput(bool dontWrite = false, pimpl::PortableSerializer *portableSer = nullptr,
                                  pimpl::DataSerializer *dataSer = nullptr,
                                  std::shared_ptr<serialization::global_serializer> globalSerializer = nullptr);
 
@@ -1223,6 +1223,10 @@ namespace hazelcast {
                 public:
                     SerializationService(const SerializationConfig &serializationConfig);
 
+                    PortableSerializer &getPortableSerializer();
+
+                    DataSerializer &getDataSerializer();
+
                     template<typename T>
                     inline Data toData(const T *object) {
                         ObjectDataOutput output(false, &portableSerializer, &dataSerializer,
@@ -1234,6 +1238,11 @@ namespace hazelcast {
 
                         Data data(output.toByteArray());
                         return data;
+                    }
+
+                    template<typename T>
+                    inline Data toData(const T &object) {
+                        return toData<T>(&object);
                     }
 
                     template<typename T>
