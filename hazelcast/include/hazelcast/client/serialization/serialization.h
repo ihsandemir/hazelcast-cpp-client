@@ -837,15 +837,22 @@ namespace hazelcast {
                                             std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<float, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<double, typename std::remove_cv<T>::type>::value, T>::type
+                                            std::is_same<double, typename std::remove_cv<T>::type>::value ||
+                                            std::is_same<std::string, typename std::remove_cv<T>::type>::value, T>::type
                         read(const std::string &fieldName) {
                         setPosition(fieldName, PortableContext::getType<T>());
                         return dataInput.read<T>();
                     }
 
                     template <typename T>
-                    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
+                    typename std::enable_if<std::is_same<boost::optional<std::string>, typename std::remove_cv<T>::type>::value, T>::type
+                        read(const std::string &fieldName) {
+                        setPosition(fieldName, PortableContext::getType<T>());
+                        return dataInput.read<T>();
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value ||
@@ -853,8 +860,7 @@ namespace hazelcast {
                                             std::is_same<std::vector<int64_t>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<float>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<std::vector<std::string>, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<std::vector<boost::optional<std::string>>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
+                                            std::is_same<std::vector<std::string>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
                                     read(const std::string &fieldName) {
                         setPosition(fieldName, PortableContext::getType<T>());
                         return dataInput.read<T>();
@@ -893,7 +899,7 @@ namespace hazelcast {
                     boost::optional<T> readPortable(const std::string &fieldName);
 
                     template<typename T>
-                    std::vector<boost::optional<T>> readPortableArray(const std::string &fieldName);
+                    boost::optional<std::vector<T>> readPortableArray(const std::string &fieldName);
                 };
 
                 class HAZELCAST_API MorphingPortableReader : public PortableReaderBase {
@@ -927,8 +933,25 @@ namespace hazelcast {
                     }
 
                     template <typename T>
-                    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
+                    typename std::enable_if<std::is_same<std::string, typename std::remove_cv<T>::type>::value, T>::type
+                    read(const std::string &fieldName) {
+                        if (!cd->hasField(fieldName)) {
+                            return std::string();
+                        }
+                        return PortableReaderBase::read<T>();
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<boost::optional<std::string>, typename std::remove_cv<T>::type>::value, T>::type
+                    read(const std::string &fieldName) {
+                        if (!cd->hasField(fieldName)) {
+                            return boost::none;
+                        }
+                        return PortableReaderBase::read<T>();
+                    }
+
+                    template <typename T>
+                    typename std::enable_if<std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value ||
                                             std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value ||
@@ -948,7 +971,7 @@ namespace hazelcast {
                     boost::optional<T> readPortable(const std::string &fieldName);
 
                     template<typename T>
-                    std::vector<boost::optional<T>> readPortableArray(const std::string &fieldName);
+                    boost::optional<std::vector<T>> readPortableArray(const std::string &fieldName);
 
                 private:
                     template <typename T>
@@ -1019,10 +1042,10 @@ namespace hazelcast {
                     PortableSerializer(PortableContext &portableContext);
 
                     template<typename T>
-                    boost::optional<T> readObject(ObjectDataInput &in);
+                    T readObject(ObjectDataInput &in);
 
                     template<typename T>
-                    boost::optional<T> read(ObjectDataInput &in, int32_t factoryId, int32_t classId);
+                    T read(ObjectDataInput &in, int32_t factoryId, int32_t classId);
 
                     template<typename T>
                     void write(const T &object, ObjectDataOutput &out);
@@ -1327,7 +1350,8 @@ namespace hazelcast {
                                         std::is_same<double, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<byte, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<char, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<bool, typename std::remove_cv<T>::type>::value, T>::type
+                                        std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                                        std::is_same<std::string, typename std::remove_cv<T>::type>::value, T>::type
                 read(const std::string &fieldName) {
                     if (isDefaultReader)
                         return defaultPortableReader->read<T>(fieldName);
@@ -1339,16 +1363,14 @@ namespace hazelcast {
                 * @return the value read
                 */
                 template<typename T>
-                typename std::enable_if<std::is_same<std::string, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
+                typename std::enable_if<std::is_same<std::vector<byte>, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<std::vector<char>, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<std::vector<bool>, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<std::vector<int16_t>, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<std::vector<int32_t>, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<std::vector<int64_t>, typename std::remove_cv<T>::type>::value ||
                                         std::is_same<std::vector<float>, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<std::vector<boost::optional<std::string>>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
+                                        std::is_same<std::vector<double>, typename std::remove_cv<T>::type>::value, boost::optional<T>>::type
                 read(const std::string &fieldName) {
                     if (isDefaultReader)
                         return defaultPortableReader->read<T>(fieldName);
@@ -1369,7 +1391,7 @@ namespace hazelcast {
                 * @return the portable array value read
                 */
                 template<typename T>
-                std::vector<boost::optional<T>> readPortableArray(const std::string &fieldName);
+                boost::optional<std::vector<T>> readPortableArray(const std::string &fieldName);
 
                 /**
                 * @see PortableWriter#getRawDataOutput
@@ -1532,7 +1554,7 @@ namespace hazelcast {
             * @throws IOException
             */
             template<typename T>
-            std::vector<boost::optional<T>> PortableReader::readPortableArray(const std::string &fieldName) {
+            boost::optional<std::vector<T>> PortableReader::readPortableArray(const std::string &fieldName) {
                 if (isDefaultReader)
                     return defaultPortableReader->readPortableArray<T>(fieldName);
                 return morphingPortableReader->readPortableArray<T>(fieldName);
@@ -1740,15 +1762,18 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                std::vector<boost::optional<T>> DefaultPortableReader::readPortableArray(const std::string &fieldName) {
+                boost::optional<std::vector<T>> DefaultPortableReader::readPortableArray(const std::string &fieldName) {
                     PortableReaderBase::setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
                     dataInput.read<int32_t>();
-                    std::vector<boost::optional<T>> portables;
+                    std::vector<T> portables;
 
                     setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
                     int32_t len = dataInput.read<int32_t>();
+                    if (len == util::Bits::NULL_ARRAY) {
+                        return boost::none;
+                    }
                     int32_t factoryId = dataInput.read<int32_t>();
                     int32_t classId = dataInput.read<int32_t>();
 
@@ -1773,7 +1798,7 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                std::vector<boost::optional<T>> MorphingPortableReader::readPortableArray(const std::string &fieldName) {
+                boost::optional<std::vector<T>> MorphingPortableReader::readPortableArray(const std::string &fieldName) {
                     PortableReaderBase::setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
                     dataInput.read<int32_t>();
@@ -1782,6 +1807,9 @@ namespace hazelcast {
                     setPosition(fieldName, FieldType::TYPE_PORTABLE_ARRAY);
 
                     int32_t len = dataInput.read<int32_t>();
+                    if (len == util::Bits::NULL_ARRAY) {
+                        return boost::none;
+                    }
                     int32_t factoryId = dataInput.read<int32_t>();
                     int32_t classId = dataInput.read<int32_t>();
 
@@ -1802,7 +1830,7 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                boost::optional<T> PortableSerializer::readObject(ObjectDataInput &in) {
+                T PortableSerializer::readObject(ObjectDataInput &in) {
                     int32_t factoryId = readInt(in);
                     int32_t classId = readInt(in);
 
@@ -1810,13 +1838,13 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                boost::optional<T> PortableSerializer::read(ObjectDataInput &in, int32_t factoryId, int32_t classId) {
+                T PortableSerializer::read(ObjectDataInput &in, int32_t factoryId, int32_t classId) {
                     int version = in.read<int32_t>();
 
                     int portableVersion = findPortableVersion<T>(factoryId, classId);
 
                     PortableReader reader = createReader(in, factoryId, classId, version, portableVersion);
-                    boost::optional<T> result = hz_serializer<T>::readPortable(reader);
+                    T result = hz_serializer<T>::readPortable(reader);
                     reader.end();
                     return result;
                 }

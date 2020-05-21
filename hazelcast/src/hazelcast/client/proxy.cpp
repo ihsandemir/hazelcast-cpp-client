@@ -1925,7 +1925,7 @@ namespace hazelcast {
 
             void hz_serializer<topic::impl::reliable::ReliableTopicMessage>::writeData(
                     const topic::impl::reliable::ReliableTopicMessage &object, ObjectDataOutput &out) {
-                out.writeLong(std::chrono::duration_cast<std::chrono::milliseconds>(object.publishTime.time_since_epoch()).count());
+                out.write<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(object.publishTime.time_since_epoch()).count());
                 out.writeObject<Address>(object.publisherAddress.value());
                 out.write(object.payload.toByteArray());
             }

@@ -56,7 +56,7 @@
 #include <hazelcast/client/LifecycleListener.h>
 #include "serialization/TestRawDataPortable.h"
 #include "serialization/TestSerializationConstants.h"
-#include "serialization/TestMainPortable.h"
+#include "serialization/Serializables.h"
 #include "serialization/TestNamedPortable.h"
 #include "serialization/TestInvalidReadPortable.h"
 #include "serialization/TestInvalidWritePortable.h"

@@ -28,8 +28,7 @@ namespace hazelcast {
     namespace client {
         namespace query {
             template <typename K, typename V>
-            class EntryComparator : public serialization::IdentifiedDataSerializable,
-                                    public util::Comparator<std::pair<const K *, const V *> > {
+            class EntryComparator : public util::Comparator<std::pair<const K *, const V *> > {
             };
         }
     }

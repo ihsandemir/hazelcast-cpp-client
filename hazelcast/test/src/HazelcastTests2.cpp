@@ -44,7 +44,6 @@
 #include <hazelcast/client/exception/IOException.h>
 #include <hazelcast/client/protocol/ClientExceptionFactory.h>
 #include <hazelcast/util/IOUtil.h>
-
 #include <ClientTestSupportBase.h>
 #include <hazelcast/util/Util.h>
 #include <TestHelperFunctions.h>
@@ -53,18 +52,9 @@
 #include <ctime>
 #include <errno.h>
 #include <hazelcast/client/LifecycleListener.h>
-#include "serialization/TestRawDataPortable.h"
-#include "serialization/TestSerializationConstants.h"
-#include "serialization/TestMainPortable.h"
-#include "serialization/TestNamedPortable.h"
-#include "serialization/TestInvalidReadPortable.h"
-#include "serialization/TestInvalidWritePortable.h"
-#include "serialization/TestInnerPortable.h"
-#include "serialization/TestNamedPortableV2.h"
-#include "serialization/TestNamedPortableV3.h"
+#include "serialization/Serializables.h"
 #include <hazelcast/client/SerializationConfig.h>
 #include <hazelcast/client/HazelcastJsonValue.h>
-#include <stdint.h>
 #include "customSerialization/TestCustomSerializerX.h"
 #include "customSerialization/TestCustomXSerializable.h"
 #include "customSerialization/TestCustomPersonSerializer.h"
@@ -72,12 +62,10 @@
 #include "serialization/ParentTemplatedPortable.h"
 #include "serialization/ChildTemplatedPortable1.h"
 #include "serialization/ObjectCarryingPortable.h"
-#include "serialization/TestDataSerializable.h"
 #include <hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheDataRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
 #include <hazelcast/client/query/FalsePredicate.h>
-#include <set>
 #include <hazelcast/client/query/EqualPredicate.h>
 #include <hazelcast/client/query/QueryConstants.h>
 #include <HazelcastServer.h>
@@ -1235,427 +1223,6 @@ namespace hazelcast {
 namespace hazelcast {
     namespace client {
         namespace test {
-            TestRawDataPortable::TestRawDataPortable(int64_t l, std::vector<char> c, TestNamedPortable p, int32_t k,
-                                                     std::string s, TestDataSerializable ds) {
-                this->l = l;
-                this->c = c;
-                this->p = p;
-                this->k = k;
-                this->s = s;
-                this->ds = ds;
-            }
-        }
-
-        namespace serialization {
-            int32_t hz_serializer<test::TestRawDataPortable>::getFactoryId() {
-                return test::TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int32_t hz_serializer<test::TestRawDataPortable>::getClassId() {
-                return test::TestSerializationConstants::TEST_RAW_DATA_PORTABLE;
-            }
-
-            void hz_serializer<test::TestRawDataPortable>::writePortable(const test::TestRawDataPortable &object,
-                    serialization::PortableWriter &writer) {
-                writer.write("l", object.l);
-                writer.write("c", object.c);
-                writer.writePortable("p", &object.p);
-                serialization::ObjectDataOutput &out = writer.getRawDataOutput();
-                out.write<int32_t>(object.k);
-                out.write(object.s);
-                hz_serializer<test::TestDataSerializable>::writeData(object.ds, out);
-            }
-
-            test::TestRawDataPortable hz_serializer<test::TestRawDataPortable>::readPortable(serialization::PortableReader &reader) {
-                test::TestRawDataPortable object;
-                object.l = reader.read<int64_t>("l");
-                object.c = std::move(reader.read<std::vector<char>>("c")).value();
-                auto namedPortable = reader.readPortable<test::TestNamedPortable>("p");
-                if (namedPortable.has_value())
-                    object.p = namedPortable.value();
-                serialization::ObjectDataInput &in = reader.getRawDataInput();
-                object.k = in.read<int32_t>();
-                object.s = in.read<std::string>();
-                object.ds = hz_serializer<test::TestDataSerializable>::readData(in).value();
-            }
-        }
-    }
-}
-
-
-//
-// Created by sancar koyunlu on 11/11/13.
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            Employee::Employee():age(-1), name("") {
-            }
-
-            Employee::Employee(std::string name, int32_t age)
-                    :age(age)
-                    , name(name) {
-                by = 2;
-                boolean = true;
-                c = 'c';
-                s = 4;
-                i = 2000;
-                l = 321324141;
-                f = 3.14f;
-                d = 3.14334;
-                str = "Hello world";
-                utfStr = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
-
-                byte byteArray[] = {50, 100, 150, 200};
-                byteVec = std::vector<byte>(byteArray, byteArray + 4);
-                char charArray[] = {'c', 'h', 'a', 'r'};
-                cc = std::vector<char>(charArray, charArray + 4);
-                bool boolArray[] = {true, false, false, true};
-                ba = std::vector<bool>(boolArray, boolArray + 4);
-                int16_t shortArray[] = {3, 4, 5};
-                ss = std::vector<int16_t>(shortArray, shortArray + 3);
-                int32_t integerArray[] = {9, 8, 7, 6};
-                ii = std::vector<int32_t>(integerArray, integerArray + 4);
-                int64_t  longArray[] = {0, 1, 5, 7, 9, 11};
-                ll = std::vector<int64_t >(longArray, longArray + 6);
-                float floatArray[] = {0.6543f, -3.56f, 45.67f};
-                ff = std::vector<float>(floatArray, floatArray + 3);
-                double doubleArray[] = {456.456, 789.789, 321.321};
-                dd = std::vector<double>(doubleArray, doubleArray + 3);
-            }
-
-            bool Employee::operator==(const Employee &rhs) const {
-                return age == rhs.getAge() && name == rhs.getName();
-            }
-
-            bool Employee::operator !=(const Employee &employee) const {
-                return !(*this == employee);
-            }
-
-            int32_t Employee::getFactoryId() const {
-                return 666;
-            }
-
-            int32_t Employee::getClassId() const {
-                return 2;
-            }
-
-            void Employee::writePortable(serialization::PortableWriter &writer) const {
-                writer.write("n", name);
-                writer.write<int32_t>("a", age);
-
-                writer.write<byte>("b", by);
-                writer.write("c", c);
-                writer.write("bo", boolean);
-                writer.write<int16_t>("s", s);
-                writer.write<int32_t>("i", i);
-                writer.write<int64_t>("l", l);
-                writer.write<float>("f", f);
-                writer.write<double>("d", d);
-                writer.write("str", str);
-                writer.write("utfstr", &utfStr);
-
-                writer.write("bb", &byteVec);
-                writer.write("cc", &cc);
-                writer.write("ba", &ba);
-                writer.write("ss", &ss);
-                writer.write("ii", &ii);
-                writer.write("ff", &ff);
-                writer.write("dd", &dd);
-
-                serialization::ObjectDataOutput &out = writer.getRawDataOutput();
-                out.writeObject<byte>(&by);
-                out.writeObject<char>(&c);
-                out.writeObject<bool>(&boolean);
-                out.writeObject<int16_t>(&s);
-                out.writeObject<int32_t>(&i);
-                out.writeObject<float>(&f);
-                out.writeObject<double>(&d);
-                out.writeObject<std::string>(&str);
-                out.writeObject<std::string>(&utfStr);
-            }
-
-            void Employee::readPortable(serialization::PortableReader &reader) {
-                name = *reader.read<std::string>("n");
-                age = reader.read<int32_t>("a");
-
-                by = reader.read<byte>("b");;
-                c = reader.read<char>("c");;
-                boolean = reader.read<bool>("bo");;
-                s = reader.read<int16_t>("s");;
-                i = reader.read<int32_t>("i");;
-                l = reader.read<int64_t>("l");;
-                f = reader.read<float>("f");;
-                d = reader.read<double>("d");;
-                str = *reader.read<std::string>("str");;
-                utfStr = *reader.read<std::string>("utfstr");;
-
-                byteVec = *reader.read<std::vector<byte>>("bb");;
-                cc = *reader.read<std::vector<char>>("cc");;
-                ba = *reader.read<std::vector<bool>>("ba");;
-                ss = *reader.read<std::vector<int16_t>>("ss");;
-                ii = *reader.read<std::vector<int32_t>>("ii");;
-                ff = *reader.read<std::vector<float>>("ff");;
-                dd = *reader.read<std::vector<double>>("dd");;
-
-                serialization::ObjectDataInput &in = reader.getRawDataInput();
-                by = *in.readObject<byte>();
-                c = *in.readObject<char>();
-                boolean = *in.readObject<bool>();
-                s = *in.readObject<int16_t>();
-                i = *in.readObject<int32_t>();
-                f = *in.readObject<float>();
-                d = *in.readObject<double>();
-                str = *in.readObject<std::string>();
-                utfStr = *in.readObject<std::string>();
-            }
-
-            int32_t Employee::getAge() const {
-                return age;
-            }
-
-            const std::string &Employee::getName() const {
-                return name;
-            }
-
-            bool Employee::operator<(const Employee &rhs) const {
-                return age < rhs.getAge();
-            }
-
-            int32_t EmployeeEntryComparator::getFactoryId() const {
-                return 666;
-            }
-
-            int32_t EmployeeEntryComparator::getClassId() const {
-                return 4;
-            }
-
-            void EmployeeEntryComparator::writeData(serialization::ObjectDataOutput &writer) const {
-            }
-
-            void EmployeeEntryComparator::readData(serialization::ObjectDataInput &reader) {
-            }
-
-            int EmployeeEntryComparator::compare(const std::pair<const int32_t *, const Employee *> *lhs,
-                                                 const std::pair<const int32_t *, const Employee *> *rhs) const {
-                const Employee *lv = lhs->second;
-                const Employee *rv = rhs->second;
-
-                if (nullptr == lv && nullptr == rv) {
-                    // order by key
-                    const int32_t leftKey = *lhs->first;
-                    const int32_t rightKey = *rhs->first;
-
-                    if (leftKey == rightKey) {
-                        return 0;
-                    }
-
-                    if (leftKey < rightKey) {
-                        return -1;
-                    }
-
-                    return 1;
-                }
-
-                if (nullptr == lv) {
-                    return -1;
-                }
-
-                if (nullptr == rv) {
-                    return 1;
-                }
-
-                int32_t la = lv->getAge();
-                int32_t ra = rv->getAge();
-
-                if (la == ra) {
-                    return 0;
-                }
-
-                if (la < ra) {
-                    return -1;
-                }
-
-                return 1;
-            }
-
-
-            int32_t EmployeeEntryKeyComparator::compare(const std::pair<const int32_t *, const Employee *> *lhs,
-                                                        const std::pair<const int32_t *, const Employee *> *rhs) const {
-                const int32_t *key1 = lhs->first;
-                const int32_t *key2 = rhs->first;
-
-                if (nullptr == key1) {
-                    return -1;
-                }
-
-                if (nullptr == key2) {
-                    return 1;
-                }
-
-                if (*key1 == *key2) {
-                    return 0;
-                }
-
-                if (*key1 < *key2) {
-                    return -1;
-                }
-
-                return 1;
-            }
-
-            int32_t EmployeeEntryKeyComparator::getClassId() const {
-                return 5;
-            }
-
-            std::ostream &operator<<(std::ostream &out, const Employee &employee) {
-                out << "Employee:[" << employee.getName() << ", " << employee.getAge() << "]";
-                return out;
-            }
-        }
-    }
-}
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            TestMainPortable::TestMainPortable()
-                    : null(true) {
-            }
-
-            TestMainPortable::TestMainPortable(byte b, bool boolean, char c, short s, int i, int64_t l, float f, double d, std::string str, TestInnerPortable p) {
-                null = false;
-                this->b = b;
-                this->boolean = boolean;
-                this->c = c;
-                this->s = s;
-                this->i = i;
-                this->l = l;
-                this->f = f;
-                this->d = d;
-                this->str = str;
-                this->p = p;
-            }
-
-            bool TestMainPortable::operator==(const TestMainPortable &m) const {
-                if (this == &m) return true;
-                if (null == true && m.null == true)
-                    return true;
-                if (b != m.b) return false;
-                if (boolean != m.boolean) return false;
-                if (c != m.c) return false;
-                if (s != m.s) return false;
-                if (i != m.i) return false;
-                if (l != m.l) return false;
-                if (f != m.f) return false;
-                if (d != m.d) return false;
-                if (str.compare(m.str)) return false;
-                if (p != m.p) return false;
-                return true;
-            }
-
-            bool TestMainPortable::operator!=(const TestMainPortable &m) const {
-                return !(*this == m);
-            }
-
-            int TestMainPortable::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestMainPortable::getClassId() const {
-                return TestSerializationConstants::TEST_MAIN_PORTABLE;
-            }
-
-            void TestMainPortable::writePortable(serialization::PortableWriter &writer) const {
-                writer.write<byte>("b", b);
-                writer.write("bool", boolean);
-                writer.write("c", c);
-                writer.write<int16_t>("s", s);
-                writer.write<int32_t>("i", i);
-                writer.write<int64_t>("l", l);
-                writer.write<float>("f", f);
-                writer.write<double>("d", d);
-                writer.write("str", &str);
-                writer.writePortable("p", &p);
-            }
-
-
-            void TestMainPortable::readPortable(serialization::PortableReader &reader) {
-                null = false;
-                b = reader.read<byte>("b");
-                boolean = reader.read<bool>("bool");
-                c = reader.read<char>("c");
-                s = reader.read<int16_t>("s");
-                i = reader.read<int32_t>("i");
-                l = reader.read<int64_t>("l");
-                f = reader.read<float>("f");
-                d = reader.read<double>("d");
-                str = *reader.read<std::string>("str");
-                auto innerPortable = reader.readPortable<TestInnerPortable>("p");
-                if (innerPortable.has_value())
-                    p = std::move(innerPortable.value());
-            }
-
-        }
-    }
-}
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-
-            TestNamedPortable::TestNamedPortable() {}
-
-            TestNamedPortable::TestNamedPortable(std::string name, int k):name(name), k(k) {}
-
-            int TestNamedPortable::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestNamedPortable::getClassId() const {
-                return TestSerializationConstants::TEST_NAMED_PORTABLE;
-            }
-
-            void TestNamedPortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.write("name", &name);
-                writer.write<int32_t>("myint", k);
-            }
-
-
-            void TestNamedPortable::readPortable(serialization::PortableReader& reader) {
-                name = *reader.read<std::string>("name");
-                k =  reader.read<int32_t>("myint");
-            }
-
-            bool TestNamedPortable::operator ==(const TestNamedPortable& m) const {
-                if (this == &m)
-                    return true;
-                if (k != m.k)
-                    return false;
-                if (name.compare(m.name))
-                    return false;
-                return true;
-            }
-
-            bool TestNamedPortable::operator !=(const TestNamedPortable& m) const {
-                return !(*this == m);
-            }
-
-        }
-    }
-}
-
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
             class PortableVersionTest : public ::testing::Test {
             public:
                 class Child {
@@ -1718,12 +1285,12 @@ namespace hazelcast {
                 }
 
                 static void writePortable(const test::PortableVersionTest::Child &object,
-                        serialization::PortableWriter &writer) {
+                                          PortableWriter &writer) {
                     writer.write("name", object.getName());
                 }
 
-                static test::PortableVersionTest::Child readPortable(serialization::PortableReader &reader) {
-                    return test::PortableVersionTest::Child(reader.read<std::string>("name").value());
+                static test::PortableVersionTest::Child readPortable(PortableReader &reader) {
+                    return test::PortableVersionTest::Child(reader.read<std::string>("name"));
                 }
             };
 
@@ -1737,274 +1304,18 @@ namespace hazelcast {
                     return 1;
                 }
 
-                void writePortable(const test::PortableVersionTest::Parent &object, serialization::PortableWriter &writer) {
+                void writePortable(const test::PortableVersionTest::Parent &object, PortableWriter &writer) {
                     writer.writePortable<test::PortableVersionTest::Child>("child", &object.getChild());
                 }
 
-                virtual test::PortableVersionTest::Parent readPortable(serialization::PortableReader &reader) {
+                virtual test::PortableVersionTest::Parent readPortable(PortableReader &reader) {
                     return test::PortableVersionTest::Parent(reader.readPortable<test::PortableVersionTest::Child>("child").value());
                 }
             };
-        }
-    }
-}
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            TestInvalidReadPortable::TestInvalidReadPortable() {
-
-            }
-
-            TestInvalidReadPortable::TestInvalidReadPortable(long l, int i, std::string s) {
-                this->l = l;
-                this->i = i;
-                this->s = s;
-            }
-
-            int TestInvalidReadPortable::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestInvalidReadPortable::getClassId() const {
-                return TestSerializationConstants::TEST_INVALID_READ_PORTABLE;
-            }
-
-            void TestInvalidReadPortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.write<int64_t>("l", l);
-                writer.write<int32_t>("i", i);
-                writer.write("s", &s);
-            }
-
-
-            void TestInvalidReadPortable::readPortable(serialization::PortableReader& reader) {
-                l = reader.read<int64_t>("l");
-                serialization::ObjectDataInput &in = reader.getRawDataInput();
-                i = in.read<int32_t>();
-                s = *reader.read<std::string>("s");
-            }
-        }
-    }
-}
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            TestInvalidWritePortable::TestInvalidWritePortable() {
-
-            }
-
-            TestInvalidWritePortable::TestInvalidWritePortable(long l, int i, std::string s) {
-                this->l = l;
-                this->i = i;
-                this->s = s;
-            }
-
-            int TestInvalidWritePortable::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestInvalidWritePortable::getClassId() const {
-                return TestSerializationConstants::TEST_INVALID_WRITE_PORTABLE;
-            }
-
-            void TestInvalidWritePortable::writePortable(serialization::PortableWriter& writer) const {
-                writer.write<int64_t>("l", l);
-                serialization::ObjectDataOutput& out = writer.getRawDataOutput();
-                out.write<int32_t>(i);
-                writer.write("s", &s);
-            }
-
-            void TestInvalidWritePortable::readPortable(serialization::PortableReader& reader) {
-                l = reader.read<int64_t>("l");
-                i = reader.read<int32_t>("i");
-                s = *reader.read<std::string>("s");
-            }
-        }
-    }
-}
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            TestInnerPortable::TestInnerPortable() {
-            }
-
-            TestInnerPortable::TestInnerPortable(const TestInnerPortable &rhs) {
-                *this = rhs;
-            }
-
-            TestInnerPortable::TestInnerPortable(std::vector<byte> b,
-                                                 std::vector<bool> ba,
-                                                 std::vector<char> c,
-                                                 std::vector<int16_t> s,
-                                                 std::vector<int32_t> i,
-                                                 std::vector<int64_t> l,
-                                                 std::vector<float> f,
-                                                 std::vector<double> d,
-                                                 std::vector<TestNamedPortable> n) : ii(i), bb(b), ba(ba), cc(c), ss(s),
-                                                                                     ll(l), ff(f), dd(d), nn(n) {
-            }
-
-            TestInnerPortable::~TestInnerPortable() {
-            }
-
-            TestInnerPortable &TestInnerPortable::operator=(const TestInnerPortable &rhs) {
-                bb = rhs.bb;
-                ba = rhs.ba;
-                cc = rhs.cc;
-                ss = rhs.ss;
-                ii = rhs.ii;
-                ll = rhs.ll;
-                ff = rhs.ff;
-                dd = rhs.dd;
-                nn = rhs.nn;
-                return (*this);
-            }
-
-            int32_t TestInnerPortable::getClassId() const {
-                return TestSerializationConstants::TEST_INNER_PORTABLE;
-            }
-
-            int32_t TestInnerPortable::getFactoryId() const {
-                return TestSerializationConstants::TEST_DATA_FACTORY;
-            }
-
-            bool TestInnerPortable::operator==(const TestInnerPortable &m) const {
-                if (bb != m.bb) return false;
-                if (ba != m.ba) return false;
-                if (cc != m.cc) return false;
-                if (ss != m.ss) return false;
-                if (ii != m.ii) return false;
-                if (ll != m.ll) return false;
-                if (ff != m.ff) return false;
-                if (dd != m.dd) return false;
-                size_t size = nn.size();
-                for (size_t i = 0; i < size; i++)
-                    if (nn[i] != m.nn[i])
-                        return false;
-                return true;
-            }
-
-            bool TestInnerPortable::operator!=(const TestInnerPortable &m) const {
-                return !(*this == m);
-            }
-
-            void TestInnerPortable::writePortable(serialization::PortableWriter &writer) const {
-                writer.write("b", &bb);
-                writer.write("ba", &ba);
-                writer.write("c", &cc);
-                writer.write("s", &ss);
-                writer.write("i", &ii);
-                writer.write("l", &ll);
-                writer.write("f", &ff);
-                writer.write("d", &dd);
-                writer.write("nn", &nn);
-            }
-
-            void TestInnerPortable::readPortable(serialization::PortableReader &reader) {
-                bb = *reader.read<std::vector<byte>>("b");
-                ba = *reader.read<std::vector<bool>>("ba");
-                cc = *reader.read<std::vector<char>>("c");
-                ss = *reader.read<std::vector<int16_t>>("s");
-                ii = *reader.read<std::vector<int32_t>>("i");
-                ll = *reader.read<std::vector<int64_t>>("l");
-                ff = *reader.read<std::vector<float>>("f");
-                dd = *reader.read<std::vector<double>>("d");
-                nn = reader.readPortableArray<TestNamedPortable>("nn");
-            }
-        }
-    }
-}
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            TestNamedPortableV2::TestNamedPortableV2() {}
-
-            TestNamedPortableV2::TestNamedPortableV2(std::string name, int v) : name(name), k(v * 10), v(v) {}
-
-            int TestNamedPortableV2::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestNamedPortableV2::getClassId() const {
-                return TestSerializationConstants::TEST_NAMED_PORTABLE_2;
-            }
-
-            void TestNamedPortableV2::writePortable(serialization::PortableWriter& writer) const {
-                writer.write<int32_t>("v", v);
-                writer.write("name", &name);
-                writer.write<int32_t>("myint", k);
-            }
-
-            void TestNamedPortableV2::readPortable(serialization::PortableReader& reader) {
-                v = reader.read<int32_t>("v");
-                name = *reader.read<std::string>("name");
-                k = reader.read<int32_t>("myint");
-            }
 
         }
     }
 }
-
-//
-// Created by sancar koyunlu on 05/04/15.
-//
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-
-            TestNamedPortableV3::TestNamedPortableV3() {
-            }
-
-            TestNamedPortableV3::TestNamedPortableV3(std::string name, short k):name(name), k(k) {
-            }
-
-            int TestNamedPortableV3::getFactoryId() const {
-                return TestSerializationConstants::TEST_PORTABLE_FACTORY;
-            }
-
-            int TestNamedPortableV3::getClassId() const {
-                return TestSerializationConstants::TEST_NAMED_PORTABLE_3;
-            }
-
-            void TestNamedPortableV3::writePortable(serialization::PortableWriter& writer) const {
-                writer.write("name", &name);
-                writer.write<int16_t>("myint", k);
-            }
-
-
-            void TestNamedPortableV3::readPortable(serialization::PortableReader& reader) {
-                name = *reader.read<std::string>("name");
-                k = reader.read<int16_t>("myint");
-            }
-
-            bool TestNamedPortableV3::operator ==(const TestNamedPortableV3& m) const {
-                if (this == &m)
-                    return true;
-                if (k != m.k)
-                    return false;
-                if (name.compare(m.name))
-                    return false;
-                return true;
-            }
-
-            bool TestNamedPortableV3::operator !=(const TestNamedPortableV3& m) const {
-                return !(*this == m);
-            }
-
-        }
-    }
-}
-
-
 
 namespace hazelcast {
     namespace client {
@@ -2069,11 +1380,6 @@ namespace hazelcast {
 }
 
 
-
-
-
-
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -2088,19 +1394,13 @@ namespace hazelcast {
             TEST_F(JsonValueSerializationTest, testSerializeDeserializeJsonValue) {
                 HazelcastJsonValue jsonValue("{ \"key\": \"value\" }");
                 serialization::pimpl::Data jsonData = serializationService.toData(&jsonValue);
-                std::unique_ptr<HazelcastJsonValue> jsonDeserialized(
-                        serializationService.toObject<HazelcastJsonValue>(jsonData));
-                ASSERT_EQ_PTR(jsonValue, jsonDeserialized.get(), HazelcastJsonValue);
+                auto jsonDeserialized = serializationService.toObject<HazelcastJsonValue>(jsonData);
+                ASSERT_TRUE(jsonDeserialized.has_value());
+                ASSERT_EQ(jsonValue, jsonDeserialized.value());
             }
         }
     }
 }
-
-//
-// Created by sancar koyunlu on 8/27/13.
-
-
-
 
 namespace hazelcast {
     namespace client {
@@ -2109,19 +1409,14 @@ namespace hazelcast {
             protected:
                 class NonSerializableObject {};
 
-                class DummyGlobalSerializer : public serialization::StreamSerializer {
+                class DummyGlobalSerializer : public serialization::global_serializer {
                 public:
-                    virtual int32_t getHazelcastTypeId() const {
-                        return 123;
+                    void write(const boost::any &object, ObjectDataOutput &out) override {
+                        out.write<std::string>("Dummy string");
                     }
 
-                    virtual void write(serialization::ObjectDataOutput &out, const void *object) {
-                        std::string value("Dummy string");
-                        out.write(&value);
-                    }
-
-                    virtual void *read(serialization::ObjectDataInput &in) {
-                        return in.read<std::string>().release();
+                    boost::any read(ObjectDataInput &in) override {
+                        return boost::any(in.read<std::string>());
                     }
                 };
 
@@ -2851,71 +2146,6 @@ namespace hazelcast {
         }
     }
 }
-
-
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            TestDataSerializable::TestDataSerializable() {
-
-            }
-
-            TestDataSerializable::TestDataSerializable(int i, char c):i(i), c(c) {
-
-            }
-
-            bool TestDataSerializable::operator ==(const TestDataSerializable & rhs) const {
-                if (this == &rhs)
-                    return true;
-                if (i != rhs.i) return false;
-                if (c != rhs.c) return false;
-                return true;
-            }
-
-            bool TestDataSerializable::operator !=(const TestDataSerializable& m) const {
-                return !(*this == m);
-            }
-
-            int TestDataSerializable::getFactoryId() const {
-                return TestSerializationConstants::TEST_DATA_FACTORY;
-            }
-
-            int TestDataSerializable::getClassId() const {
-                return TestSerializationConstants::TEST_DATA_SERIALIZABLE;
-            }
-
-            void TestDataSerializable::writeData(serialization::ObjectDataOutput& writer) const {
-                writer.write(c);
-                writer.write<int32_t>(i);
-            }
-
-            void TestDataSerializable::readData(serialization::ObjectDataInput &reader) {
-                c = reader.read<char>();
-                i = reader.read<int32_t>();
-            }
-
-            std::unique_ptr<serialization::IdentifiedDataSerializable>
-            TestDataSerializableFactory::create(int32_t classId) {
-                switch (classId) {
-                    case TestSerializationConstants::TEST_DATA_SERIALIZABLE:
-                        return std::unique_ptr<serialization::IdentifiedDataSerializable>(new TestDataSerializable());
-                    default:
-                        return std::unique_ptr<serialization::IdentifiedDataSerializable>();
-                }
-            }
-        }
-    }
-}
-
-
-
-
-//
-// Created by İhsan Demir on Jan 10 2017.
-//
-
-
 
 namespace hazelcast {
     namespace client {

@@ -32,17 +32,13 @@ namespace hazelcast {
             template<typename T>
             class ParentTemplatedPortable : public serialization::Portable {
             public:
-                ParentTemplatedPortable(){
-
-                }
+                ParentTemplatedPortable(){}
 
                 ParentTemplatedPortable(T* child):child(child){
 
                 }
 
-                virtual ~ParentTemplatedPortable() {
-
-                }
+                virtual ~ParentTemplatedPortable() {}
 
                 int getFactoryId() const {
                     return TestSerializationConstants::TEST_DATA_FACTORY;
