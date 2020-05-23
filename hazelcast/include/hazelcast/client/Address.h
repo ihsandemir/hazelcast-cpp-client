@@ -34,7 +34,8 @@ namespace hazelcast {
          * IP Address
          */
         class HAZELCAST_API Address {
-            friend class serialization::hz_serializer<Address>;
+            friend struct serialization::hz_serializer<Address>;
+            friend struct std::hash<hazelcast::client::Address>;
         public:
             Address(const std::string &hostname, int port, unsigned long scopeId);
 
@@ -108,9 +109,15 @@ namespace hazelcast {
         typedef std::less<Address> addressComparator;
 
         std::ostream HAZELCAST_API &operator << (std::ostream &stream, const Address &address);
-
     }
-};
+}
+
+namespace std {
+    template<>
+    struct hash<hazelcast::client::Address> {
+        std::size_t operator()(const hazelcast::client::Address &address) const;
+    };
+}
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)

@@ -267,18 +267,16 @@ namespace hazelcast {
                       globalSerializer_(globalSerializer) {}
 
             ObjectDataOutput::ObjectDataOutput(bool dontWrite, pimpl::PortableSerializer *portableSer,
-                                               pimpl::DataSerializer *dataSer,
                                                std::shared_ptr<serialization::global_serializer> globalSerializer)
-                    : DataOutput(dontWrite), portableSerializer(portableSer), dataSerializer(dataSer),
-                      globalSerializer_(globalSerializer) {}
+                    : DataOutput(dontWrite), portableSerializer(portableSer), globalSerializer_(globalSerializer) {}
 
             PortableReader::PortableReader(pimpl::PortableSerializer &portableSer, ObjectDataInput &input,
                                            std::shared_ptr<ClassDefinition> cd, bool isDefaultReader)
                     : isDefaultReader(isDefaultReader) {
                 if (isDefaultReader) {
-                    defaultPortableReader = pimpl::DefaultPortableReader(portableSer, input, cd);
+                    defaultPortableReader = boost::make_optional(pimpl::DefaultPortableReader(portableSer, input, cd));
                 } else {
-                    morphingPortableReader = pimpl::MorphingPortableReader(portableSer, input, cd);
+                    morphingPortableReader = boost::make_optional(pimpl::MorphingPortableReader(portableSer, input, cd));
                 }
             }
 
@@ -308,10 +306,9 @@ namespace hazelcast {
             }
 
             const FieldDefinition &ClassDefinition::getField(const std::string &name) const {
-                std::map<std::string, FieldDefinition>::const_iterator it;
-                it = fieldDefinitionsMap.find(name);
+                auto it = fieldDefinitionsMap.find(name);
                 if (it != fieldDefinitionsMap.end()) {
-                    return fieldDefinitionsMap.find(name)->second;
+                    return it->second;
                 }
                 BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("ClassDefinition::getField",
                                                                           (boost::format("Field (%1%) does not exist") %
@@ -355,9 +352,8 @@ namespace hazelcast {
                 dataOutput.write<int32_t>(classId);
                 dataOutput.write<int32_t>(version);
                 dataOutput.write<int16_t>(fieldDefinitionsMap.size());
-                for (std::map<std::string, FieldDefinition>::iterator it = fieldDefinitionsMap.begin();
-                     it != fieldDefinitionsMap.end(); ++it) {
-                    it->second.writeData(dataOutput);
+                for (auto &entry : fieldDefinitionsMap) {
+                    entry.second.writeData(dataOutput);
                 }
             }
 
@@ -389,9 +385,8 @@ namespace hazelcast {
                    << " version: "
                    << definition.version << " fieldDefinitions: {";
 
-                for (std::map<std::string, FieldDefinition>::const_iterator it = definition.fieldDefinitionsMap.begin();
-                     it != definition.fieldDefinitionsMap.end(); ++it) {
-                    os << it->second;
+                for (auto &entry : definition.fieldDefinitionsMap) {
+                    os << entry.second;
                 }
                 os << "} }";
                 return os;
@@ -988,7 +983,7 @@ namespace hazelcast {
 
                 PortableReaderBase::PortableReaderBase(PortableSerializer &portableSer, ObjectDataInput &input,
                                                        std::shared_ptr<ClassDefinition> cd)
-                        : cd(cd), dataInput(input), portableSerializer(portableSer), raw(false) {
+                        : cd(cd), dataInput(&input), portableSerializer(&portableSer), raw(false) {
                     int fieldCount;
                     try {
                         // final position after portable is read
@@ -1011,7 +1006,7 @@ namespace hazelcast {
                 }
                 
                 void PortableReaderBase::setPosition(const std::string &fieldName, FieldType const &fieldType) {
-                    dataInput.position(readPosition(fieldName, fieldType));
+                    dataInput->position(readPosition(fieldName, fieldType));
                 }
 
                 int PortableReaderBase::readPosition(const std::string &fieldName, FieldType const &fieldType) {
@@ -1033,11 +1028,11 @@ namespace hazelcast {
                                                                                          std::string(fieldName)));
                     }
 
-                    dataInput.position(offset + cd->getField(fieldName).getIndex() * util::Bits::INT_SIZE_IN_BYTES);
-                    int32_t pos = dataInput.read<int32_t>();
+                    dataInput->position(offset + cd->getField(fieldName).getIndex() * util::Bits::INT_SIZE_IN_BYTES);
+                    int32_t pos = dataInput->read<int32_t>();
 
-                    dataInput.position(pos);
-                    int16_t len = dataInput.read<int16_t>();
+                    dataInput->position(pos);
+                    int16_t len = dataInput->read<int16_t>();
 
                     // name + len + type
                     return pos + util::Bits::SHORT_SIZE_IN_BYTES + len + 1;
@@ -1045,16 +1040,16 @@ namespace hazelcast {
 
                 hazelcast::client::serialization::ObjectDataInput &PortableReaderBase::getRawDataInput() {
                     if (!raw) {
-                        dataInput.position(offset + cd->getFieldCount() * util::Bits::INT_SIZE_IN_BYTES);
-                        int32_t pos = dataInput.read<int32_t>();
-                        dataInput.position(pos);
+                        dataInput->position(offset + cd->getFieldCount() * util::Bits::INT_SIZE_IN_BYTES);
+                        int32_t pos = dataInput->read<int32_t>();
+                        dataInput->position(pos);
                     }
                     raw = true;
-                    return dataInput;
+                    return *dataInput;
                 }
 
                 void PortableReaderBase::end() {
-                    dataInput.position(finalPosition);
+                    dataInput->position(finalPosition);
                 }
 
                 void

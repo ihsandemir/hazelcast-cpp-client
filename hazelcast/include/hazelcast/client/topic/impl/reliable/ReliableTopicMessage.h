@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#=pragma once
+#pragma once
 
 #include <memory>
 
@@ -34,8 +34,7 @@ namespace hazelcast {
             namespace impl {
                 namespace reliable {
                     class HAZELCAST_API ReliableTopicMessage {
-                        template<>
-                        friend class serialization::hz_serializer<topic::impl::reliable::ReliableTopicMessage>;
+                        friend struct serialization::hz_serializer<topic::impl::reliable::ReliableTopicMessage>;
                     public:
                         ReliableTopicMessage();
 

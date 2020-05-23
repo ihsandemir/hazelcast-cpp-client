@@ -2403,7 +2403,7 @@ namespace hazelcast {
                         });
                     }
 
-                    std::string
+                    boost::future<std::string>
                     SmartClientListenerService::registerListener(
                             std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                             std::unique_ptr<impl::BaseEventHandler> &&handler) {

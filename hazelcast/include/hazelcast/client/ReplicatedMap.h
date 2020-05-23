@@ -275,16 +275,6 @@ namespace hazelcast {
                 }
 
             private:
-                boost::future<boost::optional<serialization::pimpl::Data>> getCachedValueData(const K &key) {
-                    std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V> > cache = nearCache.get();
-                    if (cache.get() == NULL) {
-                        // TODO Check to see if Java NOT_CACHED object impl. is possible
-                        return boost::future<boost::optional<V>> ();
-                    }
-
-                    return cache->get(toSharedData<K>(key));
-                }
-
                 void fireMapWideEvent(std::unique_ptr<serialization::pimpl::Data> &key,
                                       std::unique_ptr<serialization::pimpl::Data> &value,
                                       std::unique_ptr<serialization::pimpl::Data> &oldValue,

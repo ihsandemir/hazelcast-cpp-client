@@ -18,6 +18,7 @@
 #include "hazelcast/client/proxy/MultiMapImpl.h"
 #include "hazelcast/client/impl/EntryEventHandler.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/spi/ClientContext.h"
 
 namespace hazelcast {
     namespace client {

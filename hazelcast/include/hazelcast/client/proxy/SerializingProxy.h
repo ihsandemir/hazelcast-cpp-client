@@ -63,8 +63,21 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                inline auto toObject(const serialization::pimpl::Data &data) -> decltype(serializationService_.template toObject<T>(data)) {
+                inline boost::optional<T> toObject(const serialization::pimpl::Data &data) {
                     return serializationService_.template toObject<T>(data);
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<T, const char *>::value, boost::optional<std::string>>::type
+                inline toObject(const serialization::pimpl::Data &data) {
+                    return toObject<std::string>(data);
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_array<T>::value &&
+                                        std::is_same<typename std::remove_all_extents<T>::type, char>::value, boost::optional<std::string>>::type
+                inline toObject(const serialization::pimpl::Data &data) {
+                    return toObject<std::string>(data);
                 }
 
                 template<typename T>
@@ -144,11 +157,6 @@ namespace hazelcast {
                 template<typename T>
                 boost::future<void> toVoidFuture(boost::future<T> messageFuture) {
                     return messageFuture.then(boost::launch::deferred, [](boost::future<T> f) { f.get(); });
-                }
-
-                template <typename T>
-                std::shared_ptr<T> toSharedObject(std::unique_ptr<serialization::pimpl::Data> &data) {
-                    return toSharedObject<T>(std::move(data));
                 }
 
                 template <typename T>

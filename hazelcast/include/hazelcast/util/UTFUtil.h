@@ -64,7 +64,7 @@ namespace hazelcast {
 
                 utfBuffer.push_back((char) firstByte);
                 for (size_t j = 0; j < n; j++) {
-                    byte b = in.readByte();
+                    byte b = in.template read<byte>();
                     if (firstByte == 0xed && (b & 0xa0) == 0xa0) {
                         throw client::exception::UTFDataFormatException("Bits::readUTF8Char",
                                                                         "Malformed byte sequence U+d800 to U+dfff"); //U+d800 to U+dfff

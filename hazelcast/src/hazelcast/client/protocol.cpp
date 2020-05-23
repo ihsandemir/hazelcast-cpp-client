@@ -263,13 +263,10 @@ namespace hazelcast {
                 assert(checkReadAvailable(len));
 
                 byte *start = ix();
-                std::unique_ptr<std::vector<byte>> bytes = std::unique_ptr<std::vector<byte> >(
-                        new std::vector<byte>(start,
-                                              start +
-                                              len));
+                std::vector<byte> bytes(start,start + len);
                 index += len;
 
-                return serialization::pimpl::Data(bytes);
+                return serialization::pimpl::Data(std::move(bytes));
             }
 
             template<>

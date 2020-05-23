@@ -31,6 +31,7 @@
  */
 
 #include <vector>
+#include <functional>
 #include <easylogging++.h>
 #include <boost/format.hpp>
 
@@ -115,10 +116,6 @@ namespace hazelcast {
 
         spi::LifecycleService &HazelcastClient::getLifecycleService() {
             return clientImpl->getLifecycleService();
-        }
-
-        std::shared_ptr<IExecutorService> HazelcastClient::getExecutorService(const std::string &name) {
-            return clientImpl->getExecutorService(name);
         }
 
         Client HazelcastClient::getLocalEndpoint() const {
@@ -249,13 +246,6 @@ namespace hazelcast {
 
             serialization::pimpl::SerializationService &HazelcastClientInstanceImpl::getSerializationService() {
                 return serializationService;
-            }
-
-            std::shared_ptr<spi::ClientProxy> HazelcastClientInstanceImpl::getDistributedObjectForService(
-                    const std::string &serviceName,
-                    const std::string &name,
-                    spi::ClientProxyFactory &factory) {
-                return proxyManager.createProxy(serviceName, name, factory);
             }
 
             const protocol::ClientExceptionFactory &HazelcastClientInstanceImpl::getExceptionFactory() const {
@@ -492,16 +482,16 @@ namespace hazelcast {
             }
 
             void hz_serializer<Address>::writeData(const Address &object, ObjectDataOutput &out) {
-                out.writeInt(object.port);
-                out.writeByte(object.type);
-                out.writeUTF(object.host);
+                out.write<int32_t>(object.port);
+                out.write<byte>(object.type);
+                out.write(object.host);
             }
 
             Address hz_serializer<Address>::readData(ObjectDataInput &in) {
                 Address object;
-                object.port = in.readInt();
-                object.type = in.readByte();
-                object.host = in.readUTF();
+                object.port = in.read<int32_t>();
+                object.type = in.read<byte>();
+                object.host = in.read<std::string>();
                 return object;
             }
         }
@@ -571,8 +561,8 @@ namespace hazelcast {
         }
 
         Address IExecutorService::getMemberAddress(const Member &member) {
-            std::shared_ptr<Member> m = getContext().getClientClusterService().getMember(member.getUuid());
-            if (m.get() == NULL) {
+            auto m = getContext().getClientClusterService().getMember(member.getUuid());
+            if (!m) {
                 throw (exception::ExceptionBuilder<exception::HazelcastException>(
                         "IExecutorService::getMemberAddress(Member)") << member << " is not available!").build();
             }
@@ -590,14 +580,14 @@ namespace hazelcast {
             invoke(request);
         }
 
-        bool IExecutorService::isShutdown() {
+        boost::future<bool> IExecutorService::isShutdown() {
             auto request = protocol::codec::ExecutorServiceIsShutdownCodec::encodeRequest(
                     getName());
-            return invokeAndGetResult<bool, protocol::codec::ExecutorServiceIsShutdownCodec::ResponseParameters>(
+            return invokeAndGetFuture<bool, protocol::codec::ExecutorServiceIsShutdownCodec::ResponseParameters>(
                     request);
         }
 
-        bool IExecutorService::isTerminated() {
+        boost::future<bool> IExecutorService::isTerminated() {
             return isShutdown();
         }
 
@@ -870,5 +860,12 @@ namespace hazelcast {
                 }
             }
         }
+    }
+}
+
+namespace std {
+    std::size_t hash<hazelcast::client::Address>::operator()(const hazelcast::client::Address &address) const {
+        return std::hash<std::string>()(address.getHost()) + std::hash<int>()(address.getPort()) +
+               std::hash<unsigned long>()(address.type);
     }
 }

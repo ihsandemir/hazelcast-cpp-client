@@ -16,13 +16,17 @@
 #pragma once
 
 #include <ostream>
-#include <set>
+#include <unordered_set>
 #include <memory>
 #include <atomic>
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
+#include "hazelcast/util/Sync.h"
 
 namespace hazelcast {
+    namespace util {
+        class ILogger;
+    }
     namespace client {
         namespace cluster {
             namespace impl {
@@ -181,7 +185,7 @@ namespace hazelcast {
                 PNCounterImpl(const std::string &serviceName, const std::string &objectName,
                               spi::ClientContext *context);
 
-                static const std::shared_ptr<std::unordered_set<Address> > EMPTY_ADDRESS_LIST;
+                static const std::shared_ptr<std::unordered_set<Address>> EMPTY_ADDRESS_LIST;
 
                 /**
                  * Returns the target on which this proxy should invoke a CRDT operation.
@@ -223,6 +227,11 @@ namespace hazelcast {
                  */
                 std::vector<Address> getReplicaAddresses(const std::unordered_set<Address> &excludedAddresses);
 
+                std::shared_ptr<Address>
+                tryChooseANewTarget(std::shared_ptr<std::unordered_set<Address>> excludedAddresses,
+                                    std::shared_ptr<Address> lastTarget,
+                                    const exception::HazelcastException &lastException);
+
                 /**
                  * Returns the max configured replica count.
                  * When invoked for the first time, this method will fetch the
@@ -250,7 +259,7 @@ namespace hazelcast {
                  * @throws NoDataMemberInClusterException if there are no replicas and the
                  *                                        {@code lastException} is false
                  */
-                protocol::ClientMessage
+                boost::future<int64_t>
                 invokeGetInternal(std::shared_ptr<std::unordered_set<Address> > excludedAddresses,
                                   std::exception_ptr lastException,
                                   const std::shared_ptr<Address> &target);
@@ -280,7 +289,7 @@ namespace hazelcast {
                  * @throws NoDataMemberInClusterException if there are no replicas and the
                  *                                        {@code lastException} is {@code null}
                  */
-                protocol::ClientMessage
+                boost::future<int64_t>
                 invokeAddInternal(int64_t delta, bool getBeforeUpdate,
                                   std::shared_ptr<std::unordered_set<Address> > excludedAddresses,
                                   std::exception_ptr lastException, const std::shared_ptr<Address> &target);

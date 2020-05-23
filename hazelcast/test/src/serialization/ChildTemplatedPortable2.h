@@ -33,13 +33,9 @@ namespace hazelcast {
 
             class ChildTemplatedPortable2 : public serialization::Portable {
             public:
-                ChildTemplatedPortable2(){
+                ChildTemplatedPortable2(){}
 
-                }
-
-                ChildTemplatedPortable2(std::string s1):s1(s1){
-
-                }
+                ChildTemplatedPortable2(std::string s1) :s1(s1){}
 
                 int getFactoryId() const {
                     return TestSerializationConstants::TEST_DATA_FACTORY;

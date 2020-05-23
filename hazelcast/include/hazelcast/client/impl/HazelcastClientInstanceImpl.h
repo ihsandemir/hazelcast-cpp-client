@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "hazelcast/client/spi/impl/sequence/CallIdSequence.h"
-#include "hazelcast/client/map/impl/ClientMapProxyFactory.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/proxy/RingbufferImpl.h"
 #include "hazelcast/client/IMap.h"
@@ -231,10 +230,6 @@ namespace hazelcast {
 
                 void operator=(const HazelcastClientInstanceImpl& rhs);
 
-                std::shared_ptr<spi::ClientProxy> getDistributedObjectForService(const std::string &serviceName,
-                                                                                   const std::string &name,
-                                                                                   spi::ClientProxyFactory &factory);
-
                 std::shared_ptr<spi::ClientListenerService> initListenerService();
 
                 std::unique_ptr<spi::ClientInvocationService> initInvocationService();
@@ -250,18 +245,6 @@ namespace hazelcast {
 
                 void initalizeNearCacheManager();
             };
-
-            template<>
-            std::shared_ptr<IMap> HazelcastClientInstanceImpl::get(const std::string &name) {
-                std::shared_ptr<map::ClientMapProxy> impl;
-                if (clientConfig.template getNearCacheConfig<serialization::pimpl::Data, serialization::pimpl::Data>(
-                        name)) {
-                    return proxyManager.getOrCreateProxy<map::NearCachedClientMapProxy<serialization::pimpl::Data, serialization::pimpl::Data>>(
-                            IMap::SERVICE_NAME, name);
-                } 
-                    
-                return proxyManager.getOrCreateProxy<IMap>(IMap::SERVICE_NAME, name);
-            }
         }
     }
 }

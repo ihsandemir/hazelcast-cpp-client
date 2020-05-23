@@ -30,8 +30,8 @@
 
 namespace hazelcast {
     namespace client {
-        namespace serialization {
-            class IdentifiedDataSerializable;
+        namespace impl {
+            class ClientLockReferenceIdGenerator;
         }
         namespace proxy {
             class HAZELCAST_API IMapImpl : public ProxyImpl {

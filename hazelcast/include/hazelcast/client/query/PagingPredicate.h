@@ -135,7 +135,7 @@ namespace hazelcast {
                  *
                  * @param predicatePageSize size of the page
                  */
-                PagingPredicate(size_t predicatePageSize) : pageSize(predicatePageSize), page(0),iterationType(VALUE) {
+                PagingPredicate(size_t predicatePageSize) : pageSize(predicatePageSize), page(0),iterationType(IterationType::VALUE) {
                 }
 
                 /**
@@ -155,7 +155,7 @@ namespace hazelcast {
                 PagingPredicate(std::unique_ptr<Predicate> &&predicate, size_t predicatePageSize) : innerPredicate(std::move(predicate)),
                                                                                              pageSize(predicatePageSize),
                                                                                              page(0),
-                                                                                             iterationType(VALUE) {
+                                                                                             iterationType(IterationType::VALUE) {
                 }
 
                 /**
@@ -172,7 +172,7 @@ namespace hazelcast {
                 }
 
                 PagingPredicate(std::unique_ptr<query::EntryComparator<K, V> > &&comparatorObj, size_t predicatePageSize) : comparator(
-                        std::move(comparatorObj)), pageSize(predicatePageSize), page(0), iterationType(VALUE) {
+                        std::move(comparatorObj)), pageSize(predicatePageSize), page(0), iterationType(IterationType::VALUE) {
                 }
 
                 /**
@@ -196,7 +196,7 @@ namespace hazelcast {
 
                 PagingPredicate(std::unique_ptr<Predicate> &&predicate, std::unique_ptr<query::EntryComparator<K, V> > &&comparatorObj,
                                 size_t predicatePageSize) : innerPredicate(std::move(predicate)), comparator(std::move(comparatorObj)),
-                                                         pageSize(predicatePageSize), page(0), iterationType(VALUE) {}
+                                                         pageSize(predicatePageSize), page(0), iterationType(IterationType::VALUE) {}
 
                 ~PagingPredicate() {
                     for (typename std::vector<std::pair<size_t, std::pair<K *, V *> > >::const_iterator it = anchorList.begin();
@@ -210,7 +210,7 @@ namespace hazelcast {
                  * resets for reuse
                  */
                 void reset() {
-                    iterationType = VALUE;
+                    iterationType = IterationType::VALUE;
                     for (typename std::vector<std::pair<size_t, std::pair<K *, V *> > >::const_iterator it = anchorList.begin();
                          it != anchorList.end(); ++it) {
                         delete it->second.first;
@@ -324,13 +324,13 @@ namespace hazelcast {
                 void writeData(serialization::ObjectDataOutput &out) const {
                     out.writeObject<serialization::IdentifiedDataSerializable>(innerPredicate.get());
                     out.writeObject<serialization::IdentifiedDataSerializable>(comparator.get());
-                    out.writeInt((int)page);
-                    out.writeInt((int)pageSize);
-                    out.writeUTF(&IterationNames[iterationType]);
-                    out.writeInt((int) anchorList.size());
+                    out.write<int32_t>((int)page);
+                    out.write<int32_t>((int)pageSize);
+                    out.write<std::string>(IterationNames[static_cast<int32_t>(iterationType)]);
+                    out.write<int32_t>((int) anchorList.size());
                     for (typename std::vector<std::pair<size_t, std::pair<K *, V *> > >::const_iterator it = anchorList.begin();
                          it != anchorList.end(); ++it) {
-                        out.writeInt((int)it->first);
+                        out.write<int32_t>((int)it->first);
                         out.writeObject<K>(it->second.first);
                         out.writeObject<V>(it->second.second);
                     }

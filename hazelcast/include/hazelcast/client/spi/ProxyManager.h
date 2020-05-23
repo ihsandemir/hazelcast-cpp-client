@@ -64,7 +64,7 @@ namespace hazelcast {
                     }
 
                     if (proxyFuture.valid()) {
-                        return proxyFuture.get();
+                        return std::static_pointer_cast<T>(proxyFuture.get());
                     }
 
                     try {
@@ -124,5 +124,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-#endif //HAZELCAST_CLIENT_SPI_PROXYMANAGER_H_

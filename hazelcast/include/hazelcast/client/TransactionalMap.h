@@ -188,7 +188,7 @@ namespace hazelcast {
 
         private:
             TransactionalMap(const std::string &name, txn::TransactionProxy &transactionProxy)
-                    : proxy::TransactionalMapImpl(name, transactionProxy) {}
+                    : proxy::TransactionalMapImpl(name, &transactionProxy) {}
         };
     }
 }

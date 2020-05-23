@@ -19,7 +19,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "serialization/Employee.h"
 #include "ClientTestSupportBase.h"
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/HazelcastClient.h>

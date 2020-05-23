@@ -223,9 +223,9 @@ namespace hazelcast {
 
                 static void checkSequence(int64_t sequence) {
                     if (sequence < 0) {
-                        BOOST_THROW_EXCEPTION(exception::ExceptionBuilder<exception::IllegalArgumentException>(
+                        BOOST_THROW_EXCEPTION((exception::ExceptionBuilder<exception::IllegalArgumentException>(
                                 "ClientRingbufferProxy::checkSequence") << "sequence can't be smaller than 0, but was: "
-                                                                        << sequence).build();
+                                                                        << sequence).build());
                     }
                 }
             };

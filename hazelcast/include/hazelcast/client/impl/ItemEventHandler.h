@@ -61,5 +61,3 @@ namespace hazelcast {
     }
 }
 
-#endif //HAZELCAST_ITEM_EVENT_HANDLER
-

@@ -30,7 +30,7 @@
  * limitations under the License.
  */
 
-#include <limits.h>
+#include <unordered_set>
 
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
 #include "hazelcast/client/proxy/PNCounterImpl.h"
@@ -300,7 +300,7 @@ namespace hazelcast {
                 return toVoidFuture(ringbuffer->add(message));
             }
 
-            const std::shared_ptr<std::set<Address> > PNCounterImpl::EMPTY_ADDRESS_LIST(
+            const std::shared_ptr<std::unordered_set<Address> > PNCounterImpl::EMPTY_ADDRESS_LIST(
                     new std::unordered_set<Address>());
 
             PNCounterImpl::PNCounterImpl(const std::string &serviceName, const std::string &objectName,
@@ -315,164 +315,101 @@ namespace hazelcast {
                 return os;
             }
 
-            int64_t PNCounterImpl::get() {
+            boost::future<int64_t> PNCounterImpl::get() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeGetInternal(EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-                protocol::codec::PNCounterGetCodec::ResponseParameters resultParameters = protocol::codec::PNCounterGetCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeGetInternal(EMPTY_ADDRESS_LIST, nullptr, target);
             }
 
-            int64_t PNCounterImpl::getAndAdd(int64_t delta) {
+            boost::future<int64_t> PNCounterImpl::getAndAdd(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(delta, true, EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(delta, true, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            int64_t PNCounterImpl::addAndGet(int64_t delta) {
+            boost::future<int64_t> PNCounterImpl::addAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(delta, false,
-                                                  EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(delta, false, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            int64_t PNCounterImpl::getAndSubtract(int64_t delta) {
+            boost::future<int64_t> PNCounterImpl::getAndSubtract(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndSubtract",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(-delta, true,
-                                                  EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
+                return invokeAddInternal(-delta, true, EMPTY_ADDRESS_LIST,nullptr, target);
 
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
             }
 
-            int64_t PNCounterImpl::subtractAndGet(int64_t delta) {
+            boost::future<int64_t> PNCounterImpl::subtractAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::subtractAndGet",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(-delta, false,
-                                                  EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(-delta, false, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            int64_t PNCounterImpl::decrementAndGet() {
+            boost::future<int64_t> PNCounterImpl::decrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::decrementAndGet",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(-1, false, EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(-1, false, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            int64_t PNCounterImpl::incrementAndGet() {
+            boost::future<int64_t> PNCounterImpl::incrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::incrementAndGet",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(1, false, EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(1, false, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            int64_t PNCounterImpl::getAndDecrement() {
+            boost::future<int64_t> PNCounterImpl::getAndDecrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndDecrement",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(-1, true, EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(-1, true, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            int64_t PNCounterImpl::getAndIncrement() {
+            boost::future<int64_t> PNCounterImpl::getAndIncrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (target.get() == NULL) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndIncrement",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
-                auto response = invokeAddInternal(1, true, EMPTY_ADDRESS_LIST,
-                                                  nullptr,
-                                                  target);
-
-                protocol::codec::PNCounterAddCodec::ResponseParameters resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
-                        response);
-                updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
-                return resultParameters.value;
+                return invokeAddInternal(1, true, EMPTY_ADDRESS_LIST,nullptr, target);
             }
 
-            void PNCounterImpl::reset() {
+            boost::future<void> PNCounterImpl::reset() {
                 observedClock = std::shared_ptr<cluster::impl::VectorClock>(new cluster::impl::VectorClock());
+                return boost::make_ready_future();
             }
 
             std::shared_ptr<Address>
-            PNCounterImpl::getCRDTOperationTarget(const std::set<Address> &excludedAddresses) {
+            PNCounterImpl::getCRDTOperationTarget(const std::unordered_set<Address> &excludedAddresses) {
                 if (currentTargetReplicaAddress.get().get() != NULL &&
                     excludedAddresses.find(*currentTargetReplicaAddress.get()) == excludedAddresses.end()) {
                     return currentTargetReplicaAddress;
@@ -489,7 +426,7 @@ namespace hazelcast {
             }
 
             std::shared_ptr<Address>
-            PNCounterImpl::chooseTargetReplica(const std::set<Address> &excludedAddresses) {
+            PNCounterImpl::chooseTargetReplica(const std::unordered_set<Address> &excludedAddresses) {
                 std::vector<Address> replicaAddresses = getReplicaAddresses(excludedAddresses);
                 if (replicaAddresses.empty()) {
                     return std::shared_ptr<Address>();
@@ -499,7 +436,7 @@ namespace hazelcast {
                 return std::shared_ptr<Address>(new Address(replicaAddresses[randomReplicaIndex]));
             }
 
-            std::vector<Address> PNCounterImpl::getReplicaAddresses(const std::set<Address> &excludedAddresses) {
+            std::vector<Address> PNCounterImpl::getReplicaAddresses(const std::unordered_set<Address> &excludedAddresses) {
                 std::vector<Member> dataMembers = getContext().getClientClusterService().getMembers(
                         *cluster::memberselector::MemberSelectors::DATA_MEMBER_SELECTOR);
                 int32_t replicaCount = getMaxConfiguredReplicaCount();
@@ -527,11 +464,25 @@ namespace hazelcast {
                 return maxConfiguredReplicaCount;
             }
 
-            protocol::ClientMessage
-            PNCounterImpl::invokeGetInternal(std::shared_ptr<std::set<Address> > excludedAddresses,
+            std::shared_ptr<Address>
+            PNCounterImpl::tryChooseANewTarget(std::shared_ptr<std::unordered_set<Address>> excludedAddresses,
+                                               std::shared_ptr<Address> lastTarget,
+                                               const exception::HazelcastException &lastException) {
+                logger.finest("Exception occurred while invoking operation on target ", *lastTarget,
+                              ", choosing different target. Cause: ", lastException);
+                if (excludedAddresses == EMPTY_ADDRESS_LIST) {
+                    // TODO: Make sure that this only affects the local variable of the method
+                    excludedAddresses = std::make_shared<std::unordered_set<Address>>();
+                }
+                excludedAddresses->insert(*lastTarget);
+                return getCRDTOperationTarget(*excludedAddresses);
+            }
+
+            boost::future<int64_t>
+            PNCounterImpl::invokeGetInternal(std::shared_ptr<std::unordered_set<Address>> excludedAddresses,
                                              std::exception_ptr lastException,
                                              const std::shared_ptr<Address> &target) {
-                if (target.get() == NULL) {
+                if (!target) {
                     if (lastException) {
                         std::rethrow_exception(lastException);
                     } else {
@@ -543,27 +494,29 @@ namespace hazelcast {
                 try {
                     auto request = protocol::codec::PNCounterGetCodec::encodeRequest(
                             getName(), observedClock.get()->entrySet(), *target);
-                    return invokeOnAddress(request, *target);
+                    return invokeOnAddress(request, *target).then(boost::launch::async, [=] (boost::future<protocol::ClientMessage> f) {
+                        try {
+                            auto resultParameters = protocol::codec::PNCounterGetCodec::ResponseParameters::decode(
+                                    f.get());
+                            updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
+                            return resultParameters.value;
+                        } catch (exception::HazelcastException &e) {
+                            return invokeGetInternal(excludedAddresses, std::current_exception(),
+                                                     tryChooseANewTarget(excludedAddresses, target, e)).get();
+                        }
+                    });
                 } catch (exception::HazelcastException &e) {
-                    logger.finest("Exception occurred while invoking operation on target ", *target,
-                                  ", choosing different target. Cause: ", e);
-                    if (excludedAddresses == EMPTY_ADDRESS_LIST) {
-                        // TODO: Make sure that this only affects the local variable of the method
-                        excludedAddresses = std::shared_ptr<std::set<Address> >(new std::set<Address>());
-                    }
-                    excludedAddresses->insert(*target);
-                    std::shared_ptr<Address> newTarget = getCRDTOperationTarget(*excludedAddresses);
-                    return invokeGetInternal(excludedAddresses, std::current_exception(), newTarget);
+                    return invokeGetInternal(excludedAddresses, std::current_exception(),
+                                                    tryChooseANewTarget(excludedAddresses, target, e));
                 }
             }
 
-
-            protocol::ClientMessage
+            boost::future<int64_t>
             PNCounterImpl::invokeAddInternal(int64_t delta, bool getBeforeUpdate,
-                                             std::shared_ptr<std::set<Address> > excludedAddresses,
+                                             std::shared_ptr<std::unordered_set<Address> > excludedAddresses,
                                              std::exception_ptr lastException,
                                              const std::shared_ptr<Address> &target) {
-                if (target.get() == NULL) {
+                if (!target) {
                     if (lastException) {
                         std::rethrow_exception(lastException);
                     } else {
@@ -576,18 +529,20 @@ namespace hazelcast {
                 try {
                     auto request = protocol::codec::PNCounterAddCodec::encodeRequest(
                             getName(), delta, getBeforeUpdate, observedClock.get()->entrySet(), *target);
-                    return invokeOnAddress(request, *target);
+                    return invokeOnAddress(request, *target).then(boost::launch::async, [=] (boost::future<protocol::ClientMessage> f) {
+                        try {
+                            auto resultParameters = protocol::codec::PNCounterAddCodec::ResponseParameters::decode(
+                                    f.get());
+                            updateObservedReplicaTimestamps(resultParameters.replicaTimestamps);
+                            return resultParameters.value;
+                        } catch (exception::HazelcastException &e) {
+                            return invokeAddInternal(delta, getBeforeUpdate, excludedAddresses, std::current_exception(),
+                                                     tryChooseANewTarget(excludedAddresses, target, e)).get();
+                        }
+                    });
                 } catch (exception::HazelcastException &e) {
-                    logger.finest("Unable to provide session guarantees when sending operations to ", *target,
-                                  ", choosing different target. Cause: ", e);
-                    if (excludedAddresses == EMPTY_ADDRESS_LIST) {
-                        // TODO: Make sure that this only affects the local variable of the method
-                        excludedAddresses = std::shared_ptr<std::set<Address> >(new std::set<Address>());
-                    }
-                    excludedAddresses->insert(*target);
-                    std::shared_ptr<Address> newTarget = getCRDTOperationTarget(*excludedAddresses);
                     return invokeAddInternal(delta, getBeforeUpdate, excludedAddresses, std::current_exception(),
-                                             newTarget);
+                                             tryChooseANewTarget(excludedAddresses, target, e));
                 }
             }
 
@@ -1118,8 +1073,7 @@ namespace hazelcast {
             }
             
             IMapImpl::IMapImpl(const std::string &instanceName, spi::ClientContext *context)
-                    : ProxyImpl("hz:impl:mapService", instanceName, context) {
-            }
+                    : ProxyImpl("hz:impl:mapService", instanceName, context) {}
 
             boost::future<bool> IMapImpl::containsKey(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapContainsKeyCodec::encodeRequest(getName(), key,

@@ -491,7 +491,7 @@ namespace hazelcast {
              *
              * @return {@code true} if this executor has been shut down
              */
-            bool isShutdown();
+            boost::future<bool> isShutdown();
 
             /**
              * Returns {@code true} if all tasks have completed following shut down.
@@ -500,7 +500,7 @@ namespace hazelcast {
              *
              * @return {@code true} if all tasks have completed following shut down
              */
-            bool isTerminated();
+            boost::future<bool> isTerminated();
 
         private:
             IExecutorService(const std::string &name, spi::ClientContext *context);

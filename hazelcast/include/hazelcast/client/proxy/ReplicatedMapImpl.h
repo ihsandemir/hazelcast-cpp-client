@@ -16,6 +16,10 @@
 #pragma once
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
+#include "hazelcast/client/spi/ClientPartitionService.h"
+#include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/ClientConfig.h"
+#include "hazelcast/client/serialization/pimpl/Data.h"
 
 namespace hazelcast {
     namespace client {
@@ -75,14 +79,14 @@ namespace hazelcast {
                 }
 
             protected:
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 putData(serialization::pimpl::Data &&keyData, serialization::pimpl::Data &&valueData,
                     std::chrono::steady_clock::duration ttl) {
                     try {
                         auto request = protocol::codec::ReplicatedMapPutCodec::encodeRequest(name, keyData, valueData,
                                                                                              std::chrono::duration_cast<std::chrono::milliseconds>(
                                                                                                      ttl).count());
-                        auto result = invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::ReplicatedMapPutCodec::ResponseParameters>(
+                        auto result = invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ReplicatedMapPutCodec::ResponseParameters>(
                                 request, keyData);
 
                         invalidate(std::move(keyData));
@@ -175,7 +179,7 @@ namespace hazelcast {
                 }
 
                 boost::future<boost::optional<serialization::pimpl::Data>> getData(serialization::pimpl::Data &&key) {
-                    auto sharedKey = toSharedData(key);
+                    auto sharedKey = std::make_shared<serialization::pimpl::Data>(key);
                     auto cachedValue = getCachedData(sharedKey);
                     if (cachedValue) {
                         return boost::make_ready_future(boost::make_optional(*cachedValue));
@@ -497,7 +501,7 @@ namespace hazelcast {
                     if (!nearCache) {
                         return;
                     }
-                    nearCache->invalidate(toShared(key));
+                    nearCache->invalidate(std::make_shared<serialization::pimpl::Data>(key));
                 }
 
                 void invalidate(const std::shared_ptr<serialization::pimpl::Data> &key) {

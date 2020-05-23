@@ -89,6 +89,7 @@ namespace hazelcast {
                         }
 
                         //@Override
+/*
                         void put(const std::shared_ptr<KS> &key,
                                  const std::shared_ptr<serialization::pimpl::Data> &value) {
                             util::Preconditions::checkNotNull<KS>(key, "key cannot be null on put!");
@@ -97,6 +98,7 @@ namespace hazelcast {
 
                             nearCacheRecordStore->put(key, value);
                         }
+*/
 
                         bool invalidate(const std::shared_ptr<KS> &key) {
                             util::Preconditions::checkNotNull<KS>(key, "key cannot be null on invalidate!");

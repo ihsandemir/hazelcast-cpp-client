@@ -220,7 +220,7 @@ namespace hazelcast {
             */
             template<typename E>
             boost::future<bool> retainAll(const std::vector<E> &elements) {
-                return proxy::IQueueImpl::retainAll(toDataCollection(elements));
+                return proxy::IQueueImpl::retainAllData(toDataCollection(elements));
             }
 
         private:

@@ -44,6 +44,7 @@
 #include "hazelcast/client/query/RegexPredicate.h"
 #include "hazelcast/client/query/LikePredicate.h"
 #include "hazelcast/client/query/QueryConstants.h"
+#include "hazelcast/client/spi/ClientContext.h"
 
 namespace hazelcast {
     namespace client {
@@ -60,7 +61,7 @@ namespace hazelcast {
             }
 
             void InstanceOfPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeUTF(&className);
+                out.write(&className);
             }
 
             void InstanceOfPredicate::readData(serialization::ObjectDataInput &in) {
@@ -82,8 +83,8 @@ namespace hazelcast {
             }
 
             void ILikePredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeUTF(&attributeName);
-                out.writeUTF(&expressionString);
+                out.write(&attributeName);
+                out.write(&expressionString);
             }
 
             void ILikePredicate::readData(serialization::ObjectDataInput &in) {
@@ -193,7 +194,7 @@ namespace hazelcast {
             }
 
             void SqlPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeUTF(&sql);
+                out.write(&sql);
             }
 
             void SqlPredicate::readData(serialization::ObjectDataInput &in) {
@@ -232,8 +233,8 @@ namespace hazelcast {
             }
 
             void RegexPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeUTF(&attributeName);
-                out.writeUTF(&regularExpression);
+                out.write(&attributeName);
+                out.write(&regularExpression);
             }
 
             void RegexPredicate::readData(serialization::ObjectDataInput &in) {
@@ -267,7 +268,7 @@ namespace hazelcast {
             }
 
             void AndPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeInt((int) predicates.size());
+                out.write<int32_t>((int) predicates.size());
                 for (std::vector<Predicate *>::const_iterator it = predicates.begin();
                      it != predicates.end(); ++it) {
                     out.writeObject<Predicate>(*it);
@@ -293,8 +294,8 @@ namespace hazelcast {
             }
 
             void LikePredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeUTF(&attributeName);
-                out.writeUTF(&expressionString);
+                out.write(&attributeName);
+                out.write(&expressionString);
             }
 
             void LikePredicate::readData(serialization::ObjectDataInput &in) {

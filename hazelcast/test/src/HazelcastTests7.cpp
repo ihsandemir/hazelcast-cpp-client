@@ -21,7 +21,6 @@
 #include <regex>
 #include <vector>
 #include "ringbuffer/StartsWithStringFilter.h"
-#include "serialization/Employee.h"
 #include "ClientTestSupportBase.h"
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/exception/IllegalStateException.h>
@@ -56,15 +55,7 @@
 #include <ctime>
 #include <cerrno>
 #include <hazelcast/client/LifecycleListener.h>
-#include "serialization/TestRawDataPortable.h"
-#include "serialization/TestSerializationConstants.h"
 #include "serialization/Serializables.h"
-#include "serialization/TestNamedPortable.h"
-#include "serialization/TestInvalidReadPortable.h"
-#include "serialization/TestInvalidWritePortable.h"
-#include "serialization/TestInnerPortable.h"
-#include "serialization/TestNamedPortableV2.h"
-#include "serialization/TestNamedPortableV3.h"
 #include <hazelcast/client/SerializationConfig.h>
 #include <hazelcast/client/HazelcastJsonValue.h>
 #include <cstdint>
@@ -74,13 +65,10 @@
 #include "serialization/ChildTemplatedPortable2.h"
 #include "serialization/ParentTemplatedPortable.h"
 #include "serialization/ChildTemplatedPortable1.h"
-#include "serialization/ObjectCarryingPortable.h"
-#include "serialization/TestDataSerializable.h"
 #include <hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheDataRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
 #include <hazelcast/client/query/FalsePredicate.h>
-#include <set>
 #include <hazelcast/client/query/EqualPredicate.h>
 #include <hazelcast/client/query/QueryConstants.h>
 #include <HazelcastServer.h>
