@@ -150,9 +150,9 @@ namespace hazelcast {
  *              // query values with predicate
  *              // EqualPredicate
  *              // key == 5
- *              std::vector<int> values = myMap.values(query::EqualPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5));
+ *              std::vector<int> values = myMap.values(query::EqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5));
  *              // Same query with raw Map
- *              std::unique_ptr<DataArray<int> > valuesArray = rawMap.values(query::EqualPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5));
+ *              std::unique_ptr<DataArray<int> > valuesArray = rawMap.values(query::EqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5));
  *              size_t numberOfValues = valuesArray->size();
  *              if (numberOfValues > 0) {
  *                  const int *firstValue = valuesArray->get(0);
@@ -165,12 +165,12 @@ namespace hazelcast {
  *              MyEntryListener listener;
  *              std::string listenerId = map.addEntryListener(listener,
  *                                   hazelcast::client::query::GreaterLessPredicate<int>(
- *                                   hazelcast::client::query::QueryConstants::getKeyAttributeName(), 7, true, false), true);
+ *                                   hazelcast::client::query::QueryConstants::KEY_ATTRIBUTE_NAME, 7, true, false), true);
  *
  *              // same listener using the raw map
  *              std::string secondListener = rawMap.addEntryListener(listener,
  *                                   hazelcast::client::query::GreaterLessPredicate<int>(
- *                                   hazelcast::client::query::QueryConstants::getKeyAttributeName(), 7, true, false), true);
+ *                                   hazelcast::client::query::QueryConstants::KEY_ATTRIBUTE_NAME, 7, true, false), true);
  *
  *              // listen for entries
  *              sleep(10);

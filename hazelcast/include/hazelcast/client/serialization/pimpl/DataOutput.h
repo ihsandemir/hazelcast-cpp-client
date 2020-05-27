@@ -39,19 +39,25 @@ namespace hazelcast {
                 public:
                     static constexpr const size_t DEFAULT_SIZE = 4 * 1024;
 
-                    DataOutput(bool dontWrite);
+                    DataOutput(bool dontWrite = false);
 
                     /**
                      *
-                     * @return a deep copy of the bytes by constructing a new byte array.
+                     * @return reference to the internal byte buffer.
                      */
-                    std::vector<byte> toByteArray();
-                    
-                    void writeZeroBytes(int numberOfBytes);
+                    inline const std::vector<byte> &toByteArray() const;
 
-                    size_t position();
+                    /**
+                     *
+                     * @param bytes The bytes to be appended to the current buffer
+                     */
+                    inline void appendBytes(const std::vector<byte> &bytes);
 
-                    void position(size_t newPos);
+                    inline void writeZeroBytes(size_t numberOfBytes);
+
+                    inline size_t position();
+
+                    inline void position(size_t newPos);
 
                     /**
                     * @param value to be written
@@ -65,23 +71,23 @@ namespace hazelcast {
                             std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
                             std::is_same<float, typename std::remove_cv<T>::type>::value ||
                             std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
-                    write(T) { if (isNoWrite) { return; } }
+                    inline write(T) { if (isNoWrite) { return; } }
 
-                    void write(const std::string *value);
+                    inline void write(const std::string *value);
 
                     template <typename T>
                     typename std::enable_if<std::is_same<std::string, T>::value ||
                                    std::is_same<HazelcastJsonValue, T>::value>::type
-                    write(const T &) { if (isNoWrite) { return; }}
+                    inline write(const T &) { if (isNoWrite) { return; }}
 
                     /**
                     * @param value to vector of values to be written. Only supported built-in values can be written.
                     */
                     template <typename T>
-                    void write(const std::vector<T> &value);
+                    inline void write(const std::vector<T> &value);
 
                     template <typename T>
-                    void write(const std::vector<T> *value);
+                    inline void write(const std::vector<T> *value);
 
                 protected:
                     bool isNoWrite;
@@ -151,6 +157,10 @@ namespace hazelcast {
                     }
 
                     write(*value);
+                }
+
+                void DataOutput::writeZeroBytes(size_t numberOfBytes) {
+                    outputStream.insert(outputStream.end(), numberOfBytes, 0);
                 }
             }
         }

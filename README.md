@@ -2573,7 +2573,7 @@ ILIKE is similar to the LIKE predicate but in a case-insensitive manner.
 
 ##### Querying Examples with Predicates
 
-You can use the `query::QueryConstants::getKeyAttributeName()` (`__key`) attribute to perform a predicated search for entry keys. See the following example:
+You can use the `query::QueryConstants::KEY_ATTRIBUTE_NAME` (`__key`) attribute to perform a predicated search for entry keys. See the following example:
 
 ```C++
     hazelcast::client::IMap<std::string, int> map = hz.getMap<std::string, int>("personMap;");
@@ -2587,14 +2587,14 @@ You can use the `query::QueryConstants::getKeyAttributeName()` (`__key`) attribu
 
 In this example, the code creates a list with the values whose keys start with the letter "F”.
 
-You can use `query::QueryConstants::getValueAttributeName()` (`this`) attribute to perform a predicated search for entry values. See the following example:
+You can use `query::QueryConstants::THIS_ATTRIBUTE_NAME` (`this`) attribute to perform a predicated search for entry values. See the following example:
 
 ```C++
     hazelcast::client::IMap<std::string, int> map = hz.getMap<std::string, int>("personMap;");
     map.put("Mali", 28);
     map.put("Ahmet", 30);
     map.put("Furkan", 23);
-    query::GreaterLessPredicate<int> greaterThan27Predicate(query::QueryConstants::getValueAttributeName(), 27, false, false);
+    query::GreaterLessPredicate<int> greaterThan27Predicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, 27, false, false);
     std::vector<std::string> olderThan27 = map.keySet(greaterThan27Predicate);
     std::cout << "First person:" << olderThan27[0] << ", second person:" << olderThan27[1] << std::endl;
 ```
@@ -2669,7 +2669,7 @@ The C++ client provides paging for defined predicates. With its `PagingPredicate
 
 ```C++
     hazelcast::client::IMap<std::string, int> map = hz.getMap<std::string, int>("personMap;");
-    query::PagingPredicate<std::string, int> pagingPredicate(std::auto_ptr<query::Predicate>(new query::GreaterLessPredicate<int>(query::QueryConstants::getValueAttributeName(), 18, false, false)), 5);
+    query::PagingPredicate<std::string, int> pagingPredicate(std::auto_ptr<query::Predicate>(new query::GreaterLessPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, 18, false, false)), 5);
     // Set page to retrieve third page
     pagingPredicate.setPage(3);
     std::vector<int> values = map.values(pagingPredicate);

@@ -134,11 +134,13 @@ namespace hazelcast {
                                 putInternal<V>(key, value);
                             }
 
+/*
                             //@Override
                             void put(const std::shared_ptr<KS> &key,
                                      const std::shared_ptr<serialization::pimpl::Data> &value) {
                                 putInternal<serialization::pimpl::Data>(key, value);
                             }
+*/
 
                             //@Override
                             bool invalidate(const std::shared_ptr<KS> &key) {
@@ -238,11 +240,13 @@ namespace hazelcast {
                                 return std::unique_ptr<R>();
                             }
 
+/*
                             virtual std::unique_ptr<R> valueToRecord(
                                     const std::shared_ptr<serialization::pimpl::Data> &value) {
                                 assert(0);
                                 return std::unique_ptr<R>();
                             }
+*/
 
                             virtual std::shared_ptr<V> recordToValue(const R *record) {
                                 assert(0);
@@ -309,14 +313,16 @@ namespace hazelcast {
                                 }
                             }
 
+/*
                             std::shared_ptr<serialization::pimpl::Data> valueToData(
                                     std::shared_ptr<serialization::pimpl::Data> &value) {
                                 return value;
                             }
+*/
 
                             std::shared_ptr<V> dataToValue(
                                     const std::shared_ptr<serialization::pimpl::Data> &data, const TypedData *dummy) {
-                                return std::shared_ptr<V>(new TypedData(data, serializationService));
+                                return std::shared_ptr<V>(new TypedData(*data, serializationService));
                             }
 
                             std::shared_ptr<V> dataToValue(
@@ -329,10 +335,12 @@ namespace hazelcast {
                                 }
                             }
 
+/*
                             const std::shared_ptr<serialization::pimpl::Data> toData(
                                     const std::shared_ptr<serialization::pimpl::Data> &obj) {
                                 return obj;
                             }
+*/
 
                             const std::shared_ptr<serialization::pimpl::Data> toData(
                                     const std::shared_ptr<V> &obj) {
@@ -343,6 +351,7 @@ namespace hazelcast {
                                 }
                             }
 
+/*
                             std::shared_ptr<V> toValue(std::shared_ptr<serialization::pimpl::Data> &obj) {
                                 if (obj.get() == NULL) {
                                     return std::shared_ptr<V>();
@@ -350,6 +359,7 @@ namespace hazelcast {
                                     return dataToValue(obj, (V *)NULL);
                                 }
                             }
+*/
 
                             std::shared_ptr<V> toValue(std::shared_ptr<V> &obj) {
                                 return obj;
@@ -390,21 +400,25 @@ namespace hazelcast {
                                        const std::shared_ptr<R> &record, const std::shared_ptr<R> &oldRecord) {
                             }
 
+/*
                             void onPut(const std::shared_ptr<KS> &key,
                                        const std::shared_ptr<serialization::pimpl::Data> &value,
                                        const std::shared_ptr<R> &record, const std::shared_ptr<R> &oldRecord) {
                             }
+*/
 
                             void onPutError(const std::shared_ptr<KS> &key, const std::shared_ptr<V> &value,
                                             const std::shared_ptr<R> &record, const std::shared_ptr<R> &oldRecord,
                                             const exception::IException &error) {
                             }
 
+/*
                             void onPutError(const std::shared_ptr<KS> &key,
                                             const std::shared_ptr<serialization::pimpl::Data> &value,
                                             const std::shared_ptr<R> &record, const std::shared_ptr<R> &oldRecord,
                                             const exception::IException &error) {
                             }
+*/
 
                             void onRemove(const std::shared_ptr<KS> &key, const std::shared_ptr<R> &record,
                                           bool removed) {

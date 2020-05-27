@@ -48,7 +48,7 @@ namespace hazelcast {
              * Base Interface for client proxies.
              *
              */
-            class HAZELCAST_API ClientProxy : public virtual DistributedObject {
+            class HAZELCAST_API ClientProxy : public DistributedObject {
             public:
                 ClientProxy(const std::string &name, const std::string &serviceName, ClientContext &context);
 
@@ -102,7 +102,7 @@ namespace hazelcast {
                  * Destroys the remote distributed object counterpart of this proxy by
                  * issuing the destruction request to the cluster.
                  */
-                boost::future<protocol::ClientMessage> destroyRemotely();
+                boost::future<void> destroyRemotely();
 
                 /**
                 * Internal API.

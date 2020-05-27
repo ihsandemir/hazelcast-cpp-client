@@ -138,11 +138,12 @@ namespace hazelcast {
                             throw;
                         }
                     });
-                } catch (exception::IException &e) {
+                } catch (...) {
                     state = TxnState::COMMIT_FAILED;
                     TRANSACTION_EXISTS.store(false);
                     ClientTransactionUtil::TRANSACTION_EXCEPTION_FACTORY()->rethrow(std::current_exception(),
                                                                                     "TransactionProxy::commit() failed");
+                    return boost::make_ready_future();
                 }
             }
 
@@ -248,6 +249,7 @@ namespace hazelcast {
                 } catch (exception::IException &e) {
                     TRANSACTION_EXCEPTION_FACTORY()->rethrow(std::current_exception(),
                                                              "ClientTransactionUtil::invoke failed");
+                    return boost::make_ready_future(*std::move(protocol::ClientMessage::create(0)));
                 }
             }
 
@@ -281,12 +283,12 @@ namespace hazelcast {
                         request);
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             TransactionalMapImpl::getData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::TransactionalMapGetCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), key);
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::TransactionalMapGetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalMapGetCodec::ResponseParameters>(
                         request);
             }
 
@@ -305,14 +307,14 @@ namespace hazelcast {
                         request);
             }
 
-            boost::future<serialization::pimpl::Data> TransactionalMapImpl::putData(
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> TransactionalMapImpl::putData(
                     const serialization::pimpl::Data &key, const serialization::pimpl::Data &value) {
 
                 auto request = protocol::codec::TransactionalMapPutCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), key, value,
                                 std::chrono::duration_cast<std::chrono::milliseconds>(getTimeout()).count());
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::TransactionalMapPutCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalMapPutCodec::ResponseParameters>(
                         request);
             }
 
@@ -324,23 +326,23 @@ namespace hazelcast {
                 return toVoidFuture(invoke(request));
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             TransactionalMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
                                                   const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::TransactionalMapPutIfAbsentCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), key, value);
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::TransactionalMapPutIfAbsentCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalMapPutIfAbsentCodec::ResponseParameters>(
                         request);
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             TransactionalMapImpl::replaceData(const serialization::pimpl::Data &key,
                                               const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::TransactionalMapReplaceCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), key, value);
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::TransactionalMapReplaceCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalMapReplaceCodec::ResponseParameters>(
                         request);
             }
 
@@ -354,12 +356,12 @@ namespace hazelcast {
                         request);
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             TransactionalMapImpl::removeData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::TransactionalMapRemoveCodec::encodeRequest(
                                 getName(), getTransactionId(), util::getCurrentThreadId(), key);
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::TransactionalMapRemoveCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::TransactionalMapRemoveCodec::ResponseParameters>(
                         request);
             }
 
@@ -523,7 +525,7 @@ namespace hazelcast {
             
             TransactionalObject::TransactionalObject(const std::string &serviceName, const std::string &objectName,
                                                      txn::TransactionProxy &context)
-                    : proxy::SerializingProxy(context->getClientContext(), objectName), serviceName(serviceName),
+                    : proxy::SerializingProxy(context.getClientContext(), objectName), serviceName(serviceName),
                       name(objectName), context(context) {}
 
             TransactionalObject::~TransactionalObject() {}

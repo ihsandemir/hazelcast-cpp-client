@@ -17,7 +17,7 @@
 
 #include <hazelcast/client/EntryEvent.h>
 #include "hazelcast/client/query/PagingPredicate.h"
-#include "hazelcast/client/query/Predicate.h"
+#include "hazelcast/client/query/Predicates.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include "hazelcast/client/map/DataEntryView.h"
@@ -102,9 +102,9 @@ namespace hazelcast {
 
                 boost::future<bool> containsValue(const serialization::pimpl::Data &value);
 
-                boost::future<serialization::pimpl::Data> getData(const serialization::pimpl::Data &key);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> getData(const serialization::pimpl::Data &key);
 
-                boost::future<serialization::pimpl::Data> removeData(const serialization::pimpl::Data &key);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> removeData(const serialization::pimpl::Data &key);
 
                 boost::future<bool> remove(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
@@ -117,21 +117,21 @@ namespace hazelcast {
                 boost::future<bool> tryPut(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                             std::chrono::steady_clock::duration timeout);
 
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 putData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                         std::chrono::steady_clock::duration ttl);
 
                 boost::future<protocol::ClientMessage> putTransient(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                   std::chrono::steady_clock::duration ttl);
 
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 putIfAbsentData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
                                 std::chrono::steady_clock::duration ttl);
 
                 boost::future<bool> replace(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
                              const serialization::pimpl::Data &newValue);
 
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 replaceData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
                 boost::future<protocol::ClientMessage>
@@ -193,10 +193,10 @@ namespace hazelcast {
 
                 boost::future<protocol::ClientMessage> putAllData(int partitionId, const EntryVector &entries);
 
-                boost::future<serialization::pimpl::Data> executeOnKeyData(const serialization::pimpl::Data &key,
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> executeOnKeyData(const serialization::pimpl::Data &key,
                                                                            const serialization::pimpl::Data &processor);
 
-                boost::future<serialization::pimpl::Data> submitToKeyData(const serialization::pimpl::Data &key,
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> submitToKeyData(const serialization::pimpl::Data &key,
                                                                            const serialization::pimpl::Data &processor);
 
                 boost::future<EntryVector> executeOnKeysData(const std::vector<serialization::pimpl::Data> &keys,

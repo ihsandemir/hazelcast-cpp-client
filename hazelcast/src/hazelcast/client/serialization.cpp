@@ -416,7 +416,12 @@ namespace hazelcast {
                     }
                 }
 
-                std::vector<byte> DataOutput::toByteArray() {
+
+                void DataOutput::appendBytes(const std::vector<byte> &bytes) {
+                    outputStream.insert(outputStream.end(), bytes.begin(), bytes.end());
+                }
+
+                const std::vector<byte> &DataOutput::toByteArray() const {
                     return outputStream;
                 }
 
@@ -538,11 +543,6 @@ namespace hazelcast {
                     return os;
                 }
 
-                DataSerializer::DataSerializer(const SerializationConfig &serializationConfig)
-                        : serializationConfig(serializationConfig) {}
-
-                DataSerializer::~DataSerializer() {}
-
                 int32_t DataSerializer::readInt(ObjectDataInput &in) const {
                     return in.read<int32_t>();
                 }
@@ -657,7 +657,7 @@ namespace hazelcast {
 
                 SerializationService::SerializationService(const SerializationConfig &serializationConfig)
                         : portableContext(serializationConfig), serializationConfig(serializationConfig),
-                          portableSerializer(portableContext), dataSerializer(serializationConfig) {}
+                          portableSerializer(portableContext) {}
 
                 DefaultPortableWriter::DefaultPortableWriter(PortableSerializer &portableSer,
                                                              std::shared_ptr<ClassDefinition> cd,
@@ -665,7 +665,7 @@ namespace hazelcast {
                         : raw(false), portableSerializer(portableSer), objectDataOutput(output), 
                         begin(objectDataOutput.position()), cd(cd) {
                     // room for final offset
-                    objectDataOutput.writeZeroBytes(4);
+                    objectDataOutput.write<int32_t>(0);
 
                     objectDataOutput.write<int32_t>(cd->getFieldCount());
 
@@ -843,7 +843,7 @@ namespace hazelcast {
 
                 Data::Data() : cachedHashValue(-1) {}
                 
-                Data::Data(std::vector<byte> &&buffer) : data(buffer), cachedHashValue(-1) {
+                Data::Data(std::vector<byte> buffer) : data(std::move(buffer)), cachedHashValue(-1) {
                     size_t size = data.size();
                     if (size > 0 && size < Data::DATA_OVERHEAD) {
                         throw (exception::ExceptionBuilder<exception::IllegalArgumentException>("Data::setBuffer")

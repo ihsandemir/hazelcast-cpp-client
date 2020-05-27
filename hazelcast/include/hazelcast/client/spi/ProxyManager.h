@@ -68,7 +68,7 @@ namespace hazelcast {
                     }
 
                     try {
-                        auto clientProxy = std::make_shared<T>(id, client);
+                        auto clientProxy = std::make_shared<T>(id, &client);
                         initializeWithRetry(clientProxy);
                         promise.set_value(clientProxy);
                         return clientProxy;
@@ -94,7 +94,7 @@ namespace hazelcast {
                  *
                  * @param proxy the proxy to destroy.
                  */
-                boost::future<protocol::ClientMessage> destroyProxy(ClientProxy &proxy);
+                boost::future<void> destroyProxy(ClientProxy &proxy);
 
                 void init();
 

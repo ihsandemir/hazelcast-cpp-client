@@ -216,7 +216,7 @@ void queryMapUsingPagingPredicate() {
 
     // PagingPredicate with inner predicate (value < 10)
     std::unique_ptr<query::Predicate> lessThanTenPredicate(std::unique_ptr<query::Predicate>(
-            new query::GreaterLessPredicate<int>(query::QueryConstants::getValueAttributeName(), 9, false, true)));
+            new query::GreaterLessPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, 9, false, true)));
     query::PagingPredicate<int, int> predicate2(lessThanTenPredicate, 5);
     values = intMap.values(predicate2);
 
@@ -268,7 +268,7 @@ void queryMapUsingDifferentPredicates() {
 
     // EqualPredicate
     // key == 5
-    values = intMap.values(query::EqualPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5));
+    values = intMap.values(query::EqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5));
 
     size_t numberOfValues = values.size();
     if (numberOfValues > 0) {
@@ -276,17 +276,17 @@ void queryMapUsingDifferentPredicates() {
     }
 
     // value == 8
-    values = intMap.values(query::EqualPredicate<int>(query::QueryConstants::getValueAttributeName(), 8));
+    values = intMap.values(query::EqualPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, 8));
 
     // key == numItems
-    values = intMap.values(query::EqualPredicate<int>(query::QueryConstants::getKeyAttributeName(), numItems));
+    values = intMap.values(query::EqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, numItems));
 
     // NotEqual Predicate
     // key != 5
-    values = intMap.values(query::NotEqualPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5));
+    values = intMap.values(query::NotEqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5));
 
     // this(value) != 8
-    values = intMap.values(query::NotEqualPredicate<int>(query::QueryConstants::getValueAttributeName(), 8));
+    values = intMap.values(query::NotEqualPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, 8));
 
     // TruePredicate
     values = intMap.values(query::TruePredicate());
@@ -296,29 +296,29 @@ void queryMapUsingDifferentPredicates() {
 
     // BetweenPredicate
     // 5 <= key <= 10
-    values = intMap.values(query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, 10));
+    values = intMap.values(query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     std::sort(values.begin(), values.end());
 
     // 20 <= key <=30
-    values = intMap.values(query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 20, 30));
+    values = intMap.values(query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 20, 30));
 
     // GreaterLessPredicate
     // value <= 10
     values = intMap.values(
-            query::GreaterLessPredicate<int>(query::QueryConstants::getValueAttributeName(), 10, true, true));
+            query::GreaterLessPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, 10, true, true));
     std::sort(values.begin(), values.end());
 
     // key < 7
     values = intMap.values(
-            query::GreaterLessPredicate<int>(query::QueryConstants::getKeyAttributeName(), 7, false, true));
+            query::GreaterLessPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 7, false, true));
 
     // value >= 15
     values = intMap.values(
-            query::GreaterLessPredicate<int>(query::QueryConstants::getValueAttributeName(), 15, true, false));
+            query::GreaterLessPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, 15, true, false));
 
     // key > 5
     values = intMap.values(
-            query::GreaterLessPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, false, false));
+            query::GreaterLessPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, false, false));
 
     // InPredicate
     // key in {4, 10, 19}
@@ -326,10 +326,10 @@ void queryMapUsingDifferentPredicates() {
     inVals[0] = 4;
     inVals[1] = 10;
     inVals[2] = 19;
-    values = intMap.values(query::InPredicate<int>(query::QueryConstants::getKeyAttributeName(), inVals));
+    values = intMap.values(query::InPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, inVals));
 
     // value in {4, 10, 19}
-    values = intMap.values(query::InPredicate<int>(query::QueryConstants::getValueAttributeName(), inVals));
+    values = intMap.values(query::InPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, inVals));
 
     // InstanceOfPredicate
     // value instanceof Integer
@@ -340,65 +340,65 @@ void queryMapUsingDifferentPredicates() {
     // NotPredicate
     // !(5 <= key <= 10)
     std::unique_ptr<query::Predicate> bp = std::unique_ptr<query::Predicate>(new query::BetweenPredicate<int>(
-            query::QueryConstants::getKeyAttributeName(), 5, 10));
+            query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     query::NotPredicate notPredicate(bp);
-    bp = std::unique_ptr<query::Predicate>(new query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, 10));
+    bp = std::unique_ptr<query::Predicate>(new query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     query::NotPredicate notPredicate2(bp);
     values = intMap.values(notPredicate2);
 
     // AndPredicate
     // 5 <= key <= 10 AND Values in {4, 10, 19} = values {4, 10}
     bp = std::unique_ptr<query::Predicate>(
-            new query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, 10));
+            new query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     std::unique_ptr<query::Predicate> inPred = std::unique_ptr<query::Predicate>(
-            new query::InPredicate<int>(query::QueryConstants::getValueAttributeName(), inVals));
+            new query::InPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, inVals));
 
     bp = std::unique_ptr<query::Predicate>(
-            new query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, 10));
+            new query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     inPred = std::unique_ptr<query::Predicate>(
-            new query::InPredicate<int>(query::QueryConstants::getValueAttributeName(), inVals));
+            new query::InPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, inVals));
     values = intMap.values(query::AndPredicate().add(bp).add(inPred));
 
     // OrPredicate
     // 5 <= key <= 10 OR Values in {4, 10, 19} = values {4, 10, 12, 14, 16, 18, 20}
     bp = std::unique_ptr<query::Predicate>(
-            new query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, 10));
+            new query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     inPred = std::unique_ptr<query::Predicate>(
-            new query::InPredicate<int>(query::QueryConstants::getValueAttributeName(), inVals));
+            new query::InPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, inVals));
 
     bp = std::unique_ptr<query::Predicate>(
-            new query::BetweenPredicate<int>(query::QueryConstants::getKeyAttributeName(), 5, 10));
+            new query::BetweenPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 5, 10));
     inPred = std::unique_ptr<query::Predicate>(
-            new query::InPredicate<int>(query::QueryConstants::getValueAttributeName(), inVals));
+            new query::InPredicate<int>(query::QueryConstants::THIS_ATTRIBUTE_NAME, inVals));
     values = intMap.values(query::OrPredicate().add(bp).add(inPred));
 
     IMap<std::string, std::string> imap = client.getMap<std::string, std::string>("StringMap");
     
     // LikePredicate
     // value LIKE "value1" : {"value1"}
-    std::vector<std::string> strValues = imap.values(query::LikePredicate(query::QueryConstants::getValueAttributeName(), "value1"));
+    std::vector<std::string> strValues = imap.values(query::LikePredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, "value1"));
 
     // ILikePredicate
     // value ILIKE "%VALue%1%" : {"myvalue_111_test", "value1", "value10", "value11"}
-    strValuesArray = intMap.values(query::ILikePredicate(query::QueryConstants::getValueAttributeName(), "%VALue%1%"));
-    strValues = imap.values(query::ILikePredicate(query::QueryConstants::getValueAttributeName(), "%VALue%1%"));
+    strValuesArray = intMap.values(query::ILikePredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, "%VALue%1%"));
+    strValues = imap.values(query::ILikePredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, "%VALue%1%"));
     std::sort(strValues.begin(), strValues.end());
 
     // value ILIKE "%VAL%2%" : {"myvalue_22_test", "value2"}
-    strValuesArray = intMap.values(query::ILikePredicate(query::QueryConstants::getValueAttributeName(), "%VAL%2%"));
-    strValues = imap.values(query::ILikePredicate(query::QueryConstants::getValueAttributeName(), "%VAL%2%"));
+    strValuesArray = intMap.values(query::ILikePredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, "%VAL%2%"));
+    strValues = imap.values(query::ILikePredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, "%VAL%2%"));
     std::sort(strValues.begin(), strValues.end());
 
     // SqlPredicate
     // __key BETWEEN 4 and 7 : {4, 5, 6, 7} -> {8, 10, 12, 14}
     char sql[100];
-    hazelcast::util::hz_snprintf(sql, 50, "%s BETWEEN 4 and 7", query::QueryConstants::getKeyAttributeName());
+    hazelcast::util::hz_snprintf(sql, 50, "%s BETWEEN 4 and 7", query::QueryConstants::KEY_ATTRIBUTE_NAME);
     values = intMap.values(query::SqlPredicate(sql));
 
     // RegexPredicate
     // value matches the regex ".*value.*2.*" : {myvalue_22_test, value2}
-    strValuesArray = intMap.values(query::RegexPredicate(query::QueryConstants::getValueAttributeName(), ".*value.*2.*"));
-    strValues = imap.values(query::RegexPredicate(query::QueryConstants::getValueAttributeName(), ".*value.*2.*"));
+    strValuesArray = intMap.values(query::RegexPredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, ".*value.*2.*"));
+    strValues = imap.values(query::RegexPredicate(query::QueryConstants::THIS_ATTRIBUTE_NAME, ".*value.*2.*"));
 }
 
 int main() {

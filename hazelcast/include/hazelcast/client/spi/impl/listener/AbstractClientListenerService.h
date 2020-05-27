@@ -63,8 +63,8 @@ namespace hazelcast {
                                                  const std::shared_ptr<protocol::ClientMessage> response);
 
                         virtual boost::future<std::string>
-                        registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
-                                         std::unique_ptr<impl::BaseEventHandler> &&handler);
+                        registerListener(std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
+                                         std::unique_ptr<BaseEventHandler> &&handler);
 
                         virtual boost::future<bool> deregisterListener(const std::string registrationId);
 

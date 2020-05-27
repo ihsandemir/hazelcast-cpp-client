@@ -47,7 +47,7 @@ namespace hazelcast {
 
                     Data();
 
-                    Data(std::vector<byte> &&buffer);
+                    Data(std::vector<byte> buffer);
 
                     size_t dataSize() const;
 

@@ -225,10 +225,21 @@ namespace hazelcast {
              *                                  or if maxCount larger than the capacity of the ringbuffer
              *                                  or if maxCount larger than 1000 (to prevent overload)
              */
-            template<typename IFUNCTION = void>
+            template<typename IFUNCTION>
             boost::future<ringbuffer::ReadResultSet>
             readMany(int64_t startSequence, int32_t minCount, int32_t maxCount, const IFUNCTION *filter = nullptr) {
-                return readManyData(startSequence, minCount, maxCount, toData<IFUNCTION>(filter)).then([=] (boost::future<protocol::ClientMessage> f) {
+                return readManyData(startSequence, minCount, maxCount, &toData<IFUNCTION>(filter)).then([=] (boost::future<protocol::ClientMessage> f) {
+                    auto params = protocol::codec::RingbufferReadManyCodec::ResponseParameters::decode(f.get());
+                    return ringbuffer::ReadResultSet(params.readCount, std::move(params.items), getSerializationService(),
+                                                     params.itemSeqs, params.itemSeqsExist,
+                                                     (params.nextSeqExist ? params.nextSeq
+                                                                          : ringbuffer::ReadResultSet::SEQUENCE_UNAVAILABLE));
+                });
+            }
+
+            boost::future<ringbuffer::ReadResultSet>
+            readMany(int64_t startSequence, int32_t minCount, int32_t maxCount) {
+                return readManyData(startSequence, minCount, maxCount, nullptr).then([=] (boost::future<protocol::ClientMessage> f) {
                     auto params = protocol::codec::RingbufferReadManyCodec::ResponseParameters::decode(f.get());
                     return ringbuffer::ReadResultSet(params.readCount, std::move(params.items), getSerializationService(),
                                                      params.itemSeqs, params.itemSeqsExist,

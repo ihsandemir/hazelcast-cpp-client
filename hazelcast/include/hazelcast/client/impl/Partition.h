@@ -17,7 +17,7 @@
 #ifndef HAZELCAST_CLIENT_IMPL_PARTITION_H_
 #define HAZELCAST_CLIENT_IMPL_PARTITION_H_
 
-#include <memory>
+#include <boost/optional.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
 
@@ -50,7 +50,7 @@ namespace hazelcast {
                  *
                  * @return the owner member of the partition
                  */
-                virtual std::shared_ptr<Member> getOwner() const = 0;
+                virtual boost::optional<Member> getOwner() const = 0;
 
                 virtual ~Partition(){};
             };

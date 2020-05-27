@@ -459,7 +459,7 @@ namespace hazelcast {
                     auto request = protocol::codec::PNCounterGetConfiguredReplicaCountCodec::encodeRequest(
                             getName());
                     maxConfiguredReplicaCount = invokeAndGetFuture<int32_t, protocol::codec::PNCounterGetConfiguredReplicaCountCodec::ResponseParameters>(
-                            request);
+                            request).get();
                 }
                 return maxConfiguredReplicaCount;
             }
@@ -1087,15 +1087,15 @@ namespace hazelcast {
                 return invokeAndGetFuture<bool, protocol::codec::MapContainsValueCodec::ResponseParameters>(request);
             }
 
-            boost::future<serialization::pimpl::Data> IMapImpl::getData(const serialization::pimpl::Data &key) {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IMapImpl::getData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapGetCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapGetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapGetCodec::ResponseParameters>(
                         request, key);
             }
 
-            boost::future<serialization::pimpl::Data> IMapImpl::removeData(const serialization::pimpl::Data &key) {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IMapImpl::removeData(const serialization::pimpl::Data &key) {
                 auto request = protocol::codec::MapRemoveCodec::encodeRequest(getName(), key, util::getCurrentThreadId());
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapRemoveCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapRemoveCodec::ResponseParameters>(
                         request, key);
             }
 
@@ -1138,13 +1138,13 @@ namespace hazelcast {
                 return invokeAndGetFuture<bool, protocol::codec::MapTryPutCodec::ResponseParameters>(request, key);
             }
 
-            boost::future<serialization::pimpl::Data> IMapImpl::putData(const serialization::pimpl::Data &key,
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IMapImpl::putData(const serialization::pimpl::Data &key,
                                                                           const serialization::pimpl::Data &value,
                                                                           std::chrono::steady_clock::duration ttl) {
                 auto request = protocol::codec::MapPutCodec::encodeRequest(getName(), key, value,
                                                                     util::getCurrentThreadId(),
                                                                     std::chrono::duration_cast<std::chrono::milliseconds>(ttl).count());
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapPutCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapPutCodec::ResponseParameters>(
                         request, key);
             }
 
@@ -1156,13 +1156,13 @@ namespace hazelcast {
                 invokeOnPartition(request, getPartitionId(key));
             }
 
-            boost::future<serialization::pimpl::Data> IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
                                                                                   const serialization::pimpl::Data &value,
                                                                                   std::chrono::steady_clock::duration ttl) {
                 auto request = protocol::codec::MapPutIfAbsentCodec::encodeRequest(getName(), key, value,
                                                                             util::getCurrentThreadId(),
                                                                             std::chrono::duration_cast<std::chrono::milliseconds>(ttl).count());
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapPutIfAbsentCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapPutIfAbsentCodec::ResponseParameters>(
                         request, key);
             }
 
@@ -1176,12 +1176,12 @@ namespace hazelcast {
                                                                                                             key);
             }
 
-            boost::future<serialization::pimpl::Data> IMapImpl::replaceData(const serialization::pimpl::Data &key,
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IMapImpl::replaceData(const serialization::pimpl::Data &key,
                                                                               const serialization::pimpl::Data &value) {
                 auto request = protocol::codec::MapReplaceCodec::encodeRequest(getName(), key, value,
                                                                         util::getCurrentThreadId());
 
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::MapReplaceCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::MapReplaceCodec::ResponseParameters>(
                         request, key);
             }
 
@@ -1369,25 +1369,25 @@ namespace hazelcast {
                 return invoke(request);
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             IMapImpl::executeOnKeyData(const serialization::pimpl::Data &key,
                                        const serialization::pimpl::Data &processor) {
                 auto request = protocol::codec::MapExecuteOnKeyCodec::encodeRequest(getName(),
                                                                              processor,
                                                                              key,
                                                                              util::getCurrentThreadId());
-                return invokeAndGetFuture<serialization::pimpl::Data,
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>,
                         protocol::codec::MapExecuteOnKeyCodec::ResponseParameters>(request, getPartitionId(key));
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             IMapImpl::submitToKeyData(const serialization::pimpl::Data &key,
                                        const serialization::pimpl::Data &processor) {
                 auto request = protocol::codec::MapSubmitToKeyCodec::encodeRequest(getName(),
                                                                                    processor,
                                                                                    key,
                                                                                    util::getCurrentThreadId());
-                return invokeAndGetFuture<serialization::pimpl::Data,
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>,
                         protocol::codec::MapExecuteOnKeyCodec::ResponseParameters>(request, getPartitionId(key));
             }
 

@@ -73,7 +73,6 @@
 #include "hazelcast/client/Socket.h"
 #include "hazelcast/client/Cluster.h"
 #include "hazelcast/util/Sync.h"
-#include "hazelcast/client/query/SqlPredicate.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/util/Runnable.h"
 #include "hazelcast/util/ILogger.h"
@@ -97,22 +96,6 @@
 #include "hazelcast/client/ITopic.h"
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
-#include "hazelcast/client/query/OrPredicate.h"
-#include "hazelcast/client/query/RegexPredicate.h"
-#include "hazelcast/client/query/PagingPredicate.h"
-#include "hazelcast/client/query/QueryConstants.h"
-#include "hazelcast/client/query/NotPredicate.h"
-#include "hazelcast/client/query/InstanceOfPredicate.h"
-#include "hazelcast/client/query/NotEqualPredicate.h"
-#include "hazelcast/client/query/InPredicate.h"
-#include "hazelcast/client/query/ILikePredicate.h"
-#include "hazelcast/client/query/LikePredicate.h"
-#include "hazelcast/client/query/GreaterLessPredicate.h"
-#include "hazelcast/client/query/AndPredicate.h"
-#include "hazelcast/client/query/BetweenPredicate.h"
-#include "hazelcast/client/query/EqualPredicate.h"
-#include "hazelcast/client/query/TruePredicate.h"
-#include "hazelcast/client/query/FalsePredicate.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/MultiMap.h"
@@ -796,7 +779,7 @@ namespace hazelcast {
                     map->get<int, int>(i).get();
                 }
 
-                map->removeAll(query::EqualPredicate<int>(query::QueryConstants::getKeyAttributeName(), 20)).get();
+                map->removeAll(query::EqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 20)).get();
 
                 assertThatOwnedEntryCountEquals(*map, 0);
             }

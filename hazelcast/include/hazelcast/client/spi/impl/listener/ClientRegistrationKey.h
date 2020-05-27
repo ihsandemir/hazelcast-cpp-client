@@ -44,16 +44,16 @@ namespace hazelcast {
                         ClientRegistrationKey();
 
                         ClientRegistrationKey(const std::string &userRegistrationId,
-                                              std::unique_ptr<impl::BaseEventHandler> &&handler,
+                                              std::unique_ptr<BaseEventHandler> &&handler,
                                               std::unique_ptr<ListenerMessageCodec> &&codec);
 
                         ClientRegistrationKey(const std::string &userRegistrationId);
 
                         const std::string &getUserRegistrationId() const;
 
-                        const std::unique_ptr<impl::BaseEventHandler> &getHandler() const;
+                        const std::shared_ptr<impl::BaseEventHandler> &getHandler() const;
 
-                        const std::unique_ptr<ListenerMessageCodec> &getCodec() const;
+                        const std::shared_ptr<ListenerMessageCodec> &getCodec() const;
 
                         bool operator==(const ClientRegistrationKey &rhs) const;
 
@@ -65,8 +65,8 @@ namespace hazelcast {
 
                     private:
                         std::string userRegistrationId;
-                        std::unique_ptr<impl::BaseEventHandler> handler;
-                        std::unique_ptr<ListenerMessageCodec> codec;
+                        std::shared_ptr<BaseEventHandler> handler;
+                        std::shared_ptr<ListenerMessageCodec> codec;
                     };
                 }
             }

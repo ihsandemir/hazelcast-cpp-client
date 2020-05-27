@@ -186,7 +186,7 @@ namespace hazelcast {
             protected:
                 boost::future<protocol::ClientMessage>
                 readManyData(int64_t startSequence, int32_t minCount, int32_t maxCount,
-                             serialization::pimpl::Data &&filterData) {
+                             serialization::pimpl::Data *filterData) {
                     checkSequence(startSequence);
                     util::Preconditions::checkNotNegative(minCount, "minCount can't be smaller than 0");
                     util::Preconditions::checkTrue(maxCount >= minCount,
@@ -213,7 +213,7 @@ namespace hazelcast {
                             startSequence,
                             minCount,
                             maxCount,
-                            &filterData);
+                            filterData);
 
                     return invokeOnPartition(request, partitionId);
                 }

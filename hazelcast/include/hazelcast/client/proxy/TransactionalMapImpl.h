@@ -40,25 +40,25 @@ namespace hazelcast {
             protected:
                 boost::future<bool> containsKeyData(const serialization::pimpl::Data &key);
 
-                boost::future<serialization::pimpl::Data> getData(const serialization::pimpl::Data &key);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> getData(const serialization::pimpl::Data &key);
 
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 putData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
                 boost::future<void>
                 setData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 putIfAbsentData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
-                boost::future<serialization::pimpl::Data>
+                boost::future<std::unique_ptr<serialization::pimpl::Data>>
                 replaceData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value);
 
                 boost::future<bool>
                 replaceData(const serialization::pimpl::Data &key, const serialization::pimpl::Data &oldValue,
                             const serialization::pimpl::Data &newValue);
 
-                boost::future<serialization::pimpl::Data> removeData(const serialization::pimpl::Data &key);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> removeData(const serialization::pimpl::Data &key);
 
                 boost::future<void> deleteEntryData(const serialization::pimpl::Data &key);
 
@@ -75,7 +75,7 @@ namespace hazelcast {
                 boost::future<std::vector<serialization::pimpl::Data>>
                 valuesData(const serialization::pimpl::Data &predicate);
 
-                TransactionalMapImpl(const std::string &name, txn::TransactionProxy *transactionProxy);
+                TransactionalMapImpl(const std::string &name, txn::TransactionProxy &transactionProxy);
             };
         }
     }

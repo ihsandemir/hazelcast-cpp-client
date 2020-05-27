@@ -76,20 +76,20 @@ namespace hazelcast {
 
             /**
              * Classes derived from this class should implement the following static methods:
-             *      static int32_t getClassId() const noexcept;
-             *      static int32_t getFactoryId() const noexcept;
+             *      static int32_t getClassId() noexcept;
+             *      static int32_t getFactoryId() noexcept;
              *      static int32_t writeData(ObjectDataOutput &out);
-             *      static int32_t readData(ObjectDataInput &in) const;
+             *      static int32_t readData(ObjectDataInput &in);
              */
             struct identified_data_serializer {
             };
 
             /**
              * Classes derived from this class should implement the following static methods:
-             *      static int32_t getClassId() const noexcept;
-             *      static int32_t getFactoryId() const noexcept;
+             *      static int32_t getClassId() noexcept;
+             *      static int32_t getFactoryId() noexcept;
              *      static int32_t writePortable(PortableWriter &out);
-             *      static int32_t readPortable(PortableReader &in) const;
+             *      static int32_t readPortable(PortableReader &in);
              */
             struct portable_serializer {
             };
@@ -598,6 +598,14 @@ namespace hazelcast {
                                           std::is_base_of<portable_serializer, hz_serializer<T>>::value ||
                                           std::is_base_of<custom_serializer, hz_serializer<T>>::value), void>::type
                 inline writeObject(const T &object);
+
+                void writeObjects() {}
+
+                template<typename FirstObjectType, typename ...OtherObjects>
+                inline void writeObjects(const FirstObjectType &object, const OtherObjects &...objects) {
+                    writeObject(object);
+                    writeObjects(objects...);
+                }
                 
             private:
                 pimpl::PortableSerializer *portableSerializer;
@@ -1068,10 +1076,6 @@ namespace hazelcast {
 
                 class HAZELCAST_API DataSerializer {
                 public:
-                    DataSerializer(const SerializationConfig &serializationConfig);
-
-                    ~DataSerializer();
-
                     template<typename T>
                     static boost::optional<T> readObject(ObjectDataInput &in) {
                         bool identified = in.read<bool>();

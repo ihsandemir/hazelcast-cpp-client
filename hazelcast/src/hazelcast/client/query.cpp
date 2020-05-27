@@ -30,280 +30,106 @@
  * limitations under the License.
  */
 
-#include "hazelcast/client/query/InstanceOfPredicate.h"
-#include "hazelcast/client/query/impl/predicates/PredicateDataSerializerHook.h"
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/query/ILikePredicate.h"
-#include "hazelcast/client/query/TruePredicate.h"
-#include "hazelcast/client/query/FalsePredicate.h"
-#include "hazelcast/client/query/AndPredicate.h"
-#include "hazelcast/client/query/OrPredicate.h"
-#include "hazelcast/client/query/NotPredicate.h"
-#include "hazelcast/client/query/SqlPredicate.h"
-#include "hazelcast/client/query/RegexPredicate.h"
-#include "hazelcast/client/query/LikePredicate.h"
-#include "hazelcast/client/query/QueryConstants.h"
+#include "hazelcast/client/query/Predicates.h"
 #include "hazelcast/client/spi/ClientContext.h"
 
 namespace hazelcast {
     namespace client {
         namespace query {
-            InstanceOfPredicate::InstanceOfPredicate(const char *javaClassName) : className(javaClassName) {
+            BasePredicate::BasePredicate(HazelcastClient &client) : outStream(false, &spi::ClientContext(
+                    client).getSerializationService().getPortableSerializer()) {}
+
+            NamedPredicate::NamedPredicate(HazelcastClient &client, const std::string &attributeName) : BasePredicate(
+                    client) {
+                outStream.write(attributeName);
             }
 
-            int InstanceOfPredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
+            InstanceOfPredicate::InstanceOfPredicate(HazelcastClient &client, const std::string &javaClassName)
+                    : BasePredicate(client) {
+                outStream.write(javaClassName);
             }
 
-            int InstanceOfPredicate::getClassId() const {
-                return impl::predicates::INSTANCEOF_PREDICATE;
+            SqlPredicate::SqlPredicate(HazelcastClient &client, const std::string &sql)
+                    : BasePredicate(client) {
+                outStream.write(sql);
             }
 
-            void InstanceOfPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.write(&className);
+            LikePredicate::LikePredicate(HazelcastClient &client, const std::string &attribute,
+                                         const std::string &expression) : NamedPredicate(client, attribute) {
+                outStream.write(expression);
             }
 
-            void InstanceOfPredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("InstanceOfPredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
+            ILikePredicate::ILikePredicate(HazelcastClient &client, const std::string &attribute,
+                                           const std::string &expression) : NamedPredicate(client, attribute) {
+                outStream.write(expression);
             }
 
-            ILikePredicate::ILikePredicate(const std::string &attribute, const std::string &expression) : attributeName(
-                    attribute), expressionString(expression) {
+            RegexPredicate::RegexPredicate(HazelcastClient &client, const std::string &attribute,
+                                           const std::string &expression) : NamedPredicate(client, attribute) {
+                outStream.write(expression);
             }
 
-            int ILikePredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
+            TruePredicate::TruePredicate(HazelcastClient &client) : BasePredicate(client) {}
+
+            FalsePredicate::FalsePredicate(HazelcastClient &client) : BasePredicate(client) {}
+        }
+
+        namespace serialization {
+            constexpr int32_t hz_serializer<query::BetweenPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::BETWEEN_PREDICATE);
             }
 
-            int ILikePredicate::getClassId() const {
-                return impl::predicates::ILIKE_PREDICATE;
+            constexpr int32_t hz_serializer<query::EqualPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::EQUAL_PREDICATE);
             }
 
-            void ILikePredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.write(&attributeName);
-                out.write(&expressionString);
+            constexpr int32_t hz_serializer<query::NotEqualPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::NOTEQUAL_PREDICATE);
             }
 
-            void ILikePredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("ILikePredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
+            constexpr int32_t hz_serializer<query::GreaterLessPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::GREATERLESS_PREDICATE);
             }
 
-            int TruePredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
+            constexpr int32_t hz_serializer<query::TruePredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::TRUE_PREDICATE);
             }
 
-            int TruePredicate::getClassId() const {
-                return impl::predicates::TRUE_PREDICATE;
+            constexpr int32_t hz_serializer<query::FalsePredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::FALSE_PREDICATE);
             }
 
-            void TruePredicate::writeData(serialization::ObjectDataOutput &out) const {
+            constexpr int32_t hz_serializer<query::InstanceOfPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::INSTANCEOF_PREDICATE);
             }
 
-            void TruePredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("TruePredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
+            constexpr int32_t hz_serializer<query::LikePredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::LIKE_PREDICATE);
             }
 
-            OrPredicate::~OrPredicate() {
-                for (std::vector<Predicate *>::const_iterator it = predicates.begin();
-                     it != predicates.end(); ++it) {
-                    delete *it;
-                }
+            constexpr int32_t hz_serializer<query::ILikePredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::ILIKE_PREDICATE);
             }
 
-            OrPredicate &OrPredicate::add(std::unique_ptr<Predicate> &predicate) {
-                return add(std::move(predicate));
+            constexpr int32_t hz_serializer<query::RegexPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::REGEX_PREDICATE);
             }
 
-            OrPredicate &OrPredicate::add(std::unique_ptr<Predicate> &&predicate) {
-                predicates.push_back(predicate.release());
-                return *this;
+            constexpr int32_t hz_serializer<query::InPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::IN_PREDICATE);
             }
 
-            int OrPredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
+            constexpr int32_t hz_serializer<query::AndPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::OR_PREDICATE);
             }
 
-            int OrPredicate::getClassId() const {
-                return impl::predicates::OR_PREDICATE;
+            constexpr int32_t hz_serializer<query::OrPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::OR_PREDICATE);
             }
 
-            void OrPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeInt((int) predicates.size());
-                for (std::vector<Predicate *>::const_iterator it = predicates.begin();
-                     it != predicates.end(); ++it) {
-                    out.writeObject<Predicate>(*it);
-                }
+            constexpr int32_t hz_serializer<query::SqlPredicate>::getClassId() noexcept {
+                return static_cast<int32_t>(query::PredicateDataSerializerHook::SQL_PREDICATE);
             }
-
-            void OrPredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("OrPredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
-            NotPredicate::NotPredicate(std::unique_ptr<Predicate> &predicate)
-                    : NotPredicate::NotPredicate(std::move(predicate)) {
-            }
-
-            NotPredicate::NotPredicate(std::unique_ptr<Predicate> &&predicate)
-                    : internalPredicate(std::move(predicate)) {
-            }
-
-            int NotPredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
-            }
-
-            int NotPredicate::getClassId() const {
-                return impl::predicates::NOT_PREDICATE;
-            }
-
-            void NotPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.writeObject<Predicate>(internalPredicate.get());
-            }
-
-            void NotPredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("NotPredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
-            const char *QueryConstants::getKeyAttributeName() {
-                return "__key";
-            }
-
-            const char *QueryConstants::getValueAttributeName() {
-                return "this";
-            }
-
-            SqlPredicate::SqlPredicate(const std::string &sqlString) : sql(sqlString) {
-            }
-
-            int SqlPredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
-            }
-
-            int SqlPredicate::getClassId() const {
-                return impl::predicates::SQL_PREDICATE;
-            }
-
-            void SqlPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.write(&sql);
-            }
-
-            void SqlPredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("SqlPredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
-            int FalsePredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
-            }
-
-            int FalsePredicate::getClassId() const {
-                return impl::predicates::FALSE_PREDICATE;
-            }
-
-            void FalsePredicate::writeData(serialization::ObjectDataOutput &out) const {
-            }
-
-            void FalsePredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("FalsePredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
-            RegexPredicate::RegexPredicate(const char *attribute, const char *regex) : attributeName(attribute),
-                                                                                       regularExpression(regex) {
-            }
-
-            int RegexPredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
-            }
-
-            int RegexPredicate::getClassId() const {
-                return impl::predicates::REGEX_PREDICATE;
-            }
-
-            void RegexPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.write(&attributeName);
-                out.write(&regularExpression);
-            }
-
-            void RegexPredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("RegexPredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
-            AndPredicate::~AndPredicate() {
-                for (std::vector<Predicate *>::const_iterator it = predicates.begin();
-                     it != predicates.end(); ++it) {
-                    delete *it;
-                }
-            }
-
-            AndPredicate &AndPredicate::add(std::unique_ptr<Predicate> &predicate) {
-                return add(std::move(predicate));
-            }
-
-            AndPredicate &AndPredicate::add(std::unique_ptr<Predicate> &&predicate) {
-                predicates.push_back(predicate.release());
-                return *this;
-            }
-
-            int AndPredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
-            }
-
-            int AndPredicate::getClassId() const {
-                return impl::predicates::AND_PREDICATE;
-            }
-
-            void AndPredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.write<int32_t>((int) predicates.size());
-                for (std::vector<Predicate *>::const_iterator it = predicates.begin();
-                     it != predicates.end(); ++it) {
-                    out.writeObject<Predicate>(*it);
-                }
-            }
-
-            void AndPredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("AndPredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
-            LikePredicate::LikePredicate(const std::string &attribute, const std::string &expression) : attributeName(
-                    attribute), expressionString(expression) {
-            }
-
-            int LikePredicate::getFactoryId() const {
-                return impl::predicates::F_ID;
-            }
-
-            int LikePredicate::getClassId() const {
-                return impl::predicates::LIKE_PREDICATE;
-            }
-
-            void LikePredicate::writeData(serialization::ObjectDataOutput &out) const {
-                out.write(&attributeName);
-                out.write(&expressionString);
-            }
-
-            void LikePredicate::readData(serialization::ObjectDataInput &in) {
-                // Not need to read at the client side
-                BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException("LikePredicate::readData",
-                                                                                 "Client should not need to use readData method!!!"));
-            }
-
         }
     }
 }

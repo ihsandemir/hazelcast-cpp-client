@@ -81,10 +81,12 @@ namespace hazelcast {
                          * @param key   the key to which the given value will be associated.
                          * @param value the value that will be associated with the key.
                          */
+/*
                         virtual void put(const std::shared_ptr<K> &key,
                                          const std::shared_ptr<serialization::pimpl::Data> &value) {
                             assert(0);
                         }
+*/
 
                         /**
                          * Removes the value associated with the given {@code key}
