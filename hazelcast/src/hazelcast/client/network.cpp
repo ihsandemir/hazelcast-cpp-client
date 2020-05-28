@@ -98,7 +98,7 @@ namespace hazelcast {
                     connectionTimeoutMillis = std::chrono::milliseconds(connTimeout);
                 }
 
-                credentials = client.getClientConfig().getCredentials();
+                credentials = client.getClientConfig().credentials;
 
                 connectionStrategy = initializeStrategy(client);
 
@@ -398,7 +398,7 @@ namespace hazelcast {
                     ownerUuid = p->getOwnerUuid();
                 }
                 std::unique_ptr<protocol::ClientMessage> clientMessage;
-                if (credentials == NULL) {
+                if (!credentials) {
                     // TODO: Change UsernamePasswordCredentials to implement Credentials interface so that we can just
                     // upcast the credentials as done at Java
                     GroupConfig &groupConfig = client.getClientConfig().getGroupConfig();
@@ -407,8 +407,7 @@ namespace hazelcast {
                             cr.getPrincipal(), cr.getPassword(), uuid, ownerUuid, asOwner, protocol::ClientTypes::CPP,
                             serializationVersion, HAZELCAST_VERSION);
                 } else {
-                    serialization::pimpl::Data data = ss.toData<Credentials>(credentials);
-                    clientMessage = protocol::codec::ClientAuthenticationCustomCodec::encodeRequest(data,
+                    clientMessage = protocol::codec::ClientAuthenticationCustomCodec::encodeRequest(credentials.value(),
                                                                                                     uuid,
                                                                                                     ownerUuid,
                                                                                                     asOwner,
@@ -751,14 +750,14 @@ namespace hazelcast {
                         connection->setRemoteEndpoint(std::shared_ptr<Address>(std::move(result->address)));
                         if (asOwner) {
                             connection->setIsAuthenticatedAsOwner();
-                            std::shared_ptr<protocol::Principal> principal(
+                            std::shared_ptr<protocol::Principal> p(
                                     new protocol::Principal(result->uuid, result->ownerUuid));
-                            connectionManager->setPrincipal(principal);
+                            connectionManager->setPrincipal(p);
                             //setting owner connection is moved to here(before onAuthenticated/before connected event)
                             //so that invocations that requires owner connection on this connection go through
                             connectionManager->setOwnerConnectionAddress(connection->getRemoteEndpoint());
                             connectionManager->logger.info("Setting ", *connection, " as owner with principal ",
-                                                           *principal);
+                                                           *p);
                         }
                         connectionManager->onAuthenticated(target, connection);
                         authFuture->onSuccess(connection);
@@ -801,17 +800,17 @@ namespace hazelcast {
                 this->authFuture->onFailure(e);
             }
 
-            void ClientConnectionManagerImpl::AuthCallback::onAuthenticationFailed(const Address &target,
-                                                                                   const std::shared_ptr<Connection> &connection,
+            void ClientConnectionManagerImpl::AuthCallback::onAuthenticationFailed(const Address &targetAddress,
+                                                                                   const std::shared_ptr<Connection> &conn,
                                                                                    std::exception_ptr cause) {
                 try {
                     std::rethrow_exception(cause);
                 } catch (exception::IException &ie) {
                     if (connectionManager->logger.isFinestEnabled()) {
-                        connectionManager->logger.finest("Authentication of ", connection, " failed.", ie);
+                        connectionManager->logger.finest("Authentication of ", conn, " failed.", ie);
                     }
-                    connection->close("", std::current_exception());
-                    connectionManager->connectionsInProgress.remove(target);
+                    conn->close("", std::current_exception());
+                    connectionManager->connectionsInProgress.remove(targetAddress);
                 }
             }
 
@@ -824,12 +823,12 @@ namespace hazelcast {
                       connectionsInProgress(connectionsInProgress), isSet(false) {
             }
 
-            void AuthenticationFuture::onSuccess(const std::shared_ptr<Connection> &connection) {
+            void AuthenticationFuture::onSuccess(const std::shared_ptr<Connection> &conn) {
                 bool expected = false;
                 if (!isSet.compare_exchange_strong(expected, true)) {
                     return;
                 }
-                this->connection = connection;
+                this->connection = conn;
                 countDownLatch->count_down();
             }
 
@@ -1094,7 +1093,7 @@ namespace hazelcast {
 
             void Connection::innerClose() {
                 if (!socket.get()) {
-                    return;;
+                    return;
                 }
 
                 socket->close();

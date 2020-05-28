@@ -22,10 +22,12 @@
 
 namespace hazelcast {
     namespace client {
+        namespace impl {
+            class BaseEventHandler;
+        }
         namespace spi {
             namespace impl {
                 class ListenerMessageCodec;
-                class BaseEventHandler;
             }
             /**
              * Client service to add/remove remote listeners.
@@ -38,7 +40,7 @@ namespace hazelcast {
             public:
                 virtual boost::future<std::string>
                 registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
-                                 std::unique_ptr<impl::BaseEventHandler> &&handler) = 0;
+                                 std::unique_ptr<client::impl::BaseEventHandler> &&handler) = 0;
 
                 virtual boost::future<bool> deregisterListener(const std::string registrationId) = 0;
             };

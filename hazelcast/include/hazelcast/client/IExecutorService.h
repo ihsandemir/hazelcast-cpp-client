@@ -59,8 +59,7 @@ namespace hazelcast {
          * @see MultiExecutionCallback
          */
         class HAZELCAST_API IExecutorService : public proxy::ProxyImpl {
-            friend class executor::impl::ExecutorServiceProxyFactory;
-
+            friend class spi::ProxyManager;
         public:
             static const std::string SERVICE_NAME;
 

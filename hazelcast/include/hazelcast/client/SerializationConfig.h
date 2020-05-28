@@ -53,10 +53,10 @@ namespace hazelcast {
 
             /**
              *
-             * @param portableVersion
+             * @param v
              * @return itself SerializationConfig
              */
-            SerializationConfig& setPortableVersion(int portableVersion);
+            SerializationConfig& setPortableVersion(int v);
 
             const std::shared_ptr<serialization::global_serializer> &getGlobalSerializer() const;
 

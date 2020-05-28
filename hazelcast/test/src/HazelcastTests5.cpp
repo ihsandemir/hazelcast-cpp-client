@@ -1950,9 +1950,7 @@ namespace hazelcast {
                 employees->put(8, empl6).get();
 
                 predSize = 2;
-                query::PagingPredicate<int, Employee> predicate3(
-                        std::unique_ptr<query::EntryComparator<int, Employee> >(new EmployeeEntryComparator()),
-                        (size_t) predSize);
+                query::PagingPredicate<int, Employee> predicate3(EmployeeEntryComparator(), (size_t) predSize);
                 std::vector<Employee> result = employees->values<Employee>(predicate3).get();
                 ASSERT_EQ(2, (int) result.size());
                 ASSERT_EQ(empl6, result[0]);
@@ -2337,7 +2335,7 @@ namespace hazelcast {
                 values = intMap->keySet<int>(predicate2).get();
                 ASSERT_EQ(0, (int) values.size());
 
-// test paging predicate with comparator
+                // test paging predicate with comparator
                 Employee empl1("ahmet", 35);
                 Employee empl2("mehmet", 21);
                 Employee empl3("deniz", 25);
@@ -2353,11 +2351,9 @@ namespace hazelcast {
                 employees->put(8, empl6).get();
 
                 predSize = 2;
-                query::PagingPredicate<int, Employee> predicate3(
-                        std::unique_ptr<query::EntryComparator<int, Employee> >(new EmployeeEntryKeyComparator()),
-                        (size_t) predSize);
+                query::PagingPredicate<int, Employee> predicate3(EmployeeEntryKeyComparator(), (size_t) predSize);
                 std::vector<int> result = employees->keySet<int>(predicate3).get();
-// since keyset result only returns keys from the server, no ordering based on the value but ordered based on the keys
+                // since keyset result only returns keys from the server, no ordering based on the value but ordered based on the keys
                 ASSERT_EQ(2, (int) result.size());
                 ASSERT_EQ(3, result[0]);
                 ASSERT_EQ(4, result[1]);
@@ -2777,9 +2773,7 @@ namespace hazelcast {
                 employees->put(8, empl6).get();
 
                 predSize = 2;
-                query::PagingPredicate<int, Employee> predicate3(
-                        std::unique_ptr<query::EntryComparator<int, Employee> >(new EmployeeEntryComparator()),
-                        (size_t) predSize);
+                query::PagingPredicate<int, Employee> predicate3(EmployeeEntryComparator(), (size_t) predSize);
                 std::vector<std::pair<int, Employee> > result = employees->entrySet<int, Employee>(
                         predicate3).get();
                 ASSERT_EQ(2, (int) result.size());

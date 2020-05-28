@@ -49,18 +49,18 @@ namespace hazelcast {
 
             private:
                 /**
-    * Set of IDs returned from {@link FlakeIdGenerator}.
-    * <p>
-    * IDs can be iterated using a foreach loop:
-    * <pre>{@code
-    *    IdBatch idBatch = myFlakeIdGenerator.newIdBatch(100);
-    *    for (Long id : idBatch) {
-    *        // ... use the id
-    *    }
-    * }</pre>
-    * <p>
-    * Object is immutable.
-    */
+                * Set of IDs returned from {@link FlakeIdGenerator}.
+                * <p>
+                * IDs can be iterated using a foreach loop:
+                * <pre>{@code
+                *    IdBatch idBatch = myFlakeIdGenerator.newIdBatch(100);
+                *    for (Long id : idBatch) {
+                *        // ... use the id
+                *    }
+                * }</pre>
+                * <p>
+                * Object is immutable.
+                */
                 class IdBatch {
                 public:
                     IdBatch(int64_t base, int64_t increment, int32_t batchSize);
@@ -95,7 +95,6 @@ namespace hazelcast {
                         const int64_t &operator*() { return base2; }
 
                     private:
-
                         int64_t base2;
                         const int64_t increment;
                         int32_t remaining;

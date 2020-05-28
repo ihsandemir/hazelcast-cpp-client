@@ -569,15 +569,15 @@ namespace hazelcast {
         }
 
         boost::future<void> TransactionContext::beginTransaction() {
-            transaction.begin();
+            return transaction.begin();
         }
 
         boost::future<void> TransactionContext::commitTransaction() {
-            transaction.commit();
+            return transaction.commit();
         }
 
         boost::future<void> TransactionContext::rollbackTransaction() {
-            transaction.rollback();
+            return transaction.rollback();
         }
 
         TransactionOptions::TransactionOptions() : timeout(std::chrono::minutes(2)), durability(1),

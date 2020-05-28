@@ -139,10 +139,10 @@ namespace hazelcast {
                 template <typename T>
                 void DataOutput::write(const std::vector<T> &value) {
                     if (isNoWrite) { return; }
-                    int32_t len = (int32_t) value->size();
+                    int32_t len = (int32_t) value.size();
                     write<int32_t>(len);
                     if (len > 0) {
-                        for (auto &item : *value) {
+                        for (auto &item : value) {
                             write(item);
                         }
                     }

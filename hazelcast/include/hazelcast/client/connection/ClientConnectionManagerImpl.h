@@ -216,7 +216,7 @@ namespace hazelcast {
                     std::shared_ptr<ClientConnectionManagerImpl> connectionManager;
                     std::shared_ptr<boost::asio::steady_timer> timeoutTimer;
 
-                    void onAuthenticationFailed(const Address &target, const std::shared_ptr<Connection> &connection,
+                    void onAuthenticationFailed(const Address &targetAddress, const std::shared_ptr<Connection> &conn,
                                                 std::exception_ptr cause);
 
                     virtual void handleAuthenticationException(std::exception_ptr e);
@@ -240,7 +240,7 @@ namespace hazelcast {
                 util::SynchronizedMap<Address, FutureTuple> connectionsInProgress;
                 // TODO: change with CopyOnWriteArraySet<ConnectionListener> as in Java
                 util::ConcurrentSet<std::shared_ptr<ConnectionListener> > connectionListeners;
-                const Credentials *credentials;
+                boost::optional<serialization::pimpl::Data> credentials;
                 util::Sync<std::shared_ptr<Address> > ownerConnectionAddress;
                 util::Sync<std::shared_ptr<Address> > previousOwnerConnectionAddress;
                 util::Sync<std::shared_ptr<protocol::Principal> > principal;

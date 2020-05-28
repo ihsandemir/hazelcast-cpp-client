@@ -56,8 +56,8 @@ namespace hazelcast {
             return version;
         }
 
-        SerializationConfig &SerializationConfig::setPortableVersion(int version) {
-            this->version = version;
+        SerializationConfig &SerializationConfig::setPortableVersion(int v) {
+            this->version = v;
             return *this;
         }
 
@@ -78,9 +78,9 @@ namespace hazelcast {
                 return enabled;
             }
 
-            SSLConfig &SSLConfig::setEnabled(bool enabled) {
+            SSLConfig &SSLConfig::setEnabled(bool isEnabled) {
                 util::Preconditions::checkSSL("getAwsConfig");
-                this->enabled = enabled;
+                this->enabled = isEnabled;
                 return *this;
             }
 
@@ -119,8 +119,8 @@ namespace hazelcast {
                 return name;
             }
 
-            ClientFlakeIdGeneratorConfig &ClientFlakeIdGeneratorConfig::setName(const std::string &name) {
-                ClientFlakeIdGeneratorConfig::name = name;
+            ClientFlakeIdGeneratorConfig &ClientFlakeIdGeneratorConfig::setName(const std::string &n) {
+                ClientFlakeIdGeneratorConfig::name = n;
                 return *this;
             }
 
@@ -550,9 +550,7 @@ namespace hazelcast {
         }
 
         ClientConfig::ClientConfig()
-                : loadBalancer(NULL), redoOperation(false), socketInterceptor(NULL), credentials(NULL),
-                  executorPoolSize(-1) {
-        }
+                : loadBalancer(NULL), redoOperation(false), socketInterceptor(NULL), executorPoolSize(-1) {}
 
         ClientConfig &ClientConfig::addAddress(const Address &address) {
             networkConfig.addAddress(address);
@@ -565,8 +563,8 @@ namespace hazelcast {
         }
 
 
-        std::set<Address> ClientConfig::getAddresses() {
-            std::set<Address> result;
+        std::unordered_set<Address> ClientConfig::getAddresses() {
+            std::unordered_set<Address> result;
             for (const Address &address : networkConfig.getAddresses()) {
                 result.insert(address);
             }
@@ -577,8 +575,7 @@ namespace hazelcast {
             this->groupConfig = groupConfig;
             return *this;
         }
-
-
+        
         GroupConfig &ClientConfig::getGroupConfig() {
             return groupConfig;
         }
@@ -682,25 +679,21 @@ namespace hazelcast {
             return *this;
         }
 
-        const std::set<LifecycleListener *> &ClientConfig::getLifecycleListeners() const {
+        const std::unordered_set<LifecycleListener *> &ClientConfig::getLifecycleListeners() const {
             return lifecycleListeners;
         }
 
-        const std::set<MembershipListener *> &ClientConfig::getMembershipListeners() const {
+        const std::unordered_set<MembershipListener *> &ClientConfig::getMembershipListeners() const {
             return membershipListeners;
         }
 
-        ClientConfig &ClientConfig::setCredentials(Credentials *credentials) {
-            this->credentials = credentials;
-            return *this;
+
+        const boost::optional<std::string> &ClientConfig::getPrincipal() const {
+            return principal;
         }
 
-        const Credentials *ClientConfig::getCredentials() const {
-            return credentials;
-        }
-
-        ClientConfig &ClientConfig::setSocketInterceptor(SocketInterceptor *socketInterceptor) {
-            this->socketInterceptor = socketInterceptor;
+        ClientConfig &ClientConfig::setSocketInterceptor(SocketInterceptor *interceptor) {
+            this->socketInterceptor = interceptor;
             return *this;
         }
 
@@ -727,7 +720,7 @@ namespace hazelcast {
         }
 
 
-        std::map<std::string, std::string> &ClientConfig::getProperties() {
+        std::unordered_map<std::string, std::string> &ClientConfig::getProperties() {
             return properties;
         }
 
@@ -742,7 +735,7 @@ namespace hazelcast {
         }
 
         const config::ReliableTopicConfig *ClientConfig::getReliableTopicConfig(const std::string &name) {
-            std::map<std::string, config::ReliableTopicConfig>::const_iterator it = reliableTopicConfigMap.find(name);
+            std::unordered_map<std::string, config::ReliableTopicConfig>::const_iterator it = reliableTopicConfigMap.find(name);
             if (reliableTopicConfigMap.end() == it) {
                 reliableTopicConfigMap[name] = config::ReliableTopicConfig(name.c_str());
             }
@@ -821,7 +814,7 @@ namespace hazelcast {
             return *this;
         }
 
-        const std::set<std::shared_ptr<MembershipListener> > &ClientConfig::getManagedMembershipListeners() const {
+        const std::unordered_set<std::shared_ptr<MembershipListener> > &ClientConfig::getManagedMembershipListeners() const {
             return managedMembershipListeners;
         }
     }

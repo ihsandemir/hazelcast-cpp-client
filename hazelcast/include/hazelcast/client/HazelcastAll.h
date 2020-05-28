@@ -23,7 +23,6 @@
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/Cluster.h"
-#include "hazelcast/client/Credentials.h"
 #include "hazelcast/client/DistributedObject.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/EntryView.h"

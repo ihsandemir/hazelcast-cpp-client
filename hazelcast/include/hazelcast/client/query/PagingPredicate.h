@@ -121,7 +121,7 @@ namespace hazelcast {
              * </pre>
              */
 
-            template<typename K, typename V, typename INNER_PREDICATE = K>
+            template<typename K, typename V, typename INNER_PREDICATE = K, typename COMPARATOR = K>
             class PagingPredicate : public Predicate {
             public:
                 /**
@@ -160,11 +160,7 @@ namespace hazelcast {
                  * @param comparatorObj the comparator through which results will be ordered
                  * @param predicatePageSize   the page size
                  */
-                PagingPredicate(std::unique_ptr<query::EntryComparator<K, V> > &comparatorObj, size_t predicatePageSize)
-                        : PagingPredicate(std::move(comparatorObj), predicatePageSize) {
-                }
-
-                PagingPredicate(std::unique_ptr<query::EntryComparator<K, V> > &&comparatorObj, size_t predicatePageSize) : comparator(
+                PagingPredicate(COMPARATOR comparatorObj, size_t predicatePageSize) : comparator(
                         std::move(comparatorObj)), pageSize(predicatePageSize), page(0), iterationType(IterationType::VALUE) {
                 }
 
@@ -179,15 +175,7 @@ namespace hazelcast {
                  * @param comparatorObj the comparator through which results will be ordered
                  * @param predicatePageSize   the page size
                  */
-                PagingPredicate(std::unique_ptr<INNER_PREDICATE> &predicate,
-                                std::unique_ptr<query::EntryComparator<K, V> > &comparatorObj,
-                                size_t predicatePageSize) : PagingPredicate(std::move(predicate),
-                                                                            std::move(comparatorObj),
-                                                                            predicatePageSize) {
-
-                }
-
-                PagingPredicate(std::unique_ptr<INNER_PREDICATE> &&predicate, std::unique_ptr<query::EntryComparator<K, V> > &&comparatorObj,
+                PagingPredicate(INNER_PREDICATE predicate, COMPARATOR comparatorObj,
                                 size_t predicatePageSize) : innerPredicate(std::move(predicate)), comparator(std::move(comparatorObj)),
                                                          pageSize(predicatePageSize), page(0), iterationType(IterationType::VALUE) {}
 
@@ -250,11 +238,17 @@ namespace hazelcast {
                 }
 
                 const Predicate *getPredicate() const {
-                    return innerPredicate.get();
+                    if (!innerPredicate) {
+                        return nullptr;
+                    }
+                    return &innerPredicate.value();
                 }
 
                 const query::EntryComparator<K, V> *getComparator() const {
-                    return comparator.get();
+                    if (!comparator) {
+                        return nullptr;
+                    }
+                    return &comparator.value();
                 }
 
 
@@ -301,8 +295,8 @@ namespace hazelcast {
                  * @param writer ObjectDataOutput
                  */
                 void writeData(serialization::ObjectDataOutput &out) const {
-                    out.writeObject<INNER_PREDICATE>(innerPredicate.get());
-                    out.writeObject<serialization::IdentifiedDataSerializable>(comparator.get());
+                    out.writeObject<INNER_PREDICATE>(innerPredicate);
+                    out.writeObject<COMPARATOR>(comparator);
                     out.write<int32_t>((int)page);
                     out.write<int32_t>((int)pageSize);
                     out.write<std::string>(IterationNames[static_cast<int32_t>(iterationType)]);
@@ -333,10 +327,10 @@ namespace hazelcast {
                 }
 
             private:
-                std::unique_ptr<INNER_PREDICATE> innerPredicate;
+                boost::optional<INNER_PREDICATE> innerPredicate;
                 // key is the page number, the value is the map entry as the anchor
                 std::vector<std::pair<size_t, std::pair<K *, V *> > > anchorList;
-                std::unique_ptr<query::EntryComparator<K, V> > comparator;
+                boost::optional<COMPARATOR> comparator;
                 size_t pageSize;
                 size_t page;
                 IterationType iterationType;

@@ -41,7 +41,7 @@ namespace hazelcast {
          *
          */
         class HAZELCAST_API ReplicatedMap : public proxy::ReplicatedMapImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:replicatedMapService";
             /**

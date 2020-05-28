@@ -230,9 +230,9 @@ namespace hazelcast {
                 lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
             }
 
-            MultiMapImpl::MultiMapEntryListenerMessageCodec::MultiMapEntryListenerMessageCodec(const std::string &name,
+            MultiMapImpl::MultiMapEntryListenerMessageCodec::MultiMapEntryListenerMessageCodec(std::string name,
                                                                                                bool includeValue)
-                    : name(name), includeValue(includeValue) {}
+                    : name(std::move(name)), includeValue(includeValue) {}
 
             std::unique_ptr<protocol::ClientMessage>
             MultiMapImpl::MultiMapEntryListenerMessageCodec::encodeAddRequest(bool localOnly) const {
@@ -281,10 +281,10 @@ namespace hazelcast {
                         clientMessage).response;
             }
 
-            MultiMapImpl::MultiMapEntryListenerToKeyCodec::MultiMapEntryListenerToKeyCodec(const std::string &name,
+            MultiMapImpl::MultiMapEntryListenerToKeyCodec::MultiMapEntryListenerToKeyCodec(std::string name,
                                                                                            bool includeValue,
                                                                                            serialization::pimpl::Data &&key)
-                    : name(name), includeValue(includeValue), key(key) {}
+                    : name(std::move(name)), includeValue(includeValue), key(key) {}
 
 
             ReliableTopicImpl::ReliableTopicImpl(const std::string &instanceName, spi::ClientContext *context)
@@ -317,7 +317,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::get() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
@@ -326,7 +326,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::getAndAdd(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
@@ -335,7 +335,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::addAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
                 }
@@ -344,7 +344,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::getAndSubtract(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndSubtract",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -355,7 +355,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::subtractAndGet(int64_t delta) {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::subtractAndGet",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -365,7 +365,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::decrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::decrementAndGet",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -375,7 +375,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::incrementAndGet() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::incrementAndGet",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -385,7 +385,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::getAndDecrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndDecrement",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -395,7 +395,7 @@ namespace hazelcast {
 
             boost::future<int64_t> PNCounterImpl::getAndIncrement() {
                 std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
-                if (target.get() == NULL) {
+                if (target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndIncrement",
                                                                       "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -410,15 +410,16 @@ namespace hazelcast {
 
             std::shared_ptr<Address>
             PNCounterImpl::getCRDTOperationTarget(const std::unordered_set<Address> &excludedAddresses) {
-                if (currentTargetReplicaAddress.get().get() != NULL &&
-                    excludedAddresses.find(*currentTargetReplicaAddress.get()) == excludedAddresses.end()) {
-                    return currentTargetReplicaAddress;
+                auto replicaAddress = currentTargetReplicaAddress.get();
+                if (replicaAddress && excludedAddresses.find(*replicaAddress) == excludedAddresses.end()) {
+                    return replicaAddress;
                 }
 
                 {
                     std::lock_guard<std::mutex> guard(targetSelectionMutex);
-                    if (currentTargetReplicaAddress.get() == NULL ||
-                        excludedAddresses.find(*currentTargetReplicaAddress.get()) != excludedAddresses.end()) {
+                    replicaAddress = currentTargetReplicaAddress.get();
+                    if (!replicaAddress ||
+                        excludedAddresses.find(*replicaAddress) != excludedAddresses.end()) {
                         currentTargetReplicaAddress = chooseTargetReplica(excludedAddresses);
                     }
                 }
@@ -658,16 +659,16 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            boost::future<serialization::pimpl::Data> IListImpl::getData(int index) {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IListImpl::getData(int index) {
                 auto request = protocol::codec::ListGetCodec::encodeRequest(getName(), index);
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::ListGetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListGetCodec::ResponseParameters>(
                         request, partitionId);
             }
 
-            boost::future<serialization::pimpl::Data> IListImpl::setData(int index,
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IListImpl::setData(int index,
                                                                            const serialization::pimpl::Data &element) {
                 auto request = protocol::codec::ListSetCodec::encodeRequest(getName(), index, element);
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::ListSetCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListSetCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -676,9 +677,9 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            boost::future<serialization::pimpl::Data> IListImpl::removeData(int index) {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IListImpl::removeData(int index) {
                 auto request = protocol::codec::ListRemoveWithIndexCodec::encodeRequest(getName(), index);
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::ListRemoveWithIndexCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::ListRemoveWithIndexCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -705,8 +706,8 @@ namespace hazelcast {
                         new ListListenerMessageCodec(getName(), includeValue));
             }
 
-            IListImpl::ListListenerMessageCodec::ListListenerMessageCodec(const std::string &name,
-                                                                          bool includeValue) : name(name),
+            IListImpl::ListListenerMessageCodec::ListListenerMessageCodec(std::string name,
+                                                                          bool includeValue) : name(std::move(name)),
                                                                                                includeValue(
                                                                                                        includeValue) {}
 
@@ -848,7 +849,7 @@ namespace hazelcast {
                         getName(), size);
                 return invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
                     auto response = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(f.get());
-                    return FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize);
+                    return std::move(FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize));
                 });
             }
 
@@ -877,12 +878,12 @@ namespace hazelcast {
 
             boost::future<void> IQueueImpl::put(const serialization::pimpl::Data &element) {
                 auto request = protocol::codec::QueuePutCodec::encodeRequest(getName(), element);
-                invokeOnPartition(request, partitionId);
+                return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            boost::future<serialization::pimpl::Data> IQueueImpl::pollData(std::chrono::steady_clock::duration timeout) {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IQueueImpl::pollData(std::chrono::steady_clock::duration timeout) {
                 auto request = protocol::codec::QueuePollCodec::encodeRequest(getName(), std::chrono::duration_cast<std::chrono::milliseconds>(timeout).count());
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::QueuePollCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::QueuePollCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -917,9 +918,9 @@ namespace hazelcast {
                         request, partitionId);
             }
 
-            boost::future<serialization::pimpl::Data> IQueueImpl::peekData() {
+            boost::future<std::unique_ptr<serialization::pimpl::Data>> IQueueImpl::peekData() {
                 auto request = protocol::codec::QueuePeekCodec::encodeRequest(getName());
-                return invokeAndGetFuture<serialization::pimpl::Data, protocol::codec::QueuePeekCodec::ResponseParameters>(
+                return invokeAndGetFuture<std::unique_ptr<serialization::pimpl::Data>, protocol::codec::QueuePeekCodec::ResponseParameters>(
                         request, partitionId);
             }
 
@@ -976,8 +977,8 @@ namespace hazelcast {
                         new QueueListenerMessageCodec(getName(), includeValue));
             }
 
-            IQueueImpl::QueueListenerMessageCodec::QueueListenerMessageCodec(const std::string &name,
-                                                                             bool includeValue) : name(name),
+            IQueueImpl::QueueListenerMessageCodec::QueueListenerMessageCodec(std::string name,
+                                                                             bool includeValue) : name(std::move(name)),
                                                                                                   includeValue(
                                                                                                           includeValue) {}
 
@@ -1021,6 +1022,7 @@ namespace hazelcast {
                     return spi::impl::ClientInvocation::create(context_, request, name_, partitionId)->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
+                    return boost::make_ready_future(*protocol::ClientMessage::create(0));
                 }
             }
 
@@ -1029,6 +1031,7 @@ namespace hazelcast {
                     return spi::impl::ClientInvocation::create(context_, request, name_)->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
+                    return boost::make_ready_future(*protocol::ClientMessage::create(0));
                 }
             }
 
@@ -1038,6 +1041,7 @@ namespace hazelcast {
                     return spi::impl::ClientInvocation::create(context_, request, name_, connection)->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
+                    return boost::make_ready_future(*protocol::ClientMessage::create(0));
                 }
             }
 
@@ -1048,6 +1052,7 @@ namespace hazelcast {
                     return invokeOnPartition(request, getPartitionId(keyData));
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
+                    return boost::make_ready_future(*protocol::ClientMessage::create(0));
                 }
             }
 
@@ -1058,13 +1063,14 @@ namespace hazelcast {
                     return invocation->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());
+                    return boost::make_ready_future(*protocol::ClientMessage::create(0));
                 }
             }
 
             PartitionSpecificClientProxy::PartitionSpecificClientProxy(const std::string &serviceName,
                                                                        const std::string &objectName,
                                                                        spi::ClientContext *context) : ProxyImpl(
-                    serviceName, objectName, context) {}
+                    serviceName, objectName, context), partitionId(-1) {}
 
             void PartitionSpecificClientProxy::onInitialize() {
                 std::string partitionKey = internal::partition::strategy::StringPartitioningStrategy::getPartitionKey(
@@ -1153,7 +1159,7 @@ namespace hazelcast {
                 auto request = protocol::codec::MapPutTransientCodec::encodeRequest(getName(), key, value,
                                                                              util::getCurrentThreadId(),
                                                                              std::chrono::duration_cast<std::chrono::milliseconds>(ttl).count());
-                invokeOnPartition(request, getPartitionId(key));
+                return invokeOnPartition(request, getPartitionId(key));
             }
 
             boost::future<std::unique_ptr<serialization::pimpl::Data>> IMapImpl::putIfAbsentData(const serialization::pimpl::Data &key,
@@ -1285,7 +1291,7 @@ namespace hazelcast {
             boost::future<EntryVector>
             IMapImpl::getAllData(int partitionId, std::vector<serialization::pimpl::Data> &&keys) {
                 auto request = protocol::codec::MapGetAllCodec::encodeRequest(getName(), keys);
-                return invokeAndGetFuture<EntryVector, protocol::codec::MapGetAllCodec>(request, partitionId);
+                return invokeAndGetFuture<EntryVector, protocol::codec::MapGetAllCodec::ResponseParameters>(request, partitionId);
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetData() {
@@ -1446,9 +1452,9 @@ namespace hazelcast {
                 lockReferenceIdGenerator = getContext().getLockReferenceIdGenerator();
             }
 
-            IMapImpl::MapEntryListenerMessageCodec::MapEntryListenerMessageCodec(const std::string &name,
+            IMapImpl::MapEntryListenerMessageCodec::MapEntryListenerMessageCodec(std::string name,
                                                                                  bool includeValue,
-                                                                                 EntryEvent::type listenerFlags) : name(name),
+                                                                                 EntryEvent::type listenerFlags) : name(std::move(name)),
                                                                                                           includeValue(
                                                                                                                   includeValue),
                                                                                                           listenerFlags(
@@ -1498,14 +1504,14 @@ namespace hazelcast {
                 return protocol::codec::MapRemoveEntryListenerCodec::ResponseParameters::decode(clientMessage).response;
             }
 
-            IMapImpl::MapEntryListenerToKeyCodec::MapEntryListenerToKeyCodec(const std::string &name, bool includeValue,
+            IMapImpl::MapEntryListenerToKeyCodec::MapEntryListenerToKeyCodec(std::string name, bool includeValue,
                                                                              EntryEvent::type listenerFlags,
-                                                                             const serialization::pimpl::Data &key)
-                    : name(name), includeValue(includeValue), listenerFlags(listenerFlags), key(key) {}
+                                                                             serialization::pimpl::Data key)
+                    : name(std::move(name)), includeValue(includeValue), listenerFlags(listenerFlags), key(std::move(key)) {}
 
             IMapImpl::MapEntryListenerWithPredicateMessageCodec::MapEntryListenerWithPredicateMessageCodec(
-                    const std::string &name, bool includeValue, EntryEvent::type listenerFlags,
-                    serialization::pimpl::Data &&predicate) : name(name), includeValue(includeValue),
+                    std::string name, bool includeValue, EntryEvent::type listenerFlags,
+                    serialization::pimpl::Data &&predicate) : name(std::move(name)), includeValue(includeValue),
                                                              listenerFlags(listenerFlags), predicate(predicate) {}
 
             std::unique_ptr<protocol::ClientMessage>
@@ -1636,7 +1642,7 @@ namespace hazelcast {
 
             boost::future<void> ISetImpl::clear() {
                 auto request = protocol::codec::SetClearCodec::encodeRequest(getName());
-                invokeOnPartition(request, partitionId);
+                return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
             std::unique_ptr<spi::impl::ListenerMessageCodec>
@@ -1645,8 +1651,8 @@ namespace hazelcast {
                         new SetListenerMessageCodec(getName(), includeValue));
             }
 
-            ISetImpl::SetListenerMessageCodec::SetListenerMessageCodec(const std::string &name, bool includeValue)
-                    : name(name), includeValue(includeValue) {}
+            ISetImpl::SetListenerMessageCodec::SetListenerMessageCodec(std::string name, bool includeValue)
+                    : name(std::move(name)), includeValue(includeValue) {}
 
             std::unique_ptr<protocol::ClientMessage>
             ISetImpl::SetListenerMessageCodec::encodeAddRequest(bool localOnly) const {
@@ -1689,7 +1695,7 @@ namespace hazelcast {
                 return std::unique_ptr<spi::impl::ListenerMessageCodec>(new TopicListenerMessageCodec(getName()));
             }
 
-            ITopicImpl::TopicListenerMessageCodec::TopicListenerMessageCodec(const std::string &name) : name(name) {}
+            ITopicImpl::TopicListenerMessageCodec::TopicListenerMessageCodec(std::string name) : name(std::move(name)) {}
 
             std::unique_ptr<protocol::ClientMessage>
             ITopicImpl::TopicListenerMessageCodec::encodeAddRequest(bool localOnly) const {
@@ -1714,17 +1720,19 @@ namespace hazelcast {
             }
 
             ReplicatedMapImpl::ReplicatedMapImpl(const std::string &serviceName, const std::string &objectName,
-                              spi::ClientContext *context) : ProxyImpl(serviceName, objectName, context) {}
+                                                 spi::ClientContext *context) : ProxyImpl(serviceName, objectName,
+                                                                                          context),
+                                                                                targetPartitionId(-1) {}
         }
 
         namespace map {
-            DataEntryView::DataEntryView(const serialization::pimpl::Data &key, const serialization::pimpl::Data &value,
+            DataEntryView::DataEntryView(serialization::pimpl::Data key, const serialization::pimpl::Data &value,
                                          int64_t cost,
                                          int64_t creationTime, int64_t expirationTime, int64_t hits,
                                          int64_t lastAccessTime,
                                          int64_t lastStoredTime, int64_t lastUpdateTime, int64_t version,
                                          int64_t evictionCriteriaNumber,
-                                         int64_t ttl) : key(key), value(value), cost(cost), creationTime(creationTime),
+                                         int64_t ttl) : key(std::move(key)), value(value), cost(cost), creationTime(creationTime),
                                                         expirationTime(expirationTime), hits(hits),
                                                         lastAccessTime(lastAccessTime),
                                                         lastStoredTime(lastStoredTime), lastUpdateTime(lastUpdateTime),
@@ -1785,9 +1793,9 @@ namespace hazelcast {
         namespace topic {
             namespace impl {
                 namespace reliable {
-                    ReliableTopicExecutor::ReliableTopicExecutor(const std::shared_ptr<Ringbuffer> &rb,
+                    ReliableTopicExecutor::ReliableTopicExecutor(std::shared_ptr<Ringbuffer> rb,
                                                                  util::ILogger &logger)
-                            : ringbuffer(rb), q(10), shutdown(false) {
+                            : ringbuffer(std::move(rb)), q(10), shutdown(false) {
                         runnerThread = std::thread([&]() { Task(ringbuffer, q, shutdown).run(); });
                     }
 
@@ -1833,7 +1841,7 @@ namespace hazelcast {
                         }
                     }
 
-                    const std::string ReliableTopicExecutor::Task::getName() const {
+                    std::string ReliableTopicExecutor::Task::getName() const {
                         return "ReliableTopicExecutor Task";
                     }
 

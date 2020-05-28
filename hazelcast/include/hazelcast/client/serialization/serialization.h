@@ -19,14 +19,13 @@
 #include <type_traits>
 
 #include <boost/any.hpp>
+#include <boost/optional.hpp>
 
-#include <hazelcast/client/HazelcastJsonValue.h>
-#include "hazelcast/client/serialization/IdentifiedDataSerializable.h"
+#include "hazelcast/client/HazelcastJsonValue.h"
 #include "hazelcast/client/serialization/Portable.h"
 #include "hazelcast/client/serialization/pimpl/DataInput.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/client/serialization/pimpl/DataOutput.h"
-#include "hazelcast/client/serialization/pimpl/SerializationConstants.h"
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/client/PartitionAware.h"
 #include "hazelcast/util/SynchronizedMap.h"
@@ -43,6 +42,7 @@ namespace hazelcast {
         namespace serialization {
             class ObjectDataInput;
             class ObjectDataOutput;
+            class PortableReader;
 
             namespace pimpl {
                 // forward declarations
@@ -55,6 +55,34 @@ namespace hazelcast {
                 class PortableSerializer;
                 class DataSerializer;
                 class SerializationService;
+
+                enum struct HAZELCAST_API SerializationConstants {
+                    CONSTANT_TYPE_NULL = 0,
+                    CONSTANT_TYPE_PORTABLE = -1,
+                    CONSTANT_TYPE_DATA = -2,
+                    CONSTANT_TYPE_BYTE = -3,
+                    CONSTANT_TYPE_BOOLEAN = -4,
+                    CONSTANT_TYPE_CHAR = -5,
+                    CONSTANT_TYPE_SHORT = -6,
+                    CONSTANT_TYPE_INTEGER = -7,
+                    CONSTANT_TYPE_LONG = -8,
+                    CONSTANT_TYPE_FLOAT = -9,
+                    CONSTANT_TYPE_DOUBLE = -10,
+                    CONSTANT_TYPE_STRING = -11,
+                    CONSTANT_TYPE_BYTE_ARRAY = -12,
+                    CONSTANT_TYPE_BOOLEAN_ARRAY = -13,
+                    CONSTANT_TYPE_CHAR_ARRAY = -14,
+                    CONSTANT_TYPE_SHORT_ARRAY = -15,
+                    CONSTANT_TYPE_INTEGER_ARRAY = -16,
+                    CONSTANT_TYPE_LONG_ARRAY = -17,
+                    CONSTANT_TYPE_FLOAT_ARRAY = -18,
+                    CONSTANT_TYPE_DOUBLE_ARRAY = -19,
+                    CONSTANT_TYPE_STRING_ARRAY = -20,
+                    JAVASCRIPT_JSON_SERIALIZATION_TYPE = -130,
+
+                    CONSTANT_TYPE_GLOBAL = INT32_MIN
+                    // ------------------------------------------------------------
+                };
             }
 
             template<typename T>
@@ -502,10 +530,6 @@ namespace hazelcast {
                 }
             };
 
-            /**
-            * Provides deserialization methods for primitives types, arrays of primitive types
-            * Portable, IdentifiedDataSerializable and custom serializable types
-            */
             class HAZELCAST_API ObjectDataInput : public pimpl::DataInput<std::vector<byte>> {
             public:
                 /**
@@ -516,8 +540,6 @@ namespace hazelcast {
                                 const std::shared_ptr<serialization::global_serializer> &globalSerializer);
 
                 /**
-                * Object can be Portable, IdentifiedDataSerializable or custom serializable
-                * for custom serialization @see Serializer
                 * @return the object read
                 * @throws IOException if it reaches end of file before finish reading
                 */
@@ -559,11 +581,6 @@ namespace hazelcast {
                 void operator=(const ObjectDataInput &);
             };
 
-            /**
-            * Provides serialization methods for primitive types,a arrays of primitive types, Portable,
-            * IdentifiedDataSerializable and custom serializables.
-            * For custom serialization @see Serializer
-            */
             class HAZELCAST_API ObjectDataOutput : public pimpl::DataOutput {
             public:
                 /**
@@ -574,6 +591,9 @@ namespace hazelcast {
 
                 template<typename T>
                 void writeObject(const T *object);
+
+                template<typename T>
+                void writeObject(const boost::optional<T> &object);
 
                 template<typename T>
                 typename std::enable_if<std::is_base_of<builtin_serializer, hz_serializer<T>>::value, void>::type
@@ -1289,13 +1309,13 @@ namespace hazelcast {
                     }
 
                     template<typename T>
-                    inline const std::shared_ptr<T> toSharedObject(const std::shared_ptr<Data> &data) {
-                        return std::make_shared<T>(new T(std::move(toObject<T>(data.get()).value())));
+                    inline std::shared_ptr<T> toSharedObject(const std::shared_ptr<Data> &data) {
+                        return std::make_shared<T>(std::move(toObject<T>(data.get())).value());
                     }
 
                     template<typename T>
-                    inline const std::shared_ptr<T> toSharedObject(const std::unique_ptr<Data> &data) {
-                        return std::make_shared<T>(new T(std::move(toObject<T>(data.get()).value())));
+                    inline std::shared_ptr<T> toSharedObject(const std::unique_ptr<Data> &data) {
+                        return std::make_shared<T>(std::move(toObject<T>(data.get())).value());
                     }
 
                     const byte getVersion() const;
@@ -1305,7 +1325,7 @@ namespace hazelcast {
                     /**
                      * @link Disposable interface implementation
                      */
-                    void dispose();
+                    void dispose() override;
 
                 private:
                     SerializationService(const SerializationService &);
@@ -1338,9 +1358,9 @@ namespace hazelcast {
             }
 
             /**
-* Provides a mean of reading portable fields from a binary in form of java primitives
-* arrays of java primitives , nested portable fields and array of portable fields.
-*/
+            * Provides a mean of reading portable fields from a binary in form of java primitives
+            * arrays of java primitives , nested portable fields and array of portable fields.
+            */
             class HAZELCAST_API PortableReader {
             public:
                 PortableReader(pimpl::PortableSerializer &portableSer, ObjectDataInput &dataInput,
@@ -1611,6 +1631,17 @@ namespace hazelcast {
                 }
 
                 writeObject<T>(*object);
+            }
+
+            template<typename T>
+            void ObjectDataOutput::writeObject(const boost::optional<T> &object) {
+                if (isNoWrite) { return; }
+                if (!object) {
+                    write<int32_t>(static_cast<int32_t>(pimpl::SerializationConstants::CONSTANT_TYPE_NULL));
+                    return;
+                }
+
+                writeObject<T>(object.value());
             }
 
             template<>

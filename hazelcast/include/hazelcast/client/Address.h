@@ -96,7 +96,7 @@ namespace hazelcast {
 
         namespace serialization {
             template<>
-            class hz_serializer<Address> : public identified_data_serializer {
+            struct hz_serializer<Address> : public identified_data_serializer {
                 static constexpr int32_t F_ID = 0;
                 static constexpr int32_t ADDRESS = 1;
                 static int32_t getFactoryId();

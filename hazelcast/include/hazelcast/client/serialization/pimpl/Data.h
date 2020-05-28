@@ -18,12 +18,10 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 #include <stdint.h>
-#include "hazelcast/client/serialization/serialization.h"
+
 #include "hazelcast/util/HazelcastDll.h"
-#include "hazelcast/util/AtomicInt.h"
-#include "hazelcast/util/AtomicBoolean.h"
-#include "SerializationConstants.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)

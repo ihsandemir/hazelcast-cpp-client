@@ -27,7 +27,7 @@ namespace hazelcast {
         *
         */
         class IList : public proxy::IListImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:listService";
 

@@ -102,7 +102,7 @@ namespace hazelcast {
             private:
                 class MultiMapEntryListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    MultiMapEntryListenerMessageCodec(const std::string &name, bool includeValue);
+                    MultiMapEntryListenerMessageCodec(std::string name, bool includeValue);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
 
@@ -119,7 +119,7 @@ namespace hazelcast {
 
                 class MultiMapEntryListenerToKeyCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    MultiMapEntryListenerToKeyCodec(const std::string &name, bool includeValue,
+                    MultiMapEntryListenerToKeyCodec(std::string name, bool includeValue,
                                                     serialization::pimpl::Data &&key);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;

@@ -261,7 +261,7 @@ namespace hazelcast {
 
                 class MapEntryListenerWithPredicateMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    MapEntryListenerWithPredicateMessageCodec(const std::string &name, bool includeValue,
+                    MapEntryListenerWithPredicateMessageCodec(std::string name, bool includeValue,
                                                               EntryEvent::type listenerFlags,
                                                               serialization::pimpl::Data &&predicate);
 
@@ -282,7 +282,7 @@ namespace hazelcast {
 
                 class MapEntryListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    MapEntryListenerMessageCodec(const std::string &name, bool includeValue, EntryEvent::type listenerFlags);
+                    MapEntryListenerMessageCodec(std::string name, bool includeValue, EntryEvent::type listenerFlags);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
 
@@ -300,8 +300,8 @@ namespace hazelcast {
 
                 class MapEntryListenerToKeyCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    MapEntryListenerToKeyCodec(const std::string &name, bool includeValue, EntryEvent::type listenerFlags,
-                                               const serialization::pimpl::Data &key);
+                    MapEntryListenerToKeyCodec(std::string name, bool includeValue, EntryEvent::type listenerFlags,
+                                               serialization::pimpl::Data key);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
 

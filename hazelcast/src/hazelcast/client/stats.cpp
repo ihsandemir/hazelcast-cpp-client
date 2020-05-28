@@ -33,7 +33,6 @@
 #include <regex>
 #include <iomanip>
 
-#include "hazelcast/client/Credentials.h"
 #include "hazelcast/client/impl/statistics/Statistics.h"
 #include "hazelcast/client/impl/BuildInfo.h"
 #include "hazelcast/client/spi/ClientContext.h"
@@ -185,11 +184,10 @@ namespace hazelcast {
 
                     addStat(stats, "clientName", statistics.clientContext.getName());
 
-                    const Credentials *credentials = statistics.clientContext.getClientConfig().getCredentials();
-                    if (credentials != NULL) {
-                        addStat(stats, "credentials.principal", credentials->getPrincipal());
+                    auto principal = statistics.clientContext.getClientConfig().getPrincipal();
+                    if (principal) {
+                        addStat(stats, "credentials.principal", principal.value());
                     }
-
                 }
 
                 void Statistics::PeriodicStatistics::addNearCacheStats(std::ostringstream &stats) {

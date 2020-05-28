@@ -34,7 +34,7 @@ namespace hazelcast {
         *
         */
         class ITopic : public proxy::ITopicImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
 
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:topicService";

@@ -35,9 +35,9 @@ namespace hazelcast {
                 boost::future<bool> removeItemListener(const std::string& registrationId);
 
                 /**
-*
-* @return size of the distributed list
-*/
+                *
+                * @return size of the distributed list
+                */
                 boost::future<int32_t> size();
 
                 /**
@@ -74,13 +74,13 @@ namespace hazelcast {
 
                 boost::future<bool> retainAllData(const std::vector<serialization::pimpl::Data>& elements);
                 
-                boost::future<serialization::pimpl::Data> getData(int32_t index);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> getData(int32_t index);
 
-                boost::future<serialization::pimpl::Data> setData(int32_t index, const serialization::pimpl::Data& element);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> setData(int32_t index, const serialization::pimpl::Data& element);
 
                 boost::future<void> add(int32_t index, const serialization::pimpl::Data& element);
 
-                boost::future<serialization::pimpl::Data> removeData(int32_t index);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> removeData(int32_t index);
 
                 boost::future<int32_t> indexOf(const serialization::pimpl::Data& element);
 
@@ -90,7 +90,7 @@ namespace hazelcast {
             private:
                 class ListListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    ListListenerMessageCodec(const std::string &name, bool includeValue);
+                    ListListenerMessageCodec(std::string name, bool includeValue);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
 

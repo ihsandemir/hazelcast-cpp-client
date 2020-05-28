@@ -97,7 +97,7 @@ namespace hazelcast {
                             std::shared_ptr<V> recordToValue(const record::NearCacheDataRecord *record) {
                                 const std::shared_ptr<serialization::pimpl::Data> value = record->getValue();
                                 if (value.get() == NULL) {
-                                    ANCRS::nearCacheStats.incrementMisses();
+                                    ANCRS::nearCacheStats->incrementMisses();
                                     return std::static_pointer_cast<V>(NearCache<K, V>::NULL_OBJECT);
                                 }
                                 return ANCRS::dataToValue(value, (V *)NULL);

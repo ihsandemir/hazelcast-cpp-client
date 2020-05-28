@@ -63,7 +63,6 @@ namespace hazelcast {
         */
         class HAZELCAST_API IMap : public proxy::IMapImpl {
             friend class spi::ProxyManager;
-            friend class impl::HazelcastClientInstanceImpl;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:mapService";
 
@@ -916,7 +915,7 @@ namespace hazelcast {
 
             monitor::impl::LocalMapStatsImpl localMapStats;
 
-            virtual boost::future<serialization::pimpl::Data> getInternal(serialization::pimpl::Data &&keyData) {
+            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>> getInternal(serialization::pimpl::Data &&keyData) {
                 return proxy::IMapImpl::getData(keyData);
             }
 
@@ -924,7 +923,7 @@ namespace hazelcast {
                 return proxy::IMapImpl::containsKey(keyData);
             }
 
-            virtual boost::future<serialization::pimpl::Data> removeInternal(
+            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>> removeInternal(
                     serialization::pimpl::Data &&keyData) {
                 return proxy::IMapImpl::removeData(keyData);
             }
@@ -951,7 +950,7 @@ namespace hazelcast {
                 return proxy::IMapImpl::tryPut(keyData, valueData, timeout);
             }
 
-            virtual boost::future<serialization::pimpl::Data> putInternal(serialization::pimpl::Data &&keyData,
+            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>> putInternal(serialization::pimpl::Data &&keyData,
                                                                           const serialization::pimpl::Data &valueData,
                                                                           std::chrono::steady_clock::duration ttl) {
                 return proxy::IMapImpl::putData(keyData, valueData, ttl);
@@ -962,7 +961,7 @@ namespace hazelcast {
                 return proxy::IMapImpl::putTransient(keyData, valueData, ttl);
             }
 
-            virtual boost::future<serialization::pimpl::Data>
+            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>>
             putIfAbsentInternal(serialization::pimpl::Data &&keyData,
                                 const serialization::pimpl::Data &valueData,
                                 std::chrono::steady_clock::duration ttl) {
@@ -975,7 +974,7 @@ namespace hazelcast {
                 return proxy::IMapImpl::replace(keyData, valueData, newValueData);
             }
 
-            virtual boost::future<serialization::pimpl::Data>
+            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>>
             replaceInternal(serialization::pimpl::Data &&keyData,
                             const serialization::pimpl::Data &valueData) {
                 return proxy::IMapImpl::replaceData(keyData, valueData);
@@ -998,13 +997,13 @@ namespace hazelcast {
                                                    std::forward<std::vector<serialization::pimpl::Data>>(partitionKeys));
             }
 
-            virtual boost::future<serialization::pimpl::Data>
+            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>>
             executeOnKeyInternal(serialization::pimpl::Data &&keyData,
                                  const serialization::pimpl::Data &processor) {
                 return proxy::IMapImpl::executeOnKeyData(keyData, processor);
             }
 
-            boost::future<serialization::pimpl::Data>
+            boost::future<std::unique_ptr<serialization::pimpl::Data>>
             submitToKeyInternal(const serialization::pimpl::Data &keyData,
                                 const serialization::pimpl::Data &processor) {
                 return submitToKeyData(keyData, processor);

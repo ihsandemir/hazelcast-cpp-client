@@ -26,7 +26,7 @@ namespace hazelcast {
         *
         */
         class HAZELCAST_API ISet : public proxy::ISetImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:setService";
 

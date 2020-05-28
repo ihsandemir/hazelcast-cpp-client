@@ -639,18 +639,18 @@ namespace hazelcast {
                 return isCompleted;
             }
 
-            void ClientMessageBuilder::addToPartialMessages(std::unique_ptr<ClientMessage> &message) {
+            void ClientMessageBuilder::addToPartialMessages(std::unique_ptr<ClientMessage> &msg) {
                 int64_t id = message->getCorrelationId();
-                partialMessages[id] = std::move(message);
+                partialMessages[id] = std::move(msg);
             }
 
-            bool ClientMessageBuilder::appendExistingPartialMessage(std::unique_ptr<ClientMessage> &message) {
+            bool ClientMessageBuilder::appendExistingPartialMessage(std::unique_ptr<ClientMessage> &msg) {
                 bool result = false;
 
-                MessageMap::iterator foundItemIter = partialMessages.find(message->getCorrelationId());
+                MessageMap::iterator foundItemIter = partialMessages.find(msg->getCorrelationId());
                 if (partialMessages.end() != foundItemIter) {
-                    foundItemIter->second->append(message.get());
-                    if (message->isFlagSet(ClientMessage::END_FLAG)) {
+                    foundItemIter->second->append(msg.get());
+                    if (msg->isFlagSet(ClientMessage::END_FLAG)) {
                         // remove from message from map
                         std::shared_ptr<ClientMessage> foundMessage(foundItemIter->second);
 

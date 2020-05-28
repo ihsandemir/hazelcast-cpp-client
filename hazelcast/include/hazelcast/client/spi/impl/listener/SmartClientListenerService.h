@@ -39,7 +39,7 @@ namespace hazelcast {
 
                         boost::future<std::string>
                         registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
-                                         std::unique_ptr<impl::BaseEventHandler> &&handler) override;
+                                         std::unique_ptr<client::impl::BaseEventHandler> &&handler) override;
 
                         void asyncConnectToAllMembersInternal();
 

@@ -57,7 +57,7 @@ namespace hazelcast {
          *
          */
         class HAZELCAST_API Ringbuffer : public proxy::RingbufferImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
         public:
             /**
              * Adds an item to the tail of the Ringbuffer. If there is no space in the Ringbuffer, the add will overwrite the oldest

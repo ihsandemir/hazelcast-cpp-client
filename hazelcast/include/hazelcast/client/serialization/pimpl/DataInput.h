@@ -178,7 +178,7 @@ namespace hazelcast {
                         }
 
                         if (len == 0) {
-                            return boost::make_optional<T>(0);
+                            return boost::none;
                         }
 
                         if (len < 0) {

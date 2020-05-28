@@ -43,7 +43,7 @@ namespace hazelcast {
             private:
                 class TopicListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    TopicListenerMessageCodec(const std::string &name);
+                    TopicListenerMessageCodec(std::string name);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
 

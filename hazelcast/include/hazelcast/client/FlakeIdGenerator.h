@@ -50,7 +50,7 @@ namespace hazelcast {
          * @since 3.10.1
          */
     class HAZELCAST_API FlakeIdGenerator : public proxy::FlakeIdGeneratorImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+        friend class spi::ProxyManager;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 

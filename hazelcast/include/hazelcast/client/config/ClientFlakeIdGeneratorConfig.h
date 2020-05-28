@@ -69,7 +69,7 @@ namespace hazelcast {
                  *
                  * @return this instance for fluent API
                  */
-                ClientFlakeIdGeneratorConfig &setName(const std::string &name);
+                ClientFlakeIdGeneratorConfig &setName(const std::string &n);
 
                 /**
                  * @see #setPrefetchCount(int)

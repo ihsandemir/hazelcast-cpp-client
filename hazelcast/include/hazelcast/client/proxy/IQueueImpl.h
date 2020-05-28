@@ -72,7 +72,7 @@ namespace hazelcast {
 
                 boost::future<void> put(const serialization::pimpl::Data& element);
 
-                boost::future<serialization::pimpl::Data> pollData(std::chrono::steady_clock::duration timeout);
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> pollData(std::chrono::steady_clock::duration timeout);
 
                 boost::future<bool> remove(const serialization::pimpl::Data& element);
 
@@ -82,7 +82,7 @@ namespace hazelcast {
 
                 boost::future<std::vector<serialization::pimpl::Data>> drainToData();
 
-                boost::future<serialization::pimpl::Data> peekData();
+                boost::future<std::unique_ptr<serialization::pimpl::Data>> peekData();
 
                 boost::future<std::vector<serialization::pimpl::Data>> toArrayData();
 
@@ -97,7 +97,7 @@ namespace hazelcast {
             private:
                 class QueueListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    QueueListenerMessageCodec(const std::string &name, bool includeValue);
+                    QueueListenerMessageCodec(std::string name, bool includeValue);
 
                     std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const override;
 

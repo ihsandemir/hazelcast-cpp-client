@@ -29,14 +29,15 @@
 
 namespace hazelcast {
     namespace client {
+        namespace impl {
+            class BaseEventHandler;
+        }
         namespace protocol {
             class ClientMessage;
         }
         namespace spi {
-
             namespace impl {
                 class ListenerMessageCodec;
-                class BaseEventHandler;
 
                 namespace listener {
                     class HAZELCAST_API ClientRegistrationKey {
@@ -44,14 +45,14 @@ namespace hazelcast {
                         ClientRegistrationKey();
 
                         ClientRegistrationKey(const std::string &userRegistrationId,
-                                              std::unique_ptr<BaseEventHandler> &&handler,
+                                              std::unique_ptr<client::impl::BaseEventHandler> &&handler,
                                               std::unique_ptr<ListenerMessageCodec> &&codec);
 
                         ClientRegistrationKey(const std::string &userRegistrationId);
 
                         const std::string &getUserRegistrationId() const;
 
-                        const std::shared_ptr<impl::BaseEventHandler> &getHandler() const;
+                        const std::shared_ptr<client::impl::BaseEventHandler> &getHandler() const;
 
                         const std::shared_ptr<ListenerMessageCodec> &getCodec() const;
 
@@ -65,7 +66,7 @@ namespace hazelcast {
 
                     private:
                         std::string userRegistrationId;
-                        std::shared_ptr<BaseEventHandler> handler;
+                        std::shared_ptr<client::impl::BaseEventHandler> handler;
                         std::shared_ptr<ListenerMessageCodec> codec;
                     };
                 }

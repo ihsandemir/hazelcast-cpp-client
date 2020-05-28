@@ -30,6 +30,9 @@
 
 namespace hazelcast {
     namespace client {
+        namespace impl {
+            class BaseEventHandler;
+        }
         namespace serialization {
             namespace pimpl {
                 class SerializationService;
@@ -64,7 +67,7 @@ namespace hazelcast {
 
                         virtual boost::future<std::string>
                         registerListener(std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
-                                         std::unique_ptr<BaseEventHandler> &&handler);
+                                         std::unique_ptr<client::impl::BaseEventHandler> &&handler);
 
                         virtual boost::future<bool> deregisterListener(const std::string registrationId);
 
@@ -91,8 +94,8 @@ namespace hazelcast {
                         void removeEventHandler(const ClientEventRegistration &registration);
 
                         virtual std::string
-                        registerListenerInternal(std::unique_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                                                 std::unique_ptr<impl::BaseEventHandler> handler);
+                        registerListenerInternal(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
+                                                 std::unique_ptr<client::impl::BaseEventHandler> &&handler);
 
                         virtual bool deregisterListenerInternal(const std::string &userRegistrationId);
 

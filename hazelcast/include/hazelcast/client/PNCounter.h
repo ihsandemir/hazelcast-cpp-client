@@ -69,7 +69,7 @@ namespace hazelcast {
  * @since 3.10
  */
         class HAZELCAST_API PNCounter : public proxy::PNCounterImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:PNCounterService";
         private:

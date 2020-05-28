@@ -42,7 +42,7 @@ namespace hazelcast {
                 AuthenticationFuture(const Address &address,
                                      util::SynchronizedMap<Address, FutureTuple> &connectionsInProgress);
 
-                void onSuccess(const std::shared_ptr<Connection> &connection);
+                void onSuccess(const std::shared_ptr<Connection> &conn);
 
                 void onFailure(std::exception_ptr t);
 

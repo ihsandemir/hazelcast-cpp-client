@@ -216,13 +216,13 @@ namespace hazelcast {
                         protected:
                             virtual std::unique_ptr<eviction::MaxSizeChecker> createNearCacheMaxSizeChecker(
                                     const std::shared_ptr<client::config::EvictionConfig<K, V> > &evictionConfig,
-                                    const client::config::NearCacheConfig<K, V> &nearCacheConfig) {
+                                    const client::config::NearCacheConfig<K, V> &) {
                                 assert(0);
                                 return std::unique_ptr<eviction::MaxSizeChecker>();
                             }
 
                             virtual std::unique_ptr<NCRM> createNearCacheRecordMap(
-                                    const client::config::NearCacheConfig<K, V> &nearCacheConfig) {
+                                    const client::config::NearCacheConfig<K, V> &) {
                                 assert(0);
                                 return std::unique_ptr<NCRM>();
                             }
@@ -294,7 +294,7 @@ namespace hazelcast {
                             }
 
                             std::unique_ptr<eviction::EvictionChecker> createEvictionChecker(
-                                    const client::config::NearCacheConfig<K, V> &nearCacheConfig) {
+                                    const client::config::NearCacheConfig<K, V> &cacheConfig) {
                                 return std::unique_ptr<eviction::EvictionChecker>(
                                         new MaxSizeEvictionChecker(maxSizeChecker.get()));
                             }
@@ -328,8 +328,8 @@ namespace hazelcast {
                             std::shared_ptr<V> dataToValue(
                                     const std::shared_ptr<serialization::pimpl::Data> &data, void *dummy) {
                                 if (data.get() != NULL) {
-                                    std::unique_ptr<V> value = serializationService.toObject<V>(data.get());
-                                    return std::shared_ptr<V>(std::move(value));
+                                    auto value = serializationService.toObject<V>(data.get());
+                                    return std::shared_ptr<V>(new V(std::move(value).value()));
                                 } else {
                                     return std::shared_ptr<V>();
                                 }

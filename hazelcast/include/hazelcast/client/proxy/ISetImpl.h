@@ -75,7 +75,7 @@ namespace hazelcast {
             private:
                 class SetListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
-                    SetListenerMessageCodec(const std::string &name, bool includeValue);
+                    SetListenerMessageCodec(std::string name, bool includeValue);
 
                     virtual std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const;
 

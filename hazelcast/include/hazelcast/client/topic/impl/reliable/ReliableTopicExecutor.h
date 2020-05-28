@@ -51,7 +51,7 @@ namespace hazelcast {
                             std::shared_ptr<ExecutionCallback<ringbuffer::ReadResultSet>> callback;
                         };
 
-                        ReliableTopicExecutor(const std::shared_ptr<Ringbuffer> &rb, util::ILogger &logger);
+                        ReliableTopicExecutor(std::shared_ptr<Ringbuffer> rb, util::ILogger &logger);
 
                         virtual ~ReliableTopicExecutor();
 
@@ -72,7 +72,7 @@ namespace hazelcast {
 
                             virtual void run();
 
-                            virtual const std::string getName() const;
+                            virtual std::string getName() const;
 
                         private:
                             std::shared_ptr<Ringbuffer> rb;

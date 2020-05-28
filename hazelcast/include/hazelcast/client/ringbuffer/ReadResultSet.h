@@ -66,7 +66,7 @@ namespace hazelcast {
                  * @throws IllegalArgumentException if index out of bounds.
                  * @since 3.9
                  */
-                virtual int64_t getSequence(int32_t index) const {
+                int64_t getSequence(int32_t index) const {
                     if (!itemSeqsExist) {
                         BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("ReadResultSet::getSequence",
                                                                                   "No item sequences exist"));
@@ -102,7 +102,7 @@ namespace hazelcast {
                  * @return the sequence of the item following the last item in the result set
                  * @since 3.10
                  */
-                virtual int64_t getNextSequenceToReadFrom() const {
+                int64_t getNextSequenceToReadFrom() const {
                     return nextSeq;
                 }
 

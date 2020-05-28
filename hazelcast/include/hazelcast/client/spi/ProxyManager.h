@@ -68,7 +68,7 @@ namespace hazelcast {
                     }
 
                     try {
-                        auto clientProxy = std::make_shared<T>(id, &client);
+                        auto clientProxy = std::shared_ptr<T>(new T(id, &client));
                         initializeWithRetry(clientProxy);
                         promise.set_value(clientProxy);
                         return clientProxy;

@@ -40,7 +40,7 @@ namespace hazelcast {
         *
         */
         class HAZELCAST_API ReliableTopic : public proxy::ReliableTopicImpl {
-            friend class impl::HazelcastClientInstanceImpl;
+            friend class spi::ProxyManager;
         public:
             static constexpr const char *SERVICE_NAME = "hz:impl:topicService";
 
