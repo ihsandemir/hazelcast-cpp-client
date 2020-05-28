@@ -38,8 +38,6 @@
 #include <hazelcast/client/LifecycleListener.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
 #include <unordered_set>
-#include <hazelcast/client/query/EqualPredicate.h>
-#include <hazelcast/client/query/QueryConstants.h>
 #include <cmath>
 #include <iostream>
 #include <string>

@@ -518,6 +518,46 @@ namespace hazelcast {
                 ASSERT_EQ(666, in.read<int32_t>());
                 return object;
             }
+
+            int32_t hz_serializer<test::ChildTemplatedPortable1>::getFactoryId() {
+                return static_cast<int32_t>(test::TestSerializationConstants::TEST_PORTABLE_FACTORY);
+            }
+
+            int32_t hz_serializer<test::ChildTemplatedPortable1>::getClassId() {
+                return static_cast<int32_t>(test::TestSerializationConstants::CHILD_TEMPLATED_PORTABLE_1);
+            }
+
+            void
+            hz_serializer<test::ChildTemplatedPortable1>::writePortable(const test::ChildTemplatedPortable1 &object,
+                                                                         PortableWriter &out) {
+                out.write("s1", object.s1);
+                out.write("s1", object.s2);
+            }
+
+            test::ChildTemplatedPortable1
+            hz_serializer<test::ChildTemplatedPortable1>::readPortable(PortableReader &reader) {
+                return test::ChildTemplatedPortable1{reader.read<std::string>("s1"), reader.read<std::string>("s2")};
+            }
+
+            int32_t hz_serializer<test::ChildTemplatedPortable2>::getFactoryId() {
+                return static_cast<int32_t>(test::TestSerializationConstants::TEST_PORTABLE_FACTORY);
+            }
+
+            int32_t hz_serializer<test::ChildTemplatedPortable2>::getClassId() {
+                return static_cast<int32_t>(test::TestSerializationConstants::CHILD_TEMPLATED_PORTABLE_2);
+            }
+
+            void
+            hz_serializer<test::ChildTemplatedPortable2>::writePortable(const test::ChildTemplatedPortable2 &object,
+                                                                         PortableWriter &out) {
+                out.write("s1", object.s1);
+            }
+
+            test::ChildTemplatedPortable2
+            hz_serializer<test::ChildTemplatedPortable2>::readPortable(PortableReader &reader) {
+                return test::ChildTemplatedPortable2{reader.read<std::string>("s1")};
+            }
+
         }
     }
 }

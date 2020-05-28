@@ -186,6 +186,20 @@ namespace hazelcast {
             struct ObjectCarryingPortable {
                 P carriedObject;
             };
+
+            template<typename T>
+            struct ParentTemplatedPortable {
+                boost::optional<T> child;
+            };
+
+            struct ChildTemplatedPortable1 {
+                std::string s1;
+                std::string s2;
+            };
+
+            struct ChildTemplatedPortable2 {
+                std::string s1;
+            };
         }
 
         namespace serialization {
@@ -343,6 +357,47 @@ namespace hazelcast {
             };
 
             template<>
+            struct hz_serializer<test::ChildTemplatedPortable1> : public portable_serializer {
+                static int32_t getFactoryId();
+
+                static int32_t getClassId();
+
+                static void writePortable(const test::ChildTemplatedPortable1 &object, PortableWriter &writer);
+
+                static test::ChildTemplatedPortable1 readPortable(PortableReader &reader);
+            };
+
+            template<>
+            struct hz_serializer<test::ChildTemplatedPortable2> : public portable_serializer {
+                static int32_t getFactoryId();
+
+                static int32_t getClassId();
+
+                static void writePortable(const test::ChildTemplatedPortable2 &object, PortableWriter &writer);
+
+                static test::ChildTemplatedPortable2 readPortable(PortableReader &reader);
+            };
+
+            template<typename P>
+            struct hz_serializer<test::ParentTemplatedPortable<P>> : public portable_serializer {
+                static int32_t getFactoryId() {
+                    return static_cast<int32_t>(test::TestSerializationConstants::TEST_PORTABLE_FACTORY);
+                }
+
+                static int32_t getClassId() {
+                    return static_cast<int32_t>(test::TestSerializationConstants::PARENT_TEMPLATED_CONSTANTS);
+                }
+
+                static void writePortable(const test::ParentTemplatedPortable<P> &object, PortableWriter &out) {
+                    out.writePortable("c", object.get());
+                }
+
+                static test::ParentTemplatedPortable<P> readPortable(PortableReader &in) {
+                    return test::ParentTemplatedPortable<P>{in.readPortable<P>()};
+                }
+            };
+
+            template<>
             struct serialization::hz_serializer<test::TestCustomPerson> : public custom_serializer {
                 static int32_t getTypeId();
 
@@ -359,6 +414,7 @@ namespace hazelcast {
 
                 test::TestCustomXSerializable read(serialization::ObjectDataInput &in);
             };
+
         }
     }
 }

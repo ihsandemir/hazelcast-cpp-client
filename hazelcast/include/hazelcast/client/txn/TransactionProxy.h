@@ -24,7 +24,7 @@
 #define HAZELCAST_TransactionProxy
 
 #include "hazelcast/util/HazelcastDll.h"
-
+#include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include <memory>

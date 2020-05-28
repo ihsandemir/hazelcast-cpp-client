@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/client/protocol/ResponseMessageConst.h"

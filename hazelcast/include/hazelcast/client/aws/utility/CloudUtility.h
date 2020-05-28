@@ -17,7 +17,7 @@
 #define HAZELCAST_CLIENT_AWS_UTILITY_CLOUDUTILITY_H_
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <boost/property_tree/ptree.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
@@ -50,11 +50,11 @@ namespace hazelcast {
                      * @param logger the logger to be used for logging any warnings during unmarshal.
                      * @return map from private to public IP or empty map in case of exceptions
                      */
-                    static std::map<std::string, std::string> unmarshalTheResponse(std::istream &stream,
+                    static std::unordered_map<std::string, std::string> unmarshalTheResponse(std::istream &stream,
                             util::ILogger &logger);
 
                     static void unmarshalJsonResponse(std::istream &stream, config::ClientAwsConfig &awsConfig,
-                                                      std::map<std::string, std::string> &attributes);
+                                                      std::unordered_map<std::string, std::string> &attributes);
                 };
             }
         }

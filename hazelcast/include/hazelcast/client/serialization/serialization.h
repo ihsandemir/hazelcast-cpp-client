@@ -16,6 +16,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <type_traits>
 
 #include <boost/any.hpp>
@@ -564,12 +565,16 @@ namespace hazelcast {
 
                 /**
                  * Global serialization
-                 * @tparam T
-                 * @param typeId
-                 * @return
+                 * @tparam T The type to be deserialized to
+                 * @param typeId the type id of the serilizer
+                 * @return the deserialized object
                  */
                 template<typename T>
-                inline boost::optional<T> readObject(int32_t typeId);
+                typename std::enable_if<!(std::is_base_of<identified_data_serializer, hz_serializer<T>>::value ||
+                        std::is_base_of<portable_serializer, hz_serializer<T>>::value ||
+                        std::is_base_of<builtin_serializer, hz_serializer<T>>::value ||
+                        std::is_base_of<custom_serializer, hz_serializer<T>>::value), boost::optional<T>>::type
+                inline readObject(int32_t typeId);
 
             private:
                 pimpl::PortableSerializer &portableSerializer;
@@ -1210,7 +1215,7 @@ namespace hazelcast {
                     ObjectDataOutput &objectDataOutput;
                     size_t begin;
                     size_t offset;
-                    std::set<std::string> writtenFields;
+                    std::unordered_set<std::string> writtenFields;
                     std::shared_ptr<ClassDefinition> cd;
                 };
 
@@ -1771,7 +1776,11 @@ namespace hazelcast {
             }
 
             template<typename T>
-            inline boost::optional<T> ObjectDataInput::readObject(int32_t typeId) {
+            typename std::enable_if<!(std::is_base_of<identified_data_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<portable_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<builtin_serializer, hz_serializer<T>>::value ||
+                                      std::is_base_of<custom_serializer, hz_serializer<T>>::value), boost::optional<T>>::type
+            inline ObjectDataInput::readObject(int32_t typeId) {
                 if (!globalSerializer_) {
                     throw exception::HazelcastSerializationException("ObjectDataInput::readObject",
                                                                      (boost::format(

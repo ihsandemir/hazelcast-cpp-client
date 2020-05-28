@@ -55,16 +55,10 @@
 #include "serialization/Serializables.h"
 #include <hazelcast/client/SerializationConfig.h>
 #include <hazelcast/client/HazelcastJsonValue.h>
-#include "serialization/ChildTemplatedPortable2.h"
-#include "serialization/ParentTemplatedPortable.h"
-#include "serialization/ChildTemplatedPortable1.h"
 #include <hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheDataRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
-#include <hazelcast/client/query/FalsePredicate.h>
-#include <set>
-#include <hazelcast/client/query/EqualPredicate.h>
-#include <hazelcast/client/query/QueryConstants.h>
+#include <unordered_set>
 #include <HazelcastServer.h>
 #include "TestHelperFunctions.h"
 #include <cmath>
@@ -73,29 +67,6 @@
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
 #include <string>
-#include "executor/tasks/SelectAllMembers.h"
-#include "executor/tasks/IdentifiedFactory.h"
-#include <hazelcast/client/serialization/serialization.h>
-#include <hazelcast/client/serialization/serialization.h>
-#include "executor/tasks/CancellationAwareTask.h"
-#include "executor/tasks/NullCallable.h"
-#include "executor/tasks/SerializedCounterCallable.h"
-#include "executor/tasks/MapPutPartitionAwareCallable.h"
-#include "executor/tasks/SelectNoMembers.h"
-#include "executor/tasks/GetMemberUuidTask.h"
-#include "executor/tasks/FailingCallable.h"
-#include "executor/tasks/AppendCallable.h"
-#include "executor/tasks/TaskWithUnserializableResponse.h"
-#include <executor/tasks/CancellationAwareTask.h>
-#include <executor/tasks/FailingCallable.h>
-#include <executor/tasks/SelectNoMembers.h>
-#include <executor/tasks/SerializedCounterCallable.h>
-#include <executor/tasks/TaskWithUnserializableResponse.h>
-#include <executor/tasks/GetMemberUuidTask.h>
-#include <executor/tasks/AppendCallable.h>
-#include <executor/tasks/SelectAllMembers.h>
-#include <executor/tasks/MapPutPartitionAwareCallable.h>
-#include <executor/tasks/NullCallable.h>
 #include <stdlib.h>
 #include <fstream>
 #include <boost/asio.hpp>
@@ -206,9 +177,9 @@ namespace hazelcast {
                     return escapedValue;
                 }
 
-                std::map<std::string, std::string>
+                std::unordered_map<std::string, std::string>
                 getStatsFromResponse(const Response &statsResponse) {
-                    std::map<std::string, std::string> statsMap;
+                    std::unordered_map<std::string, std::string> statsMap;
                     if (statsResponse.success && !statsResponse.result.empty()) {
                         // passing -1 as the submatch index parameter performs splitting
                         std::regex re(",");
@@ -234,7 +205,7 @@ namespace hazelcast {
                     return statsMap;
                 }
 
-                std::map<std::string, std::string> getStats() {
+                std::unordered_map<std::string, std::string> getStats() {
                     HazelcastServerFactory::Response statsResponse = getClientStatsFromServer();
 
                     return getStatsFromResponse(statsResponse);
@@ -275,7 +246,7 @@ namespace hazelcast {
                 }
 
                 bool isStatsUpdated(const std::string &lastStatisticsCollectionTime) {
-                    std::map<string, string> stats = getStats();
+                    std::unordered_map<string, string> stats = getStats();
                     if (stats["lastStatisticsCollectionTime"] != lastStatisticsCollectionTime) {
                         return true;
                     }
@@ -293,9 +264,9 @@ namespace hazelcast {
                     ASSERT_EQ(10, *map->get<std::string, std::string>(5));
                 }
 
-                std::string toString(const std::map<std::string, std::string> &map) {
+                std::string toString(const std::unordered_map<std::string, std::string> &map) {
                     std::ostringstream out;
-                    typedef std::map<std::string, std::string> StringMap;
+                    typedef std::unordered_map<std::string, std::string> StringMap;
                     out << "Map {" << std::endl;
                     for (const StringMap::value_type &entry : map) {
                         out << "\t\t(" << entry.first << " , " << entry.second << ")" << std::endl;
@@ -430,7 +401,7 @@ namespace hazelcast {
                 string &stats = statsResponse.result;
                 ASSERT_TRUE(!stats.empty());
 
-                std::map<std::string, std::string> statsMap = getStatsFromResponse(statsResponse);
+                std::unordered_map<std::string, std::string> statsMap = getStatsFromResponse(statsResponse);
 
                 ASSERT_EQ(1U, statsMap.count("clusterConnectionTimestamp"))
                                             << "clusterConnectionTimestamp stat should exist (" << stats << ")";
@@ -495,7 +466,7 @@ namespace hazelcast {
                 // wait enough time for statistics collection
                 waitForFirstStatisticsCollection();
 
-                std::map<std::string, std::string> initialStats = getStats();
+                std::unordered_map<std::string, std::string> initialStats = getStats();
 
                 // produce map stat
                 produceSomeStats(*client);
@@ -516,22 +487,24 @@ namespace hazelcast {
             namespace ringbuffer {
                 StartsWithStringFilter::StartsWithStringFilter(const std::string &startString) : startString(
                         startString) {}
+            }
+        }
 
-                int StartsWithStringFilter::getFactoryId() const {
-                    return 666;
-                }
+        namespace serialization {
+            int32_t hz_serializer<test::ringbuffer::StartsWithStringFilter>::getFactoryId() {
+                return 666;
+            }
 
-                int StartsWithStringFilter::getClassId() const {
-                    return 14;
-                }
+            int32_t hz_serializer<test::ringbuffer::StartsWithStringFilter>::getClassId() {
+                return 14;
+            }
 
-                void StartsWithStringFilter::writeData(serialization::ObjectDataOutput &writer) const {
-                    writer.writeUTF(&startString);
-                }
+            void hz_serializer<test::ringbuffer::StartsWithStringFilter>::writeData(const test::ringbuffer::StartsWithStringFilter &object, ObjectDataOutput &out) {
+                out.write(object.startString);
+            }
 
-                void StartsWithStringFilter::readData(serialization::ObjectDataInput &reader) {
-                    startString = *reader.readUTF();
-                }
+            test::ringbuffer::StartsWithStringFilter hz_serializer<test::ringbuffer::StartsWithStringFilter>::readData(ObjectDataInput &in) {
+                return test::ringbuffer::StartsWithStringFilter(in,read<std::string>());
             }
         }
     }
@@ -1982,13 +1955,13 @@ namespace hazelcast {
 
             TEST_F (FlakeIdGeneratorApiTest, testSmoke) {
                 boost::latch startLatch(1);
-                std::array<std::future<std::set<int64_t>>, 4> futures;
+                std::array<std::future<std::unordered_set<int64_t>>, 4> futures;
                 constexpr size_t NUM_IDS_PER_THREAD = 100000;
                 constexpr int NUM_THREADS = 4;
 
                 for (int i = 0; i < NUM_THREADS; ++i) {
                     futures[i] = std::async([&]() {
-                        std::set<int64_t> localIds;
+                        std::unordered_set<int64_t> localIds;
                         startLatch.wait();
                         for (size_t j = 0; j < NUM_IDS_PER_THREAD; ++j) {
                             localIds.insert(flakeIdGenerator->newId().get());
@@ -2000,7 +1973,7 @@ namespace hazelcast {
 
                 startLatch.count_down();
 
-                std::set<int64_t> allIds;
+                std::unordered_set<int64_t> allIds;
                 for (auto &f : futures) {
                     auto ids = f.get();
                     allIds.insert(ids.begin(), ids.end());

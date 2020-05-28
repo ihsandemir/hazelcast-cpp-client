@@ -77,7 +77,7 @@ namespace hazelcast {
             return cluster;
         }
 
-        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster, const std::set<Member> &members) : cluster(
+        InitialMembershipEvent::InitialMembershipEvent(Cluster &cluster, const std::unordered_set<Member> &members) : cluster(
                 cluster) {
             for (const Member &member : members) {
                 this->members.push_back(Member(member));
@@ -328,7 +328,7 @@ namespace hazelcast {
             }
 
             LifecycleService::LifecycleService(ClientContext &clientContext,
-                                               const std::set<LifecycleListener *> &lifecycleListeners,
+                                               const std::unordered_set<LifecycleListener *> &lifecycleListeners,
                                                LoadBalancer *const loadBalancer, Cluster &cluster) : clientContext(
                     clientContext), loadBalancer(loadBalancer), cluster(cluster), shutdownCompletedLatch(1) {
                 listeners.insert(lifecycleListeners.begin(), lifecycleListeners.end());
@@ -434,7 +434,7 @@ namespace hazelcast {
                         break;
                 }
 
-                for (std::set<LifecycleListener *>::iterator it = listeners.begin(); it != listeners.end(); ++it) {
+                for (std::unordered_set<LifecycleListener *>::iterator it = listeners.begin(); it != listeners.end(); ++it) {
                     (*it)->stateChanged(lifecycleEvent);
                 }
 
@@ -732,7 +732,7 @@ namespace hazelcast {
                 }
 
                 boost::optional<Member> ClientClusterServiceImpl::getMember(const Address &address) {
-                    std::map<Address, std::shared_ptr<Member> > currentMembers = members.get();
+                    std::unordered_map<Address, std::shared_ptr<Member> > currentMembers = members.get();
                     const auto &it = currentMembers.find(address);
                     if (it == currentMembers.end()) {
                         return boost::none;
@@ -751,7 +751,7 @@ namespace hazelcast {
                 }
 
                 std::vector<Member> ClientClusterServiceImpl::getMemberList() {
-                    typedef std::map<Address, std::shared_ptr<Member> > MemberMap;
+                    typedef std::unordered_map<Address, std::shared_ptr<Member> > MemberMap;
                     MemberMap memberMap = members.get();
                     std::vector<Member> memberList;
                     for (const MemberMap::value_type &entry : memberMap) {
@@ -764,7 +764,7 @@ namespace hazelcast {
                     if (listener.shouldRequestInitialMembers()) {
                         Cluster &cluster = client.getCluster();
                         std::vector<Member> memberCollection = getMemberList();
-                        InitialMembershipEvent event(cluster, std::set<Member>(memberCollection.begin(),
+                        InitialMembershipEvent event(cluster, std::unordered_set<Member>(memberCollection.begin(),
                                                                                memberCollection.end()));
                         ((InitialMembershipListener &) listener).init(event);
                     }
@@ -774,7 +774,7 @@ namespace hazelcast {
                     clientMembershipListener.reset(new ClientMembershipListener(client));
 
                     ClientConfig &config = client.getClientConfig();
-                    const std::set<std::shared_ptr<MembershipListener> > &membershipListeners = config.getManagedMembershipListeners();
+                    const std::unordered_set<std::shared_ptr<MembershipListener> > &membershipListeners = config.getManagedMembershipListeners();
 
                     for (const std::shared_ptr<MembershipListener> &listener : membershipListeners) {
                         addMembershipListenerWithoutInit(listener);
@@ -784,7 +784,7 @@ namespace hazelcast {
                 void ClientClusterServiceImpl::handleMembershipEvent(const MembershipEvent &event) {
                     std::lock_guard<std::mutex> guard(initialMembershipListenerMutex);
                     const Member &member = event.getMember();
-                    std::map<Address, std::shared_ptr<Member> > newMap = members.get();
+                    std::unordered_map<Address, std::shared_ptr<Member> > newMap = members.get();
                     if (event.getEventType() == MembershipEvent::MEMBER_ADDED) {
                         newMap[member.getAddress()] = std::shared_ptr<Member>(new Member(member));
                     } else {
@@ -813,7 +813,7 @@ namespace hazelcast {
                 void ClientClusterServiceImpl::handleInitialMembershipEvent(const InitialMembershipEvent &event) {
                     std::lock_guard<std::mutex> guard(initialMembershipListenerMutex);
                     const std::vector<Member> &initialMembers = event.getMembers();
-                    std::map<Address, std::shared_ptr<Member> > newMap;
+                    std::unordered_map<Address, std::shared_ptr<Member> > newMap;
                     for (const Member &initialMember : initialMembers) {
                         newMap[initialMember.getAddress()] = std::shared_ptr<Member>(
                                 new Member(initialMember));
@@ -992,7 +992,7 @@ namespace hazelcast {
                 }
 
                 void ClientMembershipListener::handleMemberListEventV10(const std::vector<Member> &initialMembers) {
-                    std::map<std::string, Member> prevMembers;
+                    std::unordered_map<std::string, Member> prevMembers;
                     if (!members.empty()) {
                         for (const Member &member : members) {
                             prevMembers[member.getUuid()] = member;
@@ -1082,14 +1082,14 @@ namespace hazelcast {
                 }
 
                 std::vector<MembershipEvent>
-                ClientMembershipListener::detectMembershipEvents(std::map<std::string, Member> &prevMembers) {
+                ClientMembershipListener::detectMembershipEvents(std::unordered_map<std::string, Member> &prevMembers) {
                     std::vector<MembershipEvent> events;
 
-                    const std::set<Member> &eventMembers = members;
+                    const std::unordered_set<Member> &eventMembers = members;
 
                     std::vector<Member> newMembers;
                     for (const Member &member : members) {
-                        std::map<std::string, Member>::iterator formerEntry = prevMembers.find(
+                        std::unordered_map<std::string, Member>::iterator formerEntry = prevMembers.find(
                                 member.getUuid());
                         if (formerEntry != prevMembers.end()) {
                             prevMembers.erase(formerEntry);
@@ -1099,7 +1099,7 @@ namespace hazelcast {
                     }
 
                     // removal events should be added before added events
-                    typedef const std::map<std::string, Member> MemberMap;
+                    typedef const std::unordered_map<std::string, Member> MemberMap;
                     for (const MemberMap::value_type &member : prevMembers) {
                         events.push_back(MembershipEvent(client.getCluster(), member.second,
                                                          MembershipEvent::MEMBER_REMOVED,
@@ -1682,10 +1682,10 @@ namespace hazelcast {
 
                 std::vector<Address> AwsAddressProvider::loadAddresses() {
                     updateLookupTable();
-                    std::map<std::string, std::string> lookupTable = getLookupTable();
+                    std::unordered_map<std::string, std::string> lookupTable = getLookupTable();
                     std::vector<Address> addresses;
 
-                    typedef std::map<std::string, std::string> LookupTable;
+                    typedef std::unordered_map<std::string, std::string> LookupTable;
                     for (const LookupTable::value_type &privateAddress : lookupTable) {
                         std::vector<Address> possibleAddresses = util::AddressHelper::getSocketAddresses(
                                 privateAddress.first + ":" + awsMemberPort, logger);
@@ -1703,7 +1703,7 @@ namespace hazelcast {
                     }
                 }
 
-                std::map<std::string, std::string> AwsAddressProvider::getLookupTable() {
+                std::unordered_map<std::string, std::string> AwsAddressProvider::getLookupTable() {
                     return privateToPublic;
                 }
 
@@ -2078,9 +2078,12 @@ namespace hazelcast {
                     }
 
                     boost::future<bool> AbstractClientListenerService::deregisterListener(const std::string registrationId) {
-                        return boost::asio::post(registrationExecutor->get_executor(), boost::packaged_task<bool()>([=]() {
+                        boost::packaged_task<bool()> task([=]() {
                             return deregisterListenerInternal(registrationId);
-                        }));
+                        });
+                        auto f = task.get_future();
+                        boost::asio::post(registrationExecutor->get_executor(), std::move(task));
+                        return f;
                     }
 
                     void AbstractClientListenerService::connectionAdded(
@@ -2506,24 +2509,20 @@ namespace hazelcast {
                         return codec;
                     }
 
-                    bool ClientRegistrationKey::operator==(const ClientRegistrationKey &rhs) const {
-                        return userRegistrationId == rhs.userRegistrationId;
-                    }
-
-                    bool ClientRegistrationKey::operator!=(const ClientRegistrationKey &rhs) const {
-                        return !(rhs == *this);
-                    }
-
-                    bool ClientRegistrationKey::operator<(const ClientRegistrationKey &rhs) const {
-                        return userRegistrationId < rhs.userRegistrationId;
-                    }
-
                     std::ostream &operator<<(std::ostream &os, const ClientRegistrationKey &key) {
                         os << "ClientRegistrationKey{ userRegistrationId='" << key.userRegistrationId + '\'' + '}';
                         return os;
                     }
 
                     ClientRegistrationKey::ClientRegistrationKey() {}
+
+                    bool operator==(const ClientRegistrationKey &lhs, const ClientRegistrationKey &rhs) {
+                        return lhs.userRegistrationId == rhs.userRegistrationId;
+                    }
+
+                    bool operator!=(const ClientRegistrationKey &lhs, const ClientRegistrationKey &rhs) {
+                        return !(rhs == lhs);
+                    }
 
                     NonSmartClientListenerService::NonSmartClientListenerService(ClientContext &clientContext,
                                                                                  int32_t eventThreadCount)
@@ -2558,8 +2557,14 @@ namespace std {
 
     std::size_t
     hash<hazelcast::client::spi::DefaultObjectNamespace>::operator()(
-            const hazelcast::client::spi::DefaultObjectNamespace &k) const {
+            const hazelcast::client::spi::DefaultObjectNamespace &k) const noexcept {
         return std::hash<std::string>()(k.getServiceName() + k.getObjectName());
+    }
+
+    std::size_t
+    hash<hazelcast::client::spi::impl::listener::ClientRegistrationKey>::operator()(
+            const hazelcast::client::spi::impl::listener::ClientRegistrationKey &val) const noexcept {
+        return std::hash<std::string>{}(val.getUserRegistrationId());
     }
 }
 

@@ -105,9 +105,9 @@ namespace hazelcast {
                     static IdIterator &end();
 
                 private:
-                    const int64_t base;
-                    const int64_t increment;
-                    const int32_t batchSize;
+                    int64_t base;
+                    int64_t increment;
+                    int32_t batchSize;
 
                     static IdIterator endOfBatch;
                 };

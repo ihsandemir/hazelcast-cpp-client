@@ -454,7 +454,7 @@ namespace hazelcast {
 
             /**
             * Returns the distributed set instance with the specified name and entry type E.
-            * Set is ordered unique set of entries. similar to std::set
+            * Set is ordered unique set of entries. similar to std::unordered_set
             *
             * @param name name of the distributed set
             * @return distributed set instance with the specified name

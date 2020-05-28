@@ -115,7 +115,7 @@ namespace hazelcast {
 namespace std {
     template<>
     struct hash<hazelcast::client::Address> {
-        std::size_t operator()(const hazelcast::client::Address &address) const;
+        std::size_t operator()(const hazelcast::client::Address &address) const noexcept;
     };
 }
 

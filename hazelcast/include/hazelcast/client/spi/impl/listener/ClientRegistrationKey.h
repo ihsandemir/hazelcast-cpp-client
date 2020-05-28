@@ -56,11 +56,9 @@ namespace hazelcast {
 
                         const std::shared_ptr<ListenerMessageCodec> &getCodec() const;
 
-                        bool operator==(const ClientRegistrationKey &rhs) const;
+                        friend bool operator==(const ClientRegistrationKey &lhs, const ClientRegistrationKey &rhs);
 
-                        bool operator!=(const ClientRegistrationKey &rhs) const;
-
-                        bool operator<(const ClientRegistrationKey &rhs) const;
+                        friend bool operator!=(const ClientRegistrationKey &lhs, const ClientRegistrationKey &rhs);
 
                         friend std::ostream &operator<<(std::ostream &os, const ClientRegistrationKey &key);
 
@@ -73,6 +71,15 @@ namespace hazelcast {
             }
         }
     }
+}
+
+namespace std {
+    template<>
+    class hash<hazelcast::client::spi::impl::listener::ClientRegistrationKey> {
+    public:
+        std::size_t HAZELCAST_API
+        operator()(const hazelcast::client::spi::impl::listener::ClientRegistrationKey &val) const noexcept;
+    };
 }
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)

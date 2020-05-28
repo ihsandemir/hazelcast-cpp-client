@@ -88,7 +88,7 @@ namespace hazelcast {
                                             const std::shared_ptr<connection::Connection> &rhs) const;
                         };
 
-                        typedef std::map<std::shared_ptr<connection::Connection>, ClientEventRegistration, ConnectionPointerLessComparator> ConnectionRegistrationsMap;
+                        typedef std::unordered_map<std::shared_ptr<connection::Connection>, ClientEventRegistration, ConnectionPointerLessComparator> ConnectionRegistrationsMap;
                         typedef util::SynchronizedMap<ClientRegistrationKey, ConnectionRegistrationsMap> RegistrationsMap;
 
                         void removeEventHandler(const ClientEventRegistration &registration);

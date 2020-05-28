@@ -67,7 +67,7 @@ namespace hazelcast {
         */
         class HAZELCAST_API ClientProperties {
         public:
-            ClientProperties(const std::map<std::string, std::string> &properties);
+            ClientProperties(const std::unordered_map<std::string, std::string> &properties);
 
             const ClientProperty& getHeartbeatTimeout() const;
 
@@ -298,7 +298,7 @@ namespace hazelcast {
             ClientProperty ioThreadCount;
             ClientProperty responseExecutorThreadCount;
 
-            std::map<std::string, std::string> propertiesMap;
+            std::unordered_map<std::string, std::string> propertiesMap;
         };
 
     }

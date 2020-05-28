@@ -17,7 +17,7 @@
 #define HAZELCAST_CLIENT_AWS_IMPL_DESCRIBEINSTANCES_H_
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 #include "hazelcast/util/HazelcastDll.h"
@@ -58,7 +58,7 @@ namespace hazelcast {
                      * @return map from private to public IP or empty map in case of failed response unmarshalling
                      * @throws IException if there is an exception invoking the service
                      */
-                    std::map<std::string, std::string> execute();
+                    std::unordered_map<std::string, std::string> execute();
                 private:
                     static std::string getFormattedTimestamp();
 
@@ -78,7 +78,7 @@ namespace hazelcast {
                     std::unique_ptr<security::EC2RequestSigner> rs;
                     config::ClientAwsConfig &awsConfig;
                     const std::string &endpoint;
-                    std::map<std::string, std::string> attributes;
+                    std::unordered_map<std::string, std::string> attributes;
                     std::unique_ptr<util::SyncHttpsClient> httpsClient;
                     util::ILogger &logger;
 

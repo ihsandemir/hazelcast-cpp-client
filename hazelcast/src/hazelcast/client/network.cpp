@@ -569,13 +569,13 @@ namespace hazelcast {
 
             void ClientConnectionManagerImpl::connectToClusterInternal() {
                 int attempt = 0;
-                std::set<Address> triedAddresses;
+                std::unordered_set<Address> triedAddresses;
 
                 while (attempt < connectionAttemptLimit) {
                     attempt++;
                     int64_t nextTry = util::currentTimeMillis() + connectionAttemptPeriod;
 
-                    std::set<Address> addresses = getPossibleMemberAddresses();
+                    std::unordered_set<Address> addresses = getPossibleMemberAddresses();
                     for (const Address &address : addresses) {
                         if (!client.getLifecycleService().isRunning()) {
                             BOOST_THROW_EXCEPTION(exception::IllegalStateException(
@@ -611,7 +611,7 @@ namespace hazelcast {
                 }
                 std::ostringstream out;
                 out << "Unable to connect to any address! The following addresses were tried: { ";
-                for (const std::set<Address>::value_type &address : triedAddresses) {
+                for (const std::unordered_set<Address>::value_type &address : triedAddresses) {
                     out << address << " , ";
                 }
                 out << "}";
@@ -619,8 +619,8 @@ namespace hazelcast {
                         exception::IllegalStateException("ConnectionManager::connectToClusterInternal", out.str()));
             }
 
-            std::set<Address> ClientConnectionManagerImpl::getPossibleMemberAddresses() {
-                std::set<Address> addresses;
+            std::unordered_set<Address> ClientConnectionManagerImpl::getPossibleMemberAddresses() {
+                std::unordered_set<Address> addresses;
 
                 std::vector<Member> memberList = client.getClientClusterService().getMemberList();
                 std::vector<Address> memberAddresses;
@@ -634,7 +634,7 @@ namespace hazelcast {
 
                 addresses.insert(memberAddresses.begin(), memberAddresses.end());
 
-                std::set<Address> providerAddressesSet;
+                std::unordered_set<Address> providerAddressesSet;
                 for (std::shared_ptr<AddressProvider> &addressProvider : addressProviders) {
                     std::vector<Address> addrList = addressProvider->loadAddresses();
                     providerAddressesSet.insert(addrList.begin(), addrList.end());

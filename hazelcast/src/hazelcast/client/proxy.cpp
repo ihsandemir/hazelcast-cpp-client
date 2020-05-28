@@ -849,7 +849,7 @@ namespace hazelcast {
                         getName(), size);
                 return invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
                     auto response = protocol::codec::FlakeIdGeneratorNewIdBatchCodec::ResponseParameters::decode(f.get());
-                    return std::move(FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize));
+                    return FlakeIdGeneratorImpl::IdBatch(response.base, response.increment, response.batchSize);
                 });
             }
 

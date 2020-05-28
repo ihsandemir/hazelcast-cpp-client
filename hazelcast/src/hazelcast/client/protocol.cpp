@@ -521,7 +521,7 @@ namespace hazelcast {
 
             ClientExceptionFactory::~ClientExceptionFactory() {
                 // release memory for the factories
-                for (std::map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it =
+                for (std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it =
                         errorCodeToFactory.begin(); errorCodeToFactory.end() != it; ++it) {
                     delete (it->second);
                 }
@@ -530,7 +530,7 @@ namespace hazelcast {
             void ClientExceptionFactory::throwException(const std::string &source,
                                                         protocol::ClientMessage &clientMessage) const {
                 codec::ErrorCodec error = codec::ErrorCodec::decode(clientMessage);
-                std::map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it = errorCodeToFactory.find(
+                std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it = errorCodeToFactory.find(
                         error.errorCode);
                 if (errorCodeToFactory.end() == it) {
                     it = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
@@ -540,7 +540,7 @@ namespace hazelcast {
             }
 
             void ClientExceptionFactory::throwException(int32_t errorCode) const {
-                std::map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it = errorCodeToFactory.find(
+                std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it = errorCodeToFactory.find(
                         errorCode);
                 if (errorCodeToFactory.end() == it) {
                     it = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
@@ -549,7 +549,7 @@ namespace hazelcast {
             }
 
             void ClientExceptionFactory::registerException(int32_t errorCode, ExceptionFactory *factory) {
-                std::map<int, hazelcast::client::protocol::ExceptionFactory *>::iterator it = errorCodeToFactory.find(
+                std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::iterator it = errorCodeToFactory.find(
                         errorCode);
                 if (errorCodeToFactory.end() != it) {
                     char msg[100];
@@ -816,7 +816,7 @@ namespace hazelcast {
                     std::string uuid = clientMessage.get<std::string>();
                     bool liteMember = clientMessage.get<bool>();
                     int32_t attributeSize = clientMessage.get<int32_t>();
-                    std::map<std::string, std::string> attributes;
+                    std::unordered_map<std::string, std::string> attributes;
                     for (int i = 0; i < attributeSize; i++) {
                         std::string key = clientMessage.get<std::string>();
                         std::string value = clientMessage.get<std::string>();

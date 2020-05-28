@@ -46,7 +46,6 @@
 #include <hazelcast/client/exception/IOException.h>
 #include <hazelcast/client/protocol/ClientExceptionFactory.h>
 #include <hazelcast/util/IOUtil.h>
-
 #include <ClientTestSupportBase.h>
 #include <hazelcast/util/Util.h>
 #include <TestHelperFunctions.h>
@@ -59,18 +58,9 @@
 #include <hazelcast/client/SerializationConfig.h>
 #include <hazelcast/client/HazelcastJsonValue.h>
 #include <cstdint>
-#include "customSerialization/TestCustomSerializerX.h"
-#include "customSerialization/TestCustomXSerializable.h"
-#include "customSerialization/TestCustomPersonSerializer.h"
-#include "serialization/ChildTemplatedPortable2.h"
-#include "serialization/ParentTemplatedPortable.h"
-#include "serialization/ChildTemplatedPortable1.h"
 #include <hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheDataRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
-#include <hazelcast/client/query/FalsePredicate.h>
-#include <hazelcast/client/query/EqualPredicate.h>
-#include <hazelcast/client/query/QueryConstants.h>
 #include <HazelcastServer.h>
 #include "TestHelperFunctions.h"
 #include <cmath>
@@ -79,29 +69,8 @@
 #include <hazelcast/client/spi/impl/sequence/FailFastCallIdSequence.h>
 #include <iostream>
 #include <string>
-#include "executor/tasks/SelectAllMembers.h"
-#include "executor/tasks/IdentifiedFactory.h"
+#include "executor/tasks/Tasks.h"
 #include <hazelcast/client/serialization/serialization.h>
-#include <hazelcast/client/serialization/serialization.h>
-#include "executor/tasks/CancellationAwareTask.h"
-#include "executor/tasks/NullCallable.h"
-#include "executor/tasks/SerializedCounterCallable.h"
-#include "executor/tasks/MapPutPartitionAwareCallable.h"
-#include "executor/tasks/SelectNoMembers.h"
-#include "executor/tasks/GetMemberUuidTask.h"
-#include "executor/tasks/FailingCallable.h"
-#include "executor/tasks/AppendCallable.h"
-#include "executor/tasks/TaskWithUnserializableResponse.h"
-#include <executor/tasks/CancellationAwareTask.h>
-#include <executor/tasks/FailingCallable.h>
-#include <executor/tasks/SelectNoMembers.h>
-#include <executor/tasks/SerializedCounterCallable.h>
-#include <executor/tasks/TaskWithUnserializableResponse.h>
-#include <executor/tasks/GetMemberUuidTask.h>
-#include <executor/tasks/AppendCallable.h>
-#include <executor/tasks/SelectAllMembers.h>
-#include <executor/tasks/MapPutPartitionAwareCallable.h>
-#include <executor/tasks/NullCallable.h>
 #include <cstdlib>
 #include <fstream>
 #include <boost/asio.hpp>
@@ -790,7 +759,7 @@ namespace hazelcast {
 
             TEST_F(ClientQueueTest, testToArray) {
                 offer(5);
-                std::vector<std::string> array = q->toArray<std::string>();
+                std::vector<std::string> array = q->toArray<std::string>().get();
                 size_t size = array.size();
                 for (size_t i = 0; i < size; i++) {
                     ASSERT_EQ(std::string("item") + std::to_string(i + 1), array[i]);
@@ -855,24 +824,6 @@ namespace hazelcast {
     }
 }
 
-int hazelcast::client::test::executor::tasks::SelectAllMembers::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::SelectAllMembers::getClassId() const {
-    return IdentifiedFactory::SELECT_ALL_MEMBERS;
-}
-
-void hazelcast::client::test::executor::tasks::SelectAllMembers::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-}
-
-void hazelcast::client::test::executor::tasks::SelectAllMembers::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-}
-
-hazelcast::client::test::executor::tasks::SelectAllMembers::SelectAllMembers() {}
-
 bool hazelcast::client::test::executor::tasks::SelectAllMembers::select(const hazelcast::client::Member &member) const {
     return true;
 }
@@ -881,224 +832,17 @@ void hazelcast::client::test::executor::tasks::SelectAllMembers::toString(std::o
     os << "SelectAllMembers";
 }
 
-int hazelcast::client::test::executor::tasks::CancellationAwareTask::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::CancellationAwareTask::getClassId() const {
-    return IdentifiedFactory::CANCELLATION_AWARE_TASK;
-}
-
-void hazelcast::client::test::executor::tasks::CancellationAwareTask::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-    writer.writeLong(sleepTime);
-}
-
-void hazelcast::client::test::executor::tasks::CancellationAwareTask::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-    sleepTime = reader.readLong();
-}
-
-hazelcast::client::test::executor::tasks::CancellationAwareTask::CancellationAwareTask(int64_t sleepTime) : sleepTime(
-        sleepTime) {}
-
-hazelcast::client::test::executor::tasks::CancellationAwareTask::CancellationAwareTask() {}
-
-
-
-int hazelcast::client::test::executor::tasks::NullCallable::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::NullCallable::getClassId() const {
-    return IdentifiedFactory::NULL_CALLABLE;
-}
-
-void hazelcast::client::test::executor::tasks::NullCallable::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-}
-
-void hazelcast::client::test::executor::tasks::NullCallable::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-}
-
-hazelcast::client::test::executor::tasks::NullCallable::NullCallable() {}
-
-
-
-int hazelcast::client::test::executor::tasks::SerializedCounterCallable::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::SerializedCounterCallable::getClassId() const {
-    return IdentifiedFactory::SERIALIZED_COUNTER_CALLABLE;
-}
-
-void hazelcast::client::test::executor::tasks::SerializedCounterCallable::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-    writer.writeInt(counter + 1);
-}
-
-void hazelcast::client::test::executor::tasks::SerializedCounterCallable::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-    counter = reader.readInt() + 1;
-}
-
-hazelcast::client::test::executor::tasks::SerializedCounterCallable::SerializedCounterCallable() : counter(0) {}
-
-
-
-int hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::getClassId() const {
-    return IdentifiedFactory::MAP_PUTPARTITIONAWARE_CALLABLE;
-}
-
-void hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-    writer.writeUTF(&mapName);
-    writer.writeObject<std::string>(&partitionKey);
-}
-
-void hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-    // no need to implement at client side for the tests
-}
-
-hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::MapPutPartitionAwareCallable() {}
-
-hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::MapPutPartitionAwareCallable(
-        const std::string &mapName, const std::string &partitionKey) : mapName(mapName), partitionKey(partitionKey) {}
-
 const std::string *hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::getPartitionKey() const {
     return &partitionKey;
 }
-
-
-
-int hazelcast::client::test::executor::tasks::SelectNoMembers::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::SelectNoMembers::getClassId() const {
-    return IdentifiedFactory::SELECT_NO_MEMBERS;
-}
-
-void hazelcast::client::test::executor::tasks::SelectNoMembers::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-}
-
-void hazelcast::client::test::executor::tasks::SelectNoMembers::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-}
-
-hazelcast::client::test::executor::tasks::SelectNoMembers::SelectNoMembers() {}
-
-bool hazelcast::client::test::executor::tasks::SelectNoMembers::select(const hazelcast::client::Member &member) const {
-    return false;
-}
-
-void hazelcast::client::test::executor::tasks::SelectNoMembers::toString(std::ostream &os) const {
-    os << "SelectNoMembers";
-}
-
-
-
-int hazelcast::client::test::executor::tasks::GetMemberUuidTask::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::GetMemberUuidTask::getClassId() const {
-    return IdentifiedFactory::GET_MEMBER_UUID_TASK;
-}
-
-void hazelcast::client::test::executor::tasks::GetMemberUuidTask::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-}
-
-void hazelcast::client::test::executor::tasks::GetMemberUuidTask::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-}
-
-hazelcast::client::test::executor::tasks::GetMemberUuidTask::GetMemberUuidTask() {}
-
-
-
-int hazelcast::client::test::executor::tasks::FailingCallable::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::FailingCallable::getClassId() const {
-    return IdentifiedFactory::FAILING_CALLABLE;
-}
-
-void hazelcast::client::test::executor::tasks::FailingCallable::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-}
-
-void hazelcast::client::test::executor::tasks::FailingCallable::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-}
-
-hazelcast::client::test::executor::tasks::FailingCallable::FailingCallable() {}
-
-
-
-std::string hazelcast::client::test::executor::tasks::AppendCallable::APPENDAGE = ":CallableResult";
-
-int hazelcast::client::test::executor::tasks::AppendCallable::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::AppendCallable::getClassId() const {
-    return IdentifiedFactory::APPEND_CALLABLE;
-}
-
-void hazelcast::client::test::executor::tasks::AppendCallable::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-    writer.writeUTF(&msg);
-}
-
-void hazelcast::client::test::executor::tasks::AppendCallable::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-    // No need to implement this part for the client
-}
-
-hazelcast::client::test::executor::tasks::AppendCallable::AppendCallable() {}
-
-hazelcast::client::test::executor::tasks::AppendCallable::AppendCallable(const std::string &msg) : msg(msg) {}
-
-
-
-int hazelcast::client::test::executor::tasks::TaskWithUnserializableResponse::getFactoryId() const {
-    return IdentifiedFactory::FACTORY_ID;
-}
-
-int hazelcast::client::test::executor::tasks::TaskWithUnserializableResponse::getClassId() const {
-    return IdentifiedFactory::TASK_WITH_UNSERIALIZABLE_RESPONSE;
-}
-
-void hazelcast::client::test::executor::tasks::TaskWithUnserializableResponse::writeData(
-        hazelcast::client::serialization::ObjectDataOutput &writer) const {
-}
-
-void hazelcast::client::test::executor::tasks::TaskWithUnserializableResponse::readData(
-        hazelcast::client::serialization::ObjectDataInput &reader) {
-}
-
-hazelcast::client::test::executor::tasks::TaskWithUnserializableResponse::TaskWithUnserializableResponse() {}
-
-
-
-
 
 namespace hazelcast {
     namespace client {
         namespace test {
             class ClientExecutorServiceTest : public ClientTestSupport {
             protected:
+                static constexpr const char *APPENDAGE = ":CallableResult";
+
                 static const size_t numberOfMembers;
 
                 virtual void TearDown() {
@@ -1192,7 +936,7 @@ namespace hazelcast {
                                                                                                                    completeLatch) {}
 
                     virtual void onResponse(const Member &member, const std::shared_ptr<std::string> &response) {
-                        if (response.get() && *response == msg + executor::tasks::AppendCallable::APPENDAGE) {
+                        if (response.get() && *response == msg + APPENDAGE) {
                             responseLatch->count_down();
                         }
                     }
@@ -1203,8 +947,8 @@ namespace hazelcast {
 
                     virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<std::string> > &values,
                                             const std::unordered_map<Member, std::exception_ptr> &exceptions) {
-                        typedef std::map<Member, std::shared_ptr<std::string> > VALUE_MAP;
-                        std::string expectedValue(msg + executor::tasks::AppendCallable::APPENDAGE);
+                        typedef std::unordered_map<Member, std::shared_ptr<std::string> > VALUE_MAP;
+                        std::string expectedValue(msg + APPENDAGE);
                         for (const VALUE_MAP::value_type &entry  : values) {
                             if (entry.second.get() && *entry.second == expectedValue) {
                                 completeLatch->count_down();
@@ -1236,7 +980,7 @@ namespace hazelcast {
 
                     virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<std::string> > &values,
                                             const std::unordered_map<Member, std::exception_ptr> &exceptions) {
-                        typedef std::map<Member, std::shared_ptr<std::string> > VALUE_MAP;
+                        typedef std::unordered_map<Member, std::shared_ptr<std::string> > VALUE_MAP;
                         for (const VALUE_MAP::value_type &entry  : values) {
                             if (entry.second.get() == NULL) {
                                 completeLatch->count_down();
@@ -1262,13 +1006,13 @@ namespace hazelcast {
             TEST_F(ClientExecutorServiceTest, testIsTerminated) {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
-                ASSERT_FALSE(service->isTerminated());
+                ASSERT_FALSE(service->isTerminated().get());
             }
 
             TEST_F(ClientExecutorServiceTest, testIsShutdown) {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
-                ASSERT_FALSE(service->isShutdown());
+                ASSERT_FALSE(service->isShutdown().get());
             }
 
             TEST_F(ClientExecutorServiceTest, testShutdown) {
@@ -1276,7 +1020,7 @@ namespace hazelcast {
 
                 service->shutdown();
 
-                ASSERT_TRUE_EVENTUALLY(service->isShutdown());
+                ASSERT_TRUE_EVENTUALLY(service->isShutdown().get());
             }
 
             TEST_F(ClientExecutorServiceTest, testShutdownMultipleTimes) {
@@ -1285,13 +1029,13 @@ namespace hazelcast {
                 service->shutdown();
                 service->shutdown();
 
-                ASSERT_TRUE_EVENTUALLY(service->isShutdown());
+                ASSERT_TRUE_EVENTUALLY(service->isShutdown().get());
             }
 
             TEST_F(ClientExecutorServiceTest, testCancellationAwareTask_whenTimeOut) {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
-                executor::tasks::CancellationAwareTask task(INT64_MAX);
+                executor::tasks::CancellationAwareTask task{INT64_MAX};
 
                 auto promise = service->submit<executor::tasks::CancellationAwareTask, bool>(task);
 
@@ -1301,7 +1045,7 @@ namespace hazelcast {
             TEST_F(ClientExecutorServiceTest, testFutureAfterCancellationAwareTaskTimeOut) {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
-                executor::tasks::CancellationAwareTask task(INT64_MAX);
+                executor::tasks::CancellationAwareTask task{INT64_MAX};
 
                 auto promise = service->submit<executor::tasks::CancellationAwareTask, bool>(task);
                 auto future = promise.get_future();
@@ -1314,7 +1058,7 @@ namespace hazelcast {
             TEST_F(ClientExecutorServiceTest, testGetFutureAfterCancel) {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
-                executor::tasks::CancellationAwareTask task(INT64_MAX);
+                executor::tasks::CancellationAwareTask task{INT64_MAX};
 
                 auto promise = service->submit<executor::tasks::CancellationAwareTask, bool>(task);
 
@@ -1366,7 +1110,7 @@ namespace hazelcast {
                 executor::tasks::SelectNoMembers selector;
 
                 ASSERT_THROW(service->execute<executor::tasks::MapPutPartitionAwareCallable>(
-                        executor::tasks::MapPutPartitionAwareCallable(mapName, randomString()), selector),
+                        executor::tasks::MapPutPartitionAwareCallable{mapName, randomString()}, selector),
                              exception::RejectedExecutionException);
             }
 
@@ -1482,7 +1226,7 @@ namespace hazelcast {
 
                 std::shared_ptr<std::string> result = f.get();
                 ASSERT_NOTNULL(result.get(), std::string);
-                ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *result);
+                ASSERT_EQ(msg + APPENDAGE, *result);
             }
 
             TEST_F(ClientExecutorServiceTest, testSubmitCallableToMembers_withMemberSelector) {
@@ -1519,7 +1263,7 @@ namespace hazelcast {
                     std::shared_ptr<std::string> result = future.get();
 
                     ASSERT_NOTNULL(result.get(), std::string);
-                    ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *result);
+                    ASSERT_EQ(msg + APPENDAGE, *result);
                 }
             }
 
@@ -1539,10 +1283,10 @@ namespace hazelcast {
                                                                                                     members[0],
                                                                                                     callback);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 ASSERT_OPEN_EVENTUALLY(*latch1);
-                ASSERT_EQ(1, map.size());
+                ASSERT_EQ(1, map->size());
             }
 
             TEST_F(ClientExecutorServiceTest, submitCallableToMember_withMultiExecutionCallback) {
@@ -1582,7 +1326,7 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(*responseLatch);
                 std::shared_ptr<std::string> message = callback->getResult();
                 ASSERT_NOTNULL(message.get(), std::string);
-                ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *message);
+                ASSERT_EQ(msg + APPENDAGE, *message);
             }
 
             TEST_F(ClientExecutorServiceTest, submitCallableToMembers_withExecutionCallback) {
@@ -1653,7 +1397,7 @@ namespace hazelcast {
 
                 std::shared_ptr<std::string> message = result.get();
                 ASSERT_NOTNULL(message.get(), std::string);
-                ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *message);
+                ASSERT_EQ(msg + APPENDAGE, *message);
             }
 
             TEST_F(ClientExecutorServiceTest, testSubmitCallable_withExecutionCallback) {
@@ -1672,7 +1416,7 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(*latch1);
                 std::shared_ptr<std::string> value = callback->getResult();
                 ASSERT_NOTNULL(value.get(), std::string);
-                ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *value);
+                ASSERT_EQ(msg + APPENDAGE, *value);
             }
 
             TEST_F(ClientExecutorServiceTest, submitCallableToKeyOwner) {
@@ -1686,7 +1430,7 @@ namespace hazelcast {
 
                 std::shared_ptr<std::string> result = f.get();
                 ASSERT_NOTNULL(result.get(), std::string);
-                ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *result);
+                ASSERT_EQ(msg + APPENDAGE, *result);
             }
 
             TEST_F(ClientExecutorServiceTest, submitCallableToKeyOwner_withExecutionCallback) {
@@ -1705,21 +1449,21 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(*latch1);
                 std::shared_ptr<std::string> value = callback->getResult();
                 ASSERT_NOTNULL(value.get(), std::string);
-                ASSERT_EQ(msg + executor::tasks::AppendCallable::APPENDAGE, *value);
+                ASSERT_EQ(msg + APPENDAGE, *value);
             }
 
             TEST_F(ClientExecutorServiceTest, submitCallablePartitionAware) {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 std::vector<Member> members = client->getCluster().getMembers();
                 spi::ClientContext clientContext(*client);
                 Member &member = members[0];
                 std::string key = generateKeyOwnedBy(clientContext, member);
 
-                executor::tasks::MapPutPartitionAwareCallable callable(testName, key);
+                executor::tasks::MapPutPartitionAwareCallable callable{testName, key};
 
                 auto f = service->submit<executor::tasks::MapPutPartitionAwareCallable, std::string>(
                         callable).get_future();
@@ -1727,14 +1471,14 @@ namespace hazelcast {
                 std::shared_ptr<std::string> result = f.get();
                 ASSERT_NOTNULL(result.get(), std::string);
                 ASSERT_EQ(member.getUuid(), *result);
-                ASSERT_TRUE(map.containsKey(member.getUuid()));
+                ASSERT_TRUE(map->containsKey(member.getUuid()));
             }
 
             TEST_F(ClientExecutorServiceTest, submitCallablePartitionAware_WithExecutionCallback) {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 std::vector<Member> members = client->getCluster().getMembers();
                 spi::ClientContext clientContext(*client);
@@ -1753,7 +1497,7 @@ namespace hazelcast {
                         callback)->getResult();
                 ASSERT_NOTNULL(value.get(), std::string);
                 ASSERT_EQ(member.getUuid(), *value);
-                ASSERT_TRUE(map.containsKey(member.getUuid()));
+                ASSERT_TRUE(map->containsKey(member.getUuid()));
             }
 
             TEST_F(ClientExecutorServiceTest, testExecute) {
@@ -1763,7 +1507,7 @@ namespace hazelcast {
                 service->execute<executor::tasks::MapPutPartitionAwareCallable>(
                         executor::tasks::MapPutPartitionAwareCallable(testName, "key"));
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 assertSizeEventually(1, map);
             }
@@ -1775,7 +1519,7 @@ namespace hazelcast {
 
                 service->execute<executor::tasks::MapPutPartitionAwareCallable>(
                         executor::tasks::MapPutPartitionAwareCallable(testName, "key"), selector);
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 assertSizeEventually(1, map);
             }
@@ -1796,14 +1540,14 @@ namespace hazelcast {
 
                 service->executeOnKeyOwner<executor::tasks::MapPutPartitionAwareCallable, std::string>(callable, key);
 
-                ASSERT_TRUE_EVENTUALLY(map.containsKey(targetUuid));
+                ASSERT_TRUE_EVENTUALLY(map->containsKey(targetUuid));
             }
 
             TEST_F(ClientExecutorServiceTest, testExecuteOnMember) {
                 std::string testName = getTestName();
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(testName);
 
-                IMap<std::string, std::string> map = client->getMap<std::string, std::string>(testName);
+                auto map = client->getMap<std::string, std::string>(testName);
 
                 std::vector<Member> members = client->getCluster().getMembers();
                 Member &member = members[0];
@@ -1813,7 +1557,7 @@ namespace hazelcast {
 
                 service->executeOnMember<executor::tasks::MapPutPartitionAwareCallable>(callable, member);
 
-                ASSERT_TRUE_EVENTUALLY(map.containsKey(targetUuid));
+                ASSERT_TRUE_EVENTUALLY(map->containsKey(targetUuid));
             }
 
             TEST_F(ClientExecutorServiceTest, testExecuteOnMembers) {
@@ -2045,9 +1789,9 @@ namespace hazelcast {
                     FIPS_mode_set(1);
 
                     HazelcastClient hazelcastClient(clientConfig);
-                    IMap<int, int> map = hazelcastClient.getMap<int, int>("myMap");
-                    map.put(5, 20);
-                    std::shared_ptr<int> val = map.get(5);
+                    auto map = hazelcastClient.getMap<int, int>("myMap");
+                    map->put(5, 20);
+                    std::shared_ptr<int> val = map->get(5);
                     ASSERT_NE((int *) NULL, val.get());
                     ASSERT_EQ(20, *val);
                 }
@@ -2099,7 +1843,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag").setTagValue("aws-tag-value-1");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_EQ(results.size(), 1U);
                     ASSERT_NE(results.end(), results.find(getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP")));
                 }
@@ -2110,7 +1854,7 @@ namespace hazelcast {
                             getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag").setTagValue(
                             "non-existent-value");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_TRUE(results.empty());
                 }
 
@@ -2119,7 +1863,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_EQ(results.size(), 1U);
                     ASSERT_NE(results.end(), results.find(getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP")));
                 }
@@ -2129,7 +1873,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("non-existent-tag");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_TRUE(results.empty());
                 }
 
@@ -2138,7 +1882,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setTagValue("aws-tag-value-1");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_EQ(results.size(), 1U);
                     ASSERT_NE(results.end(), results.find(getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP")));
                 }
@@ -2148,7 +1892,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setTagValue("non-existent-value");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_TRUE(results.empty());
                 }
 
@@ -2157,7 +1901,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setSecurityGroupName("launch-wizard-147");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_EQ(results.size(), 1U);
                     ASSERT_NE(results.end(), results.find(getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP")));
                 }
@@ -2167,7 +1911,7 @@ namespace hazelcast {
                     awsConfig.setEnabled(true).setAccessKey(getenv("AWS_ACCESS_KEY_ID")).setSecretKey(
                             getenv("AWS_SECRET_ACCESS_KEY")).setSecurityGroupName("non-existent-group");
                     client::aws::impl::DescribeInstances desc(awsConfig, awsConfig.getHostHeader(), getLogger());
-                    std::map<std::string, std::string> results = desc.execute();
+                    std::unordered_map<std::string, std::string> results = desc.execute();
                     ASSERT_TRUE(results.empty());
                 }
 
@@ -2198,7 +1942,7 @@ namespace hazelcast {
                     std::istream responseStream(&fb);
 
                     config::ClientAwsConfig awsConfig;
-                    std::map<std::string, std::string> results = hazelcast::client::aws::utility::CloudUtility::unmarshalTheResponse(
+                    std::unordered_map<std::string, std::string> results = hazelcast::client::aws::utility::CloudUtility::unmarshalTheResponse(
                             responseStream, getLogger());
                     ASSERT_EQ(4U, results.size());
                     ASSERT_NE(results.end(), results.find("10.0.16.13"));

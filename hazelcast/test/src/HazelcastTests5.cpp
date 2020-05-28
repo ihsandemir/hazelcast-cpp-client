@@ -3898,7 +3898,7 @@ namespace hazelcast {
 
 namespace std {
     template<> struct hash<hazelcast::client::test::PartitionAwareInt> {
-        std::size_t operator()(const hazelcast::client::test::PartitionAwareInt &object) {
+        std::size_t operator()(const hazelcast::client::test::PartitionAwareInt &object) const noexcept {
             return std::hash<int>{}(object.getActualKey());
         }
     };

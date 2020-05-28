@@ -16,7 +16,7 @@
 #ifndef HAZELCAST_CLIENT_AWS_IMPL_FILTER_H_
 #define HAZELCAST_CLIENT_AWS_IMPL_FILTER_H_
 
-#include <map>
+#include <unordered_map>
 #include <string>
 
 #include "hazelcast/util/HazelcastDll.h"
@@ -47,10 +47,10 @@ namespace hazelcast {
                      */
                     void addFilter(const std::string &name, const std::string &value);
 
-                    const std::map<std::string, std::string> &getFilters();
+                    const std::unordered_map<std::string, std::string> &getFilters();
 
                 private:
-                    std::map<std::string, std::string> filters;
+                    std::unordered_map<std::string, std::string> filters;
                 };
             };
         }

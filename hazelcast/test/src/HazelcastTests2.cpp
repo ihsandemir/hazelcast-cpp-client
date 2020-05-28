@@ -39,9 +39,6 @@
 #include "serialization/Serializables.h"
 #include <hazelcast/client/SerializationConfig.h>
 #include <hazelcast/client/HazelcastJsonValue.h>
-#include "serialization/ChildTemplatedPortable2.h"
-#include "serialization/ParentTemplatedPortable.h"
-#include "serialization/ChildTemplatedPortable1.h"
 #include <hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheDataRecordStore.h>
 #include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
@@ -88,7 +85,7 @@ namespace hazelcast {
                 std::string address("10.2.3.1");
                 std::vector<Address> addresses = util::AddressHelper::getSocketAddresses(address, getLogger());
                 ASSERT_EQ(3U, addresses.size());
-                std::set<Address> socketAddresses;
+                std::unordered_set<Address> socketAddresses;
                 socketAddresses.insert(addresses.begin(), addresses.end());
                 ASSERT_NE(socketAddresses.end(), socketAddresses.find(Address(address, 5701)));
                 ASSERT_NE(socketAddresses.end(), socketAddresses.find(Address(address, 5702)));
@@ -769,7 +766,7 @@ namespace hazelcast {
                 Address address("localhost", 5555);
                 clientConfig.getNetworkConfig().addAddress(address);
 
-                std::set<Address, addressComparator> addresses = clientConfig.getAddresses();
+                auto addresses = clientConfig.getAddresses();
                 ASSERT_EQ(1U, addresses.size());
                 ASSERT_EQ(address, *addresses.begin());
             }
@@ -781,7 +778,7 @@ namespace hazelcast {
                 addresses.push_back(Address("localhost", 6666));
                 clientConfig.getNetworkConfig().addAddresses(addresses);
 
-                std::set<Address, addressComparator> configuredAddresses = clientConfig.getAddresses();
+                std::unordered_set<Address, addressComparator> configuredAddresses = clientConfig.getAddresses();
                 ASSERT_EQ(2U, addresses.size());
                 std::vector<Address> configuredAddressVector(configuredAddresses.begin(), configuredAddresses.end());
                 ASSERT_EQ(addresses, configuredAddressVector);
@@ -1210,28 +1207,13 @@ namespace hazelcast {
     namespace client {
         namespace test {
             class PartitionAwareTest : public ClientTestSupport {
-            protected:
-                class SimplePartitionAwareObject
-                        : public PartitionAware<int>, public serialization::IdentifiedDataSerializable {
+            public:
+                class SimplePartitionAwareObject : public PartitionAware<int> {
                 public:
                     SimplePartitionAwareObject() : testKey(5) {}
 
                     virtual const int *getPartitionKey() const {
                         return &testKey;
-                    }
-
-                    int getFactoryId() const {
-                        return 1;
-                    }
-
-                    int getClassId() const {
-                        return 2;
-                    }
-
-                    void writeData(serialization::ObjectDataOutput &writer) const {
-                    }
-
-                    void readData(serialization::ObjectDataInput &reader) {
                     }
 
                     int getTestKey() const {
@@ -1264,6 +1246,25 @@ namespace hazelcast {
                 serialization::pimpl::Data data = serializationService.toData<int>(&obj);
                 ASSERT_FALSE(data.hasPartitionHash());
             }
+        }
+
+        namespace serialization {
+            template<>
+            struct hz_serializer<test::PartitionAwareTest::SimplePartitionAwareObject> : public identified_data_serializer {
+                static int32_t getFactoryId() {
+                    return 1;
+                }
+
+                static int32_t getClassId() {
+                    return 2;
+                }
+
+                static void writeData(const test::PartitionAwareTest::SimplePartitionAwareObject &object, ObjectDataOutput &out) {}
+
+                static test::PartitionAwareTest::SimplePartitionAwareObject readData(ObjectDataInput &in) {
+                    return test::PartitionAwareTest::SimplePartitionAwareObject();
+                }
+            };
         }
     }
 }

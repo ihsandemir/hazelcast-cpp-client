@@ -190,7 +190,7 @@ namespace hazelcast {
 
                 void connectToClusterInternal();
 
-                std::set<Address> getPossibleMemberAddresses();
+                std::unordered_set<Address> getPossibleMemberAddresses();
 
                 std::unique_ptr<ClientConnectionStrategy> initializeStrategy(spi::ClientContext &context);
 

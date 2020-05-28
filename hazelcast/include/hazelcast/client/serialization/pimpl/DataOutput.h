@@ -45,7 +45,9 @@ namespace hazelcast {
                      *
                      * @return reference to the internal byte buffer.
                      */
-                    inline const std::vector<byte> &toByteArray() const;
+                    inline const std::vector<byte> &toByteArray() const {
+                        return outputStream;
+                    }
 
                     /**
                      *

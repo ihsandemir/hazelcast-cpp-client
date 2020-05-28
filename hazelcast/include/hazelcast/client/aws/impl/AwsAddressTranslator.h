@@ -17,7 +17,7 @@
 #define HAZELCAST_CLIENT_AWS_IMPL_AWSADDRESSTRANSLATOR_H_
 
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 #include "hazelcast/client/aws/AWSClient.h"
@@ -59,7 +59,7 @@ namespace hazelcast {
                     bool findFromCache(const Address &address, Address &translatedAddress);
 
                     std::unique_ptr<AWSClient> awsClient;
-                    util::Sync<std::shared_ptr<std::map<std::string, std::string> > > privateToPublic;
+                    util::Sync<std::shared_ptr<std::unordered_map<std::string, std::string> > > privateToPublic;
                     util::ILogger &logger;
                 };
             };

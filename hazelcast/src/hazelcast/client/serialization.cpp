@@ -421,10 +421,6 @@ namespace hazelcast {
                     outputStream.insert(outputStream.end(), bytes.begin(), bytes.end());
                 }
 
-                const std::vector<byte> &DataOutput::toByteArray() const {
-                    return outputStream;
-                }
-
                 template<>
                 void DataOutput::write(byte i) {
                     if (isNoWrite) { return; }

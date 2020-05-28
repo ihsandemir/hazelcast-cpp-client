@@ -17,7 +17,7 @@
 #ifndef HAZELCAST_CLIENT_SPI_IMPL_CLIENTCLUSTERSERVICEIMPL_H
 #define HAZELCAST_CLIENT_SPI_IMPL_CLIENTCLUSTERSERVICEIMPL_H
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "hazelcast/client/ClientConfig.h"
@@ -84,7 +84,7 @@ namespace hazelcast {
                 private:
                     ClientContext &client;
                     std::shared_ptr<ClientMembershipListener> clientMembershipListener;
-                    util::Sync<std::map<Address, std::shared_ptr<Member> > > members;
+                    util::Sync<std::unordered_map<Address, std::shared_ptr<Member> > > members;
                     util::SynchronizedMap<std::string, MembershipListener> listeners;
 
                     std::mutex initialMembershipListenerMutex;

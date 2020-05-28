@@ -33,7 +33,7 @@ namespace hazelcast {
         /**
          * MultiExecutionCallback provides notification for when an execution is completed on each member
          * that a task is submitted to. After all executions are completed on all submitted members,
-         * the {@link #onComplete(std::map)} method is called with a map of all results.
+         * the {@link #onComplete(std::unordered_map)} method is called with a map of all results.
          *
          * @see IExecutorService
          * @see ExecutionCallback

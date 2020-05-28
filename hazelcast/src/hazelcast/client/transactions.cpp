@@ -619,3 +619,11 @@ namespace hazelcast {
         }
     }
 }
+
+namespace std {
+    std::size_t hash<std::pair<std::string, std::string>>::operator()(
+            const std::pair<std::string, std::string> &val) const noexcept {
+        return std::hash<std::string>{}(val.first + val.second);
+    }
+}
+

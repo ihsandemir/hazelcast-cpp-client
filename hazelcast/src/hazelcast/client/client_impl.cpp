@@ -44,7 +44,6 @@
 #include "hazelcast/client/Cluster.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/LifecycleListener.h"
-#include <hazelcast/client/executor/impl/ExecutorServiceProxyFactory.h>
 #include <hazelcast/client/cluster/impl/ClusterDataSerializerHook.h>
 #include <hazelcast/client/exception/ProtocolExceptions.h>
 #include "hazelcast/client/proxy/PNCounterImpl.h"
@@ -656,7 +655,7 @@ namespace hazelcast {
             return ::getenv(name.c_str());
         }
 
-        ClientProperties::ClientProperties(const std::map<std::string, std::string> &properties)
+        ClientProperties::ClientProperties(const std::unordered_map<std::string, std::string> &properties)
                 : heartbeatTimeout(PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT),
                   heartbeatInterval(PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT),
                   retryCount(PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT),
@@ -740,7 +739,7 @@ namespace hazelcast {
         }
 
         std::string ClientProperties::getString(const ClientProperty &property) const {
-            std::map<std::string, std::string>::const_iterator valueIt = propertiesMap.find(property.getName());
+            std::unordered_map<std::string, std::string>::const_iterator valueIt = propertiesMap.find(property.getName());
             if (valueIt != propertiesMap.end()) {
                 return valueIt->second;
             }
@@ -847,24 +846,11 @@ namespace hazelcast {
                                          details, true,
                                          false) {}
         }
-
-        namespace executor {
-            namespace impl {
-                ExecutorServiceProxyFactory::ExecutorServiceProxyFactory(spi::ClientContext *clientContext)
-                        : clientContext(
-                        clientContext) {}
-
-                std::shared_ptr<spi::ClientProxy> ExecutorServiceProxyFactory::create(const std::string &id) {
-                    return std::shared_ptr<spi::ClientProxy>(
-                            new IExecutorService(id, clientContext));
-                }
-            }
-        }
     }
 }
 
 namespace std {
-    std::size_t hash<hazelcast::client::Address>::operator()(const hazelcast::client::Address &address) const {
+    std::size_t hash<hazelcast::client::Address>::operator()(const hazelcast::client::Address &address) const noexcept {
         return std::hash<std::string>()(address.getHost()) + std::hash<int>()(address.getPort()) +
                std::hash<unsigned long>()(address.type);
     }
