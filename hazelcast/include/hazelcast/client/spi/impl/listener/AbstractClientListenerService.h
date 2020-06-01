@@ -83,12 +83,7 @@ namespace hazelcast {
 
                         virtual bool registersLocalOnly() const = 0;
 
-                        struct ConnectionPointerLessComparator {
-                            bool operator()(const std::shared_ptr<connection::Connection> &lhs,
-                                            const std::shared_ptr<connection::Connection> &rhs) const;
-                        };
-
-                        typedef std::unordered_map<std::shared_ptr<connection::Connection>, ClientEventRegistration, ConnectionPointerLessComparator> ConnectionRegistrationsMap;
+                        typedef std::unordered_map<std::shared_ptr<connection::Connection>, ClientEventRegistration> ConnectionRegistrationsMap;
                         typedef util::SynchronizedMap<ClientRegistrationKey, ConnectionRegistrationsMap> RegistrationsMap;
 
                         void removeEventHandler(const ClientEventRegistration &registration);

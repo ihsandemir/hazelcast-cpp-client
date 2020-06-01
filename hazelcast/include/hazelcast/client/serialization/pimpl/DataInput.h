@@ -150,6 +150,12 @@ namespace hazelcast {
                     }
 
                     template<typename T>
+                    typename std::enable_if<std::is_same<HazelcastJsonValue, typename std::remove_cv<T>::type>::value, T>::type
+                    inline read() {
+                        return HazelcastJsonValue(read<std::string>());
+                    }
+
+                    template<typename T>
                     typename std::enable_if<std::is_same<boost::optional<std::string>, typename std::remove_cv<T>::type>::value, T>::type
                     inline read() {
                         int32_t charCount = read<int32_t>();
@@ -191,7 +197,7 @@ namespace hazelcast {
                         T values;
                         values.reserve(len);
                         for (int32_t i = 0; i < len; i++) {
-                            values[i].push_back(read<typename T::value_type>());
+                            values.push_back(read<typename T::value_type>());
                         }
                         return boost::make_optional(values);
                     }

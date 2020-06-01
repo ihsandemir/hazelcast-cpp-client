@@ -121,7 +121,7 @@ namespace hazelcast {
              * </pre>
              */
 
-            template<typename K, typename V, typename INNER_PREDICATE = K, typename COMPARATOR = K>
+            template<typename K, typename V, typename INNER_PREDICATE = char, typename COMPARATOR = query::EntryComparator<K, V>>
             class PagingPredicate : public Predicate {
             public:
                 /**
@@ -248,7 +248,7 @@ namespace hazelcast {
                     if (!comparator) {
                         return nullptr;
                     }
-                    return &comparator.value();
+                    return comparator.get_ptr();
                 }
 
 

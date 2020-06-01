@@ -145,6 +145,78 @@ namespace hazelcast {
                 return out;
             }
 
+            bool operator==(const TestCustomXSerializable &lhs, const TestCustomXSerializable &rhs) {
+                return lhs.id == rhs.id;
+            }
+
+            bool operator==(const TestCustomPerson &lhs, const TestCustomPerson &rhs) {
+                return lhs.name == rhs.name;
+            }
+
+            bool operator==(const TestRawDataPortable &lhs, const TestRawDataPortable &rhs) {
+                return lhs.l == rhs.l &&
+                       lhs.c == rhs.c &&
+                       lhs.p == rhs.p &&
+                       lhs.k == rhs.k &&
+                       lhs.s == rhs.s &&
+                       lhs.ds == rhs.ds;
+            }
+
+            bool operator==(const TestDataSerializable &lhs, const TestDataSerializable &rhs) {
+                return lhs.i == rhs.i &&
+                       lhs.c == rhs.c;
+            }
+
+            bool operator==(const TestNamedPortableV2 &lhs, const TestNamedPortableV2 &rhs) {
+                return lhs.name == rhs.name &&
+                       lhs.k == rhs.k &&
+                       lhs.v == rhs.v;
+            }
+
+            bool operator==(const TestInnerPortable &lhs, const TestInnerPortable &rhs) {
+                return lhs.bb == rhs.bb &&
+                       lhs.ba == rhs.ba &&
+                       lhs.cc == rhs.cc &&
+                       lhs.ss == rhs.ss &&
+                       lhs.ii == rhs.ii &&
+                       lhs.ll == rhs.ll &&
+                       lhs.ff == rhs.ff &&
+                       lhs.dd == rhs.dd &&
+                       lhs.nn == rhs.nn;
+            }
+
+            bool operator==(const TestNamedPortable &lhs, const TestNamedPortable &rhs) {
+                return lhs.name == rhs.name &&
+                       lhs.k == rhs.k;
+            }
+
+            bool operator==(const TestMainPortable &lhs, const TestMainPortable &rhs) {
+                return lhs.null == rhs.null &&
+                       lhs.b == rhs.b &&
+                       lhs.boolean == rhs.boolean &&
+                       lhs.c == rhs.c &&
+                       lhs.s == rhs.s &&
+                       lhs.i == rhs.i &&
+                       lhs.l == rhs.l &&
+                       lhs.f == rhs.f &&
+                       lhs.d == rhs.d &&
+                       lhs.str == rhs.str &&
+                       lhs.p == rhs.p;
+            }
+
+            bool operator==(const TestNamedPortableV3 &lhs, const TestNamedPortableV3 &rhs) {
+                return lhs.name == rhs.name &&
+                       lhs.k == rhs.k;
+            }
+
+            bool operator==(const ChildTemplatedPortable1 &lhs, const ChildTemplatedPortable1 &rhs) {
+                return lhs.s1 == rhs.s1 &&
+                       lhs.s2 == rhs.s2;
+            }
+
+            bool operator==(const ChildTemplatedPortable2 &lhs, const ChildTemplatedPortable2 &rhs) {
+                return lhs.s1 == rhs.s1;
+            }
         }
 
         namespace serialization {
@@ -249,11 +321,11 @@ namespace hazelcast {
                 return 5;
             }
 
-            void hz_serializer<test::EmployeeEntryKeyComparator>::writeData(const test::EmployeeEntryComparator &,
+            void hz_serializer<test::EmployeeEntryKeyComparator>::writeData(const test::EmployeeEntryKeyComparator &,
                                                                             ObjectDataOutput &) {}
 
-            test::EmployeeEntryComparator hz_serializer<test::EmployeeEntryKeyComparator>::readData(ObjectDataInput &) {
-                return test::EmployeeEntryComparator();
+            test::EmployeeEntryKeyComparator hz_serializer<test::EmployeeEntryKeyComparator>::readData(ObjectDataInput &) {
+                return test::EmployeeEntryKeyComparator();
             }
 
             int32_t hz_serializer<test::TestMainPortable>::getFactoryId() {
@@ -293,7 +365,7 @@ namespace hazelcast {
                 object.str = reader.read<std::string>("str");
                 auto innerPortable = reader.readPortable<test::TestInnerPortable>("p");
                 if (innerPortable.has_value())
-                    object.p = std::move(innerPortable).value());
+                    object.p = std::move(innerPortable).value();
 
                 return object;
             }
@@ -329,6 +401,7 @@ namespace hazelcast {
                 object.k = in.read<int32_t>();
                 object.s = in.read<std::string>();
                 object.ds = hz_serializer<test::TestDataSerializable>::readData(in);
+                return object;
             }
 
             int32_t hz_serializer<test::TestDataSerializable>::getFactoryId() {
@@ -400,6 +473,7 @@ namespace hazelcast {
                 object.ff = *reader.read<std::vector<float>>("f");
                 object.dd = *reader.read<std::vector<double>>("d");
                 object.nn = *reader.readPortableArray<test::TestNamedPortable>("nn");
+                return object;
             }
 
             int32_t hz_serializer<test::TestNamedPortableV2>::getFactoryId() {
@@ -485,10 +559,6 @@ namespace hazelcast {
                                                       reader.read<std::string>("s")};
             }
 
-            int32_t hz_serializer<test::TestCustomPerson>::getTypeId() {
-                return 666;
-            }
-
             void hz_serializer<test::TestCustomPerson>::write(const test::TestCustomPerson &object, ObjectDataOutput &out) {
                 out.write<int32_t>(999);
                 out.write(object.name);
@@ -496,14 +566,10 @@ namespace hazelcast {
             }
 
             test::TestCustomPerson hz_serializer<test::TestCustomPerson>::read(ObjectDataInput &in) {
-                ASSERT_EQ(999, in.read<int32_t>());
+                assert(999 ==in.read<int32_t>());
                 test::TestCustomPerson object{in.read<std::string>()};
                 assert(999 == in.read<int32_t>());
                 return object;
-            }
-
-            int32_t hz_serializer<test::TestCustomXSerializable>::getTypeId() {
-                return 666;
             }
 
             void hz_serializer<test::TestCustomXSerializable>::write(const test::TestCustomXSerializable &object, ObjectDataOutput &out) {
@@ -513,9 +579,9 @@ namespace hazelcast {
             }
 
             test::TestCustomXSerializable hz_serializer<test::TestCustomXSerializable>::read(ObjectDataInput &in) {
-                ASSERT_EQ(666, in.read<int32_t>());
+                assert(666 ==in.read<int32_t>());
                 test::TestCustomXSerializable object{in.read<int32_t>()};
-                ASSERT_EQ(666, in.read<int32_t>());
+                assert(666 ==in.read<int32_t>());
                 return object;
             }
 

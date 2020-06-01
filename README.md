@@ -1568,7 +1568,7 @@ Please see the below code as an example of when you want to get notified when a 
 ```
     class ItemsPrinter : public ExecutionCallback<hazelcast::client::ringbuffer::ReadResultSet<std::string> > {
     public:
-        virtual void onResponse(const boost::shared_ptr<ringbuffer::ReadResultSet<std::string> > &response) {
+        virtual void onResponse(const boost::optional<ringbuffer::ReadResultSet<std::string> > &response) {
             DataArray<std::string> &items = response->getItems();
             for (size_t i = 0; i < items.size(); ++i) {
                 std::cout << "Received " << items.get(i) << std::endl;
@@ -2227,11 +2227,11 @@ The `PrinterCallback` implementation class is as below:
 ```C++
 class PrinterCallback : public ExecutionCallback<std::string> {
 public:
-    virtual void onResponse(const boost::shared_ptr<std::string> &response) {
+    virtual void onResponse(const boost::optional<std::string> &response) {
         std::cout << "The execution of the task is completed successfully and server returned:" << *response << std::endl;
     }
 
-    virtual void onFailure(const boost::shared_ptr<exception::IException> &e) {
+    virtual void onFailure(const std::shared_ptr<exception::IException> &e) {
         std::cout << "The execution of the task failed with exception:" << e << std::endl;
     }
 };

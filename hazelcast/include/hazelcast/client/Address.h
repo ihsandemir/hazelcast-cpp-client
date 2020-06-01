@@ -106,8 +106,6 @@ namespace hazelcast {
             };
         }
 
-        typedef std::less<Address> addressComparator;
-
         std::ostream HAZELCAST_API &operator << (std::ostream &stream, const Address &address);
     }
 }

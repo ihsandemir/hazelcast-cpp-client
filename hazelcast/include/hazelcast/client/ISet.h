@@ -48,7 +48,7 @@ namespace hazelcast {
                                 getContext().getSerializationService(),
                                 listener,
                                 includeValue));
-                return proxy::ISetImpl::addItemListener(itemEventHandler, includeValue);
+                return proxy::ISetImpl::addItemListener(std::move(itemEventHandler), includeValue);
             }
 
             /**

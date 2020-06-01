@@ -127,7 +127,8 @@ namespace hazelcast {
                             listener.entryMerged(entryEvent);
                             break;
                         default:
-                            logger.warning("Received unrecognized event with type: ", type, " Dropping the event!!!");
+                            logger.warning("Received unrecognized event with type: ", static_cast<int32_t>(type),
+                                           " Dropping the event!!!");
                     }
                 }
             private:

@@ -228,7 +228,8 @@ namespace hazelcast {
             template<typename IFUNCTION>
             boost::future<ringbuffer::ReadResultSet>
             readMany(int64_t startSequence, int32_t minCount, int32_t maxCount, const IFUNCTION *filter = nullptr) {
-                return readManyData(startSequence, minCount, maxCount, &toData<IFUNCTION>(filter)).then([=] (boost::future<protocol::ClientMessage> f) {
+                auto filterData = toData<IFUNCTION>(filter);
+                return readManyData(startSequence, minCount, maxCount, &filterData).then([=] (boost::future<protocol::ClientMessage> f) {
                     auto params = protocol::codec::RingbufferReadManyCodec::ResponseParameters::decode(f.get());
                     return ringbuffer::ReadResultSet(params.readCount, std::move(params.items), getSerializationService(),
                                                      params.itemSeqs, params.itemSeqsExist,

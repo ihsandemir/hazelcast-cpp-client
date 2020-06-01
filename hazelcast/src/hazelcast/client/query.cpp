@@ -73,64 +73,6 @@ namespace hazelcast {
 
             FalsePredicate::FalsePredicate(HazelcastClient &client) : BasePredicate(client) {}
         }
-
-        namespace serialization {
-            constexpr int32_t hz_serializer<query::BetweenPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::BETWEEN_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::EqualPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::EQUAL_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::NotEqualPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::NOTEQUAL_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::GreaterLessPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::GREATERLESS_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::TruePredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::TRUE_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::FalsePredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::FALSE_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::InstanceOfPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::INSTANCEOF_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::LikePredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::LIKE_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::ILikePredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::ILIKE_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::RegexPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::REGEX_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::InPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::IN_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::AndPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::OR_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::OrPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::OR_PREDICATE);
-            }
-
-            constexpr int32_t hz_serializer<query::SqlPredicate>::getClassId() noexcept {
-                return static_cast<int32_t>(query::PredicateDataSerializerHook::SQL_PREDICATE);
-            }
-        }
     }
 }
 

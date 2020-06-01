@@ -30,6 +30,8 @@
  * limitations under the License.
  */
 
+#include <cstdlib>
+
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/connection/DefaultClientConnectionStrategy.h"
@@ -38,18 +40,15 @@
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/protocol/AuthenticationStatus.h"
 #include "hazelcast/client/exception/AuthenticationException.h"
-#include "hazelcast/client/exception/AuthenticationException.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/connection/ConnectionListener.h"
 #include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/protocol/codec/ErrorCodec.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/SocketInterceptor.h"
@@ -58,27 +57,17 @@
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/connection/HeartbeatManager.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
-#include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/ClientInvocationService.h"
 #include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
-#include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/internal/socket/TcpSocket.h"
-#include "hazelcast/util/Util.h"
-#include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/impl/BuildInfo.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/config/SSLConfig.h"
-#include "hazelcast/client/exception/IOException.h"
 #include "hazelcast/util/IOUtil.h"
 
 namespace hazelcast {
     namespace client {
-        SocketInterceptor::~SocketInterceptor() {
-        }
+        SocketInterceptor::~SocketInterceptor() {}
 
         namespace connection {
             int ClientConnectionManagerImpl::DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
@@ -1465,4 +1454,15 @@ namespace hazelcast {
         }
     }
 }
+
+namespace std {
+    std::size_t hash<std::shared_ptr<hazelcast::client::connection::Connection>>::operator()(
+            const std::shared_ptr<hazelcast::client::connection::Connection> &conn) const noexcept {
+        if (!conn) {
+            return 0;
+        }
+        return std::abs(conn->getConnectionId());
+    }
+}
+
 

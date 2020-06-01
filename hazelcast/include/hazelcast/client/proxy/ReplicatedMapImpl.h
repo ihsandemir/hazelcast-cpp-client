@@ -142,6 +142,12 @@ namespace hazelcast {
                             request, keyData);
                 }
 
+                boost::future<bool> containsValueData(serialization::pimpl::Data &&valueData) {
+                    auto request = protocol::codec::ReplicatedMapContainsValueCodec::encodeRequest(name, valueData);
+                    return invokeAndGetFuture<bool, protocol::codec::ReplicatedMapContainsValueCodec::ResponseParameters>(
+                            request, valueData);
+                }
+
                 boost::future<std::string> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler) {
                     return registerListener(createEntryListenerCodec(getName()), std::move(entryEventHandler));
                 }

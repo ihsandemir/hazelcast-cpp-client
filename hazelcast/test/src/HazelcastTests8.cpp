@@ -16,6 +16,7 @@
 #include "HazelcastServerFactory.h"
 #include "HazelcastServer.h"
 #include "ClientTestSupport.h"
+#include "serialization/Serializables.h"
 #include <memory>
 #include <utility>
 #include <vector>
@@ -772,12 +773,12 @@ namespace hazelcast {
                     map->put(i, i).get();
                     keys.insert(i);
                 }
-// populate Near Cache
+                // populate Near Cache
                 for (int i = 0; i < size; i++) {
                     map->get<int, int>(i).get();
                 }
 
-                map->removeAll(query::EqualPredicate<int>(query::QueryConstants::KEY_ATTRIBUTE_NAME, 20)).get();
+                map->removeAll(query::EqualPredicate(*client, query::QueryConstants::KEY_ATTRIBUTE_NAME, 20)).get();
 
                 assertThatOwnedEntryCountEquals(*map, 0);
             }
@@ -854,7 +855,7 @@ namespace hazelcast {
                 l.emplace_back("item2");
 
                 ASSERT_TRUE(set->addAll(l).get());
-                ASSERT_EQ(2, set->size());
+                ASSERT_EQ(2, set->size().get());
 
                 ASSERT_FALSE(set->addAll(l).get());
                 ASSERT_EQ(2, set->size().get());
@@ -1176,9 +1177,9 @@ namespace hazelcast {
                 auto state = std::make_shared<ListenerState>(1);
                 ASSERT_NO_THROW(listenerId = intTopic->addMessageListener(GenericListener(state)));
 
-                auto timeBeforePublish = hazelcast::util::currentTimeMillis();
+                auto timeBeforePublish = std::chrono::system_clock::now();
                 intTopic->publish<int>(3).get();
-                auto timeAfterPublish = hazelcast::util::currentTimeMillis();
+                auto timeAfterPublish = std::chrono::system_clock::now();
                 ASSERT_OPEN_EVENTUALLY(state->latch1);
                 ASSERT_EQ(1, state->numberOfMessagesReceived);
                 auto message = state->messages.poll();

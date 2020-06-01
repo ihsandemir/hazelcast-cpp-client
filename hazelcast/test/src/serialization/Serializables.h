@@ -108,12 +108,17 @@ namespace hazelcast {
 
             struct TestDataSerializable {
                 int i;
+
+                friend bool operator==(const TestDataSerializable &lhs, const TestDataSerializable &rhs);
+
                 char c;
             };
 
             struct TestNamedPortable {
                 std::string name;
                 int k;
+
+                friend bool operator==(const TestNamedPortable &lhs, const TestNamedPortable &rhs);
             };
 
             struct TestRawDataPortable {
@@ -123,6 +128,8 @@ namespace hazelcast {
                 int32_t k;
                 std::string s;
                 TestDataSerializable ds;
+
+                friend bool operator==(const TestRawDataPortable &lhs, const TestRawDataPortable &rhs);
             };
 
             struct TestInnerPortable {
@@ -135,6 +142,8 @@ namespace hazelcast {
                 std::vector<float> ff;
                 std::vector<double> dd;
                 std::vector<TestNamedPortable> nn;
+
+                friend bool operator==(const TestInnerPortable &lhs, const TestInnerPortable &rhs);
             };
 
             struct TestMainPortable {
@@ -149,6 +158,8 @@ namespace hazelcast {
                 double d;
                 std::string str;
                 TestInnerPortable p;
+
+                friend bool operator==(const TestMainPortable &lhs, const TestMainPortable &rhs);
             };
 
             struct TestInvalidReadPortable {
@@ -167,38 +178,58 @@ namespace hazelcast {
                 std::string name;
                 int k;
                 int v;
+
+                friend bool operator==(const TestNamedPortableV2 &lhs, const TestNamedPortableV2 &rhs);
             };
 
             struct TestNamedPortableV3 {
                 std::string name;
                 short k;
+
+                friend bool operator==(const TestNamedPortableV3 &lhs, const TestNamedPortableV3 &rhs);
             };
 
             struct TestCustomXSerializable {
                 int32_t id;
+
+                friend bool operator==(const TestCustomXSerializable &lhs, const TestCustomXSerializable &rhs);
             };
 
             struct TestCustomPerson {
                 std::string name;
+
+                friend bool operator==(const TestCustomPerson &lhs, const TestCustomPerson &rhs);
             };
 
             template<typename P>
             struct ObjectCarryingPortable {
                 P carriedObject;
+
+                friend bool operator==(const ObjectCarryingPortable &lhs, const ObjectCarryingPortable &rhs) {
+                    return lhs.carriedObject == rhs.carriedObject;
+                }
             };
 
             template<typename T>
             struct ParentTemplatedPortable {
                 boost::optional<T> child;
+
+                friend bool operator==(const ParentTemplatedPortable &lhs, const ParentTemplatedPortable &rhs) {
+                    return lhs.child == rhs.child;
+                }
             };
 
             struct ChildTemplatedPortable1 {
                 std::string s1;
                 std::string s2;
+
+                friend bool operator==(const ChildTemplatedPortable1 &lhs, const ChildTemplatedPortable1 &rhs);
             };
 
             struct ChildTemplatedPortable2 {
                 std::string s1;
+
+                friend bool operator==(const ChildTemplatedPortable2 &lhs, const ChildTemplatedPortable2 &rhs);
             };
         }
 
@@ -281,7 +312,7 @@ namespace hazelcast {
             };
 
             template<>
-            struct hz_serializer<test::TestNamedPortable> : public versioned_portable_serializer {
+            struct hz_serializer<test::TestNamedPortable> : public portable_serializer {
                 static int32_t getFactoryId();
 
                 static int32_t getClassId();
@@ -292,7 +323,7 @@ namespace hazelcast {
             };
 
             template<>
-            struct hz_serializer<test::TestNamedPortableV2> : public versioned_portable_serializer {
+            struct hz_serializer<test::TestNamedPortableV2> : public portable_serializer {
                 static int32_t getFactoryId();
 
                 static int32_t getClassId();
@@ -303,7 +334,7 @@ namespace hazelcast {
             };
 
             template<>
-            struct hz_serializer<test::TestNamedPortableV3> : public versioned_portable_serializer {
+            struct hz_serializer<test::TestNamedPortableV3> : public portable_serializer {
                 static int32_t getFactoryId();
 
                 static int32_t getClassId();
@@ -389,7 +420,7 @@ namespace hazelcast {
                 }
 
                 static void writePortable(const test::ParentTemplatedPortable<P> &object, PortableWriter &out) {
-                    out.writePortable("c", object.get());
+                    out.writePortable("c", object.child.get_ptr());
                 }
 
                 static test::ParentTemplatedPortable<P> readPortable(PortableReader &in) {
@@ -399,7 +430,9 @@ namespace hazelcast {
 
             template<>
             struct serialization::hz_serializer<test::TestCustomPerson> : public custom_serializer {
-                static int32_t getTypeId();
+                static constexpr int32_t getTypeId() {
+                    return 666;
+                }
 
                 static void write(const test::TestCustomPerson &object, ObjectDataOutput & out);
 
@@ -408,11 +441,13 @@ namespace hazelcast {
 
             template<>
             struct serialization::hz_serializer<test::TestCustomXSerializable> : public custom_serializer {
-                static int32_t getTypeId();
+                static constexpr int32_t getTypeId() {
+                    return 666;
+                }
 
-                void write(const test::TestCustomXSerializable &object, serialization::ObjectDataOutput & out);
+                static void write(const test::TestCustomXSerializable &object, ObjectDataOutput &out);
 
-                test::TestCustomXSerializable read(serialization::ObjectDataInput &in);
+                static test::TestCustomXSerializable read(ObjectDataInput &in);
             };
 
         }

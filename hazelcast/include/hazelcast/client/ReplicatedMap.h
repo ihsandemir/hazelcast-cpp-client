@@ -58,7 +58,7 @@ namespace hazelcast {
              */
             template<typename K, typename V>
             boost::future<boost::optional<V>> put(const K &key, const V &value, std::chrono::steady_clock::duration ttl) {
-                return putData(toData(key), toData(value), ttl);
+                return toObject<V>(putData(toData(key), toData(value), ttl));
             }
 
             /**
@@ -87,7 +87,7 @@ namespace hazelcast {
                 return proxy::ReplicatedMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
-                                        getContext().getSerializationService(), listener, getContext().getLogger())));
+                                        getContext().getSerializationService(), std::forward<Listener>(listener), getContext().getLogger())));
             }
 
             /**
@@ -107,7 +107,7 @@ namespace hazelcast {
                 return proxy::ReplicatedMapImpl::addEntryListenerToKey(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
-                                                                getContext().getSerializationService(), listener,
+                                                                getContext().getSerializationService(), std::forward<Listener>(listener),
                                                                 getContext().getLogger())), toData(key));
             }
 
@@ -123,7 +123,7 @@ namespace hazelcast {
                 return proxy::ReplicatedMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
-                                                                getContext().getSerializationService(), listener,
+                                                                getContext().getSerializationService(), std::forward<Listener>(listener),
                                                                 getContext().getLogger())), toData(predicate));
             }
 
@@ -140,7 +140,7 @@ namespace hazelcast {
                 return proxy::ReplicatedMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
-                                                                getContext().getSerializationService(), listener,
+                                                                getContext().getSerializationService(), std::forward<Listener>(listener),
                                                                 getContext().getLogger())), toData(key), toData(predicate));
             }
 
@@ -327,7 +327,8 @@ namespace hazelcast {
                             listener.entryEvicted(entryEvent);
                             break;
                         default:
-                            logger.warning("Received unrecognized event with type: ", type, " Dropping the event!!!");
+                            logger.warning("Received unrecognized event with type: ", static_cast<int>(type),
+                                           " Dropping the event!!!");
                     }
                 }
             private:

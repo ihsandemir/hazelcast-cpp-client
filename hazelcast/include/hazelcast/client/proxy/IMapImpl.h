@@ -209,7 +209,7 @@ namespace hazelcast {
                                      const serialization::pimpl::Data &predicate);
 
                 template<typename K, typename V>
-                std::pair<size_t, size_t> updateAnchor(std::vector<std::pair<K, V>> &entries,
+                std::pair<size_t, size_t> updateAnchor(std::vector<std::pair<K, boost::optional<V>>> &entries,
                                                        query::PagingPredicate<K, V> &predicate,
                                                        query::IterationType iterationType) {
                     if (0 == entries.size()) {
@@ -237,7 +237,7 @@ namespace hazelcast {
 
                 template<typename K, typename V>
                 static void
-                setAnchor(std::vector<std::pair<K, V>> &entries, query::PagingPredicate<K, V> &predicate, int nearestPage) {
+                setAnchor(std::vector<std::pair<K, boost::optional<V>>> &entries, query::PagingPredicate<K, V> &predicate, int nearestPage) {
                     if (0 == entries.size()) {
                         return;
                     }
@@ -246,9 +246,7 @@ namespace hazelcast {
                     size_t pageSize = (size_t) predicate.getPageSize();
                     int page = (int) predicate.getPage();
                     for (size_t i = pageSize; i <= size && nearestPage < page; i += pageSize) {
-                        std::unique_ptr<K> key = entries.releaseKey(i - 1);
-                        std::unique_ptr<V> value = entries.releaseValue(i - 1);
-                        std::pair<K *, V *> anchor(key.release(), value.release());
+                        std::pair<K *, V *> anchor(new K(entries[i-1].first), new V(entries[i-1].second.value()));
                         nearestPage++;
                         predicate.setAnchor((size_t) nearestPage, anchor);
                     }

@@ -31,9 +31,9 @@ namespace hazelcast {
         template<typename K, typename V>
         class EntryView{
         public:
-            EntryView(const K &key, const V &value, const map::DataEntryView &rhs)
-            : key(key)
-            , value(value)
+            EntryView(K key, V value, map::DataEntryView rhs)
+            : key(std::move(key))
+            , value(std::move(value))
             , cost (rhs.getCost())
             , creationTime (rhs.getCreationTime())
             , expirationTime (rhs.getExpirationTime())
@@ -41,9 +41,8 @@ namespace hazelcast {
             , lastAccessTime (rhs.getLastAccessTime())
             , lastStoredTime (rhs.getLastStoredTime())
             , lastUpdateTime (rhs.getLastUpdateTime())
-            , version (rhs.getVersion()) {
+            , version (rhs.getVersion()) {};
 
-            };
             /**
              * key
              */

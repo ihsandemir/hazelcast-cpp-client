@@ -53,8 +53,11 @@ namespace hazelcast {
             protected:
                 IListImpl(const std::string& instanceName, spi::ClientContext *context);
 
+                template<typename Listener>
                 boost::future<std::string>
-                addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue);
+                addItemListener(std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::ListAddListenerCodec::AbstractEventHandler>> &&itemEventHandler, bool includeValue) {
+                    return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
+                }
 
                 boost::future<bool> contains(const serialization::pimpl::Data& element);
 

@@ -578,11 +578,6 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            boost::future<std::string>
-            IListImpl::addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue) {
-                return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
-            }
-
             boost::future<bool> IListImpl::removeItemListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
@@ -858,11 +853,6 @@ namespace hazelcast {
                 serialization::pimpl::Data data = getContext().getSerializationService().toData<std::string>(
                         &instanceName);
                 partitionId = getPartitionId(data);
-            }
-
-            boost::future<std::string>
-            IQueueImpl::addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue) {
-                return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
             }
 
             boost::future<bool> IQueueImpl::removeItemListener(const std::string &registrationId) {
@@ -1573,11 +1563,6 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            boost::future<std::string>
-            ISetImpl::addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue) {
-                return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
-            }
-
             boost::future<bool> ISetImpl::removeItemListener(const std::string &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
@@ -1833,7 +1818,7 @@ namespace hazelcast {
                             }
                             try {
                                 rb->readMany(m.sequence, 1, m.maxCount).then([=] (boost::future<ringbuffer::ReadResultSet> f) {
-                                    m.callback->onResponse(std::make_shared<ringbuffer::ReadResultSet>(f.get()));
+                                    m.callback->onResponse(boost::make_optional<ringbuffer::ReadResultSet>(f.get()));
                                 }).get();
                             } catch (exception::IException &e) {
                                 m.callback->onFailure(std::current_exception());

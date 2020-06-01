@@ -59,7 +59,12 @@ namespace hazelcast {
 
                 template<typename T>
                 serialization::pimpl::Data toData(const T &object) {
-                    return serializationService_.template toData<T>(&object);
+                    return serializationService_.template toData<T>(object);
+                }
+
+                template<typename T>
+                serialization::pimpl::Data toData(const T *object) {
+                    return serializationService_.template toData<T>(object);
                 }
 
                 template<typename T>
@@ -68,7 +73,39 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                typename std::enable_if<std::is_same<T, const char *>::value, boost::optional<std::string>>::type
+                inline boost::optional<T> toObject(const serialization::pimpl::Data *data) {
+                    if (!data) {
+                        return boost::none;
+                    } else {
+                        return toObject<T>(*data);
+                    }
+                }
+
+                template<typename T>
+                inline boost::optional<T> toObject(std::unique_ptr<serialization::pimpl::Data> &&data) {
+                    return toObject<T>(data.get());
+                }
+
+                template<typename T>
+                inline boost::optional<T> toObject(std::unique_ptr<serialization::pimpl::Data> &data) {
+                    return toObject<T>(data.get());
+                }
+
+                template<typename T>
+                inline boost::optional<T> toObject(const boost::optional<serialization::pimpl::Data> &data) {
+                    return toObject<T>(data.get_ptr());
+                }
+
+
+                template<typename T>
+                inline boost::future<boost::optional<T>> toObject(boost::future<boost::optional<serialization::pimpl::Data>> f) {
+                    return f.then([=] (boost::future<boost::optional<serialization::pimpl::Data>> f) {
+                        return toObject<T>(f.get().get_ptr());
+                    });
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<char *, typename std::remove_cv<T>::type>::value, boost::optional<std::string>>::type
                 inline toObject(const serialization::pimpl::Data &data) {
                     return toObject<std::string>(data);
                 }
@@ -81,31 +118,17 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                auto toObject(boost::future<serialization::pimpl::Data> &f) -> boost::future<decltype(toObject<T>(f.get()))> {
+                auto toObject(boost::future<serialization::pimpl::Data> f) -> boost::future<decltype(toObject<T>(f.get()))> {
                     return f.then(boost::launch::deferred, [=] (boost::future<serialization::pimpl::Data> f) {
                         return toObject<T>(f.get());
                     });
                 }
 
                 template<typename T>
-                auto toObject(boost::future<std::unique_ptr<serialization::pimpl::Data>> &f) -> boost::future<decltype(toObject<T>(f.get()))> {
+                auto toObject(boost::future<std::unique_ptr<serialization::pimpl::Data>> f) -> boost::future<decltype(toObject<T>(f.get()))> {
                     return f.then(boost::launch::deferred, [=] (boost::future<std::unique_ptr<serialization::pimpl::Data>> f) {
                         return toObject<T>(f.get());
                     });
-                }
-
-                template<typename T>
-                inline boost::optional<T> toObject(std::unique_ptr<serialization::pimpl::Data> &data) {
-                    return toObject<T>(std::move(data));
-                }
-
-                template<typename T>
-                inline boost::optional<T> toObject(std::unique_ptr<serialization::pimpl::Data> &&data) {
-                    if (!data) {
-                        return boost::optional<T>();
-                    } else {
-                        return toObject<T>(*data);
-                    }
                 }
 
                 template<typename T>
@@ -125,7 +148,7 @@ namespace hazelcast {
                 }
 
                 template<typename K, typename V>
-                boost::future<std::unordered_map<K, boost::optional<V>>> toObjectMap(const boost::future<EntryVector> &entriesData) {
+                boost::future<std::unordered_map<K, boost::optional<V>>> toObjectMap(boost::future<EntryVector> entriesData) {
                     return entriesData.then(boost::launch::deferred, [=](boost::future<EntryVector> f) {
                         auto entries = f.get();
                         std::unordered_map<K, boost::optional<V>> result;
@@ -141,14 +164,13 @@ namespace hazelcast {
                 toEntryObjectVector(boost::future<EntryVector> dataFuture) {
                     return dataFuture.then(boost::launch::deferred, [=](boost::future<EntryVector> f) {
                         auto dataEntryVector = f.get();
-                        std::vector<K, V> result;
+                        std::vector<std::pair<K, V>> result;
                         result.reserve(dataEntryVector.size());
                         std::for_each(dataEntryVector.begin(), dataEntryVector.end(),
                                       [&](const std::pair<serialization::pimpl::Data, serialization::pimpl::Data> &entryData) {
                                           // please note that the key and value will never be null
-                                          result.push_back(
-                                                  std::make_pair(std::move(toObject<K>(entryData.first).value()),
-                                                                 std::move(toObject<V>(entryData.second).value())));
+                                          result.emplace_back(std::move(toObject<K>(entryData.first).value()),
+                                                                 std::move(toObject<V>(entryData.second).value()));
                                       });
                         return result;
                     });
@@ -167,7 +189,7 @@ namespace hazelcast {
                 template<typename T>
                 std::vector<serialization::pimpl::Data> toDataCollection(const std::vector<T> &elements) {
                     std::vector<serialization::pimpl::Data> dataCollection;
-                    dataCollection.reserve(elements.sie());
+                    dataCollection.reserve(elements.size());
                     std::for_each(elements.begin(), elements.end(),
                                   [&](const T &item) { dataCollection.push_back(toData(item)); });
                     return dataCollection;

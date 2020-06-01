@@ -43,8 +43,7 @@ namespace hazelcast {
 
                     virtual void handleTopicEventV10(serialization::pimpl::Data &&item, const int64_t &publishTime,
                                              const std::string &uuid) {
-                        listener()(
-                                Message(instanceName, TypedData(std::move(item), serializationService), publishTime,
+                        listener(Message(instanceName, TypedData(std::move(item), serializationService), publishTime,
                                         clusterService.getMember(uuid)));
                     }
                 private:

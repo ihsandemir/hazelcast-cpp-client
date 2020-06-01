@@ -35,7 +35,6 @@
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include <hazelcast/client/protocol/codec/UUIDCodec.h>
 #include <hazelcast/client/protocol/ClientProtocolErrorCodes.h>
-#include "hazelcast/client/Socket.h"
 #include "hazelcast/client/protocol/codec/AddressCodec.h"
 #include "hazelcast/client/protocol/codec/MemberCodec.h"
 #include "hazelcast/client/protocol/codec/DataEntryViewCodec.h"
@@ -49,17 +48,11 @@
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 #include "hazelcast/client/protocol/codec/ErrorCodec.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
-#include "hazelcast/client/protocol/ClientExceptionFactory.h"
-#include "hazelcast/client/protocol/ClientMessage.h"
-#include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
 #include "hazelcast/client/protocol/Principal.h"
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
-#include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
-#include "hazelcast/client/impl/ClientMessageDecoder.h"
-#include "hazelcast/client/serialization/serialization.h"
 
 namespace hazelcast {
     namespace client {
@@ -888,19 +881,6 @@ namespace hazelcast {
                            + ClientMessage::INT64_SIZE * 10;
                 }
 
-            }
-        }
-
-        namespace impl {
-            std::shared_ptr<void>
-            VoidMessageDecoder::decodeClientMessage(protocol::ClientMessage &&clientMessage,
-                                                    serialization::pimpl::SerializationService &serializationService) {
-                return std::shared_ptr<void>();
-            }
-
-            const std::shared_ptr<ClientMessageDecoder<void>> &VoidMessageDecoder::instance() {
-                static std::shared_ptr<ClientMessageDecoder<void>> singleton(new VoidMessageDecoder);
-                return singleton;
             }
         }
     }

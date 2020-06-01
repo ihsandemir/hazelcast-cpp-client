@@ -59,6 +59,8 @@ namespace hazelcast {
                     struct MapPutPartitionAwareCallable : public PartitionAware<std::string> {
                         const std::string *getPartitionKey() const override;
 
+                        MapPutPartitionAwareCallable(const std::string &mapName, const std::string &partitionKey);
+
                         std::string mapName;
                         std::string partitionKey;
                     };

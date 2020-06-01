@@ -77,9 +77,9 @@ namespace hazelcast {
             template<typename Listener>
             std::string addMessageListener(Listener &&listener) {
                 int id = ++runnerCounter;
-                std::shared_ptr<MessageRunner<Listener>>
-                        runner(new MessageRunner<Listener>(id, listener, ringbuffer, getName(),
-                                                 getSerializationService(), config, logger));
+                std::shared_ptr<MessageRunner < Listener>>
+                runner(new MessageRunner<Listener>(id, std::forward<Listener>(listener), ringbuffer, getName(),
+                                                   getSerializationService(), *config, logger));
                 runnersMap.put(id, runner);
                 runner->next();
                 return std::to_string(id);
@@ -119,8 +119,10 @@ namespace hazelcast {
                     instanceName, context) {}
 
             template<typename Listener>
-            class MessageRunner : public ExecutionCallback<ringbuffer::ReadResultSet>,
-        public std::enable_shared_from_this<MessageRunner<Listener>>, public util::concurrent::Cancellable {
+            class MessageRunner
+                    : public ExecutionCallback<ringbuffer::ReadResultSet>,
+                      public std::enable_shared_from_this<MessageRunner<Listener>>,
+                      public util::concurrent::Cancellable {
             public:
                 MessageRunner(int id, Listener &&listener, const std::shared_ptr<Ringbuffer> &rb,
                               const std::string &topicName, serialization::pimpl::SerializationService &service,
@@ -129,7 +131,7 @@ namespace hazelcast {
                         name(topicName), executor(rb, logger), serializationService(service),
                         config(reliableTopicConfig) {
                     // we are going to listen to next publication. We don't care about what already has been published.
-                    int64_t initialSequence = listener->retrieveInitialSequence();
+                    int64_t initialSequence = listener.retrieveInitialSequence();
                     if (initialSequence == -1) {
                         initialSequence = ringbuffer->tailSequence().get() + 1;
                     }
@@ -152,17 +154,17 @@ namespace hazelcast {
                 }
 
                 // This method is called from the provided executor.
-                void onResponse(const std::shared_ptr<ringbuffer::ReadResultSet> &allMessages) override {
+                void onResponse(const boost::optional<ringbuffer::ReadResultSet> &allMessages) override {
                     if (cancelled) {
                         return;
                     }
-                    
+
                     // we process all messages in batch. So we don't release the thread and reschedule ourselves;
                     // but we'll process whatever was received in 1 go.
                     for (auto &item : allMessages->getItems()) {
                         try {
                             listener.storeSequence(sequence);
-                            process(*item.get<topic::impl::reliable::ReliableTopicMessage>());
+                            process(item.get<topic::impl::reliable::ReliableTopicMessage>().get_ptr());
                         } catch (exception::IException &e) {
                             if (terminate(e)) {
                                 cancel();
@@ -280,7 +282,7 @@ namespace hazelcast {
                     }
 
                     try {
-                        bool terminate = listener->isTerminal(failure);
+                        bool terminate = listener.isTerminal(failure);
                         if (terminate) {
                             std::ostringstream out;
                             out << "Terminating MessageListener " << id << " on topic: " << name << ". "

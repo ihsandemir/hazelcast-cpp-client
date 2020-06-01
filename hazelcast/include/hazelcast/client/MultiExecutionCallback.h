@@ -49,7 +49,7 @@ namespace hazelcast {
              * @param member member that the task is submitted to.
              * @param value result of the execution
              */
-            virtual void onResponse(const Member &member, const std::shared_ptr<V> &response) = 0;
+            virtual void onResponse(const Member &member, const boost::optional<V> &response) = 0;
 
             /**
              * Called when an execution is completed with an exception on a member.
@@ -65,7 +65,7 @@ namespace hazelcast {
              * @param values map of Member-Response pairs where no exception occured.
              * @param exceptions The exceptions produced by failing members.
              */
-            virtual void onComplete(const std::unordered_map<Member, std::shared_ptr<V> > &values,
+            virtual void onComplete(const std::unordered_map<Member, boost::optional<V> > &values,
                                     const std::unordered_map<Member, std::exception_ptr> &exceptions) = 0;
         };
     }

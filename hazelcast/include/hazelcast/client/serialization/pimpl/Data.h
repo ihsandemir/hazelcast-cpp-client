@@ -67,6 +67,8 @@ namespace hazelcast {
 
                     bool operator<(const Data &rhs) const;
 
+                    friend bool operator==(const Data &lhs, const Data &rhs);
+
                 private:
                     std::vector<byte> data;
                     int cachedHashValue;

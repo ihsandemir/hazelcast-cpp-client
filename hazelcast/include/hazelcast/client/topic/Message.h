@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <utility>
+
 #include "hazelcast/client/TypedData.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -30,14 +32,19 @@ namespace hazelcast {
             class HAZELCAST_API Message {
             public:
                 Message(const std::string &topicName, TypedData &&message, int64_t publishTime,
+                        boost::optional<Member> &&member) : Message(topicName, std::move(message),
+                                std::chrono::system_clock::from_time_t(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::milliseconds(publishTime)).count()),
+                                std::move(member)) {}
+
+                Message(std::string topicName, TypedData &&message, std::chrono::system_clock::time_point publishTime,
                         boost::optional<Member> &&member)
-                        : messageObject(message), publishTime(publishTime), publishingMember(member), name(topicName) {}
+                        : messageObject(message), publishTime(publishTime), publishingMember(member), name(std::move(topicName)) {}
 
                 const TypedData &getMessageObject() const {
                     return messageObject;
                 }
 
-                int64_t getPublishTime() const {
+                std::chrono::system_clock::time_point getPublishTime() const {
                     return publishTime;
                 }
 
@@ -55,7 +62,7 @@ namespace hazelcast {
 
             private:
                 TypedData messageObject;
-                int64_t publishTime;
+                std::chrono::system_clock::time_point publishTime;
                 boost::optional<Member> publishingMember;
                 std::string name;
             };

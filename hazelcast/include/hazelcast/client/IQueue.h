@@ -51,9 +51,9 @@ namespace hazelcast {
                         new impl::ItemEventHandler<Listener, protocol::codec::QueueAddListenerCodec::AbstractEventHandler>(
                                 getName(), getContext().getClientClusterService(),
                                 getContext().getSerializationService(),
-                                listener,
+                                std::forward<Listener>(listener),
                                 includeValue));
-                return proxy::IQueueImpl::addItemListener(itemEventHandler, includeValue);
+                return proxy::IQueueImpl::addItemListener(std::move(itemEventHandler), includeValue);
             }
 
             /**
@@ -138,7 +138,9 @@ namespace hazelcast {
             */
             template<typename E>
             boost::future<size_t> drainTo(std::vector<E> &elements) {
-                return proxy::IQueueImpl::drainToData().then(boost::launch::deferred, &drainItems < E > );
+                return proxy::IQueueImpl::drainToData().then(boost::launch::deferred, [&](boost::future<std::vector<serialization::pimpl::Data>> f)  {
+                    return drainItems(std::move(f), elements);
+                });
             }
 
             /**
@@ -150,7 +152,9 @@ namespace hazelcast {
             */
             template<typename E>
             boost::future<size_t> drainTo(std::vector<E> &elements, size_t maxElements) {
-                return proxy::IQueueImpl::drainToData().then(boost::launch::deferred, &drainItems < E > );
+                return proxy::IQueueImpl::drainToData(maxElements).then(boost::launch::deferred, [&](boost::future<std::vector<serialization::pimpl::Data>> f)  {
+                    return drainItems(std::move(f), elements);
+                });
             }
 
             /**
@@ -234,7 +238,7 @@ namespace hazelcast {
                 elements.reserve(size);
                 auto &ss = getContext().getSerializationService();
                 for (auto &data : datas) {
-                    elements.push_back(ss.template toObject<E>(data));
+                    elements.push_back(ss.template toObject<E>(data).value());
                 }
                 return size;
             }

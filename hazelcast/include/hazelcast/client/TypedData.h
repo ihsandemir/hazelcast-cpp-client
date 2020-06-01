@@ -47,7 +47,7 @@ namespace hazelcast {
              *
              * @return The type of the underlying object for this binary.
              */
-            const serialization::pimpl::ObjectType getType() const;
+            serialization::pimpl::ObjectType getType() const;
 
             /**
              * Deserializes the underlying binary data and produces the object of type T.

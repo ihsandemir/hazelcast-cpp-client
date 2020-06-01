@@ -50,7 +50,7 @@ namespace hazelcast {
                                 getContext().getSerializationService(),
                                 listener,
                                 includeValue));
-                return proxy::IListImpl::addItemListener(itemEventHandler, includeValue);
+                return proxy::IListImpl::addItemListener(std::move(itemEventHandler), includeValue);
             }
 
             /**
@@ -175,7 +175,7 @@ namespace hazelcast {
             * @throws IndexOutOfBoundsException if the index is out of range.
             */
             template<typename E>
-            auto set(int32_t index, const E &element) -> boost::future<decltype(toObject<E>(serialization::pimpl::Data()))> {
+            boost::future<boost::optional<E>> set(int32_t index, const E &element) {
                 return toObject<E>(proxy::IListImpl::setData(index, toData(element)));
             }
 

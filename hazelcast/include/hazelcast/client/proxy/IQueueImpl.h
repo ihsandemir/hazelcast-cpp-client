@@ -15,10 +15,11 @@
  */
 #pragma once
 
-#include "hazelcast/client/proxy/ProxyImpl.h"
 #include <vector>
 #include <memory>
 #include <chrono>
+#include "hazelcast/client/proxy/ProxyImpl.h"
+#include "hazelcast/client/impl/ItemEventHandler.h"
 
 namespace hazelcast {
     namespace client {
@@ -65,8 +66,11 @@ namespace hazelcast {
             protected:
                 IQueueImpl(const std::string& instanceName, spi::ClientContext *context);
 
+                template<typename Listener>
                 boost::future<std::string>
-                addItemListener(std::unique_ptr<impl::BaseEventHandler> &&itemEventHandler, bool includeValue);
+                addItemListener(std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::QueueAddListenerCodec::AbstractEventHandler>> &&itemEventHandler, bool includeValue) {
+                    return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
+                }
                 
                 boost::future<bool> offer(const serialization::pimpl::Data& element, std::chrono::steady_clock::duration timeout);
 

@@ -778,7 +778,7 @@ namespace hazelcast {
                 addresses.push_back(Address("localhost", 6666));
                 clientConfig.getNetworkConfig().addAddresses(addresses);
 
-                std::unordered_set<Address, addressComparator> configuredAddresses = clientConfig.getAddresses();
+                std::unordered_set<Address> configuredAddresses = clientConfig.getAddresses();
                 ASSERT_EQ(2U, addresses.size());
                 std::vector<Address> configuredAddressVector(configuredAddresses.begin(), configuredAddresses.end());
                 ASSERT_EQ(addresses, configuredAddressVector);
@@ -1115,17 +1115,26 @@ namespace hazelcast {
                 public:
                     Child() {}
 
-                    Child(std::string name) : name (name) {}
+                    Child(std::string name) : name(name) {}
 
                     const std::string &getName() const {
                         return name;
                     }
+
+                    friend bool operator==(const Child &lhs, const Child &rhs) {
+                        return lhs.name == rhs.name;
+                    }
+
                 private:
                     std::string name;
                 };
 
                 class Parent {
                 public:
+                    friend bool operator==(const Parent &lhs, const Parent &rhs) {
+                        return lhs.child == rhs.child;
+                    }
+
                     Parent() {}
 
                     Parent(Child child) : child(child) {}
@@ -1133,6 +1142,7 @@ namespace hazelcast {
                     const Child &getChild() const {
                         return child;
                     }
+
                 private:
                     Child child;
                 };
@@ -1155,8 +1165,7 @@ namespace hazelcast {
                 serialization::pimpl::Data data = ss1.toData<Parent>(&parent);
 
                 // cached class definition of Child and the class definition from data coming from ss1 should be compatible
-                        ASSERT_EQ(parent, *ss2.toObject<Parent>(data));
-
+                ASSERT_EQ(parent, *ss2.toObject<Parent>(data));
             }
         }
         namespace serialization {
@@ -1190,12 +1199,13 @@ namespace hazelcast {
                     return 1;
                 }
 
-                void writePortable(const test::PortableVersionTest::Parent &object, PortableWriter &writer) {
+                static void writePortable(const test::PortableVersionTest::Parent &object, PortableWriter &writer) {
                     writer.writePortable<test::PortableVersionTest::Child>("child", &object.getChild());
                 }
 
-                virtual test::PortableVersionTest::Parent readPortable(PortableReader &reader) {
-                    return test::PortableVersionTest::Parent(reader.readPortable<test::PortableVersionTest::Child>("child").value());
+                static test::PortableVersionTest::Parent readPortable(PortableReader &reader) {
+                    return test::PortableVersionTest::Parent(
+                            reader.readPortable<test::PortableVersionTest::Child>("child").value());
                 }
             };
 
@@ -1350,7 +1360,7 @@ namespace hazelcast {
                 serialization::pimpl::Data data = serializationService.toData<TestCustomXSerializable>(&a);
                 auto a2 = serializationService.toObject<TestCustomXSerializable>(data);
                 ASSERT_TRUE(a2);
-                ASSERT_EQ(a, *a2);
+                ASSERT_EQ(a, a2.value());
 
                 TestCustomPerson b{"TestCustomPerson"};
                 serialization::pimpl::Data data1 = serializationService.toData<TestCustomPerson>(&b);
@@ -1596,12 +1606,13 @@ namespace hazelcast {
                 SerializationConfig serializationConfig;
                 serialization::pimpl::SerializationService ss(serializationConfig);
 
-                ParentTemplatedPortable <ChildTemplatedPortable1> portable(new ChildTemplatedPortable1("aaa", "bbb"));
-                ss.toData < ParentTemplatedPortable < ChildTemplatedPortable1 > > (&portable);
-                ParentTemplatedPortable <ChildTemplatedPortable2> portable2(new ChildTemplatedPortable2("ccc"));
+                auto child1 = boost::make_optional(ChildTemplatedPortable1{"aaa", "bbb"});
+                ParentTemplatedPortable <ChildTemplatedPortable1> parent1{child1};
+                ss.toData(parent1);
 
-                ASSERT_THROW(ss.toData < ParentTemplatedPortable < ChildTemplatedPortable2 > > (&portable2),
-                             exception::HazelcastSerializationException);
+                auto child2 = boost::make_optional(ChildTemplatedPortable2{"ccc"});
+                ParentTemplatedPortable <ChildTemplatedPortable2> parent2{child2};
+                ASSERT_THROW(ss.toData(parent2), exception::HazelcastSerializationException);
             }
 
             TEST_F(ClientSerializationTest, testDataHash) {
@@ -1806,7 +1817,7 @@ namespace hazelcast {
                 out.writeObject<std::string>(&str);
                 out.writeObject<std::string>(&utfStr);
                 out.write<int32_t>(5);
-                out.write(nullptr);
+                out.write<std::string>(nullptr);
                 out.write<std::vector<std::string>>(nullptr);
 
                 serialization::ObjectDataInput in(out.toByteArray(), 0, serializationService.getPortableSerializer(), serializationService.getDataSerializer(),
@@ -1922,12 +1933,9 @@ namespace hazelcast {
                         static const char *DEFAULT_NEAR_CACHE_NAME;
 
                         void putAndGetRecord(config::InMemoryFormat inMemoryFormat) {
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 nearCacheRecordStore->put(getSharedKey(i), getSharedValue(i));
@@ -1936,19 +1944,16 @@ namespace hazelcast {
                             ASSERT_EQ(DEFAULT_RECORD_COUNT, nearCacheRecordStore->size());
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                                std::shared_ptr<std::string> value = nearCacheRecordStore->get(getSharedKey(i));
+                                auto value = nearCacheRecordStore->get(getSharedKey(i));
                                 ASSERT_TRUE(value);
                                 ASSERT_EQ(*getSharedValue(i), *value);
                             }
                         }
 
                         void putAndRemoveRecord(config::InMemoryFormat inMemoryFormat) {
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 std::shared_ptr<serialization::pimpl::Data> key = getSharedKey(i);
@@ -1970,12 +1975,9 @@ namespace hazelcast {
                         }
 
                         void clearRecordsOrDestroyStore(config::InMemoryFormat inMemoryFormat, bool destroy) {
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 std::shared_ptr<serialization::pimpl::Data> key = getSharedKey(i);
@@ -1996,12 +1998,9 @@ namespace hazelcast {
 
                         void statsCalculated(config::InMemoryFormat inMemoryFormat) {
                             int64_t creationStartTime = hazelcast::util::currentTimeMillis();
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
                             int64_t creationEndTime = hazelcast::util::currentTimeMillis();
 
                             int64_t expectedEntryCount = 0;
@@ -2070,14 +2069,11 @@ namespace hazelcast {
                         void ttlEvaluated(config::InMemoryFormat inMemoryFormat) {
                             int ttlSeconds = 3;
 
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
                             nearCacheConfig.setTimeToLiveSeconds(ttlSeconds);
 
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 nearCacheRecordStore->put(getSharedKey(i), getSharedValue(i));
@@ -2097,14 +2093,11 @@ namespace hazelcast {
                         void maxIdleTimeEvaluatedSuccessfully(config::InMemoryFormat inMemoryFormat) {
                             int maxIdleSeconds = 3;
 
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
                             nearCacheConfig.setMaxIdleSeconds(maxIdleSeconds);
 
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 nearCacheRecordStore->put(getSharedKey(i), getSharedValue(i));
@@ -2125,7 +2118,7 @@ namespace hazelcast {
                                                                  bool useIdleTime) {
                             int cleanUpThresholdSeconds = 3;
 
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
                             if (useIdleTime) {
                                 nearCacheConfig.setMaxIdleSeconds(cleanUpThresholdSeconds);
@@ -2133,10 +2126,7 @@ namespace hazelcast {
                                 nearCacheConfig.setTimeToLiveSeconds(cleanUpThresholdSeconds);
                             }
 
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 nearCacheRecordStore->put(getSharedKey(i), getSharedValue(i));
@@ -2154,42 +2144,35 @@ namespace hazelcast {
                         }
 
                         void createNearCacheWithMaxSizePolicy(config::InMemoryFormat inMemoryFormat,
-                                                              config::EvictionConfig<int, std::string>::MaxSizePolicy maxSizePolicy,
+                                                              config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data>::MaxSizePolicy maxSizePolicy,
                                                               int32_t size) {
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
-                            std::shared_ptr<config::EvictionConfig<int, std::string> > evictionConfig(
-                                    new config::EvictionConfig<int, std::string>());
+                            std::shared_ptr<config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data> > evictionConfig(
+                                    new config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data>());
                             evictionConfig->setMaximumSizePolicy(maxSizePolicy);
                             evictionConfig->setSize(size);
                             nearCacheConfig.setEvictionConfig(evictionConfig);
 
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
                         }
 
                         void doEvictionWithEntryCountMaxSizePolicy(config::InMemoryFormat inMemoryFormat,
                                                                    config::EvictionPolicy evictionPolicy) {
                             int32_t maxSize = DEFAULT_RECORD_COUNT / 2;
 
-                            config::NearCacheConfig<int, std::string> nearCacheConfig = createNearCacheConfig<int, std::string>(
+                            auto nearCacheConfig = createNearCacheConfig(
                                     DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
 
+                            std::shared_ptr<config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data> > evictionConfig(
+                                    new config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data>());
 
-                            std::shared_ptr<config::EvictionConfig<int, std::string> > evictionConfig(
-                                    new config::EvictionConfig<int, std::string>());
-
-                            evictionConfig->setMaximumSizePolicy(config::EvictionConfig<int, std::string>::ENTRY_COUNT);
+                            evictionConfig->setMaximumSizePolicy(config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data>::ENTRY_COUNT);
                             evictionConfig->setSize(maxSize);
                             evictionConfig->setEvictionPolicy(evictionPolicy);
                             nearCacheConfig.setEvictionConfig(evictionConfig);
 
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, std::string> >
-                                    nearCacheRecordStore = createNearCacheRecordStore<int, std::string, serialization::pimpl::Data>(
-                                    nearCacheConfig,
-                                    inMemoryFormat);
+                            auto nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
                             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                                 nearCacheRecordStore->put(getSharedKey(i), getSharedValue(i));
@@ -2198,20 +2181,19 @@ namespace hazelcast {
                             }
                         }
 
-                        template<typename K, typename V, typename KS>
-                        std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<KS, V> > createNearCacheRecordStore(
-                                config::NearCacheConfig<K, V> &nearCacheConfig,
+                        std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, serialization::pimpl::Data> > createNearCacheRecordStore(
+                                config::NearCacheConfig<serialization::pimpl::Data, serialization::pimpl::Data> &nearCacheConfig,
                                 config::InMemoryFormat inMemoryFormat) {
-                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<KS, V> > recordStore;
+                            std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, serialization::pimpl::Data> > recordStore;
                             switch (inMemoryFormat) {
                                 case config::BINARY:
-                                    recordStore = std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<KS, V> >(
-                                            new hazelcast::client::internal::nearcache::impl::store::NearCacheDataRecordStore<K, V, KS>(
+                                    recordStore = std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, serialization::pimpl::Data> >(
+                                            new hazelcast::client::internal::nearcache::impl::store::NearCacheDataRecordStore<serialization::pimpl::Data, serialization::pimpl::Data, serialization::pimpl::Data>(
                                                     DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, *ss));
                                     break;
                                 case config::OBJECT:
-                                    recordStore = std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<KS, V> >(
-                                            new hazelcast::client::internal::nearcache::impl::store::NearCacheObjectRecordStore<K, V, KS>(
+                                    recordStore = std::unique_ptr<hazelcast::client::internal::nearcache::impl::NearCacheRecordStore<serialization::pimpl::Data, serialization::pimpl::Data> >(
+                                            new hazelcast::client::internal::nearcache::impl::store::NearCacheObjectRecordStore<serialization::pimpl::Data, serialization::pimpl::Data, serialization::pimpl::Data>(
                                                     DEFAULT_NEAR_CACHE_NAME,
                                                     nearCacheConfig, *ss));
                                     break;
@@ -2226,18 +2208,18 @@ namespace hazelcast {
                             return recordStore;
                         }
 
-                        template<typename K, typename V>
-                        config::NearCacheConfig<K, V> createNearCacheConfig(const char *name,
-                                                                            config::InMemoryFormat inMemoryFormat) {
-                            config::NearCacheConfig<K, V> config;
+                        config::NearCacheConfig<serialization::pimpl::Data, serialization::pimpl::Data>
+                        createNearCacheConfig(const char *name,
+                                              config::InMemoryFormat inMemoryFormat) {
+                            config::NearCacheConfig<serialization::pimpl::Data, serialization::pimpl::Data> config;
                             config.setName(name).setInMemoryFormat(inMemoryFormat);
                             return config;
                         }
 
-                        std::shared_ptr<std::string> getSharedValue(int value) const {
+                        std::shared_ptr<serialization::pimpl::Data> getSharedValue(int value) const {
                             char buf[30];
                             hazelcast::util::hz_snprintf(buf, 30, "Record-%ld", value);
-                            return std::shared_ptr<std::string>(new std::string(buf));
+                            return ss->toSharedData(new std::string(buf));
                         }
 
                         std::shared_ptr<serialization::pimpl::Data> getSharedKey(int value) {
@@ -2289,7 +2271,7 @@ namespace hazelcast {
 
                     TEST_P(NearCacheRecordStoreTest, canCreateWithEntryCountMaxSizePolicy) {
                         createNearCacheWithMaxSizePolicy(GetParam(),
-                                                         config::EvictionConfig<int, std::string>::ENTRY_COUNT,
+                                                         config::EvictionConfig<serialization::pimpl::Data, serialization::pimpl::Data>::ENTRY_COUNT,
                                                          1000);
                     }
 

@@ -144,8 +144,6 @@ namespace hazelcast {
             class ClientReplicatedMapTest : public ClientTestSupport {
             public:
                 struct SamplePortable {
-                public:
-                    SamplePortable(int a) : a(a) {}
                     int32_t a;
                 };
             protected:
@@ -535,7 +533,7 @@ namespace hazelcast {
 
             TEST_F(ClientReplicatedMapTest, testClientPortableWithoutRegisteringToNode) {
                 auto sampleMap = client->getReplicatedMap(getTestName());
-                sampleMap->put(1, SamplePortable(666));
+                sampleMap->put(1, SamplePortable{666});
                 auto samplePortable = sampleMap->get<int, SamplePortable>(1).get();
                 ASSERT_TRUE(samplePortable.has_value());
                 ASSERT_EQ(666, samplePortable->a);
@@ -554,11 +552,11 @@ namespace hazelcast {
                 }
 
                 static void writePortable(test::ClientReplicatedMapTest::SamplePortable object, serialization::PortableWriter &out) {
-                    out.writeInt("a", object.a);
+                    out.write<int32_t>("a", object.a);
                 }
 
                 static test::ClientReplicatedMapTest::SamplePortable readPortable(serialization::PortableReader &reader) {
-                    return {reader.readInt("a")};
+                    return {reader.read<int32_t>("a")};
                 }
             };
         }
@@ -693,7 +691,7 @@ namespace hazelcast {
 
             TEST_F(ClientReplicatedMapListenerTest, testListenWithPredicate) {
                 auto replicatedMap = client->getReplicatedMap(getTestName());
-                replicatedMap->addEntryListener(EventCountingListener(state), query::FalsePredicate());
+                replicatedMap->addEntryListener(EventCountingListener(state), query::FalsePredicate(*client));
                 replicatedMap->put(2, 2).get();
                 ASSERT_TRUE_ALL_THE_TIME((state.addCount.load() == 0), 1);
             }
@@ -1045,9 +1043,9 @@ namespace hazelcast {
                     auto value = nearCache->get(key);
                     if (value.get() != NULL) {
                         // the internal value should either be `null` or `NULL_OBJECT`
-                        std::shared_ptr<std::string> nullObj = std::static_pointer_cast<std::string>(
-                                hazelcast::client::internal::nearcache::NearCache<int, std::string>::NULL_OBJECT);
-                        ASSERT_EQ(nullObj, nearCache->get(key)) << "Expected NULL_OBJECT in Near Cache for key " << i;
+                        ASSERT_EQ(
+                        (hazelcast::client::internal::nearcache::NearCache<serialization::pimpl::Data, serialization::pimpl::Data>::NULL_OBJECT),
+                                nearCache->get(key)) << "Expected NULL_OBJECT in Near Cache for key " << i;
                     }
                 }
             }

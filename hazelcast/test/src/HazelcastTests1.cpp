@@ -82,7 +82,7 @@
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/serialization/serialization.h"
+#include "hazelcast/client/serialization/pimpl/DataInput.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -499,12 +499,14 @@ namespace hazelcast {
                 return 14;
             }
 
-            void hz_serializer<test::ringbuffer::StartsWithStringFilter>::writeData(const test::ringbuffer::StartsWithStringFilter &object, ObjectDataOutput &out) {
+            void hz_serializer<test::ringbuffer::StartsWithStringFilter>::writeData(
+                    const test::ringbuffer::StartsWithStringFilter &object, ObjectDataOutput &out) {
                 out.write(object.startString);
             }
 
-            test::ringbuffer::StartsWithStringFilter hz_serializer<test::ringbuffer::StartsWithStringFilter>::readData(ObjectDataInput &in) {
-                return test::ringbuffer::StartsWithStringFilter(in,read<std::string>());
+            test::ringbuffer::StartsWithStringFilter
+            hz_serializer<test::ringbuffer::StartsWithStringFilter>::readData(ObjectDataInput &in) {
+                return test::ringbuffer::StartsWithStringFilter(in.read<std::string>());
             }
         }
     }
@@ -679,8 +681,12 @@ namespace hazelcast {
                     auto result = clientRingbuffer->addAll(items, client::ringbuffer::OverflowPolicy::OVERWRITE).get();
 
                     ASSERT_EQ(client2Ringbuffer->tailSequence().get(), result);
-                    ASSERT_EQ_PTR("foo", client2Ringbuffer->readOne<std::string>(0).get(), std::string);
-                    ASSERT_EQ_PTR("bar", client2Ringbuffer->readOne<std::string>(1).get(), std::string);
+                    auto val0 = client2Ringbuffer->readOne<std::string>(0).get();
+                    auto val1 = client2Ringbuffer->readOne<std::string>(1).get();
+                    ASSERT_TRUE(val0);
+                    ASSERT_TRUE(val1);
+                    ASSERT_EQ(val1.value(), "foo");
+                    ASSERT_EQ(val1.value(), "bar");
                     ASSERT_EQ(0, client2Ringbuffer->headSequence().get());
                     ASSERT_EQ(1, client2Ringbuffer->tailSequence().get());
                 }
@@ -1513,7 +1519,7 @@ namespace hazelcast {
                     TEST_F(BasicPnCounterAPITest, testSubtractAndGet) {
                         auto pnCounter = client->getPNCounter(
                                 testing::UnitTest::GetInstance()->current_test_info()->name());
-                        ASSERT_EQ(-3, pnCounter->subtractAndGet(3));
+                        ASSERT_EQ(-3, pnCounter->subtractAndGet(3).get());
                     }
 
                     TEST_F(BasicPnCounterAPITest, testReset) {
@@ -2297,10 +2303,10 @@ namespace hazelcast {
 
                 ASSERT_EQ(2, (int) txMap->size().get());
                 ASSERT_EQ(2, (int) txMap->keySet<std::string>().get().size());
-                query::SqlPredicate predicate("a = 10");
+                query::SqlPredicate predicate(client, "a = 10");
                 ASSERT_EQ(0, (int) txMap->keySet<std::string>(predicate).get().size());
                 ASSERT_EQ(0, (int) txMap->values<std::string>(predicate).get().size());
-                query::SqlPredicate predicate2("a >= 10");
+                query::SqlPredicate predicate2(client, "a >= 10");
                 ASSERT_EQ(2, (int) txMap->keySet<std::string>(predicate2).get().size());
                 ASSERT_EQ(2, (int) txMap->values<std::string>(predicate2).get().size());
 
@@ -2368,7 +2374,7 @@ namespace hazelcast {
 
                 context.commitTransaction().get();
 
-                ASSERT_EQ(1, s->size());
+                ASSERT_EQ(1, s->size().get());
             }
         }
     }
@@ -2706,7 +2712,7 @@ namespace hazelcast {
                 ASSERT_FALSE(multiMap->remove(key, "NonExistentValue").get());
                 ASSERT_TRUE(multiMap->remove(key, "value1").get());
 
-                ASSERT_EQ(2, multiMap->size());
+                ASSERT_EQ(2, multiMap->size().get());
                 ASSERT_EQ(2, (int) (multiMap->valueCount<std::string>(key).get()));
 
                 context.commitTransaction().get();
@@ -2795,9 +2801,9 @@ namespace hazelcast {
                 latch1.count_down();
                 s = q0->poll<std::string>(std::chrono::seconds(10)).get();
                 ASSERT_EQ("item0", s.value());
-                ASSERT_TRUE(q1->offer(s.value()));
+                ASSERT_TRUE(q1->offer(s.value()).get());
 
-                ASSERT_NO_THROW(context.commitTransaction());
+                ASSERT_NO_THROW(context.commitTransaction().get());
 
                 ASSERT_EQ(0, client.getQueue("defQueue0")->size().get());
                 ASSERT_EQ("item0", client.getQueue("defQueue1")->poll<std::string>().get().value());
@@ -2814,196 +2820,105 @@ namespace hazelcast {
                 {};
 
                 TEST_F(DataInputTest, testReadByte) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x01);
-                    bytes.push_back(0x12);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    ASSERT_EQ(0x01, dataInput.readByte());
-                    ASSERT_EQ(0x12, dataInput.readByte());
+                    std::vector<byte> bytes{0x01, 0x12};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_EQ(0x01, dataInput.read<byte>());
+                    ASSERT_EQ(0x12, dataInput.read<byte>());
                 }
 
                 TEST_F(DataInputTest, testReadBoolean) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x10);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    ASSERT_FALSE(dataInput.readBoolean());
-                    ASSERT_TRUE(dataInput.readBoolean());
+                    std::vector<byte> bytes{0x00, 0x10};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_FALSE(dataInput.read<bool>());
+                    ASSERT_TRUE(dataInput.read<bool>());
                 }
 
                 TEST_F(DataInputTest, testReadChar) {
-                    std::vector<byte> bytes;
-                    bytes.push_back('a');
-                    bytes.push_back('b');
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    ASSERT_EQ('b', dataInput.readChar());
+                    std::vector<byte> bytes{'a', 'b'};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_EQ('b', dataInput.read<char>());
                 }
 
                 TEST_F(DataInputTest, testReadShort) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    ASSERT_EQ(0x1234, dataInput.readShort());
+                    std::vector<byte> bytes{0x12, 0x34, 0x56};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_EQ(0x1234, dataInput.read<int16_t>());
                 }
 
                 TEST_F(DataInputTest, testReadInteger) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    bytes.push_back(0x90);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    ASSERT_EQ(INT32_C(0x12345678), dataInput.readInt());
+                    std::vector<byte> bytes{0x12, 0x34, 0x56, 0x78, 0x90};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_EQ(INT32_C(0x12345678), dataInput.read<int32_t>());
                 }
 
                 TEST_F(DataInputTest, testReadLong) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    bytes.push_back(0x90);
-                    bytes.push_back(0x9A);
-                    bytes.push_back(0x9B);
-                    bytes.push_back(0x9C);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    ASSERT_EQ(INT64_C(0x12345678909A9B9C), dataInput.readLong());
+                    std::vector<byte> bytes{0x12, 0x34, 0x56, 0x78, 0x90, 0x9A, 0x9B, 0x9C};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_EQ(INT64_C(0x12345678909A9B9C), dataInput.read<int64_t>());
                 }
 
                 TEST_F(DataInputTest, testReadUTF) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x04);
-                    bytes.push_back('b');
-                    bytes.push_back('d');
-                    bytes.push_back('f');
-                    bytes.push_back('h');
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::string> utf = dataInput.readUTF();
-                    ASSERT_NE((std::string *) nullptr, utf.get());
-                    ASSERT_EQ("bdfh", *utf);
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x04, 'b', 'd', 'f', 'h'};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    ASSERT_EQ("bdfh", dataInput.read<std::string>());
                 }
 
                 TEST_F(DataInputTest, testReadByteArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    std::vector<byte> actualDataBytes;
-                    actualDataBytes.push_back(0x12);
-                    actualDataBytes.push_back(0x34);
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02};
+                    std::vector<byte> actualDataBytes{0x12, 0x34};
                     bytes.insert(bytes.end(), actualDataBytes.begin(), actualDataBytes.end());
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::vector<byte> > readBytes = dataInput.readByteArray();
-                    ASSERT_NE((std::vector<byte> *) nullptr, readBytes.get());
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    auto readBytes = dataInput.read<std::vector<byte>>();
+                    ASSERT_TRUE(readBytes.has_value());
                     ASSERT_EQ(actualDataBytes, *readBytes);
                 }
 
                 TEST_F(DataInputTest, testReadBooleanArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x01);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::vector<bool> > booleanArray = dataInput.readBooleanArray();
-                    ASSERT_NE((std::vector<bool> *) nullptr, booleanArray.get());
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x00, 0x01};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    auto booleanArray = dataInput.read<std::vector<bool>>();
+                    ASSERT_TRUE(booleanArray);
                     ASSERT_EQ(2U, booleanArray->size());
                     ASSERT_FALSE((*booleanArray)[0]);
                     ASSERT_TRUE((*booleanArray)[1]);
                 }
 
                 TEST_F(DataInputTest, testReadCharArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0);
-                    bytes.push_back('f');
-                    bytes.push_back(0);
-                    bytes.push_back('h');
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::vector<char> > charArray = dataInput.readCharArray();
-                    ASSERT_NE((std::vector<char> *) nullptr, charArray.get());
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x00, 'f', 0x00, 'h'};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    auto charArray = dataInput.read<std::vector<char>>();
+                    ASSERT_TRUE(charArray);
                     ASSERT_EQ(2U, charArray->size());
                     ASSERT_EQ('f', (*charArray)[0]);
                     ASSERT_EQ('h', (*charArray)[1]);
                 }
 
                 TEST_F(DataInputTest, testReadShortArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::vector<int16_t> > array = dataInput.readShortArray();
-                    ASSERT_NE((std::vector<int16_t> *) nullptr, array.get());
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    auto array = dataInput.read<std::vector<int16_t>>();
+                    ASSERT_TRUE(array);
                     ASSERT_EQ(2U, array->size());
                     ASSERT_EQ(0x1234, (*array)[0]);
                     ASSERT_EQ(0x5678, (*array)[1]);
                 }
 
                 TEST_F(DataInputTest, testReadIntegerArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    bytes.push_back(0x1A);
-                    bytes.push_back(0xBC);
-                    bytes.push_back(0xDE);
-                    bytes.push_back(0xEF);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::vector<int32_t> > array = dataInput.readIntArray();
-                    ASSERT_NE((std::vector<int32_t> *) nullptr, array.get());
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78, 0x1A, 0xBC, 0xDE, 0xEF};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    auto array = dataInput.read<std::vector<int32_t>>();
+                    ASSERT_TRUE(array.has_value());
                     ASSERT_EQ(2U, array->size());
                     ASSERT_EQ(INT32_C(0x12345678), (*array)[0]);
                     ASSERT_EQ(INT32_C(0x1ABCDEEF), (*array)[1]);
                 }
 
                 TEST_F(DataInputTest, testReadLongArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    bytes.push_back(0x9A);
-                    bytes.push_back(0xBC);
-                    bytes.push_back(0xDE);
-                    bytes.push_back(0xEF);
-                    bytes.push_back(0x11);
-                    bytes.push_back(0xA2);
-                    bytes.push_back(0xA3);
-                    bytes.push_back(0xA4);
-                    bytes.push_back(0xA5);
-                    bytes.push_back(0xA6);
-                    bytes.push_back(0xA7);
-                    bytes.push_back(0xA8);
-                    serialization::pimpl::DataInput dataInput(bytes);
-                    std::unique_ptr<std::vector<int64_t> > array = dataInput.readLongArray();
-                    ASSERT_NE((std::vector<int64_t> *) nullptr, array.get());
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xEF,
+                                            0x11, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8};
+                    serialization::pimpl::DataInput<std::vector<byte>> dataInput(bytes);
+                    auto array = dataInput.read<std::vector<int64_t>>();
+                    ASSERT_TRUE(array.has_value());
                     ASSERT_EQ(2U, array->size());
                     ASSERT_EQ(INT64_C(0x123456789ABCDEEF), (*array)[0]);
                     ASSERT_EQ(INT64_C(0x11A2A3A4A5A6A7A8), (*array)[1]);
@@ -3012,8 +2927,6 @@ namespace hazelcast {
         }
     }
 }
-
-
 
 namespace hazelcast {
     namespace client {
@@ -3199,23 +3112,21 @@ namespace hazelcast {
                 {};
 
                 TEST_F(DataOutputTest, testWriteByte) {
-                    std::vector<byte> bytes;
+                    std::vector<byte> bytes{0x01, 0x12};
                     bytes.push_back(0x01);
                     bytes.push_back(0x12);
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeByte((byte) 0x01);
-                    dataOutput.writeByte(0x12);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<byte>((byte) 0x01);
+                    dataOutput.write<byte>(0x12);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteBoolean) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x01);
+                    std::vector<byte> bytes{0x00, 0x01};
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeBoolean(false);
-                    dataOutput.writeBoolean(true);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<bool>(false);
+                    dataOutput.write<bool>(true);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteChar) {
@@ -3223,178 +3134,96 @@ namespace hazelcast {
                     bytes.push_back(0);
                     bytes.push_back('b');
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeChar('b');
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<char>('b');
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteShort) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
+                    std::vector<byte> bytes{0x12, 0x34};
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeShort(0x1234);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<int16_t>(0x1234);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteInteger) {
-                    std::vector<byte> bytes;
+                    std::vector<byte> bytes{0x12, 0x34, 0x56, 0x78};
                     bytes.push_back(0x12);
                     bytes.push_back(0x34);
                     bytes.push_back(0x56);
                     bytes.push_back(0x78);
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeInt(INT32_C(0x12345678));
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<int32_t>(INT32_C(0x12345678));
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteLong) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    bytes.push_back(0x90);
-                    bytes.push_back(0x9A);
-                    bytes.push_back(0x9B);
-                    bytes.push_back(0x9C);
+                    std::vector<byte> bytes{0x12, 0x34, 0x56, 0x78, 0x90, 0x9A, 0x9B, 0x9C};
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeLong(INT64_C(0x12345678909A9B9C));
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<int64_t>(INT64_C(0x12345678909A9B9C));
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteUTF) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x04);
-                    bytes.push_back('b');
-                    bytes.push_back('d');
-                    bytes.push_back('f');
-                    bytes.push_back('h');
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x04, 'b', 'd', 'f', 'h'};
                     serialization::pimpl::DataOutput dataOutput;
                     std::string value("bdfh");
-                    dataOutput.writeUTF(&value);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<std::string>(&value);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteByteArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    std::vector<byte> actualDataBytes;
-                    actualDataBytes.push_back(0x12);
-                    actualDataBytes.push_back(0x34);
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02};
+                    std::vector<byte> actualDataBytes{0x12, 0x34};
                     bytes.insert(bytes.end(), actualDataBytes.begin(), actualDataBytes.end());
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeByteArray(&actualDataBytes);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write(&actualDataBytes);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteBooleanArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x01);
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x00, 0x01};
                     std::vector<bool> actualValues;
                     actualValues.push_back(false);
                     actualValues.push_back(true);
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeBooleanArray(&actualValues);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<std::vector<bool>>(&actualValues);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteCharArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    std::vector<char> actualChars;
-                    bytes.push_back(0);
-                    bytes.push_back('f');
-                    actualChars.push_back('f');
-                    bytes.push_back(0);
-                    bytes.push_back('h');
-                    actualChars.push_back('h');
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0, 'f', 0, 'h'};
+                    std::vector<char> actualChars{'f', 'h'};
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeCharArray(&actualChars);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<std::vector<char>>(actualChars);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteShortArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    std::vector<int16_t> actualValues;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    actualValues.push_back(0x1234);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    actualValues.push_back(0x5678);
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78};
+                    std::vector<int16_t> actualValues{0x1234, 0x5678};
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeShortArray(&actualValues);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<std::vector<int16_t>>(&actualValues);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteIntegerArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    std::vector<int32_t> actualValues;
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
+                    std::vector<byte> bytes{0x00, 0x00, 0x00, 0x02};
+                    std::vector<int32_t> actualValues{0x12, 0x34, 0x56, 0x78};
                     actualValues.push_back(INT32_C(0x12345678));
-                    bytes.push_back(0x9A);
-                    bytes.push_back(0xBC);
-                    bytes.push_back(0xDE);
-                    bytes.push_back(0xEF);
+                    bytes.insert(bytes.end(), {0x9A, 0xBC, 0xDE, 0xEF});
                     actualValues.push_back(INT32_C(0x9ABCDEEF));
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeIntArray(&actualValues);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<std::vector<int32_t>>(&actualValues);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
 
                 TEST_F(DataOutputTest, testWriteLongArray) {
-                    std::vector<byte> bytes;
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x00);
-                    bytes.push_back(0x02);
-                    bytes.push_back(0x12);
-                    bytes.push_back(0x34);
-                    bytes.push_back(0x56);
-                    bytes.push_back(0x78);
-                    bytes.push_back(0x9A);
-                    bytes.push_back(0xBC);
-                    bytes.push_back(0xDE);
-                    bytes.push_back(0xEF);
-                    bytes.push_back(0xA1);
-                    bytes.push_back(0xA2);
-                    bytes.push_back(0xA3);
-                    bytes.push_back(0xA4);
-                    bytes.push_back(0xA5);
-                    bytes.push_back(0xA6);
-                    bytes.push_back(0xA7);
-                    bytes.push_back(0xA8);
-                    std::vector<int64_t> actualValues;
-                    actualValues.push_back(INT64_C(0x123456789ABCDEEF));
-                    actualValues.push_back(INT64_C(0xA1A2A3A4A5A6A7A8));
+                    std::vector<byte> bytes = {0x00, 0x00, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xEF,
+                                               0x01, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8};
+                    std::vector<int64_t> actualValues{INT64_C(0x123456789ABCDEEF), INT64_C(0x01A2A3A4A5A6A7A8)};
                     serialization::pimpl::DataOutput dataOutput;
-                    dataOutput.writeLongArray(&actualValues);
-                    ASSERT_EQ(bytes, *dataOutput.toByteArray());
+                    dataOutput.write<std::vector<int64_t>>(&actualValues);
+                    ASSERT_EQ(bytes, dataOutput.toByteArray());
                 }
             }
         }
@@ -3402,8 +3231,6 @@ namespace hazelcast {
 }
 
 #ifdef HZ_BUILD_WITH_SSL
-
-
 
 namespace hazelcast {
     namespace client {
@@ -3436,4 +3263,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-

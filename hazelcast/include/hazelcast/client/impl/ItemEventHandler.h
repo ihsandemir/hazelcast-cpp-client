@@ -40,9 +40,9 @@ namespace hazelcast {
                     if (includeValue) {
                         val = TypedData(std::move(*item), serializationService);
                     }
-                    std::shared_ptr<Member> member = clusterService.getMember(uuid);
+                    auto member = clusterService.getMember(uuid);
                     ItemEventType type(static_cast<ItemEventType>(eventType));
-                    ItemEvent itemEvent(instanceName, type, std::move(val), *member);
+                    ItemEvent itemEvent(instanceName, type, std::move(val), std::move(member).value());
                     if (type == ItemEventType::ADDED) {
                         listener.itemAdded(itemEvent);
                     } else if (type == ItemEventType::REMOVED) {

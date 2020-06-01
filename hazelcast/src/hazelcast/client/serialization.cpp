@@ -31,6 +31,7 @@
  */
 
 #include <boost/concept_check.hpp>
+#include <utility>
 
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
@@ -43,11 +44,10 @@
 
 namespace hazelcast {
     namespace client {
-        HazelcastJsonValue::HazelcastJsonValue(const std::string &jsonString) : jsonString(jsonString) {
+        HazelcastJsonValue::HazelcastJsonValue(std::string jsonString) : jsonString(std::move(jsonString)) {
         }
 
-        HazelcastJsonValue::~HazelcastJsonValue() {
-        }
+        HazelcastJsonValue::~HazelcastJsonValue() = default;
 
         const std::string &HazelcastJsonValue::toString() const {
             return jsonString;
@@ -66,15 +66,15 @@ namespace hazelcast {
             return os;
         }
 
-        TypedData::TypedData() : ss(NULL) {
+        TypedData::TypedData() : ss(nullptr) {
         }
 
         TypedData::TypedData(serialization::pimpl::Data d,
-                             serialization::pimpl::SerializationService &serializationService) : data(d),
+                             serialization::pimpl::SerializationService &serializationService) : data(std::move(d)),
                                                                                                  ss(&serializationService) {
         }
 
-        const serialization::pimpl::ObjectType TypedData::getType() const {
+        serialization::pimpl::ObjectType TypedData::getType() const {
             return ss->getObjectType(&data);
         }
 
@@ -83,18 +83,18 @@ namespace hazelcast {
         }
 
         bool operator<(const TypedData &lhs, const TypedData &rhs) {
-            auto lhsData = lhs.getData();
-            auto rhsData = rhs.getData();
+            const auto& lhsData = lhs.getData();
+            const auto& rhsData = rhs.getData();
 
             return lhsData < rhsData;
         }
 
         namespace serialization {
             PortableWriter::PortableWriter(pimpl::DefaultPortableWriter *defaultPortableWriter)
-                    : defaultPortableWriter(defaultPortableWriter), classDefinitionWriter(NULL), isDefaultWriter(true) {}
+                    : defaultPortableWriter(defaultPortableWriter), classDefinitionWriter(nullptr), isDefaultWriter(true) {}
 
             PortableWriter::PortableWriter(pimpl::ClassDefinitionWriter *classDefinitionWriter)
-                    : defaultPortableWriter(NULL), classDefinitionWriter(classDefinitionWriter),
+                    : defaultPortableWriter(nullptr), classDefinitionWriter(classDefinitionWriter),
                       isDefaultWriter(false) {}
 
             void PortableWriter::end() {
@@ -416,11 +416,6 @@ namespace hazelcast {
                     }
                 }
 
-
-                void DataOutput::appendBytes(const std::vector<byte> &bytes) {
-                    outputStream.insert(outputStream.end(), bytes.begin(), bytes.end());
-                }
-
                 template<>
                 void DataOutput::write(byte i) {
                     if (isNoWrite) { return; }
@@ -508,17 +503,6 @@ namespace hazelcast {
                 void DataOutput::write(const HazelcastJsonValue &value) {
                     if (isNoWrite) { return; }
                     write<std::string>(value.toString());
-                }
-
-                size_t DataOutput::position() {
-                    return outputStream.size();
-                }
-
-                void DataOutput::position(size_t newPos) {
-                    if (isNoWrite) { return; }
-                    if (outputStream.size() < newPos) {
-                        outputStream.resize(newPos, 0);
-                    }
                 }
 
                 int DataOutput::getUTF8CharCount(const std::string &str) {
@@ -730,26 +714,6 @@ namespace hazelcast {
                     objectDataOutput.write(static_cast<int32_t>(pos)); // write final offset
                 }
 
-                void
-                DefaultPortableWriter::checkPortableAttributes(const FieldDefinition &fd, const Portable &portable) {
-                    if (fd.getFactoryId() != portable.getFactoryId()) {
-                        std::stringstream errorMessage;
-                        errorMessage << "Wrong Portable type! Templated portable types are not supported! "
-                                     << " Expected factory-id: " << fd.getFactoryId() << ", Actual factory-id: "
-                                     << portable.getFactoryId();
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
-                                                      "DefaultPortableWriter::::checkPortableAttributes", errorMessage.str()));
-                    }
-                    if (fd.getClassId() != portable.getClassId()) {
-                        std::stringstream errorMessage;
-                        errorMessage << "Wrong Portable type! Templated portable types are not supported! "
-                                     << "Expected class-id: " << fd.getClassId() << ", Actual class-id: "
-                                     << portable.getClassId();
-                        BOOST_THROW_EXCEPTION(exception::HazelcastSerializationException(
-                                                      "DefaultPortableWriter::::checkPortableAttributes", errorMessage.str()));
-                    }
-                }
-
                 bool SerializationService::isNullData(const Data &data) {
                     return data.dataSize() == 0 &&
                            data.getType() == static_cast<int32_t>(SerializationConstants::CONSTANT_TYPE_NULL);
@@ -897,6 +861,10 @@ namespace hazelcast {
 
                 bool Data::operator<(const Data &rhs) const {
                     return cachedHashValue < rhs.cachedHashValue;
+                }
+
+                bool operator==(const Data &lhs, const Data &rhs) {
+                    return lhs.data == rhs.data;
                 }
 
                 template<typename T>

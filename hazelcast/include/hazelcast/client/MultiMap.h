@@ -180,7 +180,7 @@ namespace hazelcast {
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::MultiMapAddEntryListenerCodec::AbstractEventHandler>(
                                         getName(), getContext().getClientClusterService(),
-                                        getContext().getSerializationService(), listener, includeValue)), includeValue);
+                                        getContext().getSerializationService(), std::forward<Listener>(listener), includeValue, getContext().getLogger())), includeValue);
             }
 
             /**
@@ -200,12 +200,12 @@ namespace hazelcast {
             * @return returns registration id.
             */
             template<typename Listener, typename K>
-            boost::future<std::string> addEntryListener(Listener &listener, const K &key, bool includeValue) {
+            boost::future<std::string> addEntryListener(Listener &&listener, const K &key, bool includeValue) {
                 return proxy::MultiMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::MultiMapAddEntryListenerToKeyCodec::AbstractEventHandler>(
                                         getName(), getContext().getClientClusterService(),
-                                        getContext().getSerializationService(), listener, includeValue)), includeValue,
+                                        getContext().getSerializationService(), std::forward<Listener>(listener), includeValue, getContext().getLogger())), includeValue,
                         toData(key));
             }
 
@@ -306,7 +306,7 @@ namespace hazelcast {
             */
             template<typename K>
             boost::future<void> unlock(const K &key) {
-                proxy::MultiMapImpl::unlock(toData(key));
+                return proxy::MultiMapImpl::unlock(toData(key));
             }
 
             /**
@@ -317,7 +317,7 @@ namespace hazelcast {
             */
             template<typename K>
             boost::future<void> forceUnlock(const K &key) {
-                proxy::MultiMapImpl::forceUnlock(toData(key));
+                return proxy::MultiMapImpl::forceUnlock(toData(key));
             }
         private:
             MultiMap(const std::string &instanceName, spi::ClientContext *context)

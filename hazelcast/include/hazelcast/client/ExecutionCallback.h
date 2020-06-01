@@ -17,7 +17,7 @@
 #ifndef HAZELCAST_CLIENT_EXECUTIONCALLBACK_H_
 #define HAZELCAST_CLIENT_EXECUTIONCALLBACK_H_
 
-#include <memory>
+#include <boost/optional.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
 
@@ -47,7 +47,7 @@ namespace hazelcast {
              *
              * @param response the result of the successful execution
              */
-            virtual void onResponse(const std::shared_ptr<V> &response) = 0;
+            virtual void onResponse(const boost::optional<V> &response) = 0;
 
             /**
              * Called when an execution is completed with an error.

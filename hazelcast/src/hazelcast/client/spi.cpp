@@ -2073,8 +2073,9 @@ namespace hazelcast {
                                     std::unique_ptr<client::impl::BaseEventHandler> &h) {
                                     return registerListenerInternal(std::move(codec), std::move(h));
                                 }, std::move(listenerMessageCodec), std::move(handler)));
-                        boost::asio::post(registrationExecutor->get_executor(), task);
-                        return task.get_future();
+                        auto f = task.get_future();
+                        boost::asio::post(registrationExecutor->get_executor(), std::move(task));
+                        return f;
                     }
 
                     boost::future<bool> AbstractClientListenerService::deregisterListener(const std::string registrationId) {
@@ -2304,22 +2305,6 @@ namespace hazelcast {
                                                ", *response, "", ", *invocation);
                             }
                         }
-                    }
-
-                    bool AbstractClientListenerService::ConnectionPointerLessComparator::operator()(
-                            const std::shared_ptr<connection::Connection> &lhs,
-                            const std::shared_ptr<connection::Connection> &rhs) const {
-                        if (lhs == rhs) {
-                            return false;
-                        }
-                        if (!lhs.get()) {
-                            return true;
-                        }
-                        if (!rhs.get()) {
-                            return false;
-                        }
-
-                        return *lhs < *rhs;
                     }
 
                     ClientEventRegistration::ClientEventRegistration(const std::string &serverRegistrationId,

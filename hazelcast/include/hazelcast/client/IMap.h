@@ -31,7 +31,6 @@
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/EntryView.h"
 #include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/impl/ClientMessageDecoder.h"
 #include "hazelcast/util/ExceptionUtil.h"
 #include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
@@ -449,7 +448,7 @@ namespace hazelcast {
                                 new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
-                                        listener,
+                                        std::forward<Listener>(listener),
                                         includeValue, getContext().getLogger())), includeValue);
             }
 
@@ -476,7 +475,7 @@ namespace hazelcast {
                                 new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
-                                        listener,
+                                        std::forward<Listener>(listener),
                                         includeValue, getContext().getLogger())), toData<P>(predicate), includeValue);
             }
 
@@ -500,7 +499,7 @@ namespace hazelcast {
                                 new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
-                                        listener,
+                                        std::forward<Listener>(listener),
                                         includeValue, getContext().getLogger())), includeValue, toData<K>(key));
             }
 
@@ -514,13 +513,13 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             boost::future<boost::optional<EntryView<K, V>>> getEntryView(const K &key) {
-                toObject(proxy::IMapImpl::getEntryViewData(toData(key))).then([=] (boost::future<boost::optional<map::DataEntryView>> f) {
+                return proxy::IMapImpl::getEntryViewData(toData(key)).then([=] (boost::future<std::unique_ptr<map::DataEntryView>> f) {
                     auto dataView = f.get();
-                    if (!dataView.has_value()) {
-                        return boost::none;
+                    if (!dataView) {
+                        return boost::optional<EntryView<K, V>>();
                     }
-                    auto v = toObject<V>(dataView.value().getValue());
-                    return boost::make_optional(EntryView<K, V>(key, v, dataView.value()));
+                    auto v = toObject<V>(dataView->getValue());
+                    return boost::make_optional(EntryView<K, V>(key, std::move(v).value(), *std::move(dataView)));
                 });
             }
 
@@ -548,7 +547,7 @@ namespace hazelcast {
             template<typename K, typename V>
             boost::future<std::unordered_map<K, V>> getAll(const std::unordered_set<K> &keys) {
                 if (keys.empty()) {
-                    return boost::none;
+                    return boost::make_ready_future(std::unordered_map<K, V>());
                 }
 
                 std::unordered_map<int, std::vector<serialization::pimpl::Data>> partitionToKeyData;
@@ -560,14 +559,16 @@ namespace hazelcast {
                 }
 
                 std::vector<boost::future<EntryVector>> futures;
+                futures.reserve(partitionToKeyData.size());
                 for (auto &entry : partitionToKeyData) {
                     futures.push_back(getAllInternal(entry.first, std::move(entry.second)));
                 }
 
+                auto val = boost::when_all(futures.begin(), futures.end());
                 return boost::when_all(futures.begin(), futures.end()).then(boost::launch::deferred,
-                                                                            [=](std::vector<boost::future<EntryVector>> &resultsData) {
+                                                                            [=](boost::future<std::vector<boost::future<EntryVector>>> resultsData) {
                                                                                 std::unordered_map<K, V> result;
-                                                                                for (auto &entryVectorFuture : resultsData) {
+                                                                                for (auto &entryVectorFuture : resultsData.get()) {
                                                                                     for(auto &entry : entryVectorFuture.get()) {
                                                                                         auto val = toObject<V>(entry.second);
                                                                                         // it is guaranteed that all values are non-null
@@ -674,7 +675,7 @@ namespace hazelcast {
             template<typename K, typename V>
             boost::future<std::vector<V>> values(query::PagingPredicate<K, V> &predicate) {
                 predicate.setIterationType(query::IterationType::VALUE);
-                return toEntryObjectVector<K, V>(valuesForPagingPredicateData(toData(predicate))).then(boost::launch::deferred, [&](boost::future<EntryVector> f) {
+                return toEntryObjectVector<K, V>(valuesForPagingPredicateData(toData(predicate))).then(boost::launch::deferred, [&](boost::future<std::vector<std::pair<K, V>>> f) {
                     auto entries = f.get();
                     auto resultEntries = sortAndGet(predicate, query::IterationType::VALUE, entries);
                     std::vector<V> result;
@@ -725,7 +726,7 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             boost::future<std::vector<std::pair<K, V>>> entrySet(query::PagingPredicate<K, V> &predicate) {
-                return toSortedEntryObjectVector<K,V>(proxy::IMapImpl::entrySetForPagingPredicateData(toData(predicate)));
+                return toSortedEntryObjectVector<K, V>(predicate, query::IterationType::ENTRY);
             }
 
             /**
@@ -818,7 +819,7 @@ namespace hazelcast {
             template<typename K, typename ResultType, typename EntryProcessor>
             boost::future<std::unordered_map<K, boost::optional<ResultType>>>
             executeOnKeys(const std::unordered_set<K> &keys, const EntryProcessor &entryProcessor) {
-                return toObjectMap<K, ResultType>(executeOnKeysInternal<EntryProcessor>(keys, entryProcessor));
+                return toObjectMap<K, ResultType>(executeOnKeysInternal<K, EntryProcessor>(keys, entryProcessor));
             }
 
             /**
@@ -856,7 +857,7 @@ namespace hazelcast {
             template<typename K, typename ResultType, typename EntryProcessor, typename P>
             boost::future<std::unordered_map<K, boost::optional<ResultType>>>
             executeOnEntries(const EntryProcessor &entryProcessor, const P &predicate) {
-                toObjectMap<K, ResultType>(proxy::IMapImpl::executeOnEntriesData(toData(entryProcessor),
+                return toObjectMap<K, ResultType>(proxy::IMapImpl::executeOnEntriesData(toData(entryProcessor),
                                                                                  toData(predicate)));
             }
 
@@ -879,14 +880,14 @@ namespace hazelcast {
                     entryMap[partitionId].push_back(std::make_pair(keyData, toData(entry.second)));
                 }
 
-                std::unordered_map<int, boost::future<protocol::ClientMessage>> resultFutures;
+                std::vector<boost::future<protocol::ClientMessage>> resultFutures;
                 for (auto &&partitionEntry : entryMap) {
                     auto partitionId = partitionEntry.first;
-                    resultFutures[partitionId] = putAllInternal(partitionId, std::move(partitionEntry.second));
+                    resultFutures.push_back(putAllInternal(partitionId, std::move(partitionEntry.second)));
                 }
                 return boost::when_all(resultFutures.begin(), resultFutures.end()).then(boost::launch::deferred,
-                                                                                        [](std::vector<boost::future<protocol::ClientMessage>> futures) {
-                                                                                            for (auto &f : futures) {
+                                                                                        [](boost::future<std::vector<boost::future<protocol::ClientMessage>>> futures) {
+                                                                                            for (auto &f : futures.get()) {
                                                                                                 f.get();
                                                                                             }
                                                                                         });
@@ -1039,7 +1040,18 @@ namespace hazelcast {
                                 result.push_back(
                                         std::make_pair(std::move(entry.first), std::move(entry.second.value())));
                             });
+                            return result;
                         });
+            }
+
+            template<typename K, typename V>
+            std::vector<std::pair<K, boost::optional<V>>> sortAndGet(query::PagingPredicate<K, V> &predicate, query::IterationType iterationType, std::vector<std::pair<K, V>> entries) {
+                std::vector<std::pair<K, boost::optional<V>>> optionalEntries;
+                optionalEntries.reserve(entries.size());
+                for(auto &&pair : entries) {
+                    optionalEntries.emplace_back(pair.first, boost::make_optional(pair.second));
+                }
+                return sortAndGet(predicate, iterationType, optionalEntries);
             }
 
             template<typename K, typename V>
@@ -1055,8 +1067,8 @@ namespace hazelcast {
                         }
                     }
 
-                    std::pair<const K *, const V *> leftVal(*lhs.first, *lhs.second);
-                    std::pair<const K *, const V *> rightVal(*rhs.first, *rhs.second);
+                    std::pair<const K *, const V *> leftVal(&lhs.first, lhs.second.get_ptr());
+                    std::pair<const K *, const V *> rightVal(&rhs.first, rhs.second.get_ptr());
                     int result = comparator->compare(&leftVal, &rightVal);
                     if (0 != result) {
                         // std sort: comparison function object returns ​true if the first argument is less

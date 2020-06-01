@@ -41,9 +41,9 @@ namespace hazelcast {
 
                 static int32_t getClassId();
 
-                static void writeData(const test::ringbuffer::StartsWithStringFilter &object, ObjectDataOutput &writer);
+                static void writeData(const test::ringbuffer::StartsWithStringFilter &object, ObjectDataOutput &out);
 
-                static test::ringbuffer::StartsWithStringFilter readData(ObjectDataInput &reader);
+                static test::ringbuffer::StartsWithStringFilter readData(ObjectDataInput &in);
             };
         }
     }

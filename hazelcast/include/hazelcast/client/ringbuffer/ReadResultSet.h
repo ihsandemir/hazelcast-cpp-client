@@ -54,7 +54,7 @@ namespace hazelcast {
                     return itemsReadCount;
                 }
 
-                const std::vector<TypedData> &getItems() {
+                const std::vector<TypedData> &getItems() const {
                     return items;
                 }
 
