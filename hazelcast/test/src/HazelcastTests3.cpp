@@ -267,6 +267,7 @@ namespace hazelcast {
             HazelcastClient *ClientReplicatedMapTest::client = nullptr;
             HazelcastClient *ClientReplicatedMapTest::client2 = nullptr;
             HazelcastServerFactory *ClientReplicatedMapTest::factory = nullptr;
+            constexpr size_t ClientReplicatedMapTest::OPERATION_COUNT;
 
             TEST_F(ClientReplicatedMapTest, testEmptyMapIsEmpty) {
                 std::shared_ptr<ReplicatedMap> map = client->getReplicatedMap(getTestName());

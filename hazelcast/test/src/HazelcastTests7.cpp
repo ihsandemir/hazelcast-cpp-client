@@ -99,45 +99,17 @@
 #include "hazelcast/client/LifecycleListener.h"
 #include "hazelcast/client/SocketInterceptor.h"
 #include "hazelcast/client/Socket.h"
-#include "hazelcast/client/Cluster.h"
 #include "hazelcast/util/Sync.h"
-#include "hazelcast/util/Util.h"
-#include "hazelcast/util/Runnable.h"
-#include "hazelcast/util/ILogger.h"
-#include "hazelcast/client/IMap.h"
-#include "hazelcast/util/Bits.h"
-#include "hazelcast/util/SyncHttpsClient.h"
-#include "hazelcast/client/exception/IOException.h"
-#include "hazelcast/util/AtomicInt.h"
-#include "hazelcast/util/BlockingConcurrentQueue.h"
-#include "hazelcast/util/UTFUtil.h"
-#include "hazelcast/util/ConcurrentQueue.h"
-#include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/Pipelining.h"
-#include "hazelcast/client/exception/IllegalArgumentException.h"
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/serialization/serialization.h"
-#include "hazelcast/client/SerializationConfig.h"
-#include "hazelcast/util/MurmurHash3.h"
-#include "hazelcast/client/ITopic.h"
-#include "hazelcast/client/protocol/ClientMessage.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
-#include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/util/LittleEndianBufferWrapper.h"
-#include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
-#include "hazelcast/client/HazelcastJsonValue.h"
 #include "hazelcast/client/IList.h"
 #include "hazelcast/client/IQueue.h"
 #include "hazelcast/client/ClientProperties.h"
-#include "hazelcast/client/config/ClientAwsConfig.h"
 #include "hazelcast/client/aws/utility/CloudUtility.h"
-#include "hazelcast/client/ISet.h"
-#include "hazelcast/client/ReliableTopic.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(disable: 4996) //for unsafe getenv
@@ -201,6 +173,7 @@ namespace hazelcast {
 
             HazelcastServer *ClientMultiMapTest::instance = nullptr;
             HazelcastClient *ClientMultiMapTest::client = nullptr;
+            std::shared_ptr<MultiMap> ClientMultiMapTest::mm;
 
             TEST_F(ClientMultiMapTest, testPutGetRemove) {
                 fillData();
@@ -414,6 +387,7 @@ namespace hazelcast {
                 static HazelcastServerFactory *sslFactory;
             };
 
+            std::shared_ptr<IList> ClientListTest::list;
             HazelcastServer *ClientListTest::instance = nullptr;
             HazelcastClient *ClientListTest::client = nullptr;
             HazelcastServerFactory *ClientListTest::sslFactory = nullptr;
@@ -601,6 +575,7 @@ namespace hazelcast {
 
             HazelcastServer *ClientQueueTest::instance = nullptr;
             HazelcastClient *ClientQueueTest::client = nullptr;
+            std::shared_ptr<IQueue> ClientQueueTest::q;
 
             class QueueTestItemListener : public ItemListener {
             public:
@@ -824,20 +799,38 @@ namespace hazelcast {
     }
 }
 
-bool hazelcast::client::test::executor::tasks::SelectAllMembers::select(const hazelcast::client::Member &member) const {
-    return true;
-}
+namespace hazelcast {
+    namespace client {
+        namespace test {
+            namespace executor {
+                namespace tasks {
+                    bool SelectAllMembers::select(const hazelcast::client::Member &member) const {
+                        return true;
+                    }
 
-void hazelcast::client::test::executor::tasks::SelectAllMembers::toString(std::ostream &os) const {
-    os << "SelectAllMembers";
-}
+                    void SelectAllMembers::toString(std::ostream &os) const {
+                        os << "SelectAllMembers";
+                    }
 
-const std::string *hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::getPartitionKey() const {
-    return &partitionKey;
-}
+                    bool SelectNoMembers::select(const hazelcast::client::Member &member) const {
+                        return false;
+                    }
 
-hazelcast::client::test::executor::tasks::MapPutPartitionAwareCallable::MapPutPartitionAwareCallable(
-        const std::string &mapName, const std::string &partitionKey) : mapName(mapName), partitionKey(partitionKey) {}
+                    void SelectNoMembers::toString(std::ostream &os) const {
+                        os << "SelectNoMembers";
+                    }
+
+                    const std::string *MapPutPartitionAwareCallable::getPartitionKey() const {
+                        return &partitionKey;
+                    }
+
+                    MapPutPartitionAwareCallable::MapPutPartitionAwareCallable(
+                            const std::string &mapName, const std::string &partitionKey) : mapName(mapName), partitionKey(partitionKey) {}
+                }
+            }
+        }
+    }
+}
 
 namespace hazelcast {
     namespace client {
@@ -1221,7 +1214,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
                 executor::tasks::SelectAllMembers selectAll;
 
                 auto f = service->submit<executor::tasks::AppendCallable, std::string>(callable,
@@ -1255,7 +1248,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
 
                 auto futuresMap = service->submitToAllMembers<executor::tasks::AppendCallable, std::string>(callable);
 
@@ -1297,7 +1290,7 @@ namespace hazelcast {
                 std::shared_ptr<boost::latch> completeLatch(new boost::latch(numberOfMembers));
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
                 std::vector<Member> members = client->getCluster().getMembers();
                 ASSERT_EQ(numberOfMembers, members.size());
 
@@ -1314,7 +1307,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
                 executor::tasks::SelectAllMembers selector;
                 std::shared_ptr<boost::latch> responseLatch(new boost::latch(1));
                 std::shared_ptr<ResultSettingExecutionCallback> callback(
@@ -1339,7 +1332,7 @@ namespace hazelcast {
                         new boost::latch(numberOfMembers));
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
                 executor::tasks::SelectAllMembers selector;
 
                 std::shared_ptr<MultiExecutionCallback<std::string> > callback(
@@ -1360,7 +1353,7 @@ namespace hazelcast {
                         new boost::latch(numberOfMembers));
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
 
                 std::shared_ptr<MultiExecutionCallback<std::string> > callback(
                         new MultiExecutionCompletionCallback(msg, responseLatch, completeLatch));
@@ -1392,7 +1385,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
 
                 auto result = service->submit<executor::tasks::AppendCallable, std::string>(callable).get_future();
 
@@ -1405,7 +1398,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
 
                 std::shared_ptr<boost::latch> latch1(new boost::latch(1));
                 std::shared_ptr<ResultSettingExecutionCallback> callback(new ResultSettingExecutionCallback(latch1));
@@ -1424,7 +1417,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
 
                 auto f = service->submitToKeyOwner<executor::tasks::AppendCallable, std::string, std::string>(callable,
                                                                                                               "key").get_future();
@@ -1438,7 +1431,7 @@ namespace hazelcast {
                 std::shared_ptr<IExecutorService> service = client->getExecutorService(getTestName());
 
                 std::string msg = randomString();
-                executor::tasks::AppendCallable callable(msg);
+                executor::tasks::AppendCallable callable{msg};
 
                 std::shared_ptr<boost::latch> latch1(new boost::latch(1));
                 std::shared_ptr<ResultSettingExecutionCallback> callback(new ResultSettingExecutionCallback(latch1));
@@ -1621,8 +1614,6 @@ namespace hazelcast {
     }
 }
 
-
-
 #ifdef HZ_BUILD_WITH_SSL
 
 namespace hazelcast {
@@ -1712,7 +1703,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 #endif // HZ_BUILD_WITH_SSL
 
@@ -1922,10 +1912,7 @@ namespace hazelcast {
 
 #endif //HZ_BUILD_WITH_SSL
 
-
 #ifdef HZ_BUILD_WITH_SSL
-
-
 
 namespace awsutil = hazelcast::client::aws::utility;
 

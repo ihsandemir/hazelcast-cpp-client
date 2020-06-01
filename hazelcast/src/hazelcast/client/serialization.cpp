@@ -725,7 +725,7 @@ namespace hazelcast {
                         return toData<std::string>(nullptr);
                     }
                     std::string str(object);
-                    return toData<std::string>(&str);
+                    return toData<std::string>(str);
                 }
 
                 const byte SerializationService::getVersion() const {

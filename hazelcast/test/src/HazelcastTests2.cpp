@@ -1086,6 +1086,7 @@ namespace hazelcast {
             };
 
             HazelcastServer *PipeliningTest::instance = nullptr;
+            std::shared_ptr<IMap> PipeliningTest::map;
             HazelcastClient *PipeliningTest::client = nullptr;
             const char *PipeliningTest::MAP_NAME = "PipeliningTestMap";
             std::vector<int> *PipeliningTest::expected = nullptr;
@@ -1278,7 +1279,6 @@ namespace hazelcast {
         }
     }
 }
-
 
 namespace hazelcast {
     namespace client {

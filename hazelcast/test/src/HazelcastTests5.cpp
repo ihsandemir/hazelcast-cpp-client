@@ -706,6 +706,7 @@ namespace hazelcast {
 
             HazelcastServer *MapGlobalSerializerTest::instance = nullptr;
             HazelcastClient *MapGlobalSerializerTest::client = nullptr;
+            std::shared_ptr<IMap> MapGlobalSerializerTest::imap;
 
             TEST_F(MapGlobalSerializerTest, testPutGetUnserializableObject) {
                 MapGlobalSerializerTest::UnknownObject myObject(8);

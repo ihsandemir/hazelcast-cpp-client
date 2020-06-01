@@ -848,6 +848,7 @@ namespace hazelcast {
 
             HazelcastServer *ClientSetTest::instance = nullptr;
             HazelcastClient *ClientSetTest::client = nullptr;
+            std::shared_ptr<ISet> ClientSetTest::set;
 
             TEST_F(ClientSetTest, testAddAll) {
                 std::vector<std::string> l;

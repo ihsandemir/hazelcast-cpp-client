@@ -39,11 +39,9 @@ namespace hazelcast {
                     };
 
                     struct AppendCallable {
-                        static std::string APPENDAGE;
-
-                        AppendCallable(const std::string &msg);
-
                         std::string msg;
+
+                        static std::string APPENDAGE;
                     };
 
                     struct CancellationAwareTask {

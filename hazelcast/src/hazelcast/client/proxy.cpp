@@ -52,6 +52,8 @@
 
 namespace hazelcast {
     namespace client {
+        constexpr std::chrono::milliseconds IMap::UNSET;
+
         namespace impl {
             ClientLockReferenceIdGenerator::ClientLockReferenceIdGenerator() : referenceIdCounter(0) {}
 

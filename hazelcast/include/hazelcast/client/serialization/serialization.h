@@ -793,38 +793,6 @@ namespace hazelcast {
                         builder.addField(fieldName, PortableContext::getType<value_type>());
                     }
 
-                    /*
-                    template <typename T>
-                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
-                    write(const std::string &fieldName, T value) {
-                        builder.addField(fieldName, PortableContext::getType<T>());
-                    }
-
-                    void write(const std::string &fieldName, const std::string *value) {
-                        builder.addField(fieldName, FieldType::TYPE_UTF);
-                    }
-
-                    template <typename T>
-                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
-                    write(const std::string &fieldName, const std::vector<T> &value) {
-                        builder.addField(fieldName, PortableContext::getType<std::vector<T>>());
-                    }
-*/
-
                     template<typename T>
                     void writeNullPortable(const std::string &fieldName) {
                         T portable;
@@ -1173,45 +1141,6 @@ namespace hazelcast {
                         setPosition(fieldName, PortableContext::getType<value_type>());
                         objectDataOutput.write(value);
                     }
-/*
-
-                    void write(const std::string &fieldName, const std::string *value) {
-                        setPosition(fieldName, PortableContext::getType<std::string>());
-                        objectDataOutput.write(value);
-                    }
-
-                    */
-/**
-                    * @param value to vector of values to be written. Only supported built-in values can be written.
-                    *//*
-
-                    template <typename T>
-                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
-                    write(const std::string &fieldName, const std::vector<T> *value) {
-                        setPosition(fieldName, PortableContext::getType<std::vector<T>>());
-                        objectDataOutput.write(value);
-                    }
-
-                    template <typename T>
-                    typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<char, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<bool, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<float, typename std::remove_cv<T>::type>::value ||
-                                            std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
-                    write(const std::string &fieldName, const T &value) {
-                        write<T>(fieldName, &value);
-                    }
-*/
 
                     void end();
 
@@ -1493,71 +1422,6 @@ namespace hazelcast {
                     }
                 }
 
-/*
-                */
-/**
-                * @param value to be written
-                *//*
-
-                template <typename T>
-                typename std::enable_if<std::is_same<byte, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<char, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<bool, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<int16_t, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<int32_t, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<int64_t, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<float, typename std::remove_cv<T>::type>::value ||
-                                        std::is_same<double, typename std::remove_cv<T>::type>::value, void>::type
-                write(const std::string &fieldName, T value) {
-                    if(isDefaultWriter) {
-                        defaultPortableWriter->write(fieldName, value);
-                    } else {
-                        classDefinitionWriter->write(value);
-                    }
-                }
-
-                void write(const std::string &fieldName, const std::string *value) {
-                    if(isDefaultWriter) {
-                        defaultPortableWriter->write(fieldName, value);
-                    } else {
-                        classDefinitionWriter->write(fieldName, value);
-                    }
-                }
-
-                template <typename T>
-                typename std::enable_if<std::is_same<std::string, T>::value>::type
-                write(const std::string &fieldName, const T &value) {
-                    if(isDefaultWriter) {
-                        defaultPortableWriter->write(fieldName, value);
-                    } else {
-                        classDefinitionWriter->write(fieldName, value);
-                    }
-                }
-
-                */
-/**
-                * @param value to vector of values to be written. Only supported built-in values can be written.
-                *//*
-
-                template <typename T>
-                void write(const std::string &fieldName, const std::vector<T> &value) {
-                    if(isDefaultWriter) {
-                        defaultPortableWriter->write(fieldName, value);
-                    } else {
-                        classDefinitionWriter->write(fieldName, value);
-                    }
-                }
-
-                template <typename T>
-                void write(const std::string &fieldName, const std::vector<T> *value) {
-                    if(isDefaultWriter) {
-                        defaultPortableWriter->write(fieldName, value);
-                    } else {
-                        classDefinitionWriter->write(fieldName, value);
-                    }
-                }
-*/
-
                 /**
                 * Internal api , should not be called by end user.
                 */
@@ -1684,18 +1548,7 @@ namespace hazelcast {
 
                 writeObject<T>(object.value());
             }
-
-            template<>
-            void ObjectDataOutput::writeObject(const char *object) {
-                if (isNoWrite) { return; }
-                if (!object) {
-                    writeObject<std::string>(nullptr);
-                    return;
-                }
-
-                writeObject<std::string>(std::string(object));
-            }
-
+            
             template<typename T>
             typename std::enable_if<std::is_base_of<identified_data_serializer, hz_serializer<T>>::value, void>::type
             inline ObjectDataOutput::writeObject(const T &object) {
