@@ -459,7 +459,7 @@ namespace hazelcast {
                 writer.write("i", object.ii);
                 writer.write("l", object.ll);
                 writer.write("f", object.ff);
-                writer.write("nn", object.nn);
+                writer.writePortableArray("nn", &object.nn);
             }
 
             test::TestInnerPortable hz_serializer<test::TestInnerPortable>::readPortable(PortableReader &reader) {

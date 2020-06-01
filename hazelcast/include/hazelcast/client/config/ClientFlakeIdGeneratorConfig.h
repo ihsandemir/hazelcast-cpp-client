@@ -39,12 +39,12 @@ namespace hazelcast {
                 /**
                  * Default value for {@link #getPrefetchCount()}.
                  */
-                static const int32_t DEFAULT_PREFETCH_COUNT = 100;
+                static constexpr int32_t DEFAULT_PREFETCH_COUNT = 100;
 
                 /**
                  * Default value for {@link #getPrefetchValidityMillis()}.
                  */
-                static const int64_t DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
+                static constexpr int64_t DEFAULT_PREFETCH_VALIDITY_MILLIS = 600000;
 
                 /**
                  * Maximum value for prefetch count. The limit is ~10% of the time we allow the IDs to be from the future
@@ -54,9 +54,9 @@ namespace hazelcast {
                  * be blocked if the future allowance is exceeded: we want to avoid a single call for large batch to block
                  * another call for small batch.
                  */
-                static const int32_t MAXIMUM_PREFETCH_COUNT = 100000;
+                static constexpr int32_t MAXIMUM_PREFETCH_COUNT = 100000;
 
-                ClientFlakeIdGeneratorConfig(const std::string &name);
+                explicit ClientFlakeIdGeneratorConfig(const std::string &name);
 
                 /**
                  * Returns the configuration name. This can be actual object name or pattern.

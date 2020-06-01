@@ -206,7 +206,7 @@ namespace hazelcast {
 
                     util::Preconditions::checkTrue(maxCount <= bufferCapacity.get(),
                                                    "the maxCount should be smaller than or equal to the capacity");
-                    util::Preconditions::checkMax(maxCount, MAX_BATCH_SIZE, "maxCount");
+                    util::Preconditions::checkMax(maxCount, RingbufferImpl::MAX_BATCH_SIZE, "maxCount");
 
                     auto request = protocol::codec::RingbufferReadManyCodec::encodeRequest(
                             name,

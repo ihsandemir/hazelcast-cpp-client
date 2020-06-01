@@ -111,9 +111,11 @@ namespace hazelcast {
                 return *this;
             }
 
+            constexpr int64_t ClientFlakeIdGeneratorConfig::DEFAULT_PREFETCH_VALIDITY_MILLIS;
+
             ClientFlakeIdGeneratorConfig::ClientFlakeIdGeneratorConfig(const std::string &name)
-                    : name(name), prefetchCount(DEFAULT_PREFETCH_COUNT),
-                      prefetchValidityDuration(DEFAULT_PREFETCH_VALIDITY_MILLIS) {}
+                    : name(name), prefetchCount(ClientFlakeIdGeneratorConfig::DEFAULT_PREFETCH_COUNT),
+                      prefetchValidityDuration(ClientFlakeIdGeneratorConfig::DEFAULT_PREFETCH_VALIDITY_MILLIS) {}
 
             const std::string &ClientFlakeIdGeneratorConfig::getName() const {
                 return name;

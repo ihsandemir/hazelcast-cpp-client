@@ -1708,6 +1708,8 @@ namespace hazelcast {
                                                  spi::ClientContext *context) : ProxyImpl(serviceName, objectName,
                                                                                           context),
                                                                                 targetPartitionId(-1) {}
+
+            constexpr int32_t RingbufferImpl::MAX_BATCH_SIZE;
         }
 
         namespace map {
