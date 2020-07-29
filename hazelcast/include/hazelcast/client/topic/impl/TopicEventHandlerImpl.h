@@ -29,7 +29,7 @@ namespace hazelcast {
         namespace topic {
             namespace impl {
                 template<typename Listener>
-                class TopicEventHandlerImpl : public protocol::codec::TopicAddMessageListenerCodec::AbstractEventHandler {
+                class TopicEventHandlerImpl : public protocol::codec::topic_addmessagelistener_handler {
                 public:
                     TopicEventHandlerImpl(const std::string &instanceName, spi::ClientClusterService &clusterService,
                                       serialization::pimpl::SerializationService &serializationService,
@@ -37,10 +37,9 @@ namespace hazelcast {
                             :instanceName(instanceName), clusterService(clusterService),
                             serializationService(serializationService), listener(messageListener) {}
 
-                    void handleTopicEventV10(serialization::pimpl::Data &&item, const int64_t &publishTime,
-                                             const std::string &uuid) override {
+                    void handle_topic(const Data &item, const int64_t &publishTime, const boost::optional<boost::uuids::uuid> &uuid) override {
                         listener(Message(instanceName, TypedData(std::move(item), serializationService), publishTime,
-                                        clusterService.getMember(uuid)));
+                                        clusterService.getMember(*uuid)));
                     }
                 private:
                     std::string instanceName;

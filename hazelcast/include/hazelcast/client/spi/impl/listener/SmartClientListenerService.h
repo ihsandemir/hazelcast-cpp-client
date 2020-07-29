@@ -36,7 +36,7 @@ namespace hazelcast {
 
                         void shutdown() override;
 
-                        boost::future<std::string>
+                        boost::future<boost::optional<boost::uuids::uuid>>
                         registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                                          std::unique_ptr<client::impl::BaseEventHandler> &&handler) override;
 

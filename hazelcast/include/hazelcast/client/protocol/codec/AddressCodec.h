@@ -31,8 +31,6 @@ namespace hazelcast {
                     static Address decode(ClientMessage &clientMessage);
 
                     static void encode(const Address &address, ClientMessage &clientMessage);
-
-                    static int calculateDataSize(const Address &address);
                 };
             }
         }

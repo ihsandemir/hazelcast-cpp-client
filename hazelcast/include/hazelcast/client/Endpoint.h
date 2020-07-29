@@ -33,14 +33,14 @@ namespace hazelcast {
          */
         class HAZELCAST_API Endpoint {
         public:
-            Endpoint(std::shared_ptr<std::string> uuid, std::shared_ptr<Address> socketAddress);
+            Endpoint(const boost::optional<boost::uuids::uuid> &uuid, std::shared_ptr<Address> socketAddress);
 
             /**
              * Returns the UUID of this endpoint
              *
              * @return the UUID of this endpoint
              */
-            const std::shared_ptr<std::string> &getUuid() const;
+            const boost::optional<boost::uuids::uuid> &getUuid() const;
 
             /**
              * Returns the socket address for this endpoint.
@@ -50,7 +50,7 @@ namespace hazelcast {
             const std::shared_ptr<Address> &getSocketAddress() const;
 
         private:
-            std::shared_ptr<std::string> uuid;
+            boost::optional<boost::uuids::uuid> uuid;
             std::shared_ptr<Address> socketAddress;
         };
     }

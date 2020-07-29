@@ -18,7 +18,7 @@
 #include "hazelcast/client/proxy/IQueueImpl.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/impl/ItemEventHandler.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 
 namespace hazelcast {
     namespace client {
@@ -46,9 +46,9 @@ namespace hazelcast {
             * @return returns registration id.
             */
             template<typename Listener>
-            boost::future<std::string> addItemListener(Listener &&listener, bool includeValue) {
-                std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::QueueAddListenerCodec::AbstractEventHandler>> itemEventHandler(
-                        new impl::ItemEventHandler<Listener, protocol::codec::QueueAddListenerCodec::AbstractEventHandler>(
+            boost::future<boost::optional<boost::uuids::uuid>> addItemListener(Listener &&listener, bool includeValue) {
+                std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::queue_addlistener_handler>> itemEventHandler(
+                        new impl::ItemEventHandler<Listener, protocol::codec::queue_addlistener_handler>(
                                 getName(), getContext().getClientClusterService(),
                                 getContext().getSerializationService(),
                                 std::forward<Listener>(listener),

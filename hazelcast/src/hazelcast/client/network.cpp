@@ -48,7 +48,7 @@
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/SocketInterceptor.h"
@@ -80,7 +80,10 @@ namespace hazelcast {
                       client(client),
                       socketInterceptor(client.getClientConfig().getSocketInterceptor()),
                       executionService(client.getClientExecutionService()),
-                      translator(addressTranslator), connectionIdGen(0), heartbeat(client, *this) {
+                      translator(addressTranslator), connectionIdGen(0), heartbeat(client, *this), partition_count_(-1) {
+                boost::uuids::uuid u;
+                std::memset(&u, 0, sizeof(boost::uuids::uuid));
+                cluster_id_ = u;
                 config::ClientNetworkConfig &networkConfig = client.getClientConfig().getNetworkConfig();
                 int64_t connTimeout = networkConfig.getConnectionTimeout();
                 if (connTimeout > 0) {
@@ -355,9 +358,7 @@ namespace hazelcast {
             ClientConnectionManagerImpl::authenticate(const Address &target, std::shared_ptr<Connection> &connection,
                                                       bool asOwner, std::shared_ptr<AuthenticationFuture> &future) {
                 std::shared_ptr<protocol::Principal> clientPrincipal = getPrincipal();
-                std::unique_ptr<protocol::ClientMessage> clientMessage = encodeAuthenticationRequest(asOwner,
-                                                                                                     client.getSerializationService(),
-                                                                                                     clientPrincipal.get());
+                auto clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), clientPrincipal.get());
                 std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         client, clientMessage, "", connection);
                 auto invocationFuture = clientInvocation->invokeUrgent();
@@ -383,36 +384,41 @@ namespace hazelcast {
                 return principal;
             }
 
-            std::unique_ptr<protocol::ClientMessage>
+            protocol::ClientMessage
             ClientConnectionManagerImpl::encodeAuthenticationRequest(bool asOwner,
                                                                      serialization::pimpl::SerializationService &ss,
                                                                      const protocol::Principal *p) {
                 byte serializationVersion = ss.getVersion();
-                const std::string *uuid = nullptr;
-                const std::string *ownerUuid = nullptr;
-                if (p != NULL) {
+                boost::optional<boost::uuids::uuid> uuid, ownerUuid, clusterId;
+                if (p) {
                     uuid = p->getUuid();
                     ownerUuid = p->getOwnerUuid();
                 }
-                std::unique_ptr<protocol::ClientMessage> clientMessage;
+                boost::uuids::uuid cid = cluster_id_;
+                if (!cid.is_nil()) {
+                    clusterId = boost::make_optional(cid);
+                }
                 if (!credentials) {
                     // TODO: Change UsernamePasswordCredentials to implement Credentials interface so that we can just
                     // upcast the credentials as done at Java
                     GroupConfig &groupConfig = client.getClientConfig().getGroupConfig();
                     const protocol::UsernamePasswordCredentials cr(groupConfig.getName(), groupConfig.getPassword());
-                    clientMessage = protocol::codec::ClientAuthenticationCodec::encodeRequest(
-                            cr.getPrincipal(), cr.getPassword(), uuid, ownerUuid, asOwner, protocol::ClientTypes::CPP,
-                            serializationVersion, HAZELCAST_VERSION);
+                    // TODO: add labels into config
+                    return protocol::codec::client_authentication_encode(cr.getPrincipal(), cr.getPassword(), uuid,
+                                                                         ownerUuid, asOwner, protocol::ClientTypes::CPP,
+                                                                         serializationVersion, HAZELCAST_VERSION,
+                                                                         client.getName(), labels_,
+                                                                         partition_count_.load(),
+                                                                         clusterId);
                 } else {
-                    clientMessage = protocol::codec::ClientAuthenticationCustomCodec::encodeRequest(credentials.value(),
-                                                                                                    uuid,
-                                                                                                    ownerUuid,
-                                                                                                    asOwner,
-                                                                                                    protocol::ClientTypes::CPP,
-                                                                                                    serializationVersion,
-                                                                                                    HAZELCAST_VERSION);
+                    return protocol::codec::client_authenticationcustom_encode(credentials.value(), uuid, ownerUuid,
+                                                                               asOwner, protocol::ClientTypes::CPP,
+                                                                               serializationVersion, HAZELCAST_VERSION,
+                                                                               client.getName(),
+                                                                               labels_,
+                                                                               partition_count_.load(),
+                                                                               clusterId);
                 }
-                return clientMessage;
             }
 
             void ClientConnectionManagerImpl::setPrincipal(const std::shared_ptr<protocol::Principal> &p) {
@@ -420,7 +426,10 @@ namespace hazelcast {
             }
 
             void ClientConnectionManagerImpl::onAuthenticated(const Address &target,
-                                                              const std::shared_ptr<Connection> &connection) {
+                                                              const std::shared_ptr<Connection> &connection,
+                                                              int32_t partition_count, boost::uuids::uuid cluster_id) {
+                partition_count_ = partition_count;
+                cluster_id_ = cluster_id;
                 std::shared_ptr<Connection> oldConnection = activeConnections.put(*connection->getRemoteEndpoint(),
                                                                                   connection);
 
@@ -735,23 +744,43 @@ namespace hazelcast {
             void ClientConnectionManagerImpl::AuthCallback::onResponse(protocol::ClientMessage response) {
                 cancelTimeoutTask();
 
-                std::unique_ptr<protocol::codec::ClientAuthenticationCodec::ResponseParameters> result;
+                struct result_t {
+                    byte status;
+                    boost::optional<boost::uuids::uuid> uuid;
+                    boost::optional<boost::uuids::uuid> owner_uuid;
+                    byte serialization_version;
+                    int32_t partition_count;
+                    boost::optional<boost::uuids::uuid> cluster_id;
+                    Address address;
+                    std::string server_version;
+                } result;
+
                 try {
-                    result.reset(new protocol::codec::ClientAuthenticationCodec::ResponseParameters(
-                            protocol::codec::ClientAuthenticationCodec::ResponseParameters::decode(response)));
+                    auto *f = reinterpret_cast<ClientMessage::frame_header_t *>(response.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                    result = {
+                            response.get<byte>(), response.get<boost::optional<boost::uuids::uuid>>(),
+                            response.get<boost::optional<boost::uuids::uuid>>(), response.get<byte>(), response.get<int32_t>(),
+                            response.get<boost::optional<boost::uuids::uuid>>()
+                    };
+                    // skip first frame
+                    response.rd_ptr(f->frame_len - ClientMessage::RESPONSE_HEADER_LEN - 2 * ClientMessage::UINT8_SIZE -
+                                    3 * (sizeof(boost::uuids::uuid) + ClientMessage::UINT8_SIZE) - ClientMessage::INT32_SIZE);
+
+                    result.address = response.getNullable<Address>().value();
+                    result.server_version = response.get<std::string>();
                 } catch (exception::IException &e) {
                     handleAuthenticationException(std::current_exception());
                     return;
                 }
-                protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) result->status;
+                protocol::AuthenticationStatus authenticationStatus = (protocol::AuthenticationStatus) result.status;
                 switch (authenticationStatus) {
                     case protocol::AUTHENTICATED: {
-                        connection->setConnectedServerVersion(result->serverHazelcastVersion);
-                        connection->setRemoteEndpoint(std::shared_ptr<Address>(std::move(result->address)));
+                        connection->setConnectedServerVersion(result.server_version);
+                        connection->setRemoteEndpoint(std::make_shared<Address>(std::move(result.address)));
                         if (asOwner) {
                             connection->setIsAuthenticatedAsOwner();
                             std::shared_ptr<protocol::Principal> p(
-                                    new protocol::Principal(result->uuid, result->ownerUuid));
+                                    new protocol::Principal(std::move(*result.uuid), std::move(*result.owner_uuid)));
                             connectionManager->setPrincipal(p);
                             //setting owner connection is moved to here(before onAuthenticated/before connected event)
                             //so that invocations that requires owner connection on this connection go through
@@ -759,7 +788,8 @@ namespace hazelcast {
                             connectionManager->logger.info("Setting ", *connection, " as owner with principal ",
                                                            *p);
                         }
-                        connectionManager->onAuthenticated(target, connection);
+                        connectionManager->onAuthenticated(target, connection, result.partition_count,
+                                                           *result.cluster_id);
                         authFuture->onSuccess(connection);
                         break;
                     }
@@ -992,7 +1022,7 @@ namespace hazelcast {
                     // erase only for non-event messages
                     invocations.erase(invocationIterator);
                 }
-                if (message->isFlagSet(protocol::ClientMessage::LISTENER_EVENT_FLAG)) {
+                if (message->is_flag_set(message->getHeaderFlags(), protocol::ClientMessage::IS_EVENT_FLAG)) {
                     spi::impl::listener::AbstractClientListenerService &listenerService =
                             (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();
                     listenerService.handleClientMessage(invocation, message);
@@ -1185,7 +1215,7 @@ namespace hazelcast {
                 }
 
                 if (now - connection->lastReadTime() > heartbeatIntervalSeconds) {
-                    auto request = protocol::codec::ClientPingCodec::encodeRequest();
+                    auto request = protocol::codec::client_ping_encode();
                     std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                             client, request, "", connection);
                     clientInvocation->invokeUrgent();

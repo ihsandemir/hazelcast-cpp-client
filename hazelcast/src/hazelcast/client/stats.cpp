@@ -42,8 +42,8 @@
 #include "hazelcast/client/spi/LifecycleService.h"
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/internal/nearcache/NearCache.h"
 #include "hazelcast/client/internal/nearcache/NearCacheManager.h"
 #include "hazelcast/client/monitor/impl/NearCacheStatsImpl.h"
@@ -156,8 +156,7 @@ namespace hazelcast {
 
                 void Statistics::sendStats(const std::string &newStats,
                                            const std::shared_ptr<connection::Connection> &ownerConnection) {
-                    auto request = protocol::codec::ClientStatisticsCodec::encodeRequest(
-                            newStats);
+                    auto request = protocol::codec::client_statistics_encode(newStats);
                     try {
                         spi::impl::ClientInvocation::create(clientContext, request, "", ownerConnection)->invoke();
                     } catch (exception::IException &e) {

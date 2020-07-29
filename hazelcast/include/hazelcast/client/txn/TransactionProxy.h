@@ -15,12 +15,14 @@
  */
 #pragma once
 
+#include <memory>
+#include <vector>
+#include <boost/uuid/uuid.hpp>
+
 #include "hazelcast/util/HazelcastDll.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/serialization/serialization.h"
-#include <memory>
-#include <vector>
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -78,7 +80,7 @@ namespace hazelcast {
 
                 TransactionProxy(const TransactionProxy &rhs);
 
-                const std::string &getTxnId() const;
+                const boost::optional<boost::uuids::uuid> &getTxnId() const;
 
                 TxnState getState() const;
 
@@ -104,7 +106,7 @@ namespace hazelcast {
                 util::AtomicBoolean TRANSACTION_EXISTS;
 
                 int64_t threadId;
-                std::string txnId;
+                boost::optional<boost::uuids::uuid> txnId;
 
                 TxnState state;
                 std::chrono::steady_clock::time_point startTime;
@@ -113,7 +115,7 @@ namespace hazelcast {
 
                 void checkTimeout();
 
-                boost::future<protocol::ClientMessage> invoke(std::unique_ptr<protocol::ClientMessage> &request);
+                boost::future<protocol::ClientMessage> invoke(protocol::ClientMessage &request);
             };
         }
     }

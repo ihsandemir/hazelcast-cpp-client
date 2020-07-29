@@ -24,7 +24,6 @@
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
 #include <hazelcast/client/serialization/serialization.h>
-#include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
 #include <thread>
@@ -121,7 +120,6 @@
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
@@ -1381,7 +1379,7 @@ namespace hazelcast {
 
             TEST_F(ClientTopicTest, testTopicListeners) {
                 boost::latch latch1(10);
-                std::string id = topic->addMessageListener([&] (topic::Message &&message) {
+                auto id = topic->addMessageListener([&] (topic::Message &&message) {
                     latch1.count_down();
                 }).get();
 

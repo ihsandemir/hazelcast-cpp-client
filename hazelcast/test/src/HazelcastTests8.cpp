@@ -97,7 +97,6 @@
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/exception/IllegalStateException.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/HazelcastJsonValue.h"
@@ -923,7 +922,7 @@ namespace hazelcast {
             TEST_F(ClientSetTest, testListener) {
                 boost::latch latch1(6);
                 MySetItemListener listener(latch1);
-                std::string registrationId = set->addItemListener(listener, true).get();
+                auto registrationId = set->addItemListener(listener, true).get();
                 addItems(5);
                 set->add("done").get();
                 ASSERT_OPEN_EVENTUALLY(latch1);
@@ -1705,16 +1704,14 @@ namespace hazelcast {
         namespace test {
             class ClientMessageTest: public ClientTestSupport {};
             TEST_F(ClientMessageTest, testOperationNameGetSet) {
-                std::unique_ptr<protocol::ClientMessage> message = protocol::ClientMessage::create(8);
+                protocol::ClientMessage message(8);
                 constexpr const char* operation_name = "OPERATION_NAME";
-                message->setOperationName(operation_name);
-                ASSERT_EQ(message->getOperationName(), operation_name);
+                message.setOperationName(operation_name);
+                ASSERT_EQ(message.getOperationName(), operation_name);
             }
             TEST_F(ClientMessageTest, testOperationNameAfterRequestEncoding) {
-                std::string expected_operation_name = protocol::codec::MapSizeCodec::OPERATION_NAME;
-                std::unique_ptr<protocol::ClientMessage> request =
-                  protocol::codec::MapSizeCodec::encodeRequest("map_name");
-                ASSERT_EQ(request->getOperationName(), expected_operation_name);
+                auto request = protocol::codec::map_size_encode("map_name");
+                ASSERT_EQ(request.getOperationName(), "Map.Size");
             }
         }
     }

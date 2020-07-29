@@ -37,11 +37,11 @@ namespace hazelcast {
              // TODO: Remove this interface and use abstract base class instead
             class ClientListenerService {
             public:
-                virtual boost::future<std::string>
+                virtual boost::future<boost::optional<boost::uuids::uuid>>
                 registerListener(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                                  std::unique_ptr<client::impl::BaseEventHandler> &&handler) = 0;
 
-                virtual boost::future<bool> deregisterListener(const std::string registrationId) = 0;
+                virtual boost::future<bool> deregisterListener(const boost::optional<boost::uuids::uuid> &registrationId) = 0;
             };
         }
     }

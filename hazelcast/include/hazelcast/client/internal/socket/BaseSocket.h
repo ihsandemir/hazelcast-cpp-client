@@ -136,31 +136,40 @@ namespace hazelcast {
                                 return;
                             }
 
-                            boost::asio::async_write(socket_,
-                                                     boost::asio::buffer(message->getBuffer().data(),
-                                                                         message->getFrameLength()),
-                                                     [=](const boost::system::error_code &ec,
-                                                         std::size_t bytesWritten) {
-                                                         if (ec) {
-                                                             auto invocationIt = connection->invocations.find(
-                                                                     correlationId);
+                            auto handler = [=](const boost::system::error_code &ec,
+                                               std::size_t bytesWritten) {
+                                if (ec) {
+                                    auto invocationIt = connection->invocations.find(
+                                            correlationId);
 
-                                                             assert(invocationIt != connection->invocations.end());
+                                    assert(invocationIt != connection->invocations.end());
 
-                                                             auto message = (boost::format{
-                                                                     "Error %1% during invocation write for %2% on connection %3%"} %
-                                                                             ec % *invocation % *connection).str();
-                                                             invocationIt->second->notifyException(
-                                                                     boost::enable_current_exception(
-                                                                             std::make_exception_ptr(
-                                                                                     exception::IOException(
-                                                                                             "Connection::write",
-                                                                                             message))));
+                                    auto message = (boost::format{
+                                            "Error %1% during invocation write for %2% on connection %3%"} %
+                                                    ec % *invocation % *connection).str();
+                                    invocationIt->second->notifyException(
+                                            boost::enable_current_exception(
+                                                    std::make_exception_ptr(
+                                                            exception::IOException(
+                                                                    "Connection::write",
+                                                                    message))));
 
-                                                             connection->close(message);
-                                                             connection->invocations.erase(invocationIt);
-                                                         }
-                                                     });
+                                    connection->close(message);
+                                    connection->invocations.erase(invocationIt);
+                                }
+                            };
+
+                            auto &datas = message->getBuffer();
+                            if (datas.size() == 1) {
+                                boost::asio::async_write(socket_, boost::asio::buffer(datas[0]), handler);
+                            } else {
+                                std::vector<boost::asio::const_buffer> buffers;
+                                buffers.reserve(datas.size());
+                                for (auto &d : datas) {
+                                    buffers.push_back(boost::asio::buffer(d));
+                                }
+                                boost::asio::async_write(socket_, buffers, handler);
+                            }
                         });
                     }
 

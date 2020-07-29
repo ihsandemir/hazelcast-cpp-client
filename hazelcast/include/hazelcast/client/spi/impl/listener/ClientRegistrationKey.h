@@ -43,13 +43,13 @@ namespace hazelcast {
                     public:
                         ClientRegistrationKey();
 
-                        ClientRegistrationKey(const std::string &userRegistrationId,
+                        ClientRegistrationKey(const boost::optional<boost::uuids::uuid> &userRegistrationId,
                                               std::unique_ptr<client::impl::BaseEventHandler> &&handler,
                                               std::unique_ptr<ListenerMessageCodec> &&codec);
 
-                        ClientRegistrationKey(const std::string &userRegistrationId);
+                        ClientRegistrationKey(const boost::optional<boost::uuids::uuid> &userRegistrationId);
 
-                        const std::string &getUserRegistrationId() const;
+                        const boost::optional<boost::uuids::uuid> & getUserRegistrationId() const;
 
                         const std::shared_ptr<client::impl::BaseEventHandler> &getHandler() const;
 
@@ -62,7 +62,7 @@ namespace hazelcast {
                         friend std::ostream &operator<<(std::ostream &os, const ClientRegistrationKey &key);
 
                     private:
-                        std::string userRegistrationId;
+                        boost::optional<boost::uuids::uuid> userRegistrationId;
                         std::shared_ptr<client::impl::BaseEventHandler> handler;
                         std::shared_ptr<ListenerMessageCodec> codec;
                     };

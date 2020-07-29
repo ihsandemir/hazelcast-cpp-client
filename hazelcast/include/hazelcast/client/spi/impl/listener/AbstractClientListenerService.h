@@ -64,11 +64,11 @@ namespace hazelcast {
                         void handleClientMessage(const std::shared_ptr<ClientInvocation> invocation,
                                                  const std::shared_ptr<protocol::ClientMessage> response);
 
-                        boost::future<std::string>
+                        boost::future<boost::optional<boost::uuids::uuid>>
                         registerListener(std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
                                          std::unique_ptr<client::impl::BaseEventHandler> &&handler) override;
 
-                        boost::future<bool> deregisterListener(const std::string registrationId) override;
+                        boost::future<bool> deregisterListener(const boost::optional<boost::uuids::uuid> &registrationId) override;
 
                         void connectionAdded(const std::shared_ptr<connection::Connection> connection) override;
 
@@ -87,11 +87,11 @@ namespace hazelcast {
 
                         void removeEventHandler(const ClientEventRegistration &registration);
 
-                        virtual std::string
+                        virtual boost::optional<boost::uuids::uuid>
                         registerListenerInternal(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                                                  std::unique_ptr<client::impl::BaseEventHandler> &&handler);
 
-                        virtual bool deregisterListenerInternal(const std::string &userRegistrationId);
+                        virtual bool deregisterListenerInternal(const boost::optional<boost::uuids::uuid> &userRegistrationId);
 
                         virtual void
                         connectionAddedInternal(const std::shared_ptr<connection::Connection> &connection);

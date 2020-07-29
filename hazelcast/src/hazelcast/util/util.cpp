@@ -60,14 +60,13 @@
 #include "hazelcast/util/TimeUtil.h"
 #include "hazelcast/util/concurrent/TimeUnit.h"
 #include "hazelcast/util/Closeable.h"
-#include "hazelcast/util/UUID.h"
+#include <boost/uuid/uuid.hpp>
 #include "hazelcast/util/UTFUtil.h"
 #include "hazelcast/util/SyncHttpClient.h"
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/util/concurrent/BackoffIdleStrategy.h"
 #include "hazelcast/util/concurrent/CancellationException.h"
-#include "hazelcast/util/UuidUtil.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/AddressHelper.h"
 #include "hazelcast/util/RuntimeAvailableProcessors.h"
@@ -370,57 +369,6 @@ namespace hazelcast {
         const std::string &ILogger::getInstanceName() const {
             return instanceName;
         }
-    }
-}
-
-namespace hazelcast {
-    namespace util {
-        UUID::UUID() : mostSigBits(0), leastSigBits(0) {}
-
-        UUID::UUID(int64_t mostBits, int64_t leastBits) : mostSigBits(mostBits), leastSigBits(leastBits) {
-        }
-
-        int64_t UUID::getLeastSignificantBits() const {
-            return leastSigBits;
-        }
-
-        /**
-         * Returns the most significant 64 bits of this UUID's 128 bit value.
-         *
-         * @return the most significant 64 bits of this UUID's 128 bit value.
-         */
-        int64_t UUID::getMostSignificantBits() const {
-            return mostSigBits;
-        }
-
-        bool UUID::equals(const UUID &rhs) const {
-            return (mostSigBits == rhs.mostSigBits && leastSigBits == rhs.leastSigBits);
-        }
-
-        std::string UUID::toString() const {
-            return (digits(mostSigBits >> 32, 8) + "-" +
-                    digits(mostSigBits >> 16, 4) + "-" +
-                    digits(mostSigBits, 4) + "-" +
-                    digits(leastSigBits >> 48, 4) + "-" +
-                    digits(leastSigBits, 12));
-        }
-
-        std::string UUID::digits(int64_t val, int32_t digits) {
-            int64_t hi = 1LL << (digits * 4);
-            std::ostringstream out;
-            out << std::hex << (hi | (val & (hi - 1)));
-            std::string value = out.str();
-            return value.substr(1);
-        }
-
-        bool UUID::operator==(const UUID &rhs) const {
-            return this->equals(rhs);
-        }
-
-        bool UUID::operator!=(const UUID &rhs) const {
-            return !(rhs == *this);
-        }
-
     }
 }
 
@@ -1013,45 +961,6 @@ namespace hazelcast {
     }
 }
 
-
-
-
-namespace hazelcast {
-    namespace util {
-        std::string UuidUtil::newUnsecureUuidString() {
-            return newUnsecureUUID().toString();
-        }
-
-        UUID UuidUtil::newUnsecureUUID() {
-            byte data[16];
-            // TODO: Use a better random bytes generator
-            for (int j = 0; j < 16; ++j) {
-                data[j] = rand() % 16;
-            }
-
-            // clear version
-            data[6] &= 0x0f;
-            // set to version 4
-            data[6] |= 0x40;
-            // clear variant
-            data[8] &= 0x3f;
-            // set to IETF variant
-            data[8] |= 0x80;
-
-            int64_t mostSigBits = 0;
-            int64_t leastSigBits = 0;
-            for (int i = 0; i < 8; i++) {
-                mostSigBits = (mostSigBits << 8) | (data[i] & 0xff);
-            }
-            for (int i = 8; i < 16; i++) {
-                leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
-            }
-            return UUID(mostSigBits, leastSigBits);
-        }
-    }
-}
-
-
 namespace hazelcast {
     namespace util {
         AtomicInt::AtomicInt() : atomic<int>(0) {
@@ -1477,13 +1386,6 @@ namespace hazelcast {
         void ByteBuffer::safeIncrementPosition(size_t t) {
             assert(pos + t <= capacity);
             pos += t;
-        }
-
-        size_t ByteBuffer::readBytes(byte *target, size_t len) {
-            size_t numBytesToCopy = util::min<size_t>(lim - pos, len);
-            memcpy(target, ix(), numBytesToCopy);
-            pos += numBytesToCopy;
-            return numBytesToCopy;
         }
 
         hz_thread_pool::hz_thread_pool(size_t numThreads) : pool_(new boost::asio::thread_pool(numThreads)) {}

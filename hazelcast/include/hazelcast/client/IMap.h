@@ -34,7 +34,7 @@
 #include "hazelcast/client/EntryView.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/ExceptionUtil.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 
@@ -473,10 +473,10 @@ namespace hazelcast {
             * @return registrationId of added listener that can be used to remove the entry listener.
             */
             template<typename Listener>
-            boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue) {
+            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
-                                new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerCodec::AbstractEventHandler>(
+                                new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistener_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
                                         std::forward<Listener>(listener),
@@ -499,11 +499,11 @@ namespace hazelcast {
             * @return registrationId of added listener that can be used to remove the entry listener.
             */
             template<typename Listener, typename P>
-            boost::future<std::string>
+            boost::future<boost::optional<boost::uuids::uuid>>
             addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
-                                new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerWithPredicateCodec::AbstractEventHandler>(
+                                new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistenerwithpredicate_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
                                         std::forward<Listener>(listener),
@@ -524,10 +524,10 @@ namespace hazelcast {
             *                     contain the value.
             */
             template<typename Listener, typename K>
-            boost::future<std::string> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
+            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
-                                new impl::EntryEventHandler<Listener, protocol::codec::MapAddEntryListenerToKeyCodec::AbstractEventHandler>(
+                                new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistenertokey_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
                                         std::forward<Listener>(listener),
@@ -544,7 +544,7 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             boost::future<boost::optional<EntryView<K, V>>> getEntryView(const K &key) {
-                return proxy::IMapImpl::getEntryViewData(toData(key)).then([=] (boost::future<std::unique_ptr<map::DataEntryView>> f) {
+                return proxy::IMapImpl::getEntryViewData(toData(key)).then([=] (boost::future<boost::optional<map::DataEntryView>> f) {
                     auto dataView = f.get();
                     if (!dataView) {
                         return boost::optional<EntryView<K, V>>();
@@ -771,7 +771,7 @@ namespace hazelcast {
             *       private:
             *          bool active;
             *          int age;
-            *          boost::future<std::string> name;
+            *          std::string name;
             *
             *   }
             *
@@ -968,7 +968,7 @@ namespace hazelcast {
 
             monitor::impl::LocalMapStatsImpl localMapStats;
 
-            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>> getInternal(const serialization::pimpl::Data &keyData) {
+            virtual boost::future<boost::optional<serialization::pimpl::Data>> getInternal(const serialization::pimpl::Data &keyData) {
                 return proxy::IMapImpl::getData(keyData);
             }
 
@@ -976,7 +976,7 @@ namespace hazelcast {
                 return proxy::IMapImpl::containsKey(keyData);
             }
 
-            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>> removeInternal(
+            virtual boost::future<boost::optional<serialization::pimpl::Data>> removeInternal(
                     const serialization::pimpl::Data &keyData) {
                 return proxy::IMapImpl::removeData(keyData);
             }
@@ -1003,9 +1003,9 @@ namespace hazelcast {
                 return proxy::IMapImpl::tryPut(keyData, valueData, timeout);
             }
 
-            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>> putInternal(const serialization::pimpl::Data &keyData,
-                                                                          const serialization::pimpl::Data &valueData,
-                                                                          std::chrono::steady_clock::duration ttl) {
+            virtual boost::future<boost::optional<serialization::pimpl::Data>> putInternal(const serialization::pimpl::Data &keyData,
+                                                                                           const serialization::pimpl::Data &valueData,
+                                                                                           std::chrono::steady_clock::duration ttl) {
                 return proxy::IMapImpl::putData(keyData, valueData, ttl);
             }
 
@@ -1014,7 +1014,7 @@ namespace hazelcast {
                 return proxy::IMapImpl::putTransient(keyData, valueData, ttl);
             }
 
-            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>>
+            virtual boost::future<boost::optional<serialization::pimpl::Data>>
             putIfAbsentInternal(const serialization::pimpl::Data &keyData,
                                 const serialization::pimpl::Data &valueData,
                                 std::chrono::steady_clock::duration ttl) {
@@ -1027,11 +1027,10 @@ namespace hazelcast {
                 return proxy::IMapImpl::replace(keyData, valueData, newValueData);
             }
 
-            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>>
+            virtual boost::future<boost::optional<serialization::pimpl::Data>>
             replaceInternal(const serialization::pimpl::Data &keyData,
                             const serialization::pimpl::Data &valueData) {
                 return proxy::IMapImpl::replaceData(keyData, valueData);
-
             }
 
             virtual boost::future<protocol::ClientMessage>
@@ -1049,13 +1048,13 @@ namespace hazelcast {
                 return proxy::IMapImpl::getAllData(partitionId, partitionKeys);
             }
 
-            virtual boost::future<std::unique_ptr<serialization::pimpl::Data>>
+            virtual boost::future<boost::optional<serialization::pimpl::Data>>
             executeOnKeyInternal(const serialization::pimpl::Data &keyData,
                                  const serialization::pimpl::Data &processor) {
                 return proxy::IMapImpl::executeOnKeyData(keyData, processor);
             }
 
-            boost::future<std::unique_ptr<serialization::pimpl::Data>>
+            boost::future<boost::optional<serialization::pimpl::Data>>
             submitToKeyInternal(const serialization::pimpl::Data &keyData,
                                 const serialization::pimpl::Data &processor) {
                 return submitToKeyData(keyData, processor);

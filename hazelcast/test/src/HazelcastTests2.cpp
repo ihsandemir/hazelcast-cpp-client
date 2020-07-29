@@ -21,7 +21,6 @@
 #include <hazelcast/client/ClientConfig.h>
 #include <hazelcast/client/HazelcastClient.h>
 #include <hazelcast/client/serialization/serialization.h>
-#include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
@@ -229,49 +228,6 @@ namespace hazelcast {
                     finished = true;
                     t.join();
                 }
-            }
-        }
-    }
-}
-
-namespace hazelcast {
-    namespace client {
-        namespace test {
-            class UuidUtilTest : public ::testing::Test {
-            };
-
-            TEST_F(UuidUtilTest, testUnsecureUuid) {
-                hazelcast::util::UUID uuid1 = hazelcast::util::UuidUtil::newUnsecureUUID();
-                hazelcast::util::UUID uuid2 = hazelcast::util::UuidUtil::newUnsecureUUID();
-                ASSERT_NE(uuid1, uuid2);
-
-                std::string uuid1String = uuid1.toString();
-                std::string uuid2String = uuid2.toString();
-                ASSERT_NE(uuid1String, uuid2String);
-                ASSERT_EQ(36U, uuid1String.length());
-                ASSERT_EQ(36U, uuid2String.length());
-
-                std::stringstream ss(uuid1String);
-                std::string token;
-                ASSERT_TRUE(std::getline(ss, token, '-'));
-                ASSERT_EQ(8U, token.length());
-                ASSERT_TRUE(std::getline(ss, token, '-'));
-                ASSERT_EQ(4U, token.length());
-                ASSERT_TRUE(std::getline(ss, token, '-'));
-                ASSERT_EQ(4U, token.length());
-                ASSERT_TRUE(std::getline(ss, token, '-'));
-                ASSERT_EQ(4U, token.length());
-                ASSERT_TRUE(std::getline(ss, token, '-'));
-                ASSERT_EQ(12U, token.length());
-                ASSERT_FALSE(std::getline(ss, token, '-'));
-            }
-
-            TEST_F(UuidUtilTest, testUuidToString) {
-                int64_t msb = static_cast<int64_t>(0xfb34567812345678LL);
-                int64_t lsb = static_cast<int64_t>(0xabcd123412345678LL);
-                hazelcast::util::UUID uuid(msb, lsb);
-                std::string uuidString = uuid.toString();
-                ASSERT_EQ("fb345678-1234-5678-abcd-123412345678", uuidString);
             }
         }
     }

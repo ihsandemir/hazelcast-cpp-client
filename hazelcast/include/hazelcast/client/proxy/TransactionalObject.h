@@ -46,7 +46,7 @@ namespace hazelcast {
             protected:
                 virtual void onDestroy();
 
-                std::string getTransactionId() const;
+                const boost::optional<boost::uuids::uuid> &getTransactionId() const;
 
                 std::chrono::steady_clock::duration getTimeout() const;
 

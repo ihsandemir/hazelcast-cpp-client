@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <memory>
 #include <atomic>
+#include <hazelcast/client/cluster/impl/VectorClock.h>
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
 #include "hazelcast/util/Sync.h"
@@ -303,7 +304,7 @@ namespace hazelcast {
                  * @param receivedLogicalTimestamps logical timestamps received from a replica state read
                  */
                 void updateObservedReplicaTimestamps(
-                        const std::vector<std::pair<std::string, int64_t> > &receivedLogicalTimestamps);
+                        const cluster::impl::VectorClock::TimestampVector &receivedLogicalTimestamps);
 
                 /**
                  * Transforms the list of replica logical timestamps to a vector clock instance.
@@ -312,7 +313,7 @@ namespace hazelcast {
                  * @return a vector clock instance
                  */
                 static std::shared_ptr<cluster::impl::VectorClock>
-                toVectorClock(const std::vector<std::pair<std::string, int64_t> > &replicaLogicalTimestamps);
+                toVectorClock(const cluster::impl::VectorClock::TimestampVector &replicaLogicalTimestamps);
 
                 util::Sync<std::shared_ptr<Address> > currentTargetReplicaAddress;
                 std::mutex targetSelectionMutex;
@@ -323,6 +324,8 @@ namespace hazelcast {
                  */
                 util::Sync<std::shared_ptr<cluster::impl::VectorClock> > observedClock;
                 util::ILogger &logger;
+
+                int64_t get_and_update_timestamps(boost::future<protocol::ClientMessage> f);
             };
         }
     }

@@ -57,7 +57,7 @@ int main() {
 
     MyEntryListener listener;
 
-    std::string listenerId = map->addEntryListener(listener, true).get();
+    auto listenerId = map->addEntryListener(listener, true).get();
 
     std::cout << "EntryListener registered" << std::endl;
 

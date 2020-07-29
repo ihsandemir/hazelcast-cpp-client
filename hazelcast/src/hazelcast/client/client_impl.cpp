@@ -373,11 +373,6 @@ namespace hazelcast {
 
             BaseEventHandler::~BaseEventHandler() = default;
 
-            void BaseEventHandler::handle(const std::shared_ptr<protocol::ClientMessage> &event) {
-                std::unique_ptr<protocol::ClientMessage> e(new protocol::ClientMessage(*event));
-                handle(std::move(e));
-            }
-
             BaseEventHandler::BaseEventHandler() : logger(NULL) {}
 
             void BaseEventHandler::setLogger(util::ILogger *iLogger) {
@@ -530,7 +525,7 @@ namespace hazelcast {
         }
 
         std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
-        IExecutorService::invokeOnTarget(std::unique_ptr<protocol::ClientMessage> &request, const Address &target) {
+        IExecutorService::invokeOnTarget(protocol::ClientMessage &&request, const Address &target) {
             try {
                 std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         getContext(), request, getName(), target);
@@ -542,7 +537,7 @@ namespace hazelcast {
         }
 
         std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
-        IExecutorService::invokeOnPartitionOwner(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
+        IExecutorService::invokeOnPartitionOwner(protocol::ClientMessage &&request, int partitionId) {
             try {
                 std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         getContext(), request, getName(), partitionId);
@@ -582,15 +577,15 @@ namespace hazelcast {
         }
 
         void IExecutorService::shutdown() {
-            auto request = protocol::codec::ExecutorServiceShutdownCodec::encodeRequest(
+            auto request = protocol::codec::executorservice_shutdown_encode(
                     getName());
             invoke(request);
         }
 
         boost::future<bool> IExecutorService::isShutdown() {
-            auto request = protocol::codec::ExecutorServiceIsShutdownCodec::encodeRequest(
+            auto request = protocol::codec::executorservice_isshutdown_encode(
                     getName());
-            return invokeAndGetFuture<bool, protocol::codec::ExecutorServiceIsShutdownCodec::ResponseParameters>(
+            return invokeAndGetFuture<bool>(
                     request);
         }
 

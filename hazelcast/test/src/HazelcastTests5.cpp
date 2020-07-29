@@ -67,7 +67,6 @@
 #include "hazelcast/util/MurmurHash3.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
 #include "hazelcast/client/MultiMap.h"
-#include "hazelcast/util/LittleEndianBufferWrapper.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/ClientProperties.h"
 
@@ -75,16 +74,19 @@
 #pragma warning(disable: 4996) //for unsafe getenv
 #endif
 
+/*
 namespace hazelcast {
     namespace client {
         namespace test {
             namespace common {
                 namespace containers {
                     class LittleEndianBufferTest : public ::testing::Test,
-                                                   public hazelcast::util::LittleEndianBufferWrapper /* Need this in order to test*/
+                                    public protocol::ClientMessage */
+/* Need this in order to test*//*
+
                     {
                     public:
-                        LittleEndianBufferTest() : LittleEndianBufferWrapper(0) {}
+                        LittleEndianBufferTest() : protocol::ClientMessage(0) {}
                     };
 
                     TEST_F (LittleEndianBufferTest, testBinaryFormat) {
@@ -178,7 +180,9 @@ namespace hazelcast {
 // ----- Test signed get ends ---------------------------------
 
                         const byte firstChar = 'B';
-                        byte strBytes[8] = {4, 0, 0, 0, /* This part is the len field which is 4 bytes */
+                        byte strBytes[8] = {4, 0, 0, 0, */
+/* This part is the len field which is 4 bytes *//*
+
                                             firstChar, firstChar + 1, firstChar + 2,
                                             firstChar + 3}; // This is string BCDE
 
@@ -195,7 +199,9 @@ namespace hazelcast {
                                                         0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B,
                                                         0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B,
                                                         0x8A, 0x9A, 0xAA, 0xBA, 0xCA,
-                                                        4, 0, 0, 0, /* This part is the len field which is 4 bytes */
+                                                        4, 0, 0, 0, */
+/* This part is the len field which is 4 bytes *//*
+
                                                         firstChar, firstChar + 1, firstChar + 2, firstChar + 3,
                                                         0x8A, 0x01, 0x00, 0xBA, 0xCA, 0xDA, 0xEA, 0x8B};
 
@@ -334,6 +340,7 @@ namespace hazelcast {
         }
     }
 }
+*/
 
 
 namespace hazelcast {
@@ -782,7 +789,7 @@ namespace hazelcast {
                 boost::latch expirationEventArrivalCount(numberOfPutOperations);
 
                 ExpirationListener expirationListener(expirationEventArrivalCount);
-                std::string registrationId = imap->addEntryListener(expirationListener, true).get();
+                auto registrationId = imap->addEntryListener(expirationListener, true).get();
 
                 for (int i = 0; i < numberOfPutOperations; i++) {
                     imap->put<int, int>(i, i, std::chrono::milliseconds(100)).get();
@@ -828,7 +835,7 @@ namespace hazelcast {
                 boost::latch evictedEventArrivalCount(numberOfPutOperations);
 
                 ExpirationAndEvictionListener expirationListener(expirationEventArrivalCount, evictedEventArrivalCount);
-                std::string registrationId = imap->addEntryListener(expirationListener, true).get();
+                auto registrationId = imap->addEntryListener(expirationListener, true).get();
 
                 for (int i = 0; i < numberOfPutOperations; i++) {
                     imap->put<int, int>(i, i, std::chrono::milliseconds(100)).get();
@@ -1173,7 +1180,7 @@ namespace hazelcast {
                 boost::latch latch1(2);
                 boost::latch nullLatch(1);
                 MyListener myListener(latch1, nullLatch);
-                std::string id = imap->addEntryListener(myListener, true).get();
+                auto id = imap->addEntryListener(myListener, true).get();
 
                 imap->put<std::string, std::string>("key1", "value1", std::chrono::seconds(2)).get();
 
@@ -1313,7 +1320,7 @@ namespace hazelcast {
                 boost::latch dummy(10);
                 boost::latch evict(1);
                 CountdownListener sampleEntryListener(dummy, dummy, dummy, evict);
-                std::string id = imap->addEntryListener(sampleEntryListener, false).get();
+                auto id = imap->addEntryListener(sampleEntryListener, false).get();
 
                 auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(
                         imap->getLocalMapStats().getNearCacheStats());
@@ -1352,7 +1359,7 @@ namespace hazelcast {
                 boost::latch dummy(10);
                 boost::latch evict(1);
                 CountdownListener sampleEntryListener(dummy, dummy, dummy, evict);
-                std::string id = map->addEntryListener(sampleEntryListener, false).get();
+                auto id = map->addEntryListener(sampleEntryListener, false).get();
 
                 auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(
                         map->getLocalMapStats().getNearCacheStats());
@@ -1411,7 +1418,7 @@ namespace hazelcast {
                 boost::latch dummy(10);
                 boost::latch evict(1);
                 CountdownListener sampleEntryListener(dummy, dummy, dummy, evict);
-                std::string id = imap->addEntryListener(sampleEntryListener, false).get();
+                auto id = imap->addEntryListener(sampleEntryListener, false).get();
 
                 auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(
                         imap->getLocalMapStats().getNearCacheStats());
@@ -1450,7 +1457,7 @@ namespace hazelcast {
                 boost::latch evict(1);
                 CountdownListener sampleEntryListener(
                         dummy, dummy, dummy, evict);
-                std::string id = map->addEntryListener(sampleEntryListener, false).get();
+                auto id = map->addEntryListener(sampleEntryListener, false).get();
 
                 auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(
                         map->getLocalMapStats().getNearCacheStats());
@@ -2832,7 +2839,7 @@ namespace hazelcast {
                 hazelcast::util::AtomicInt atomicInteger(0);
                 SampleEntryListenerForPortableKey listener(countDownLatch, atomicInteger);
                 Employee key("a", 1);
-                std::string id = tradeMap->addEntryListener(listener, true, key).get();
+                auto id = tradeMap->addEntryListener(listener, true, key).get();
                 Employee key2("a", 2);
                 tradeMap->put<Employee, int>(key2, 1).get();
                 tradeMap->put<Employee, int>(key, 3).get();
@@ -2854,8 +2861,8 @@ namespace hazelcast {
                 CountdownListener listener2(
                         latch2Add, latch2Remove, dummy, dummy);
 
-                std::string listener1ID = imap->addEntryListener(listener1, false).get();
-                std::string listener2ID = imap->addEntryListener(listener2, true, "key3").get();
+                auto listener1ID = imap->addEntryListener(listener1, false).get();
+                auto listener2ID = imap->addEntryListener(listener2, true, "key3").get();
 
                 std::this_thread::sleep_for(std::chrono::seconds(2));
 
@@ -2875,7 +2882,6 @@ namespace hazelcast {
 
                 ASSERT_TRUE(imap->removeEntryListener(listener1ID).get());
                 ASSERT_TRUE(imap->removeEntryListener(listener2ID).get());
-
             }
 
             TEST_P(ClientMapTest, testListenerWithTruePredicate) {
@@ -2886,7 +2892,7 @@ namespace hazelcast {
 
                 CountdownListener listener(latchAdd, latchRemove, latchUpdate, latchEvict);
 
-                std::string listenerId = intMap->addEntryListener(listener, query::TruePredicate(client), false).get();
+                auto listenerId = intMap->addEntryListener(listener, query::TruePredicate(client), false).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
@@ -2897,7 +2903,7 @@ namespace hazelcast {
 
                 ASSERT_FALSE((intMap->get<int, int>(3).get().has_value())); // trigger eviction
 
-// update an entry
+                // update an entry
                 intMap->set(1, 5).get();
                 boost::optional<int> value = intMap->get<int, int>(1).get();
                 ASSERT_TRUE(value.has_value());
@@ -2920,7 +2926,7 @@ namespace hazelcast {
                                                      latchUpdate,
                                                      latchEvict);
 
-                std::string listenerId = intMap->addEntryListener(listener, query::FalsePredicate(client), false).get();
+                auto listenerId = intMap->addEntryListener(listener, query::FalsePredicate(client), false).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
@@ -2954,7 +2960,7 @@ namespace hazelcast {
                                                      latchUpdate,
                                                      latchEvict);
 
-                std::string listenerId = intMap->addEntryListener(listener,
+                auto listenerId = intMap->addEntryListener(listener,
                                                                  query::EqualPredicate(client, 
                                                                          query::QueryConstants::KEY_ATTRIBUTE_NAME,
                                                                          3), true).get();
@@ -2995,7 +3001,7 @@ namespace hazelcast {
                                                      latchUpdate,
                                                      latchEvict);
 
-                std::string listenerId = intMap->addEntryListener(listener,
+                auto listenerId = intMap->addEntryListener(listener,
                                                                  query::NotEqualPredicate(client, 
                                                                          query::QueryConstants::KEY_ATTRIBUTE_NAME,
                                                                          3), true).get();
@@ -3037,7 +3043,7 @@ namespace hazelcast {
                                                      latchEvict);
 
 // key <= 2
-                std::string listenerId = intMap->addEntryListener(listener,
+                auto listenerId = intMap->addEntryListener(listener,
                                                                  query::GreaterLessPredicate(client, 
                                                                          query::QueryConstants::KEY_ATTRIBUTE_NAME,
                                                                          2, true, true),
@@ -3076,7 +3082,7 @@ namespace hazelcast {
                 CountdownListener listener(latchAdd, latchRemove, latchUpdate, latchEvict);
 
 // 1 <=key <= 2
-                std::string listenerId = intMap->addEntryListener(listener,
+                auto listenerId = intMap->addEntryListener(listener,
                                                                  query::BetweenPredicate(client, 
                                                                          query::QueryConstants::KEY_ATTRIBUTE_NAME,
                                                                          1, 2), true).get();
@@ -3114,7 +3120,7 @@ namespace hazelcast {
                 CountdownListener listener(latchAdd, latchRemove, latchUpdate, latchEvict);
 
 // 1 <=key <= 2
-                std::string listenerId = intMap->addEntryListener(listener, query::SqlPredicate(client, "__key < 2"), true).get();
+                auto listenerId = intMap->addEntryListener(listener, query::SqlPredicate(client, "__key < 2"), true).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
@@ -3152,7 +3158,7 @@ namespace hazelcast {
                         latchAdd, latchRemove, latchUpdate, latchEvict);
 
 // key matches any word containing ".*met.*"
-                std::string listenerId = imap->addEntryListener(listener,
+                auto listenerId = imap->addEntryListener(listener,
                                                                query::RegexPredicate(client, 
                                                                        query::QueryConstants::KEY_ATTRIBUTE_NAME,
                                                                        ".*met.*"), true).get();
@@ -3189,7 +3195,7 @@ namespace hazelcast {
                 boost::latch latchUpdate(1);
                 CountdownListener listener(latchAdd, latchRemove,latchUpdate,latchEvict);
 // 1 <=key <= 2
-                std::string listenerId = intMap->addEntryListener(listener,
+                auto listenerId = intMap->addEntryListener(listener,
                                                                  query::InstanceOfPredicate(client, 
                                                                          "java.lang.Integer"),
                                                                  false).get();
@@ -3226,7 +3232,7 @@ namespace hazelcast {
                 query::NotPredicate notPredicate(client, query::GreaterLessPredicate(client,
                                                                                      query::QueryConstants::KEY_ATTRIBUTE_NAME,
                                                                                      3, true, false));
-                std::string listenerId = intMap->addEntryListener(listener, notPredicate,false).get();
+                auto listenerId = intMap->addEntryListener(listener, notPredicate,false).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
@@ -3267,7 +3273,7 @@ namespace hazelcast {
                 query::EqualPredicate equalPred(client, query::QueryConstants::KEY_ATTRIBUTE_NAME, 1);
 // key < 3 AND key == 1 --> (1, 1)
                 query::AndPredicate predicate(client, greaterLessPred, equalPred);
-                std::string listenerId = intMap->addEntryListener(listener, predicate, false).get();
+                auto listenerId = intMap->addEntryListener(listener, predicate, false).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
@@ -3311,7 +3317,7 @@ namespace hazelcast {
                 query::EqualPredicate equalPred(client, query::QueryConstants::THIS_ATTRIBUTE_NAME, 2);
                 // key >= 3 OR value == 2 --> (1, 1), (2, 2)
                 query::OrPredicate predicate(client, greaterLessPred, equalPred);
-                std::string listenerId = intMap->addEntryListener(listener, predicate, true).get();
+                auto listenerId = intMap->addEntryListener(listener, predicate, true).get();
 
                 intMap->put(1, 1).get();
                 intMap->put(2, 2).get();
@@ -3340,7 +3346,7 @@ namespace hazelcast {
             TEST_P(ClientMapTest, testClearEvent) {
                 boost::latch latch1(1);
                 ClearListener clearListener(latch1);
-                std::string listenerId = imap->addEntryListener(clearListener, false).get();
+                auto listenerId = imap->addEntryListener(clearListener, false).get();
                 imap->put<std::string, std::string>("key1", "value1").get();
                 imap->clear().get();
                 ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(120)));
@@ -3350,7 +3356,7 @@ namespace hazelcast {
             TEST_P(ClientMapTest, testEvictAllEvent) {
                 boost::latch latch1(1);
                 EvictListener evictListener(latch1);
-                std::string listenerId = imap->addEntryListener(evictListener, false).get();
+                auto listenerId = imap->addEntryListener(evictListener, false).get();
                 imap->put<std::string, std::string>("key1", "value1").get();
                 imap->evictAll().get();
                 ASSERT_EQ(boost::cv_status::no_timeout, latch1.wait_for(boost::chrono::seconds(120)));

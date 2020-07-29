@@ -24,7 +24,6 @@
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
 #include <hazelcast/client/serialization/serialization.h>
-#include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
 #include <thread>
@@ -740,7 +739,7 @@ namespace hazelcast {
 
             std::string ClientTestSupportBase::randomString() {
                 // TODO: Change with secure uuid generator as in Java
-                return hazelcast::util::UuidUtil::newUnsecureUuidString();
+                return boost::uuids::to_string(boost::uuids::random_generator()());
             }
 
             void ClientTestSupportBase::sleepSeconds(int32_t seconds) {
@@ -753,7 +752,7 @@ namespace hazelcast {
                 spi::ClientPartitionService &partitionService = context.getPartitionService();
                 serialization::pimpl::SerializationService &serializationService = context.getSerializationService();
                 while (true) {
-                    std::string id = randomString();
+                    auto id = randomString();
                     int partitionId = partitionService.getPartitionId(serializationService.toData<std::string>(&id));
                     std::shared_ptr<impl::Partition> partition = partitionService.getPartition(partitionId);
                     if (*partition->getOwner() == member) {
@@ -1251,8 +1250,7 @@ namespace hazelcast {
 
                 std::shared_ptr<protocol::Principal> principal = connectionManager.getPrincipal();
                 ASSERT_NOTNULL(principal.get(), protocol::Principal);
-                ASSERT_NOTNULL(principal->getUuid(), std::string);
-                ASSERT_EQ_PTR((*principal->getUuid()), endpoint.getUuid().get(), std::string);
+                ASSERT_EQ(principal->getUuid(), *endpoint.getUuid());
             }
         }
     }
@@ -1761,8 +1759,8 @@ namespace hazelcast {
                 std::shared_ptr<MembershipListener> sampleListener(
                         new SampleListenerInSimpleListenerTest(memberAdded, attributeLatch, memberRemoved));
 
-                std::string initialListenerRegistrationId = cluster.addMembershipListener(sampleInitialListener);
-                std::string sampleListenerRegistrationId = cluster.addMembershipListener(sampleListener);
+                auto initialListenerRegistrationId = cluster.addMembershipListener(sampleInitialListener);
+                auto sampleListenerRegistrationId = cluster.addMembershipListener(sampleListener);
 
                 HazelcastServer instance2(*g_srvFactory);
 
@@ -1865,10 +1863,10 @@ namespace hazelcast {
 
                 auto map = hazelcastClient.getMap("testDeregisterListener");
 
-                ASSERT_FALSE(map->removeEntryListener("Unknown").get());
+                ASSERT_FALSE(map->removeEntryListener(boost::uuids::random_generator()()).get());
 
                 boost::latch mapClearedLatch(1);
-                std::string listenerRegistrationId = map->addEntryListener(MyEntryListener(mapClearedLatch), true).get();
+                auto listenerRegistrationId = map->addEntryListener(MyEntryListener(mapClearedLatch), true).get();
                 map->put(1, 1).get();
                 map->clear().get();
                 ASSERT_OPEN_EVENTUALLY(mapClearedLatch);
@@ -2430,7 +2428,7 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = client->newTransactionContext();
                 context.beginTransaction().get();
-                ASSERT_FALSE(context.getTxnId().empty());
+                ASSERT_FALSE(context.getTxnId());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2451,7 +2449,7 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = uniSocketClient.newTransactionContext();
                 context.beginTransaction().get();
-                ASSERT_FALSE(context.getTxnId().empty());
+                ASSERT_FALSE(context.getTxnId());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2473,7 +2471,7 @@ namespace hazelcast {
                 TransactionContext context = client->newTransactionContext(transactionOptions);
 
                 context.beginTransaction().get();
-                ASSERT_FALSE(context.getTxnId().empty());
+                ASSERT_FALSE(context.getTxnId());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2510,7 +2508,7 @@ namespace hazelcast {
 
                 try {
                     context.beginTransaction().get();
-                    ASSERT_FALSE(context.getTxnId().empty());
+                    ASSERT_FALSE(context.getTxnId());
                     auto queue = context.getQueue(queueName);
                     queue->offer(randomString()).get();
 

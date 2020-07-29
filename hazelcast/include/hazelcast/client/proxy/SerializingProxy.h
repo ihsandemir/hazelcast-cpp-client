@@ -40,19 +40,19 @@ namespace hazelcast {
             protected:
                 SerializingProxy(spi::ClientContext &context, const std::string &objectName);
                 
-                boost::future<protocol::ClientMessage> invoke(std::unique_ptr<protocol::ClientMessage> &request);
+                boost::future<protocol::ClientMessage> invoke(protocol::ClientMessage &request);
 
-                boost::future<protocol::ClientMessage> invokeOnConnection(std::unique_ptr<protocol::ClientMessage> &request,
+                boost::future<protocol::ClientMessage> invokeOnConnection(protocol::ClientMessage &request,
                                                                           std::shared_ptr<connection::Connection> connection);
 
                 boost::future<protocol::ClientMessage>
-                invokeOnPartition(std::unique_ptr<protocol::ClientMessage> &request, int partitionId);
+                invokeOnPartition(protocol::ClientMessage &request, int partitionId);
 
                 boost::future<protocol::ClientMessage>
-                invokeOnKeyOwner(std::unique_ptr<protocol::ClientMessage> &request,
+                invokeOnKeyOwner(protocol::ClientMessage &request,
                                  const serialization::pimpl::Data &keyData);
 
-                boost::future<protocol::ClientMessage> invokeOnAddress(std::unique_ptr<protocol::ClientMessage> &request,
+                boost::future<protocol::ClientMessage> invokeOnAddress(protocol::ClientMessage &request,
                                                         const Address &address);
 
                 int getPartitionId(const serialization::pimpl::Data &key);
@@ -202,34 +202,75 @@ namespace hazelcast {
                     return entries;
                 }
 
-                template<typename T, typename CODEC>
-                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request) {
-                    return invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
-                        return CODEC::decode(f.get()).response;
-                    });
+                template<typename T>
+                boost::future<T> invokeAndGetFuture(protocol::ClientMessage &request) {
+                    return decode<T>(invoke(request));
                 }
 
-                template<typename T, typename CODEC>
-                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request, int partitionId) {
-                    return invokeOnPartition(request, partitionId).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
-                        return (T) CODEC::decode(f.get()).response;
-                    });
+                template<typename T>
+                boost::future<T> invokeAndGetFuture(protocol::ClientMessage &request, int partitionId) {
+                    return decode<T>(invokeOnPartition(request, partitionId));
                 }
 
-                template<typename T, typename CODEC>
-                boost::future<T> invokeAndGetFuture(std::unique_ptr<protocol::ClientMessage> &request,
+                template<typename T>
+                boost::future<T> invokeAndGetFuture(protocol::ClientMessage &request,
                                      const serialization::pimpl::Data &key) {
-                    return invokeOnKeyOwner(request, key).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
-                        return CODEC::decode(f.get()).response;
-                    });
+                    return decode<T>(invokeOnKeyOwner(request, key));
                 }
 
             protected:
+                template<typename T>
+                static boost::future<boost::optional<T>>
+                decode_optional_var_sized(boost::future<protocol::ClientMessage> f) {
+                    return f.then(boost::launch::deferred, [](boost::future<protocol::ClientMessage> f) {
+                        auto msg = f.get();
+                        return msg.get_first_optional_var_sized_field<T>();
+                    });
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_trivial<T>::value, boost::future<T>>::type
+                static decode(boost::future<protocol::ClientMessage> f) {
+                    return f.then(boost::launch::deferred, [](boost::future<protocol::ClientMessage> f) {
+                        auto msg = f.get();
+                        return msg.get_first_fixed_sized_field<T>();
+                    });
+                }
+
+                template<typename T>
+                typename std::enable_if<!std::is_trivial<T>::value, boost::future<T>>::type
+                static decode(boost::future<protocol::ClientMessage> f) {
+                    return f.then(boost::launch::deferred, [](boost::future<protocol::ClientMessage> f) {
+                        auto msg = f.get();
+                        return *msg.get_first_var_sized_field<T>();
+                    });
+                }
+
                 serialization::pimpl::SerializationService &serializationService_;
                 spi::ClientPartitionService &partitionService_;
                 std::string name_;
                 spi::ClientContext &context_;
             };
+
+            template<>
+            boost::future<boost::optional<serialization::pimpl::Data>>
+            SerializingProxy::invokeAndGetFuture(protocol::ClientMessage &request);
+
+            template<>
+            boost::future<boost::optional<map::DataEntryView>>
+            SerializingProxy::invokeAndGetFuture(protocol::ClientMessage &request,
+                                                 const serialization::pimpl::Data &key);
+
+            template<>
+            boost::future<boost::optional<serialization::pimpl::Data>>
+            SerializingProxy::invokeAndGetFuture(protocol::ClientMessage &request, int partitionId);
+
+
+            template<>
+            boost::future<boost::optional<serialization::pimpl::Data>>
+            SerializingProxy::invokeAndGetFuture(protocol::ClientMessage &request,
+                                                 const serialization::pimpl::Data &key);
+
         }
     }
 }

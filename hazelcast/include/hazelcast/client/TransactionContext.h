@@ -69,7 +69,7 @@ namespace hazelcast {
             /**
              *  @return txn id.
              */
-            std::string getTxnId() const;
+            const boost::optional<boost::uuids::uuid> & getTxnId() const;
 
             /**
              * Begins a transaction.

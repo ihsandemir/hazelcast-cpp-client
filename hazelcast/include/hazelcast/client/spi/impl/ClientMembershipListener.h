@@ -18,13 +18,14 @@
 
 #include <unordered_set>
 #include <memory>
+#include <boost/functional/hash.hpp>
 
 #include <boost/thread/latch.hpp>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
 
 #include "hazelcast/util/HazelcastDll.h"
 #include "ClientClusterServiceImpl.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/MembershipEvent.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -55,18 +56,19 @@ namespace hazelcast {
                 class ClientClusterServiceImpl;
 
                 class HAZELCAST_API ClientMembershipListener
-                        : public protocol::codec::ClientAddMembershipListenerCodec::AbstractEventHandler,
+                        : public protocol::codec::client_addmembershiplistener_handler,
                           public std::enable_shared_from_this<ClientMembershipListener> {
                 public:
                     ClientMembershipListener(ClientContext &client);
 
-                    void handleMemberEventV10(const Member &member, const int32_t &eventType) override;
+                    void handle_member(const Member &member, const int32_t &eventType) override;
 
-                    void handleMemberListEventV10(const std::vector<Member> &members) override;
+                    void handle_memberlist(const std::vector<Member> &new_members) override;
 
-                    void handleMemberAttributeChangeEventV10(const std::string &uuid, const std::string &key,
-                                                                     const int32_t &operationType,
-                                                                     std::unique_ptr<std::string> &value) override;
+                    void handle_memberattributechange(const Member &member, const std::vector<Member> &new_members,
+                                                      const std::string &key,
+                                                      const int32_t &operationType,
+                                                      const boost::optional<std::string> &value) override;
 
                     void listenMembershipEvents(const std::shared_ptr<connection::Connection> &ownerConnection);
 
@@ -89,7 +91,8 @@ namespace hazelcast {
                     std::exception_ptr newTargetDisconnectedExceptionCausedByMemberLeftEvent(
                             const std::shared_ptr<connection::Connection> &connection);
 
-                    std::vector<MembershipEvent> detectMembershipEvents(std::unordered_map<std::string, Member> &prevMembers);
+                    std::vector<MembershipEvent> detectMembershipEvents(
+                            std::unordered_map<boost::uuids::uuid, Member, boost::hash<boost::uuids::uuid>> &prevMembers);
 
                     void fireMembershipEvent(std::vector<MembershipEvent> &events);
 

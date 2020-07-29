@@ -168,11 +168,12 @@ namespace hazelcast {
 
                 std::shared_ptr<Connection> getOrConnect(const Address &address, bool asOwner);
 
-                std::unique_ptr<protocol::ClientMessage>
+                protocol::ClientMessage
                 encodeAuthenticationRequest(bool asOwner, serialization::pimpl::SerializationService &ss,
                                             const protocol::Principal *p);
 
-                void onAuthenticated(const Address &target, const std::shared_ptr<Connection> &connection);
+                void onAuthenticated(const Address &target, const std::shared_ptr<Connection> &connection,
+                        int32_t partition_count, boost::uuids::uuid cluster_id);
 
                 void fireConnectionAddedEvent(const std::shared_ptr<Connection> &connection);
 
@@ -254,6 +255,15 @@ namespace hazelcast {
                 HeartbeatManager heartbeat;
                 std::vector<std::thread> ioThreads;
                 std::unique_ptr<boost::asio::io_context::work> ioGuard;
+                std::atomic<int32_t> partition_count_;
+#ifdef __linux__
+                // default support for 16 byte atomics is missing for linux
+                util::Sync<boost::uuids::uuid> cluster_id_;
+#else
+                std::atomic<boost::uuids::uuid> cluster_id_;
+#endif
+                std::vector<std::string> labels_;
+
             };
         }
     }

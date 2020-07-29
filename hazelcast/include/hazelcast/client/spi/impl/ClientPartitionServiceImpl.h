@@ -25,7 +25,7 @@
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/impl/Partition.h"
 #include "hazelcast/util/ILogger.h"
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -48,7 +48,7 @@ namespace hazelcast {
 
                 class HAZELCAST_API ClientPartitionServiceImpl : public ClientPartitionService,
                                                                  public std::enable_shared_from_this<ClientPartitionServiceImpl>,
-                                                                 public protocol::codec::ClientAddPartitionListenerCodec::AbstractEventHandler {
+                                                                 public protocol::codec::client_addpartitionlistener_handler {
                 public:
                     ClientPartitionServiceImpl(ClientContext &client,
                                                hazelcast::client::spi::impl::ClientExecutionServiceImpl &executionService);
@@ -62,8 +62,8 @@ namespace hazelcast {
                     void listenPartitionTable(const std::shared_ptr<connection::Connection> &ownerConnection);
 
                     void
-                    handlePartitionsEventV15(const std::vector<std::pair<Address, std::vector<int32_t> > > &partitions,
-                                             const int32_t &partitionStateVersion) override;
+                    handle_partitions(const std::vector<std::pair<Address, std::vector<int32_t> > > &partitions,
+                                      const int32_t &partitionStateVersion) override;
 
                     void beforeListenerRegister() override;
 
@@ -95,7 +95,7 @@ namespace hazelcast {
 
                     bool processPartitionResponse(
                             const std::vector<std::pair<Address, std::vector<int32_t> > > &partitions,
-                            int32_t partitionStateVersion, bool partitionStateVersionExist);
+                            int32_t partitionStateVersion);
 
                     ClientContext &client;
                     ClientExecutionServiceImpl &clientExecutionService;
@@ -110,6 +110,9 @@ namespace hazelcast {
                     void waitForPartitionsFetchedOnce();
 
                     bool isClusterFormedByOnlyLiteMembers();
+
+                    std::pair<int32_t, std::vector<std::pair<Address, std::vector<int32_t>>>>
+                    get_response_params(boost::future<protocol::ClientMessage> &f) const;
                 };
             }
         }

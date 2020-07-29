@@ -63,7 +63,7 @@ namespace hazelcast {
                  * @param uuid The UUID of the member.
                  * @return The member that was found, or none if not found.
                  */
-                virtual boost::optional<Member> getMember(const std::string &uuid) = 0;
+                virtual boost::optional<Member> getMember(const boost::uuids::uuid &uuid) = 0;
 
                 /**
                  * Gets the collection of members.
@@ -85,13 +85,13 @@ namespace hazelcast {
                  * @param listener The listener to be registered.
                  * @return The registration ID
                  */
-                virtual std::string addMembershipListener(const std::shared_ptr<MembershipListener> &listener) = 0;
+                virtual boost::uuids::uuid addMembershipListener(const std::shared_ptr<MembershipListener> &listener) = 0;
 
                 /**
                  * @param registrationId The registrationId of the listener to be removed.
                  * @return true if successfully removed, false otherwise.
                  */
-                virtual bool removeMembershipListener(const std::string &registrationId) = 0;
+                virtual bool removeMembershipListener(const boost::uuids::uuid &registrationId) = 0;
 
                 /**
                  * Gets the current number of members.

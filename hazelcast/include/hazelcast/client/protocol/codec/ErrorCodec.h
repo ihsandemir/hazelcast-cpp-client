@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*
- * ErrorCodec.h
- *
- *  Created on: Apr 13, 2015
- *      Author: ihsan
- */
-
 #pragma once
 
 #include <string>
 #include <vector>
-#include <memory>
-#include <stdint.h>
+#include <boost/optional.hpp>
 
-#include "hazelcast/client/protocol/ResponseMessageConst.h"
 #include "hazelcast/client/protocol/codec/StackTraceElement.h"
 
 namespace hazelcast {
@@ -41,25 +31,15 @@ namespace hazelcast {
                 public:
                     int32_t errorCode;
                     std::string className;
-                    std::unique_ptr<std::string> message;
+                    boost::optional<std::string> message;
                     std::vector<StackTraceElement> stackTrace;
-                    int32_t causeErrorCode;
-                    std::unique_ptr<std::string> causeClassName;
 
-                    static const enum ResponseMessageConst TYPE = EXCEPTION;
+                    static constexpr int32_t EXCEPTION_MESSAGE_TYPE = 0;
 
-                    /**
-                    * Decode input byte array data into parameters
-                    *
-                    * @param message
-                    * @return ErrorCodec
-                    */
                     static ErrorCodec decode(ClientMessage &clientMessage);
-
 
                     std::string toString() const;
 
-                    ErrorCodec(const ErrorCodec &rhs);
                 private:
                     ErrorCodec(ClientMessage &clientMessage);
                 };
@@ -67,5 +47,4 @@ namespace hazelcast {
         }
     }
 }
-
 

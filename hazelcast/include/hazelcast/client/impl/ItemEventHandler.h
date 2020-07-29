@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "hazelcast/client/protocol/codec/ProtocolCodecs.h"
+#include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/ItemEvent.h"
@@ -34,13 +34,13 @@ namespace hazelcast {
                         : instanceName(instanceName), clusterService(clusterService),
                           serializationService(serializationService), listener(listener), includeValue(includeValue) {};
 
-                void handleItemEventV10(std::unique_ptr<serialization::pimpl::Data> &item, const std::string &uuid,
+                void handle_item(const boost::optional<serialization::pimpl::Data> &item, const boost::optional<boost::uuids::uuid> &uuid,
                                         const int32_t &eventType) override {
                     TypedData val;
                     if (includeValue) {
                         val = TypedData(std::move(*item), serializationService);
                     }
-                    auto member = clusterService.getMember(uuid);
+                    auto member = clusterService.getMember(*uuid);
                     ItemEventType type(static_cast<ItemEventType>(eventType));
                     ItemEvent itemEvent(instanceName, type, std::move(val), std::move(member).value());
                     if (type == ItemEventType::ADDED) {

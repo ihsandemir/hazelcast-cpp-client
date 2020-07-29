@@ -31,7 +31,7 @@ namespace hazelcast {
                 *
                 * @return true if registration is removed, false otherwise
                 */
-                boost::future<bool> removeItemListener(const std::string& registrationId);
+                boost::future<bool> removeItemListener(const boost::optional<boost::uuids::uuid> &registrationId);
 
                 /**
                 *
@@ -54,8 +54,8 @@ namespace hazelcast {
                 ISetImpl(const std::string& instanceName, spi::ClientContext *clientContext);
 
                 template<typename Listener>
-                boost::future<std::string>
-                addItemListener(std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::SetAddListenerCodec::AbstractEventHandler>> &&itemEventHandler, bool includeValue) {
+                boost::future<boost::optional<boost::uuids::uuid>>
+                addItemListener(std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::set_addlistener_handler>> &&itemEventHandler, bool includeValue) {
                     return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
                 }
 
@@ -80,14 +80,10 @@ namespace hazelcast {
                 public:
                     SetListenerMessageCodec(std::string name, bool includeValue);
 
-                    std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const override;
+                    protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const override;
-
-                    std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const override;
-
-                    bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const override;
+                    protocol::ClientMessage
+                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
 
                 private:
                     std::string  name;

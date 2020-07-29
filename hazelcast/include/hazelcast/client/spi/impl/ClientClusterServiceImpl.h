@@ -18,6 +18,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <boost/functional/hash.hpp>
 
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/spi/ClientClusterService.h"
@@ -57,16 +58,16 @@ namespace hazelcast {
 
                     boost::optional<Member> getMember(const Address &address) override;
 
-                    boost::optional<Member> getMember(const std::string &uuid) override;
+                    boost::optional<Member> getMember(const boost::uuids::uuid &uuid) override;
 
                     std::vector<Member> getMemberList() override;
 
                     std::vector<Member> getMembers(
                             const cluster::memberselector::MemberSelector &selector) override;
 
-                    std::string addMembershipListener(const std::shared_ptr<MembershipListener> &listener) override;
+                    boost::uuids::uuid addMembershipListener(const std::shared_ptr<MembershipListener> &listener) override;
 
-                    bool removeMembershipListener(const std::string &registrationId) override;
+                    bool removeMembershipListener(const boost::uuids::uuid &registrationId) override;
 
                     void handleMembershipEvent(const MembershipEvent &event);
 
@@ -84,11 +85,11 @@ namespace hazelcast {
                     ClientContext &client;
                     std::shared_ptr<ClientMembershipListener> clientMembershipListener;
                     util::Sync<std::unordered_map<Address, std::shared_ptr<Member> > > members;
-                    util::SynchronizedMap<std::string, MembershipListener> listeners;
+                    util::SynchronizedMap<boost::uuids::uuid, MembershipListener, boost::hash<boost::uuids::uuid>> listeners;
 
                     std::mutex initialMembershipListenerMutex;
 
-                    std::string addMembershipListenerWithoutInit(const std::shared_ptr<MembershipListener> &listener);
+                    boost::uuids::uuid addMembershipListenerWithoutInit(const std::shared_ptr<MembershipListener> &listener);
 
                     void initMembershipListener(MembershipListener &listener);
 

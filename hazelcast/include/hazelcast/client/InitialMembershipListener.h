@@ -83,9 +83,9 @@ namespace hazelcast {
         private:
             bool shouldRequestInitialMembers() const override;
 
-            const std::string &getRegistrationId() const override;
+            const boost::uuids::uuid & getRegistrationId() const override;
 
-            void setRegistrationId(const std::string &registrationId) override;
+            void setRegistrationId(const boost::uuids::uuid &registrationId) override;
 
             InitialMembershipListener *listener;
         };

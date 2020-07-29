@@ -35,9 +35,14 @@
 #include <boost/asio/detail/win_iocp_io_context.hpp>
 #endif
 
-#include <boost/range/algorithm/find_if.hpp>
 #include <utility>
 
+#include <boost/range/algorithm/find_if.hpp>
+#include <boost/uuid/uuid_hash.hpp>
+#include <boost/functional/hash.hpp>
+
+#include <hazelcast/client/protocol/codec/ErrorCodec.h>
+#include <hazelcast/client/spi/impl/ListenerMessageCodec.h>
 #include "hazelcast/util/RuntimeAvailableProcessors.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/LifecycleEvent.h"
@@ -167,8 +172,7 @@ namespace hazelcast {
                     BOOST_THROW_EXCEPTION(exception::IOException("ProxyManager::initialize",
                                                                  "Not able to find a member to create proxy on!"));
                 }
-                std::unique_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientCreateProxyCodec::encodeRequest(
-                        clientProxy->getName(),
+                auto clientMessage = protocol::codec::client_createproxy_encode(clientProxy->getName(),
                         clientProxy->getServiceName(), *initializationTarget);
                 spi::impl::ClientInvocation::create(client, clientMessage, clientProxy->getServiceName(),
                                                     *initializationTarget)->invoke().get();
@@ -525,13 +529,13 @@ namespace hazelcast {
             }
 
             boost::future<void> ClientProxy::destroyRemotely() {
-                std::unique_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientDestroyProxyCodec::encodeRequest(
+                auto clientMessage = protocol::codec::client_destroyproxy_encode(
                         getName(), getServiceName());
-                return spi::impl::ClientInvocation::create(getContext(), clientMessage, getName())->invoke().then(
+                return spi::impl::ClientInvocation::create(getContext(), std::make_shared<protocol::ClientMessage>(std::move(clientMessage)), getName())->invoke().then(
                         boost::launch::deferred, [](boost::future<protocol::ClientMessage> f) { f.get(); });
             }
 
-            boost::future<std::string>
+            boost::future<boost::optional<boost::uuids::uuid>>
             ClientProxy::registerListener(std::unique_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
                                           std::unique_ptr<client::impl::BaseEventHandler> handler) {
                 handler->setLogger(&getContext().getLogger());
@@ -539,12 +543,20 @@ namespace hazelcast {
                                                                                 std::move(handler));
             }
 
-            boost::future<bool> ClientProxy::deregisterListener(const std::string &registrationId) {
+            boost::future<bool> ClientProxy::deregisterListener(const boost::optional<boost::uuids::uuid> &registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-
             namespace impl {
+                boost::optional<boost::uuids::uuid>
+                ListenerMessageCodec::decodeAddResponse(protocol::ClientMessage &msg) const {
+                    return msg.get_first_uuid();
+                }
+
+                bool ListenerMessageCodec::decodeRemoveResponse(protocol::ClientMessage &msg) const {
+                    return msg.get_first_fixed_sized_field<bool>();
+                }
+
                 AbstractClientInvocationService::AbstractClientInvocationService(ClientContext &client)
                         : client(client), invocationLogger(client.getLogger()),
                           connectionManager(NULL),
@@ -601,7 +613,6 @@ namespace hazelcast {
                 void AbstractClientInvocationService::writeToConnection(connection::Connection &connection,
                                                                         const std::shared_ptr<ClientInvocation> &clientInvocation) {
                     auto clientMessage = clientInvocation->getClientMessage();
-                    clientMessage->addFlag(protocol::ClientMessage::BEGIN_AND_END_FLAGS);
                     connection.write(clientInvocation);
                 }
 
@@ -617,7 +628,7 @@ namespace hazelcast {
                         const std::shared_ptr<ClientInvocation> invocation,
                         const std::shared_ptr<protocol::ClientMessage> response) {
                     try {
-                        if (protocol::codec::ErrorCodec::TYPE == response->getMessageType()) {
+                        if (protocol::codec::ErrorCodec::EXCEPTION_MESSAGE_TYPE == response->getMessageType()) {
                             try {
                                 client.getClientExceptionFactory().throwException(
                                         "AbstractClientInvocationService::ResponseThread::handleClientMessage",
@@ -726,9 +737,9 @@ namespace hazelcast {
                         : client(client) {
                 }
 
-                std::string ClientClusterServiceImpl::addMembershipListenerWithoutInit(
+                boost::uuids::uuid ClientClusterServiceImpl::addMembershipListenerWithoutInit(
                         const std::shared_ptr<MembershipListener> &listener) {
-                    std::string id = util::UuidUtil::newUnsecureUuidString();
+                    auto id = boost::uuids::random_generator()();
                     listeners.put(id, listener);
                     listener->setRegistrationId(id);
                     return id;
@@ -743,7 +754,7 @@ namespace hazelcast {
                     return boost::make_optional(*it->second);
                 }
 
-                boost::optional<Member> ClientClusterServiceImpl::getMember(const std::string &uuid) {
+                boost::optional<Member> ClientClusterServiceImpl::getMember(const boost::uuids::uuid &uuid) {
                     std::vector<Member> memberList = getMemberList();
                     for (Member &member : memberList) {
                         if (uuid == member.getUuid()) {
@@ -842,21 +853,21 @@ namespace hazelcast {
                     clientMembershipListener->listenMembershipEvents(ownerConnection);
                 }
 
-                std::string
+                boost::uuids::uuid
                 ClientClusterServiceImpl::addMembershipListener(const std::shared_ptr<MembershipListener> &listener) {
-                    if (listener.get() == NULL) {
+                    if (!listener) {
                         BOOST_THROW_EXCEPTION(
                                 exception::NullPointerException("ClientClusterServiceImpl::addMembershipListener",
                                                                 "listener can't be null"));
                     }
 
                     std::lock_guard<std::mutex> guard(initialMembershipListenerMutex);
-                    std::string id = addMembershipListenerWithoutInit(listener);
+                    auto id = addMembershipListenerWithoutInit(listener);
                     initMembershipListener(*listener);
                     return id;
                 }
 
-                bool ClientClusterServiceImpl::removeMembershipListener(const std::string &registrationId) {
+                bool ClientClusterServiceImpl::removeMembershipListener(const boost::uuids::uuid &registrationId) {
                     return listeners.remove(registrationId).get() != NULL;
                 }
 
@@ -883,9 +894,7 @@ namespace hazelcast {
                             connection.get() != NULL ? std::shared_ptr<Address>(connection->getLocalSocketAddress())
                                                      : std::shared_ptr<Address>();
                     const std::shared_ptr<protocol::Principal> principal = cm.getPrincipal();
-                    std::shared_ptr<std::string> uuid =
-                            principal.get() != NULL ? std::make_shared<std::string>(*principal->getUuid())
-                                                    : std::shared_ptr<std::string>();
+                    auto uuid = principal ? boost::make_optional(principal->getUuid()) : boost::none;
                     return Client(uuid, inetSocketAddress, client.getName());
                 }
 
@@ -980,7 +989,7 @@ namespace hazelcast {
                     setLogger(&client.getLogger());
                 }
 
-                void ClientMembershipListener::handleMemberEventV10(const Member &member, const int32_t &eventType) {
+                void ClientMembershipListener::handle_member(const Member &member, const int32_t &eventType) {
                     switch (eventType) {
                         case MembershipEvent::MEMBER_ADDED:
                             memberAdded(member);
@@ -994,8 +1003,8 @@ namespace hazelcast {
                     partitionService.refreshPartitions();
                 }
 
-                void ClientMembershipListener::handleMemberListEventV10(const std::vector<Member> &initialMembers) {
-                    std::unordered_map<std::string, Member> prevMembers;
+                void ClientMembershipListener::handle_memberlist(const std::vector<Member> &new_members) {
+                    std::unordered_map<boost::uuids::uuid, Member, boost::hash<boost::uuids::uuid>> prevMembers;
                     if (!members.empty()) {
                         for (const Member &member : members) {
                             prevMembers[member.getUuid()] = member;
@@ -1003,7 +1012,7 @@ namespace hazelcast {
                         members.clear();
                     }
 
-                    for (const Member &initialMember : initialMembers) {
+                    for (const Member &initialMember : new_members) {
                         members.insert(initialMember);
                     }
 
@@ -1023,18 +1032,19 @@ namespace hazelcast {
                 }
 
                 void
-                ClientMembershipListener::handleMemberAttributeChangeEventV10(const std::string &uuid,
-                                                                              const std::string &key,
-                                                                              const int32_t &operationType,
-                                                                              std::unique_ptr<std::string> &value) {
+                ClientMembershipListener::handle_memberattributechange(const Member &member,
+                                                                       const std::vector<Member> &members,
+                                                                       const std::string &key,
+                                                                       const int32_t &operationType,
+                                                                       const boost::optional<std::string> &value) {
                     std::vector<Member> memberList = clusterService.getMemberList();
                     for (Member &target : memberList) {
-                        if (target.getUuid() == uuid) {
+                        if (target.getUuid() == member.getUuid()) {
                             Member::MemberAttributeOperationType type = (Member::MemberAttributeOperationType) operationType;
                             target.updateAttribute(type, key, value);
                             MemberAttributeEvent memberAttributeEvent(client.getCluster(), target,
                                                                       (MemberAttributeEvent::MemberAttributeOperationType) type,
-                                                                      key, value.get() ? (*value) : "");
+                                                                      key, value ? (*value) : "");
                             clusterService.fireMemberAttributeEvent(memberAttributeEvent);
                             break;
                         }
@@ -1085,7 +1095,8 @@ namespace hazelcast {
                 }
 
                 std::vector<MembershipEvent>
-                ClientMembershipListener::detectMembershipEvents(std::unordered_map<std::string, Member> &prevMembers) {
+                ClientMembershipListener::detectMembershipEvents(
+                        std::unordered_map<boost::uuids::uuid, Member, boost::hash<boost::uuids::uuid>> &prevMembers) {
                     std::vector<MembershipEvent> events;
 
                     const std::unordered_set<Member> &eventMembers = members;
@@ -1101,15 +1112,13 @@ namespace hazelcast {
                     }
 
                     // removal events should be added before added events
-                    typedef const std::unordered_map<std::string, Member> MemberMap;
-                    for (const MemberMap::value_type &member : prevMembers) {
+                    for (const auto &member : prevMembers) {
                         events.emplace_back(client.getCluster(), member.second,
                                             MembershipEvent::MEMBER_REMOVED,
                                             std::vector<Member>(eventMembers.begin(),
                                                                 eventMembers.end()));
                         const Address &address = member.second.getAddress();
-                        std::shared_ptr<connection::Connection> connection = connectionManager.getActiveConnection(
-                                address);
+                        auto connection = connectionManager.getActiveConnection(address);
                         if (connection) {
                             auto foundIt = boost::find_if(members, [&](const Member &m) {
                                 return m.getAddress() == address;
@@ -1141,7 +1150,7 @@ namespace hazelcast {
                 ClientMembershipListener::listenMembershipEvents(
                         const std::shared_ptr<connection::Connection> &ownerConnection) {
                     initialListFetchedLatch = boost::make_shared<boost::latch>(1);
-                    std::unique_ptr<protocol::ClientMessage> clientMessage = protocol::codec::ClientAddMembershipListenerCodec::encodeRequest(
+                    auto clientMessage = protocol::codec::client_addmembershiplistener_encode(
                             false);
                     std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client,
                                                                                             clientMessage, "",
@@ -1202,7 +1211,7 @@ namespace hazelcast {
                 }
 
                 ClientInvocation::ClientInvocation(spi::ClientContext &clientContext,
-                                                   std::unique_ptr<protocol::ClientMessage> &message,
+                                                   std::shared_ptr<protocol::ClientMessage> &&message,
                                                    const std::string &name,
                                                    int partition,
                                                    const std::shared_ptr<connection::Connection> &conn,
@@ -1422,30 +1431,54 @@ namespace hazelcast {
                 }
 
                 std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
-                                                                           std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                           std::shared_ptr<protocol::ClientMessage> &&clientMessage,
                                                                            const std::string &objectName,
                                                                            int partitionId) {
                     return std::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, clientMessage, objectName, partitionId));
+                            new ClientInvocation(clientContext, std::move(clientMessage), objectName, partitionId));
                 }
 
                 std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
-                                                                           std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                           std::shared_ptr<protocol::ClientMessage> &&clientMessage,
                                                                            const std::string &objectName,
                                                                            const std::shared_ptr<connection::Connection> &connection) {
                     return std::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, clientMessage, objectName, UNASSIGNED_PARTITION,
+                            new ClientInvocation(clientContext, std::move(clientMessage), objectName, UNASSIGNED_PARTITION,
                                                  connection));
                 }
 
 
                 std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
-                                                                           std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                           std::shared_ptr<protocol::ClientMessage> &&clientMessage,
                                                                            const std::string &objectName,
                                                                            const Address &address) {
                     return std::shared_ptr<ClientInvocation>(
-                            new ClientInvocation(clientContext, clientMessage, objectName, UNASSIGNED_PARTITION,
+                            new ClientInvocation(clientContext, std::move(clientMessage), objectName, UNASSIGNED_PARTITION,
                                                  nullptr, std::make_shared<Address>(address)));
+                }
+
+                std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
+                                                                           protocol::ClientMessage &clientMessage,
+                                                                           const std::string &objectName,
+                                                                           int partitionId) {
+                    return create(clientContext, std::make_shared<protocol::ClientMessage>(std::move(clientMessage)),
+                                  objectName, partitionId);
+                }
+
+                std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
+                                                                           protocol::ClientMessage &clientMessage,
+                                                                           const std::string &objectName,
+                                                                           const std::shared_ptr<connection::Connection> &connection) {
+                    return create(clientContext, std::make_shared<protocol::ClientMessage>(std::move(clientMessage)),
+                                  objectName, connection);
+                }
+
+                std::shared_ptr<ClientInvocation> ClientInvocation::create(spi::ClientContext &clientContext,
+                                                                           protocol::ClientMessage &clientMessage,
+                                                                           const std::string &objectName,
+                                                                           const Address &address) {
+                    return create(clientContext, std::make_shared<protocol::ClientMessage>(std::move(clientMessage)),
+                                  objectName, address);
                 }
 
                 std::shared_ptr<connection::Connection> ClientInvocation::getSendConnection() {
@@ -1710,10 +1743,10 @@ namespace hazelcast {
 
                 bool ClientPartitionServiceImpl::processPartitionResponse(
                         const std::vector<std::pair<Address, std::vector<int32_t> > > &newPartitions,
-                        int32_t partitionStateVersion, bool partitionStateVersionExist) {
+                        int32_t partitionStateVersion) {
                     {
                         std::lock_guard<std::mutex> guard(lock);
-                        if (!partitionStateVersionExist || partitionStateVersion > lastPartitionStateVersion) {
+                        if (partitionStateVersion > lastPartitionStateVersion) {
                             typedef std::vector<std::pair<Address, std::vector<int32_t> > > PARTITION_VECTOR;
                             for (const PARTITION_VECTOR::value_type &entry : newPartitions) {
                                 const Address &address = entry.first;
@@ -1726,9 +1759,7 @@ namespace hazelcast {
                             lastPartitionStateVersion = partitionStateVersion;
                             if (logger->isFinestEnabled()) {
                                 logger->finest("Processed partition response. partitionStateVersion : ",
-                                               (partitionStateVersionExist ? util::IOUtil::to_string<int32_t>(
-                                                       partitionStateVersion) : "NotAvailable"), ", partitionCount :",
-                                               (int) partitionCount);
+                                        partitionStateVersion, ", partitionCount :", partitionCount);
                             }
                         }
                     }
@@ -1745,8 +1776,8 @@ namespace hazelcast {
                     if (ownerConnection->getConnectedServerVersion() >=
                         client::impl::BuildInfo::calculateVersion("3.9")) {
                         //Servers after 3.9 supports listeners
-                        std::unique_ptr<protocol::ClientMessage> clientMessage =
-                                protocol::codec::ClientAddPartitionListenerCodec::encodeRequest();
+                        auto clientMessage =
+                                protocol::codec::client_addpartitionlistener_encode();
                         std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client, clientMessage,
                                                                                                 "", ownerConnection);
                         invocation->setEventHandler(shared_from_this());
@@ -1766,18 +1797,14 @@ namespace hazelcast {
                             if (!connection.get()) {
                                 return;
                             }
-                            std::unique_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::encodeRequest();
+                            auto requestMessage = protocol::codec::client_getpartitions_encode();
                             std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client,
                                                                                                     requestMessage, "");
                             auto future = invocation->invokeUrgent();
                             future.then(boost::launch::sync, [=](boost::future<protocol::ClientMessage> f) {
                                 try {
-                                    auto responseMessage = f.get();
-                                    protocol::codec::ClientGetPartitionsCodec::ResponseParameters response =
-                                            protocol::codec::ClientGetPartitionsCodec::ResponseParameters::decode(
-                                                    responseMessage);
-                                    processPartitionResponse(response.partitions, response.partitionStateVersion,
-                                                             response.partitionStateVersionExist);
+                                    auto params = get_response_params(f);
+                                    processPartitionResponse(params.second, params.first);
                                 } catch (std::exception &e) {
                                     if (client.getLifecycleService().isRunning()) {
                                         logger->warning("Error while fetching cluster partition table! Cause:",
@@ -1795,10 +1822,21 @@ namespace hazelcast {
                     });
                 }
 
-                void ClientPartitionServiceImpl::handlePartitionsEventV15(
-                        const std::vector<std::pair<Address, std::vector<int32_t> > > &collection,
+                std::pair<int32_t, std::vector<std::pair<Address, std::vector<int32_t>>>>
+                ClientPartitionServiceImpl::get_response_params(boost::future<protocol::ClientMessage> &future) const {
+                    auto responseMessage = future.get();
+                    auto *f = reinterpret_cast<ClientMessage::frame_header_t *>(responseMessage.rd_ptr(
+                            ClientMessage::REQUEST_HEADER_LEN));
+                    auto version = responseMessage.get<int32_t>();
+                    // skip to the end of first frame
+                    responseMessage.rd_ptr(f->frame_len - ClientMessage::REQUEST_HEADER_LEN - ClientMessage::INT32_SIZE);
+                    return {version, responseMessage.get<std::vector<std::pair<Address, std::vector<int32_t>>>>()};
+                }
+
+                void ClientPartitionServiceImpl::handle_partitions(
+                        const std::vector<std::pair<Address, std::vector<int32_t> > > &partitions,
                         const int32_t &partitionStateVersion) {
-                    processPartitionResponse(collection, partitionStateVersion, true);
+                    processPartitionResponse(partitions, partitionStateVersion);
                 }
 
                 void ClientPartitionServiceImpl::beforeListenerRegister() {
@@ -1837,18 +1875,13 @@ namespace hazelcast {
                                                           "ClientPartitionServiceImpl::waitForPartitionsFetchedOnce",
                                                                   "Partitions can't be assigned since all nodes in the cluster are lite members"));
                         }
-                        std::unique_ptr<protocol::ClientMessage> requestMessage = protocol::codec::ClientGetPartitionsCodec::encodeRequest();
+                        auto requestMessage = protocol::codec::client_getpartitions_encode();
                         std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(client,
                                                                                                 requestMessage, "");
                         auto future = invocation->invokeUrgent();
                         try {
-                            protocol::ClientMessage responseMessage = future.get();
-                            protocol::codec::ClientGetPartitionsCodec::ResponseParameters response =
-                                    protocol::codec::ClientGetPartitionsCodec::ResponseParameters::decode(
-                                            responseMessage);
-                            processPartitionResponse(response.partitions,
-                                                     response.partitionStateVersion,
-                                                     response.partitionStateVersionExist);
+                            auto params = get_response_params(future);
+                            processPartitionResponse(params.second, params.first);
                         } catch (exception::IException &e) {
                             if (client.getLifecycleService().isRunning()) {
                                 logger->warning("Error while fetching cluster partition table!", e);
@@ -2044,11 +2077,11 @@ namespace hazelcast {
 
                     AbstractClientListenerService::~AbstractClientListenerService() = default;
 
-                    boost::future<std::string>
+                    boost::future<boost::optional<boost::uuids::uuid>>
                     AbstractClientListenerService::registerListener(
                             std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
                             std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
-                        auto task = boost::packaged_task<std::string()>(std::bind(
+                        auto task = boost::packaged_task<boost::optional<boost::uuids::uuid>()>(std::bind(
                                 [=](std::unique_ptr<impl::ListenerMessageCodec> &codec,
                                     std::unique_ptr<client::impl::BaseEventHandler> &h) {
                                     return registerListenerInternal(std::move(codec), std::move(h));
@@ -2058,7 +2091,8 @@ namespace hazelcast {
                         return f;
                     }
 
-                    boost::future<bool> AbstractClientListenerService::deregisterListener(const std::string registrationId) {
+                    boost::future<bool> AbstractClientListenerService::deregisterListener(
+                            const boost::optional<boost::uuids::uuid> &registrationId) {
                         boost::packaged_task<bool()> task([=]() {
                             return deregisterListenerInternal(registrationId);
                         });
@@ -2126,10 +2160,10 @@ namespace hazelcast {
                         clientConnectionManager.addConnectionListener(shared_from_this());
                     }
 
-                    std::string AbstractClientListenerService::registerListenerInternal(
+                    boost::optional<boost::uuids::uuid> AbstractClientListenerService::registerListenerInternal(
                             std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
                             std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
-                        std::string userRegistrationId = util::UuidUtil::newUnsecureUuidString();
+                        auto userRegistrationId = boost::uuids::random_generator()();
 
                         ClientRegistrationKey registrationKey(userRegistrationId, std::move(handler), std::move(listenerMessageCodec));
                         registrations.put(registrationKey, std::shared_ptr<ConnectionRegistrationsMap>(
@@ -2150,7 +2184,8 @@ namespace hazelcast {
                     }
 
                     bool
-                    AbstractClientListenerService::deregisterListenerInternal(const std::string &userRegistrationId) {
+                    AbstractClientListenerService::deregisterListenerInternal(
+                            const boost::optional<boost::uuids::uuid> &userRegistrationId) {
                         ClientRegistrationKey key(userRegistrationId);
                         std::shared_ptr<ConnectionRegistrationsMap> registrationMap = registrations.get(key);
                         if (!registrationMap) {
@@ -2163,9 +2198,8 @@ namespace hazelcast {
                             const std::shared_ptr<connection::Connection>& subscriber = registration.getSubscriber();
                             try {
                                 const std::shared_ptr<ListenerMessageCodec> &listenerMessageCodec = registration.getCodec();
-                                const std::string &serverRegistrationId = registration.getServerRegistrationId();
-                                auto request = listenerMessageCodec->encodeRemoveRequest(
-                                        serverRegistrationId);
+                                auto serverRegistrationId = registration.getServerRegistrationId();
+                                auto request = listenerMessageCodec->encodeRemoveRequest(serverRegistrationId);
                                 std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
                                                                                                         request, "",
                                                                                                         subscriber);
@@ -2242,13 +2276,13 @@ namespace hazelcast {
                         handler->beforeListenerRegister();
 
                         std::shared_ptr<ClientInvocation> invocation = ClientInvocation::create(clientContext,
-                                                                                                request, "",
+                                                                                                std::make_shared<protocol::ClientMessage>(std::move(request)), "",
                                                                                                 connection);
                         invocation->setEventHandler(handler);
 
                         auto clientMessage = invocation->invokeUrgent().get();
 
-                        std::string serverRegistrationId = codec->decodeAddResponse(clientMessage);
+                        auto serverRegistrationId = codec->decodeAddResponse(clientMessage);
                         handler->onListenerRegister();
                         int64_t correlationId = invocation->getClientMessage()->getCorrelationId();
                         ClientEventRegistration registration(serverRegistrationId, correlationId, connection, codec);
@@ -2270,7 +2304,7 @@ namespace hazelcast {
                         }
 
                         try {
-                            eventHandler->handle(response);
+                            eventHandler->handle(*response);
                         } catch (std::exception &e) {
                             if (clientContext.getLifecycleService().isRunning()) {
                                 logger.warning("Delivery of event message to event handler failed. ", e.what(),
@@ -2279,7 +2313,7 @@ namespace hazelcast {
                         }
                     }
 
-                    ClientEventRegistration::ClientEventRegistration(const std::string &serverRegistrationId,
+                    ClientEventRegistration::ClientEventRegistration(const boost::optional<boost::uuids::uuid> &serverRegistrationId,
                                                                      int64_t callId,
                                                                      const std::shared_ptr<connection::Connection> &subscriber,
                                                                      const std::shared_ptr<ListenerMessageCodec> &codec)
@@ -2287,7 +2321,7 @@ namespace hazelcast {
                               codec(codec) {
                     }
 
-                    const std::string &ClientEventRegistration::getServerRegistrationId() const {
+                    const boost::optional<boost::uuids::uuid> & ClientEventRegistration::getServerRegistrationId() const {
                         return serverRegistrationId;
                     }
 
@@ -2343,7 +2377,7 @@ namespace hazelcast {
                         });
                     }
 
-                    boost::future<std::string>
+                    boost::future<boost::optional<boost::uuids::uuid>>
                     SmartClientListenerService::registerListener(
                             std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                             std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
@@ -2446,15 +2480,15 @@ namespace hazelcast {
                         AbstractClientListenerService::shutdown();
                     }
 
-                    ClientRegistrationKey::ClientRegistrationKey(const std::string &userRegistrationId,
+                    ClientRegistrationKey::ClientRegistrationKey(const boost::optional<boost::uuids::uuid> &userRegistrationId,
                                                                  std::unique_ptr<client::impl::BaseEventHandler> &&handler,
                                                                  std::unique_ptr<ListenerMessageCodec> &&codec)
                             : userRegistrationId(userRegistrationId), handler(handler.release()), codec(codec.release()) {}
 
-                    ClientRegistrationKey::ClientRegistrationKey(const std::string &userRegistrationId)
+                    ClientRegistrationKey::ClientRegistrationKey(const boost::optional<boost::uuids::uuid> &userRegistrationId)
                             : userRegistrationId(userRegistrationId) {}
 
-                    const std::string &ClientRegistrationKey::getUserRegistrationId() const {
+                    const boost::optional<boost::uuids::uuid> & ClientRegistrationKey::getUserRegistrationId() const {
                         return userRegistrationId;
                     }
 
@@ -2467,7 +2501,8 @@ namespace hazelcast {
                     }
 
                     std::ostream &operator<<(std::ostream &os, const ClientRegistrationKey &key) {
-                        os << "ClientRegistrationKey{ userRegistrationId='" << key.userRegistrationId + '\'' + '}';
+                        os << "ClientRegistrationKey{ userRegistrationId='" << key.userRegistrationId;
+                        os << "'}";
                         return os;
                     }
 
@@ -2521,7 +2556,7 @@ namespace std {
     std::size_t
     hash<hazelcast::client::spi::impl::listener::ClientRegistrationKey>::operator()(
             const hazelcast::client::spi::impl::listener::ClientRegistrationKey &val) const noexcept {
-        return std::hash<std::string>{}(val.getUserRegistrationId());
+        return boost::hash<boost::uuids::uuid>()(*val.getUserRegistrationId());
     }
 }
 

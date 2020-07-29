@@ -26,7 +26,6 @@
 #include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
 #include <hazelcast/client/serialization/serialization.h>
-#include <hazelcast/util/UuidUtil.h>
 #include <hazelcast/client/impl/Partition.h>
 #include <hazelcast/client/spi/impl/ClientInvocation.h>
 #include <gtest/gtest.h>
@@ -231,8 +230,8 @@ namespace hazelcast {
                 MyMultiMapListener listener1(latch1Add, latch1Remove);
                 MyMultiMapListener listener2(latch2Add, latch2Remove);
 
-                std::string id1 = mm->addEntryListener(listener1, true).get();
-                std::string id2 = mm->addEntryListener(listener2, "key3", true).get();
+                auto id1 = mm->addEntryListener(listener1, true).get();
+                auto id2 = mm->addEntryListener(listener2, "key3", true).get();
 
                 fillData();
 
@@ -558,7 +557,7 @@ namespace hazelcast {
                 boost::latch latch1(1);
 
                 MyListItemListener listener(latch1);
-                std::string registrationId = list->addItemListener(listener, true).get();
+                auto registrationId = list->addItemListener(listener, true).get();
 
                 list->add("item-1").get();
 
@@ -633,7 +632,7 @@ namespace hazelcast {
 
                 boost::latch latch1(5);
 
-                std::string id = q->addItemListener(QueueTestItemListener(latch1), true).get();
+                auto id = q->addItemListener(QueueTestItemListener(latch1), true).get();
                 
                 for (int i = 0; i < 5; i++) {
                     ASSERT_TRUE(q->offer(std::string("event_item") + std::to_string(i)).get());
@@ -1222,7 +1221,7 @@ namespace hazelcast {
 
                 auto uuid = future.get();
                 ASSERT_TRUE(uuid);
-                ASSERT_EQ(members[0].getUuid(), *uuid);
+                ASSERT_EQ(boost::uuids::to_string(members[0].getUuid()), *uuid);
             }
 
             TEST_F(ClientExecutorServiceTest, testSubmitCallableToMembers) {
@@ -1242,7 +1241,7 @@ namespace hazelcast {
                     ASSERT_NE(futuresMap.end(), it);
                     auto uuid = (*it).second.get_future().get();
                     ASSERT_TRUE(uuid);
-                    ASSERT_EQ(member.getUuid(), *uuid);
+                    ASSERT_EQ(boost::uuids::to_string(member.getUuid()), *uuid);
                 }
             }
 
@@ -1276,7 +1275,7 @@ namespace hazelcast {
 
                     auto uuid = future.get();
                     ASSERT_TRUE(uuid);
-                    ASSERT_EQ(member.getUuid(), *uuid);
+                    ASSERT_EQ(boost::uuids::to_string(member.getUuid()), *uuid);
                 }
             }
 
@@ -1500,7 +1499,7 @@ namespace hazelcast {
 
                 auto result = f.get();
                 ASSERT_TRUE(result);
-                ASSERT_EQ(member.getUuid(), *result);
+                ASSERT_EQ(boost::uuids::to_string(member.getUuid()), *result);
                 ASSERT_TRUE(map->containsKey(member.getUuid()).get());
             }
 
@@ -1525,7 +1524,7 @@ namespace hazelcast {
                 ASSERT_OPEN_EVENTUALLY(*latch1);
                 auto value = std::static_pointer_cast<ResultSettingExecutionCallback>(callback)->getResult();
                 ASSERT_TRUE(value);
-                ASSERT_EQ(member.getUuid(), *value);
+                ASSERT_EQ(boost::uuids::to_string(member.getUuid()), *value);
                 ASSERT_TRUE(map->containsKey(member.getUuid()).get());
             }
 
@@ -1562,14 +1561,14 @@ namespace hazelcast {
                 std::vector<Member> members = client->getCluster().getMembers();
                 spi::ClientContext clientContext(*client);
                 Member &member = members[0];
-                std::string targetUuid = member.getUuid();
+                auto targetUuid = member.getUuid();
                 std::string key = generateKeyOwnedBy(clientContext, member);
 
                 executor::tasks::MapPutPartitionAwareCallable callable(testName, key);
 
                 service->executeOnKeyOwner<executor::tasks::MapPutPartitionAwareCallable, std::string>(callable, key);
 
-                ASSERT_TRUE_EVENTUALLY(map->containsKey(targetUuid).get());
+                ASSERT_TRUE_EVENTUALLY(map->containsKey(boost::uuids::to_string(targetUuid)).get());
             }
 
             TEST_F(ClientExecutorServiceTest, testExecuteOnMember) {
@@ -1580,13 +1579,13 @@ namespace hazelcast {
 
                 std::vector<Member> members = client->getCluster().getMembers();
                 Member &member = members[0];
-                std::string targetUuid = member.getUuid();
+                auto targetUuid = member.getUuid();
 
                 executor::tasks::MapPutPartitionAwareCallable callable(testName, "key");
 
                 service->executeOnMember<executor::tasks::MapPutPartitionAwareCallable>(callable, member);
 
-                ASSERT_TRUE_EVENTUALLY(map->containsKey(targetUuid).get());
+                ASSERT_TRUE_EVENTUALLY(map->containsKey(boost::uuids::to_string(targetUuid)).get());
             }
 
             TEST_F(ClientExecutorServiceTest, testExecuteOnMembers) {

@@ -29,37 +29,17 @@
 #endif
 
 #include <string>
-#include <memory>
+#include <boost/optional.hpp>
 #include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
     namespace client {
         namespace protocol {
             namespace codec {
-                class HAZELCAST_API StackTraceElement {
-                public:
-                    StackTraceElement();
-
-                    StackTraceElement(const std::string &className, const std::string &method,
-                                      std::unique_ptr<std::string> &file, int line);
-
-                    StackTraceElement(const StackTraceElement &rhs);
-
-                    StackTraceElement &operator=(const StackTraceElement &rhs);
-
-                    const std::string &getDeclaringClass() const;
-
-                    const std::string &getMethodName() const;
-
-                    const std::string &getFileName() const;
-
-                    int getLineNumber() const;
-
-                private:
-                    static const std::string EMPTY_STRING;
+                struct HAZELCAST_API StackTraceElement {
                     std::string declaringClass;
                     std::string methodName;
-                    std::unique_ptr<std::string> fileName;
+                    boost::optional<std::string> fileName;
                     int lineNumber;
                 };
 

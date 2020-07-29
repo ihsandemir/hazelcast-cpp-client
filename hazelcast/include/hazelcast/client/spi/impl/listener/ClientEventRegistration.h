@@ -44,7 +44,7 @@ namespace hazelcast {
                     public:
                         ClientEventRegistration();
 
-                        ClientEventRegistration(const std::string &serverRegistrationId, int64_t callId,
+                        ClientEventRegistration(const boost::optional<boost::uuids::uuid> &serverRegistrationId, int64_t callId,
                                                 const std::shared_ptr<connection::Connection> &subscriber,
                                                 const std::shared_ptr<ListenerMessageCodec> &codec);
 
@@ -56,7 +56,7 @@ namespace hazelcast {
                          *
                          * @return server registration ID
                          */
-                        const std::string &getServerRegistrationId() const;
+                        const boost::optional<boost::uuids::uuid> & getServerRegistrationId() const;
 
                         /**
                          * Call ID of first event registration request
@@ -82,7 +82,7 @@ namespace hazelcast {
                         bool operator<(const ClientEventRegistration &rhs) const;
 
                     private:
-                        std::string serverRegistrationId;
+                        boost::optional<boost::uuids::uuid> serverRegistrationId;
                         int64_t callId;
                         std::shared_ptr<connection::Connection> subscriber;
                         std::shared_ptr<ListenerMessageCodec> codec;

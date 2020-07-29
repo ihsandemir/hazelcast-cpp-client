@@ -51,7 +51,7 @@ namespace hazelcast {
                 *
                 * @return true if registration is removed, false otherwise
                 */
-                boost::future<bool> removeEntryListener(const std::string& registrationId);
+                boost::future<bool> removeEntryListener(const boost::optional<boost::uuids::uuid> &registrationId);
             protected:
                 MultiMapImpl(const std::string& instanceName, spi::ClientContext *context);
 
@@ -77,10 +77,10 @@ namespace hazelcast {
 
                 boost::future<int> valueCount(const serialization::pimpl::Data& key);
 
-                boost::future<std::string>
+                boost::future<boost::optional<boost::uuids::uuid>>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
 
-                boost::future<std::string>
+                boost::future<boost::optional<boost::uuids::uuid>>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
                                  Data &&key);
 
@@ -108,14 +108,9 @@ namespace hazelcast {
                 public:
                     MultiMapEntryListenerMessageCodec(std::string name, bool includeValue);
 
-                    std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const override;
+                    protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const override;
-
-                    std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const override;
-
-                    bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const override;
+                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
                 private:
                     std::string name;
                     bool includeValue;
@@ -126,14 +121,9 @@ namespace hazelcast {
                     MultiMapEntryListenerToKeyCodec(std::string name, bool includeValue,
                                                     serialization::pimpl::Data &&key);
 
-                    std::unique_ptr<protocol::ClientMessage> encodeAddRequest(bool localOnly) const override;
+                    protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    std::string decodeAddResponse(protocol::ClientMessage &responseMessage) const override;
-
-                    std::unique_ptr<protocol::ClientMessage>
-                    encodeRemoveRequest(const std::string &realRegistrationId) const override;
-
-                    bool decodeRemoveResponse(protocol::ClientMessage &clientMessage) const override;
+                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
                 private:
                     std::string  name;
                     bool includeValue;

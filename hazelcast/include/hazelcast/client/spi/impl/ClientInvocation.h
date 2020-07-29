@@ -77,18 +77,34 @@ namespace hazelcast {
                     virtual ~ClientInvocation();
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
-                                                                    std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                    std::shared_ptr<protocol::ClientMessage> &&clientMessage,
                                                                     const std::string &objectName, int partitionId);
 
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
-                                                                    std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                    std::shared_ptr<protocol::ClientMessage> &&clientMessage,
                                                                     const std::string &objectName,
                                                                     const std::shared_ptr<connection::Connection> &connection = nullptr);
 
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
-                                                                    std::unique_ptr<protocol::ClientMessage> &clientMessage,
+                                                                    std::shared_ptr<protocol::ClientMessage> &&clientMessage,
+                                                                    const std::string &objectName,
+                                                                    const Address &address);
+
+                    static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
+                                                                    protocol::ClientMessage &clientMessage,
+                                                                    const std::string &objectName, int partitionId);
+
+
+                    static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
+                                                                    protocol::ClientMessage &clientMessage,
+                                                                    const std::string &objectName,
+                                                                    const std::shared_ptr<connection::Connection> &connection = nullptr);
+
+
+                    static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
+                                                                    protocol::ClientMessage &clientMessage,
                                                                     const std::string &objectName,
                                                                     const Address &address);
 
@@ -125,7 +141,7 @@ namespace hazelcast {
 
                 private:
                     ClientInvocation(spi::ClientContext &clientContext,
-                                     std::unique_ptr<protocol::ClientMessage> &message,
+                                     std::shared_ptr<protocol::ClientMessage> &&message,
                                      const std::string &name, int partition = UNASSIGNED_PARTITION,
                                      const std::shared_ptr<connection::Connection> &conn = nullptr,
                                      const std::shared_ptr<Address> serverAddress = nullptr);
