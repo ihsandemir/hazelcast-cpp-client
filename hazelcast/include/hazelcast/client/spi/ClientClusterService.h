@@ -50,14 +50,6 @@ namespace hazelcast {
                 virtual ~ClientClusterService() = default;
 
                 /**
-                 * Gets the member for the given address.
-                 *
-                 * @param address The address of the member to look up.
-                 * @return The member that was found, or none if not found.
-                 */
-                virtual boost::optional<Member> getMember(const Address &address) = 0;
-
-                /**
                  * Gets the member with the given UUID.
                  *
                  * @param uuid The UUID of the member.
@@ -92,13 +84,6 @@ namespace hazelcast {
                  * @return true if successfully removed, false otherwise.
                  */
                 virtual bool removeMembershipListener(const boost::uuids::uuid &registrationId) = 0;
-
-                /**
-                 * Gets the current number of members.
-                 *
-                 * @return The current number of members.
-                 */
-                virtual int getSize() = 0;
             };
         }
     }

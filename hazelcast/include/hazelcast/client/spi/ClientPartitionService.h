@@ -46,13 +46,13 @@ namespace hazelcast {
              */
             class HAZELCAST_API ClientPartitionService {
             public:
-                virtual std::shared_ptr<Address> getPartitionOwner(int partitionId) = 0;
+                virtual boost::uuids::uuid getPartitionOwner(int32_t partitionId) = 0;
 
-                virtual int getPartitionId(const serialization::pimpl::Data &key) = 0;
+                virtual int32_t getPartitionId(const serialization::pimpl::Data &key) = 0;
 
-                virtual int getPartitionCount() = 0;
+                virtual int32_t getPartitionCount() = 0;
 
-                virtual std::shared_ptr<client::impl::Partition> getPartition(int partitionId) = 0;
+                virtual std::shared_ptr<client::impl::Partition> getPartition(int32_t partitionId) = 0;
             };
         }
     }

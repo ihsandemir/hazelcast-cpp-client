@@ -198,6 +198,8 @@ namespace hazelcast {
              */
             DEFINE_EXCEPTION_CLASS(UnknownHostException, protocol::UNKNOWN_HOST, false);
             DEFINE_EXCEPTION_CLASS(FutureUninitialized, protocol::FUTURE_UNINITIALIZED, false);
+
+            DEFINE_EXCEPTION_CLASS(ClientNotAllowedInClusterException, protocol::CLIENT_NOT_ALLOWED_IN_CLUSTER, true);
             // -----------------    Client side non-runtime exceptions finish here ----------------------------
 
             // -----------------    Client side runtime exceptions ends here --------------------------------

@@ -106,8 +106,6 @@ namespace hazelcast {
             private:
                 void initializeWithRetry(const std::shared_ptr<ClientProxy> &clientProxy);
 
-                std::shared_ptr<Address> findNextAddressToSendCreateRequest();
-
                 void initialize(const std::shared_ptr<ClientProxy> &clientProxy);
 
                 proxy_map proxies;

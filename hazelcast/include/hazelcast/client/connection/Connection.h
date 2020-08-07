@@ -47,8 +47,6 @@ namespace hazelcast {
         }
         namespace spi {
             class ClientContext;
-
-            class ClientInvocationService;
         }
 
         namespace internal {
@@ -62,18 +60,17 @@ namespace hazelcast {
         class SocketInterceptor;
 
         namespace connection {
-            class AuthenticationFuture;
+            class ConnectionFuture;
 
             class ClientConnectionManagerImpl;
 
             class HAZELCAST_API Connection : public util::Closeable, public std::enable_shared_from_this<Connection> {
             public:
                 Connection(const Address &address, spi::ClientContext &clientContext, int connectionId,
-                           const std::shared_ptr<AuthenticationFuture> &authFuture,
-                           internal::socket::SocketFactory &socketFactory, bool asOwner,
+                           const std::shared_ptr<ConnectionFuture> &authFuture,
+                           internal::socket::SocketFactory &socketFactory,
                            ClientConnectionManagerImpl &clientConnectionManager,
-                           std::chrono::steady_clock::duration &connectTimeoutInMillis,
-                           boost::asio::ip::tcp::resolver &resolver);
+                           std::chrono::steady_clock::duration &connectTimeoutInMillis);
 
                 ~Connection() override;
 
@@ -87,13 +84,13 @@ namespace hazelcast {
 
                 void write(const std::shared_ptr<spi::impl::ClientInvocation> &clientInvocation);
 
-                const std::shared_ptr<Address> &getRemoteEndpoint() const;
+                const std::shared_ptr<Address> &getRemoteAddress() const;
 
-                void setRemoteEndpoint(const std::shared_ptr<Address> &endpoint);
+                void setRemoteAddress(const std::shared_ptr<Address> &endpoint);
 
-                bool isAuthenticatedAsOwner();
+                const boost::uuids::uuid &getRemoteUuid() const;
 
-                void setIsAuthenticatedAsOwner();
+                void setRemoteUuid(const boost::uuids::uuid &remoteUuid);
 
                 virtual void handleClientMessage(const std::shared_ptr<protocol::ClientMessage> &message);
 
@@ -101,7 +98,7 @@ namespace hazelcast {
 
                 bool isAlive() const;
 
-                const std::chrono::steady_clock::time_point lastReadTime() const;
+                std::chrono::steady_clock::time_point lastReadTime() const;
 
                 const std::string &getCloseReason() const;
 
@@ -115,7 +112,7 @@ namespace hazelcast {
 
                 void setConnectedServerVersion(const std::string &connectedServer);
 
-                std::unique_ptr<Address> getLocalSocketAddress() const;
+                boost::optional<Address> getLocalSocketAddress() const;
 
                 int getConnectedServerVersion() const;
 
@@ -123,11 +120,7 @@ namespace hazelcast {
 
                 Socket &getSocket();
 
-                void deregisterListenerInvocation(int64_t callId);
-
-                void authenticate();
-
-                void reAuthenticateAsOwner();
+                void deregisterInvocation(int64_t callId);
 
                 friend std::ostream &operator<<(std::ostream &os, const Connection &connection);
 
@@ -143,7 +136,7 @@ namespace hazelcast {
                 spi::ClientContext &clientContext;
                 protocol::IMessageHandler &invocationService;
                 std::unique_ptr<Socket> socket;
-                std::shared_ptr<AuthenticationFuture> authFuture;
+                std::shared_ptr<ConnectionFuture> authFuture;
                 util::AtomicBoolean authenticatedAsOwner;
 
                 int connectionId;
@@ -153,10 +146,11 @@ namespace hazelcast {
                 std::string connectedServerVersionString;
                 int connectedServerVersion;
 
-                std::shared_ptr<Address> remoteEndpoint;
+                // check if they need to be atomic
+                std::shared_ptr<Address> remote_address_;
+                boost::uuids::uuid remote_uuid_;
 
                 util::ILogger &logger;
-                bool asOwner;
                 ClientConnectionManagerImpl &connectionManager;
                 std::atomic_bool alive;
             };

@@ -22,6 +22,8 @@
 
 #include <boost/thread/future.hpp>
 #include <boost/asio/thread_pool.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/smart_ptr/atomic_shared_ptr.hpp>
 
 #include "hazelcast/util/Sync.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
@@ -49,15 +51,11 @@ namespace hazelcast {
         namespace spi {
             class LifecycleService;
 
-            class ClientInvocationService;
-
             class ClientContext;
-
-            class ClientClusterService;
 
             namespace impl {
                 class ClientClusterServiceImpl;
-
+                class ClientInvocationServiceImpl;
                 class ClientExecutionServiceImpl;
 
                 namespace sequence {
@@ -90,7 +88,7 @@ namespace hazelcast {
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                     std::shared_ptr<protocol::ClientMessage> &&clientMessage,
                                                                     const std::string &objectName,
-                                                                    const Address &address);
+                                                                    boost::uuids::uuid uuid);
 
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                     protocol::ClientMessage &clientMessage,
@@ -106,7 +104,7 @@ namespace hazelcast {
                     static std::shared_ptr<ClientInvocation> create(spi::ClientContext &clientContext,
                                                                     protocol::ClientMessage &clientMessage,
                                                                     const std::string &objectName,
-                                                                    const Address &address);
+                                                                    boost::uuids::uuid uuid);
 
                     boost::future<protocol::ClientMessage> invoke();
 
@@ -120,14 +118,14 @@ namespace hazelcast {
 
                     void notifyException(std::exception_ptr exception);
 
-                    std::shared_ptr<connection::Connection> getSendConnection();
+                    std::shared_ptr<connection::Connection> getSendConnection() const;
 
                     std::shared_ptr<connection::Connection> getSendConnectionOrWait();
 
                     void
                     setSendConnection(const std::shared_ptr<connection::Connection> &sendConnection);
 
-                    const std::shared_ptr<protocol::ClientMessage> getClientMessage();
+                    std::shared_ptr<protocol::ClientMessage> getClientMessage() const;
 
                     const std::shared_ptr<EventHandler < protocol::ClientMessage> > &getEventHandler() const;
 
@@ -135,16 +133,38 @@ namespace hazelcast {
 
                     friend std::ostream &operator<<(std::ostream &os, const ClientInvocation &invocation);
 
-                    static bool isRetrySafeException(exception::IException &exception);
-
                     boost::promise<protocol::ClientMessage> &getPromise();
 
                 private:
+                    static constexpr int MAX_FAST_INVOCATION_COUNT = 5;
+                    static constexpr int UNASSIGNED_PARTITION = -1;
+
+                    util::ILogger &logger;
+                    LifecycleService &lifecycleService;
+                    ClientClusterServiceImpl &clientClusterService;
+                    ClientInvocationServiceImpl &invocationService;
+                    std::shared_ptr<ClientExecutionServiceImpl> executionService;
+                    boost::atomic_shared_ptr<std::shared_ptr<protocol::ClientMessage>> clientMessage;
+                    std::shared_ptr<sequence::CallIdSequence> callIdSequence;
+                    boost::uuids::uuid uuid_;
+                    int partitionId;
+                    std::chrono::steady_clock::time_point startTime;
+                    std::chrono::steady_clock::duration retryPause;
+                    std::string objectName;
+                    std::shared_ptr<connection::Connection> connection;
+                    boost::atomic_shared_ptr<std::shared_ptr<connection::Connection>> sendConnection;
+                    std::shared_ptr<EventHandler < protocol::ClientMessage>> eventHandler;
+                    std::atomic<int64_t> invokeCount;
+                    boost::promise<protocol::ClientMessage> invocationPromise;
+                    bool urgent_;
+                    bool smart_routing_;
+
                     ClientInvocation(spi::ClientContext &clientContext,
                                      std::shared_ptr<protocol::ClientMessage> &&message,
                                      const std::string &name, int partition = UNASSIGNED_PARTITION,
                                      const std::shared_ptr<connection::Connection> &conn = nullptr,
-                                     const std::shared_ptr<Address> serverAddress = nullptr);
+                                     boost::uuids::uuid uuid = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+                                                                0x0, 0x0, 0x0, 0x0, 0x0});
 
                     void invokeOnSelection();
 
@@ -152,28 +172,7 @@ namespace hazelcast {
 
                     void retry();
 
-                    static const int MAX_FAST_INVOCATION_COUNT = 5;
-                    static const int UNASSIGNED_PARTITION = -1;
-
-                    util::ILogger &logger;
-                    LifecycleService &lifecycleService;
-                    ClientClusterService &clientClusterService;
-                    ClientInvocationService &invocationService;
-                    std::shared_ptr<ClientExecutionServiceImpl> executionService;
-                    util::Sync<std::shared_ptr<protocol::ClientMessage>> clientMessage;
-                    std::shared_ptr<sequence::CallIdSequence> callIdSequence;
-                    std::shared_ptr<Address> address;
-                    int partitionId;
-                    std::chrono::steady_clock::time_point startTime;
-                    std::chrono::steady_clock::duration retryPause;
-                    std::string objectName;
-                    std::shared_ptr<connection::Connection> connection;
-                    util::Sync<std::shared_ptr<connection::Connection>> sendConnection;
-                    std::shared_ptr<EventHandler < protocol::ClientMessage>> eventHandler;
-                    std::atomic<int64_t> invokeCount;
-                    boost::promise<protocol::ClientMessage> invocationPromise;
-
-                    bool isNotAllowedToRetryOnSelection(exception::IException &exception);
+                    bool should_retry(exception::IException &exception);
 
                     void execute();
 
@@ -184,6 +183,8 @@ namespace hazelcast {
                     std::shared_ptr<protocol::ClientMessage> copyMessage();
 
                     void setException(const exception::IException &e, boost::exception_ptr exceptionPtr);
+
+                    void log_exception(exception::IException &e);
                 };
             }
         }

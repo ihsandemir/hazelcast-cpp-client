@@ -618,7 +618,7 @@ namespace hazelcast {
         }
 
         LoadBalancer *const ClientConfig::getLoadBalancer() {
-            if (loadBalancer == NULL)
+            if (!loadBalancer)
                 return &defaultLoadBalancer;
             return loadBalancer;
         }
@@ -816,6 +816,28 @@ namespace hazelcast {
 
         const std::unordered_set<std::shared_ptr<MembershipListener> > &ClientConfig::getManagedMembershipListeners() const {
             return managedMembershipListeners;
+        }
+
+        const std::string &ClientConfig::getClusterName() const {
+            return cluster_name_;
+        }
+
+        void ClientConfig::setClusterName(const std::string &clusterName) {
+            cluster_name_ = clusterName;
+        }
+
+        const std::unordered_set<std::string> &ClientConfig::getLabels() const {
+            return labels_;
+        }
+
+        ClientConfig &ClientConfig::setLabels(const std::unordered_set<std::string> &labels) {
+            labels_ = labels;
+            return *this;
+        }
+
+        ClientConfig &ClientConfig::addLabel(const std::string &label) {
+            labels_.insert(label);
+            return *this;
         }
     }
 }

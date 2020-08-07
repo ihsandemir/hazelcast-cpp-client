@@ -459,7 +459,7 @@ namespace hazelcast {
                 class NearCacheEntryListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override {
-                        return protocol::codec::map_addnearcacheentrylistener_encode(name,
+                        return protocol::codec::map_addnearcacheinvalidationlistener_encode(name,
                                                                                                  static_cast<int32_t>(listenerFlags),
                                                                                                  localOnly);
                     }

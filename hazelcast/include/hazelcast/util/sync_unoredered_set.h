@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-#include <string>
-#include <memory>
+#include <unordered_set>
 
 #include "hazelcast/util/HazelcastDll.h"
+#include <mutex>
+
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -26,34 +28,31 @@
 #endif
 
 namespace hazelcast {
-    namespace client {
-        namespace spi {
-            class ClientProxy;
+    namespace util {
 
-            /**
-             * Factory interface creating client proxies.
-             *
-             * Instances implementing this interface can be registered with the {@link ProxyManager} for instantiation upon request.
-             */
-            class HAZELCAST_API ClientProxyFactory {
-            public:
-                virtual ~ClientProxyFactory() { }
-
-                /**
-                 * Creates a new client proxy with the given id.
-                 *
-                 * @param id the ID of the client proxy
-                 * @return the client proxy
-                 */
-                virtual std::shared_ptr<ClientProxy> create(const std::string &id) = 0;
-            };
-        }
+        template <typename Key, typename Hash = std::hash<Key>>
+        class sync_unordered_set  {
+        public:
+            std::pair<typename std::unordered_set<Key, Hash>::iterator, bool> insert(const Key& key) {
+                std::lock_guard<std::mutex> g(lock_);
+                return set_.insert(key);
+            }
+            typename std::unordered_set<Key, Hash>::size_type erase( const Key& key) {
+                std::lock_guard<std::mutex> g(lock_);
+                return set_.erase(key);
+            }
+        private:
+            std::unordered_set<Key, Hash> set_;
+            std::mutex lock_;
+        };
     }
 }
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
+
+
 
 
 

@@ -114,10 +114,11 @@ namespace hazelcast {
                 CONSISTENCY_LOST = 88,
 
                 // Non protocol exceptions, thrown locally
-                        HAZELCAST_CLIENT_OFFLINE = -1,
-                UNKNOWN_HOST = -2,
-                FUTURE_UNINITIALIZED = -3,
-                UNEXPECTED_MESSAGE_TYPE = -4
+                UNEXPECTED_MESSAGE_TYPE = -1,
+                HAZELCAST_CLIENT_OFFLINE = -2,
+                UNKNOWN_HOST = -3,
+                FUTURE_UNINITIALIZED = -4,
+                CLIENT_NOT_ALLOWED_IN_CLUSTER = -5
             };
         }
     }

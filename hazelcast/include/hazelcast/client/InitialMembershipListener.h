@@ -62,9 +62,9 @@ namespace hazelcast {
              *
              * @param event the InitialMembershipEvent
              */
-            virtual void init(const InitialMembershipEvent &event) = 0;
+            virtual void init(InitialMembershipEvent event) = 0;
 
-        private:
+        protected:
             bool shouldRequestInitialMembers() const override;
         };
 
@@ -72,13 +72,11 @@ namespace hazelcast {
         public:
             InitialMembershipListenerDelegator(InitialMembershipListener *listener);
 
-            void init(const InitialMembershipEvent &event) override;
+            void init(InitialMembershipEvent event) override;
 
             void memberRemoved(const MembershipEvent &membershipEvent) override;
 
             void memberAdded(const MembershipEvent &membershipEvent) override;
-
-            void memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent) override;
 
         private:
             bool shouldRequestInitialMembers() const override;

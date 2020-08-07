@@ -22,7 +22,7 @@
 
 #include "hazelcast/client/Socket.h"
 #include "hazelcast/client/connection/Connection.h"
-#include "hazelcast/client/connection/AuthenticationFuture.h"
+#include "hazelcast/client/connection/ConnectionFuture.h"
 #include "hazelcast/client/exception/IOException.h"
 #include "hazelcast/client/SocketInterceptor.h"
 
@@ -57,7 +57,7 @@ namespace hazelcast {
                     }
 
                     void asyncStart(const std::shared_ptr<connection::Connection> connection,
-                                    const std::shared_ptr<connection::AuthenticationFuture> authFuture) override {
+                                    const std::shared_ptr<connection::ConnectionFuture> authFuture) override {
                         using namespace boost::asio;
                         using namespace boost::asio::ip;
 
@@ -189,15 +189,14 @@ namespace hazelcast {
                      *
                      * @returns An address that represents the local endpoint of the socket.
                      */
-                    std::unique_ptr<Address> localSocketAddress() const override {
+                    boost::optional<Address> localSocketAddress() const override {
                         boost::system::error_code ec;
                         boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> localEndpoint = socket_.lowest_layer().local_endpoint(
                                 ec);
                         if (ec) {
-                            return std::unique_ptr<Address>();
+                            return boost::none;
                         }
-                        return std::unique_ptr<Address>(
-                                new Address(localEndpoint.address().to_string(), localEndpoint.port()));
+                        return boost::optional<Address>(Address(localEndpoint.address().to_string(), localEndpoint.port()));
                     }
 
                     const Address &getRemoteEndpoint() const override {
@@ -258,7 +257,7 @@ namespace hazelcast {
                     }
 
                     virtual void async_handle_connect(const std::shared_ptr<connection::Connection> connection,
-                                                      const std::shared_ptr<connection::AuthenticationFuture> authFuture) {
+                                                      const std::shared_ptr<connection::ConnectionFuture> authFuture) {
                         try {
                             setSocketOptions(socketOptions);
                         } catch (std::exception &e) {
@@ -285,8 +284,6 @@ namespace hazelcast {
                                         }
 
                                         do_read(connection);
-
-                                        connection->authenticate();
                                     });
                     }
 

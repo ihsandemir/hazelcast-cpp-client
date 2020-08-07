@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 #include <hazelcast/client/HazelcastClient.h>
-#include <hazelcast/client/MemberAttributeEvent.h>
 #include <hazelcast/client/InitialMembershipListener.h>
 #include <hazelcast/client/InitialMembershipEvent.h>
 
@@ -39,12 +38,6 @@ public:
         membershipEvent.getMember().getAddress() << std::endl;
     }
 
-    void memberAttributeChanged(const hazelcast::client::MemberAttributeEvent &memberAttributeEvent) override {
-        std::cout << "[MyInitialMemberListener::memberAttributeChanged] Member attribute:" <<
-        memberAttributeEvent.getKey()
-        << " changed. Value:" << memberAttributeEvent.getValue() << " for member:" <<
-        memberAttributeEvent.getMember().getAddress() << std::endl;
-    }
 };
 
 class MyMemberListener : public hazelcast::client::MembershipListener {
@@ -58,12 +51,6 @@ public:
     void memberRemoved(const hazelcast::client::MembershipEvent &membershipEvent) override {
         std::cout << "[MyMemberListener::memberRemoved] Member left:" <<
         membershipEvent.getMember().getAddress() << std::endl;
-    }
-
-    void memberAttributeChanged(const hazelcast::client::MemberAttributeEvent &memberAttributeEvent) override {
-        std::cout << "[MyMemberListener::memberAttributeChanged] Member attribute:" << memberAttributeEvent.getKey()
-        << " changed. Value:" << memberAttributeEvent.getValue() << " for member:" <<
-        memberAttributeEvent.getMember().getAddress() << std::endl;
     }
 };
 

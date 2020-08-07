@@ -37,12 +37,11 @@
 #include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipListener.h"
+#include "hazelcast/client/InitialMembershipEvent.h"
 #include "hazelcast/client/Member.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/MembershipEvent.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/impl/RoundRobinLB.h"
-#include "hazelcast/client/impl/MemberAttributeChange.h"
 #include "hazelcast/client/cluster/impl/VectorClock.h"
 #include "hazelcast/client/cluster/memberselector/MemberSelectors.h"
 #include "hazelcast/client/internal/partition/strategy/StringPartitioningStrategy.h"
@@ -160,30 +159,30 @@ namespace hazelcast {
             }
         }
 
-        Endpoint::Endpoint(const boost::optional<boost::uuids::uuid> &uuid, std::shared_ptr<Address> socketAddress)
-                : uuid(uuid), socketAddress(socketAddress) {}
+        Endpoint::Endpoint(boost::uuids::uuid uuid, boost::optional<Address> socketAddress)
+                : uuid(uuid), socketAddress(std::move(socketAddress)) {}
 
-        const boost::optional<boost::uuids::uuid> &Endpoint::getUuid() const {
+        const boost::uuids::uuid &Endpoint::getUuid() const {
             return uuid;
         }
 
-        const std::shared_ptr<Address> &Endpoint::getSocketAddress() const {
+        const boost::optional<Address> &Endpoint::getSocketAddress() const {
             return socketAddress;
         }
 
         MembershipEvent::MembershipEvent(Cluster &cluster, const Member &member, MembershipEventType eventType,
-                                         const std::vector<Member> &membersList) :
-                cluster(&cluster), member(member), eventType(eventType), members(membersList) {
+                                         const std::unordered_map<boost::uuids::uuid, Member, boost::hash<boost::uuids::uuid>> &membersList) :
+                cluster(cluster), member(member), eventType(eventType), members(membersList) {
         }
 
         MembershipEvent::~MembershipEvent() = default;
 
-        const std::vector<Member> MembershipEvent::getMembers() const {
+        std::unordered_map<boost::uuids::uuid, Member, boost::hash<boost::uuids::uuid>> MembershipEvent::getMembers() const {
             return members;
         }
 
         const Cluster &MembershipEvent::getCluster() const {
-            return *cluster;
+            return cluster;
         }
 
         MembershipEvent::MembershipEventType MembershipEvent::getEventType() const {
@@ -194,27 +193,9 @@ namespace hazelcast {
             return member;
         }
 
-        MemberAttributeEvent::MemberAttributeEvent(Cluster &cluster, const Member &member,
-                                                   MemberAttributeEvent::MemberAttributeOperationType operationType,
-                                                   const std::string &key, const std::string &value)
-                : MembershipEvent(cluster, member, MembershipEvent::MEMBER_ATTRIBUTE_CHANGED, std::vector<Member>()),
-                  operationType(operationType), key(key), value(value) {
-        }
-
-        MemberAttributeEvent::MemberAttributeOperationType MemberAttributeEvent::getOperationType() const {
-            return operationType;
-        }
-
-        const std::string &MemberAttributeEvent::getKey() const {
-            return key;
-        }
-
-        const std::string &MemberAttributeEvent::getValue() const {
-            return value;
-        }
-
-        Client::Client(const boost::optional<boost::uuids::uuid> &uuid, const std::shared_ptr<Address> &socketAddress,
-                       const std::string &name) : Endpoint(uuid, socketAddress), name(name) {}
+        Client::Client(boost::uuids::uuid uuid, boost::optional<Address> socketAddress, std::string name,
+                       std::unordered_set<std::string> labels) : Endpoint(uuid, socketAddress), name(std::move(name)),
+                                                                 labels_(std::move(labels)) {}
 
         const std::string &Client::getName() const {
             return name;
@@ -247,11 +228,6 @@ namespace hazelcast {
             listener->memberRemoved(membershipEvent);
         }
 
-        void MembershipListenerDelegator::memberAttributeChanged(
-                const MemberAttributeEvent &memberAttributeEvent) {
-            listener->memberAttributeChanged(memberAttributeEvent);
-        }
-
         bool MembershipListenerDelegator::shouldRequestInitialMembers() const {
             return listener->shouldRequestInitialMembers();
         }
@@ -270,9 +246,8 @@ namespace hazelcast {
             return true;
         }
 
-        void InitialMembershipListenerDelegator::init(
-                const InitialMembershipEvent &event) {
-            listener->init(event);
+        void InitialMembershipListenerDelegator::init(InitialMembershipEvent event) {
+            listener->init(std::move(event));
         }
 
         void InitialMembershipListenerDelegator::memberRemoved(
@@ -283,11 +258,6 @@ namespace hazelcast {
         void InitialMembershipListenerDelegator::memberAdded(
                 const MembershipEvent &membershipEvent) {
             listener->memberAdded(membershipEvent);
-        }
-
-        void InitialMembershipListenerDelegator::memberAttributeChanged(
-                const MemberAttributeEvent &memberAttributeEvent) {
-            listener->memberAttributeChanged(memberAttributeEvent);
         }
 
         InitialMembershipListenerDelegator::InitialMembershipListenerDelegator(
@@ -313,11 +283,10 @@ namespace hazelcast {
                 AbstractLoadBalancer::init(cluster);
             }
 
-            const Member RoundRobinLB::next() {
-                std::vector<Member> members = getMembers();
-                if (members.size() == 0) {
-                    BOOST_THROW_EXCEPTION(exception::IllegalStateException("const Member& RoundRobinLB::next()",
-                                                                           "No member in member list!!"));
+            boost::optional<Member> RoundRobinLB::next() {
+                auto members = getMembers();
+                if (members.empty()) {
+                    return boost::none;
                 }
                 return members[++index % members.size()];
             }
@@ -327,34 +296,6 @@ namespace hazelcast {
 
             void RoundRobinLB::operator=(const RoundRobinLB &rhs) {
                 index.store(const_cast<RoundRobinLB &>(rhs).index.load());
-            }
-
-            MemberAttributeChange::MemberAttributeChange() = default;
-
-            MemberAttributeChange::MemberAttributeChange(std::unique_ptr<std::string> &uuid,
-                                                         MemberAttributeEvent::MemberAttributeOperationType const &operationType,
-                                                         std::unique_ptr<std::string> &key,
-                                                         std::unique_ptr<std::string> &value)
-                    : uuid(std::move(uuid)),
-                      operationType(operationType),
-                      key(std::move(key)),
-                      value(std::move(value)) {
-            }
-
-            const std::string &MemberAttributeChange::getUuid() const {
-                return *uuid;
-            }
-
-            MemberAttributeEvent::MemberAttributeOperationType MemberAttributeChange::getOperationType() const {
-                return operationType;
-            }
-
-            const std::string &MemberAttributeChange::getKey() const {
-                return *key;
-            }
-
-            const std::string &MemberAttributeChange::getValue() const {
-                return *value;
             }
 
             AbstractLoadBalancer::AbstractLoadBalancer(const AbstractLoadBalancer &rhs) {
@@ -387,9 +328,6 @@ namespace hazelcast {
                 setMembersRef();
             }
 
-            void AbstractLoadBalancer::memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent) {
-            }
-
             std::vector<Member> AbstractLoadBalancer::getMembers() {
                 std::lock_guard<std::mutex> lg(membersLock);
                 return membersRef;
@@ -400,7 +338,7 @@ namespace hazelcast {
             AbstractLoadBalancer::AbstractLoadBalancer() : cluster(NULL) {
             }
 
-            void AbstractLoadBalancer::init(const InitialMembershipEvent &event) {
+            void AbstractLoadBalancer::init(InitialMembershipEvent event) {
                 setMembersRef();
             }
         }

@@ -93,7 +93,6 @@
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
 #include "hazelcast/client/InitialMembershipListener.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/EntryAdapter.h"
 #include "hazelcast/client/LifecycleListener.h"
 #include "hazelcast/client/SocketInterceptor.h"

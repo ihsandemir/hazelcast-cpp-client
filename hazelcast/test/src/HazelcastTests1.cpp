@@ -76,7 +76,6 @@
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
 #include "hazelcast/client/InitialMembershipListener.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/EntryAdapter.h"
 #include "hazelcast/client/SocketInterceptor.h"
 #include "hazelcast/client/Socket.h"
@@ -1239,8 +1238,8 @@ namespace hazelcast {
                 spi::ClientContext context(client);
                 ASSERT_EQ(context.getName(), endpoint.getName());
 
-                std::shared_ptr<Address> endpointAddress = endpoint.getSocketAddress();
-                ASSERT_NOTNULL(endpointAddress.get(), Address);
+                auto endpointAddress = endpoint.getSocketAddress();
+                ASSERT_TRUE(endpointAddress);
                 connection::ClientConnectionManagerImpl &connectionManager = context.getConnectionManager();
                 std::shared_ptr<connection::Connection> connection = connectionManager.getOwnerConnection();
                 ASSERT_NOTNULL(connection.get(), connection::Connection);
@@ -1250,7 +1249,7 @@ namespace hazelcast {
 
                 std::shared_ptr<protocol::Principal> principal = connectionManager.getPrincipal();
                 ASSERT_NOTNULL(principal.get(), protocol::Principal);
-                ASSERT_EQ(principal->getUuid(), *endpoint.getUuid());
+                ASSERT_EQ(principal->getUuid(), endpoint.getUuid());
             }
         }
     }
@@ -1258,9 +1257,6 @@ namespace hazelcast {
 
 namespace hazelcast {
     namespace client {
-
-        class HazelcastClient;
-
         namespace test {
             class MemberAttributeTest : public ClientTestSupport
             {};
@@ -1293,87 +1289,6 @@ namespace hazelcast {
 
                 ASSERT_TRUE(member.lookupAttribute("strAttr"));
                 ASSERT_EQ(std::string("strAttr"), *member.getAttribute("strAttr"));
-
-                instance.shutdown();
-            }
-
-            class AttributeListener : public MembershipListener {
-            public:
-                AttributeListener(boost::latch &_attributeLatch)
-                        : _attributeLatch(_attributeLatch) {
-
-                }
-
-                void memberAdded(const MembershipEvent &event) override {
-                }
-
-                void memberRemoved(const MembershipEvent &event) override {
-                }
-
-                void memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent) override {
-                    if (memberAttributeEvent.getOperationType() != MemberAttributeEvent::PUT) {
-                        return;
-                    }
-                    const std::string &key = memberAttributeEvent.getKey();
-
-                    if (key == "intAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if ("211" == value) {
-                            _attributeLatch.count_down();
-                        }
-                    } else if (key == "boolAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if ("true" == value) {
-                            _attributeLatch.count_down();
-                        }
-                    } else if (key == "byteAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if ("7" == value) {
-                            _attributeLatch.count_down();
-                        }
-                    } else if (key == "doubleAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if ("2.0" == value) {
-                            _attributeLatch.count_down();
-                        }
-                    } else if (key == "floatAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if ("1.2" == value) {
-                            _attributeLatch.count_down();
-                        }
-                    } else if (key == "shortAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if ("3" == value) {
-                            _attributeLatch.count_down();
-                        }
-                    } else if (key == "strAttr") {
-                        const std::string &value = memberAttributeEvent.getValue();
-                        if (std::string("strAttr") == value) {
-                            _attributeLatch.count_down();
-                        }
-                    }
-                }
-
-            private:
-                boost::latch &_attributeLatch;
-            };
-
-            TEST_F(MemberAttributeTest, testChangeWithListeners) {
-                boost::latch attributeLatch(7);
-                AttributeListener sampleListener(attributeLatch);
-
-                ClientConfig clientConfig(getConfig());
-                clientConfig.addListener(&sampleListener);
-
-                HazelcastServer instance(*g_srvFactory);
-                HazelcastClient hazelcastClient(clientConfig);
-
-                HazelcastServer instance2(*g_srvFactory);
-                ASSERT_TRUE(instance2.setAttributes(1));
-
-                ASSERT_EQ(boost::cv_status::no_timeout, attributeLatch.wait_for(boost::chrono::seconds(30)));
-
-                instance2.shutdown();
 
                 instance.shutdown();
             }
@@ -1675,10 +1590,8 @@ namespace hazelcast {
 
                 class SampleInitialListener : public InitialMembershipListener {
                 public:
-                    SampleInitialListener(boost::latch &_memberAdded, boost::latch &_attributeLatch,
-                                          boost::latch &_memberRemoved)
-                            : _memberAdded(_memberAdded), _attributeLatch(_attributeLatch),
-                              _memberRemoved(_memberRemoved) {
+                    SampleInitialListener(boost::latch &_memberAdded, boost::latch &_memberRemoved)
+                            : _memberAdded(_memberAdded), _memberRemoved(_memberRemoved) {
                     }
 
                     void init(const InitialMembershipEvent &event) override {
@@ -1696,24 +1609,16 @@ namespace hazelcast {
                         _memberRemoved.count_down();
                     }
 
-
-                    void memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent) override {
-                        _attributeLatch.count_down();
-                    }
-
                 private:
                     boost::latch &_memberAdded;
-                    boost::latch &_attributeLatch;
                     boost::latch &_memberRemoved;
                 };
 
                 class SampleListenerInSimpleListenerTest : public MembershipListener {
                 public:
                     SampleListenerInSimpleListenerTest(boost::latch &_memberAdded,
-                                                       boost::latch &_attributeLatch,
                                                        boost::latch &_memberRemoved)
-                            : _memberAdded(_memberAdded), _attributeLatch(_attributeLatch),
-                              _memberRemoved(_memberRemoved) {
+                            : _memberAdded(_memberAdded), _memberRemoved(_memberRemoved) {
                     }
 
                     void memberAdded(const MembershipEvent &event) override {
@@ -1724,14 +1629,8 @@ namespace hazelcast {
                         _memberRemoved.count_down();
                     }
 
-                    void memberAttributeChanged(const MemberAttributeEvent &memberAttributeEvent) override {
-                        memberAttributeEvent.getKey();
-                        _attributeLatch.count_down();
-                    }
-
                 private:
                     boost::latch &_memberAdded;
-                    boost::latch &_attributeLatch;
                     boost::latch &_memberRemoved;
                 };
             };
@@ -1751,13 +1650,11 @@ namespace hazelcast {
                 boost::latch memberAddedInit(2);
                 boost::latch memberRemoved(1);
                 boost::latch memberRemovedInit(1);
-                boost::latch attributeLatch(7);
-                boost::latch attributeLatchInit(7);
 
                 std::shared_ptr<MembershipListener> sampleInitialListener(
-                        new SampleInitialListener(memberAddedInit, attributeLatchInit, memberRemovedInit));
+                        new SampleInitialListener(memberAddedInit, memberRemovedInit));
                 std::shared_ptr<MembershipListener> sampleListener(
-                        new SampleListenerInSimpleListenerTest(memberAdded, attributeLatch, memberRemoved));
+                        new SampleListenerInSimpleListenerTest(memberAdded, memberRemoved));
 
                 auto initialListenerRegistrationId = cluster.addMembershipListener(sampleInitialListener);
                 auto sampleListenerRegistrationId = cluster.addMembershipListener(sampleListener);
@@ -1766,11 +1663,6 @@ namespace hazelcast {
 
                 ASSERT_EQ(boost::cv_status::no_timeout, memberAdded.wait_for(boost::chrono::seconds(30)));
                 ASSERT_EQ(boost::cv_status::no_timeout, memberAddedInit.wait_for(boost::chrono::seconds(30)));
-
-                ASSERT_TRUE(instance2.setAttributes(1));
-
-                ASSERT_EQ(boost::cv_status::no_timeout, attributeLatchInit.wait_for(boost::chrono::seconds(30)));
-                ASSERT_EQ(boost::cv_status::no_timeout, attributeLatch.wait_for(boost::chrono::seconds(30)));
 
                 instance2.shutdown();
 
@@ -1791,11 +1683,9 @@ namespace hazelcast {
                 boost::latch memberAddedInit(2);
                 boost::latch memberRemoved(1);
                 boost::latch memberRemovedInit(1);
-                boost::latch attributeLatch(7);
-                boost::latch attributeLatchInit(7);
 
-                SampleInitialListener sampleInitialListener(memberAddedInit, attributeLatchInit, memberRemovedInit);
-                SampleListenerInSimpleListenerTest sampleListener(memberAdded, attributeLatch, memberRemoved);
+                SampleInitialListener sampleInitialListener(memberAddedInit, memberRemovedInit);
+                SampleListenerInSimpleListenerTest sampleListener(memberAdded, memberRemoved);
 
                 cluster.addMembershipListener(&sampleInitialListener);
                 cluster.addMembershipListener(&sampleListener);
@@ -1804,11 +1694,6 @@ namespace hazelcast {
 
                 ASSERT_EQ(boost::cv_status::no_timeout, memberAdded.wait_for(boost::chrono::seconds(30)));
                 ASSERT_EQ(boost::cv_status::no_timeout, memberAddedInit.wait_for(boost::chrono::seconds(30)));
-
-                ASSERT_TRUE(instance2.setAttributes(1));
-
-                ASSERT_OPEN_EVENTUALLY(attributeLatchInit);
-                ASSERT_OPEN_EVENTUALLY(attributeLatch);
 
                 instance2.shutdown();
 
@@ -1826,10 +1711,8 @@ namespace hazelcast {
                 boost::latch memberAddedInit(2);
                 boost::latch memberRemoved(1);
                 boost::latch memberRemovedInit(1);
-                boost::latch attributeLatch(7);
-                boost::latch attributeLatchInit(7);
-                SampleInitialListener sampleInitialListener(memberAddedInit, attributeLatchInit, memberRemovedInit);
-                SampleListenerInSimpleListenerTest sampleListener(memberAdded, attributeLatch, memberRemoved);
+                SampleInitialListener sampleInitialListener(memberAddedInit, memberRemovedInit);
+                SampleListenerInSimpleListenerTest sampleListener(memberAdded, memberRemoved);
 
                 ClientConfig &clientConfig = *const_cast<ParamType &>(GetParam());
                 clientConfig.addListener(&sampleListener);
@@ -1842,11 +1725,6 @@ namespace hazelcast {
 
                 ASSERT_OPEN_EVENTUALLY(memberAdded);
                 ASSERT_OPEN_EVENTUALLY(memberAddedInit);
-
-                ASSERT_TRUE(instance2.setAttributes(1));
-
-                ASSERT_OPEN_EVENTUALLY(attributeLatchInit);
-                ASSERT_OPEN_EVENTUALLY(attributeLatch);
 
                 instance2.shutdown();
 
@@ -2387,7 +2265,6 @@ namespace hazelcast {
                     countDownLatch.count_down();
                 }
 
-                void memberAttributeChanged(const MemberAttributeEvent& memberAttributeEvent) override {}
             private:
                 boost::latch &countDownLatch;
             };

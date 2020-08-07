@@ -44,6 +44,8 @@
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 #include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/spi/impl/ClientTransactionManagerServiceImpl.h"
+#include "hazelcast/client/spi/impl/listener/cluster_view_listener.h"
+#include "hazelcast/client/spi/impl/ClientInvocationServiceImpl.h"
 #include "hazelcast/client/impl/statistics/Statistics.h"
 #include "hazelcast/client/FlakeIdGenerator.h"
 #include "hazelcast/client/IExecutorService.h"
@@ -69,13 +71,9 @@ namespace hazelcast {
         namespace spi {
             class ClientContext;
 
-            class ClientInvocationService;
-
             class LifecycleService;
 
             class ClientListenerService;
-
-            class ClientProxyFactory;
 
             namespace impl {
                 class ClientExecutionServiceImpl;
@@ -195,7 +193,7 @@ namespace hazelcast {
 
                 const protocol::ClientExceptionFactory &getExceptionFactory() const;
 
-                void onClusterConnect(const std::shared_ptr<connection::Connection> &ownerConnection);
+                void on_cluster_restart();
 
                 const std::shared_ptr<ClientLockReferenceIdGenerator> &getLockReferenceIdGenerator() const;
 
@@ -213,7 +211,7 @@ namespace hazelcast {
                 spi::impl::ClientClusterServiceImpl clusterService;
                 std::shared_ptr<spi::impl::ClientPartitionServiceImpl> partitionService;
                 std::shared_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
-                std::unique_ptr<spi::ClientInvocationService> invocationService;
+                spi::impl::ClientInvocationServiceImpl invocationService;
                 std::shared_ptr<spi::ClientListenerService> listenerService;
                 spi::impl::ClientTransactionManagerServiceImpl transactionManager;
                 Cluster cluster;
@@ -227,6 +225,8 @@ namespace hazelcast {
                 int32_t id;
                 std::shared_ptr<ClientLockReferenceIdGenerator> lockReferenceIdGenerator;
                 std::shared_ptr<util::ILogger> logger;
+                spi::impl::listener::cluster_view_listener cluster_listener_;
+
                 HazelcastClientInstanceImpl(const HazelcastClientInstanceImpl& rhs) = delete;
 
                 void operator=(const HazelcastClientInstanceImpl& rhs) = delete;

@@ -42,7 +42,7 @@ namespace hazelcast {
 
                 void init(Cluster &cluster) override;
 
-                const Member next() override;
+                boost::optional<Member> next() override;
 
             private:
                 util::AtomicInt index;

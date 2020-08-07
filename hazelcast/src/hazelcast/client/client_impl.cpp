@@ -49,8 +49,7 @@
 #include "hazelcast/client/proxy/PNCounterImpl.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
-#include "hazelcast/client/spi/impl/SmartClientInvocationService.h"
-#include "hazelcast/client/spi/impl/NonSmartClientInvocationService.h"
+#include "hazelcast/client/spi/impl/ClientInvocationServiceImpl.h"
 #include "hazelcast/client/spi/impl/listener/NonSmartClientListenerService.h"
 #include "hazelcast/client/spi/impl/listener/SmartClientListenerService.h"
 #include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
@@ -135,7 +134,7 @@ namespace hazelcast {
                       transactionManager(clientContext, *clientConfig.getLoadBalancer()), cluster(clusterService),
                       lifecycleService(clientContext, clientConfig.getLifecycleListeners(),
                                        clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
-                      id(++CLIENT_ID) {
+                      id(++CLIENT_ID), invocationService(clientContext), cluster_listener_(clientContext) {
                 const std::shared_ptr<std::string> &name = clientConfig.getInstanceName();
                 if (name.get() != NULL) {
                     instanceName = *name;
@@ -167,7 +166,6 @@ namespace hazelcast {
 
                 partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext, *executionService));
 
-                invocationService = initInvocationService();
                 listenerService = initListenerService();
 
                 proxyManager.init();
@@ -262,16 +260,6 @@ namespace hazelcast {
                 }
             }
 
-            std::unique_ptr<spi::ClientInvocationService> HazelcastClientInstanceImpl::initInvocationService() {
-                if (clientConfig.getNetworkConfig().isSmartRouting()) {
-                    return std::unique_ptr<spi::ClientInvocationService>(
-                            new spi::impl::SmartClientInvocationService(clientContext));
-                } else {
-                    return std::unique_ptr<spi::ClientInvocationService>(
-                            new spi::impl::NonSmartClientInvocationService(clientContext));
-                }
-            }
-
             std::shared_ptr<spi::impl::ClientExecutionServiceImpl>
             HazelcastClientInstanceImpl::initExecutionService() {
                 return std::make_shared<spi::impl::ClientExecutionServiceImpl>(instanceName, clientProperties,
@@ -299,10 +287,12 @@ namespace hazelcast {
 
             }
 
-            void HazelcastClientInstanceImpl::onClusterConnect(
-                    const std::shared_ptr<connection::Connection> &ownerConnection) {
-                partitionService->listenPartitionTable(ownerConnection);
-                clusterService.listenMembershipEvents(ownerConnection);
+            void HazelcastClientInstanceImpl::on_cluster_restart() {
+                logger->info("Clearing local state of the client, because of a cluster restart");
+
+                nearCacheManager->clearAllNearCaches();
+                //clear the member list version
+                clusterService.clear_member_list_version();
             }
 
             std::vector<std::shared_ptr<connection::AddressProvider>>
@@ -594,9 +584,9 @@ namespace hazelcast {
         }
 
         const std::string ClientProperties::PROP_HEARTBEAT_TIMEOUT = "hazelcast_client_heartbeat_timeout";
-        const std::string ClientProperties::PROP_HEARTBEAT_TIMEOUT_DEFAULT = "60";
+        const std::string ClientProperties::PROP_HEARTBEAT_TIMEOUT_DEFAULT = "60000";
         const std::string ClientProperties::PROP_HEARTBEAT_INTERVAL = "hazelcast_client_heartbeat_interval";
-        const std::string ClientProperties::PROP_HEARTBEAT_INTERVAL_DEFAULT = "10";
+        const std::string ClientProperties::PROP_HEARTBEAT_INTERVAL_DEFAULT = "5000";
         const std::string ClientProperties::PROP_REQUEST_RETRY_COUNT = "hazelcast_client_request_retry_count";
         const std::string ClientProperties::PROP_REQUEST_RETRY_COUNT_DEFAULT = "20";
         const std::string ClientProperties::PROP_REQUEST_RETRY_WAIT_TIME = "hazelcast_client_request_retry_wait_time";

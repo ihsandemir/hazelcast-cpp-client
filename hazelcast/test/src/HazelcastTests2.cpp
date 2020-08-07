@@ -56,9 +56,7 @@
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/SocketInterceptor.h"
-#include "hazelcast/client/Socket.h"
 #include "hazelcast/client/IMap.h"
 #include "hazelcast/util/Bits.h"
 #include "hazelcast/util/SyncHttpsClient.h"
@@ -772,7 +770,7 @@ namespace hazelcast {
                     class LifecycleStateListener : public LifecycleListener {
                     public:
                         LifecycleStateListener(boost::latch &connectedLatch,
-                                               const LifecycleEvent::LifeCycleState expectedState)
+                                               const LifecycleEvent::LifecycleState expectedState)
                                 : connectedLatch(connectedLatch), expectedState(expectedState) {}
 
                         void stateChanged(const LifecycleEvent &event) override {
@@ -783,7 +781,7 @@ namespace hazelcast {
 
                     private:
                         boost::latch &connectedLatch;
-                        const LifecycleEvent::LifeCycleState expectedState;
+                        const LifecycleEvent::LifecycleState expectedState;
                     };
 
                     ClientConfig clientConfig;

@@ -56,7 +56,6 @@
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/internal/socket/SSLSocket.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
-#include "hazelcast/client/MemberAttributeEvent.h"
 #include "hazelcast/client/EntryAdapter.h"
 #include "hazelcast/client/SocketInterceptor.h"
 #include "hazelcast/client/Socket.h"

@@ -213,6 +213,12 @@ namespace hazelcast {
                 return std::unique_ptr<std::pair<K, std::shared_ptr<V> > >(
                         new std::pair<K, std::shared_ptr<V> >(it->first, it->second));
             }
+
+            bool empty() const {
+                std::lock_guard<std::mutex> lg(mapLock);
+                return internalMap.empty();
+            }
+
         private:
             std::unordered_map<K, std::shared_ptr<V>, Hash> internalMap;
             mutable std::mutex mapLock;
