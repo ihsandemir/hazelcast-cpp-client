@@ -16,7 +16,7 @@
 #pragma once
 
 #include "hazelcast/client/proxy/ProxyImpl.h"
-#include "hazelcast/client/spi/ClientPartitionService.h"
+#include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/ClientConfig.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"

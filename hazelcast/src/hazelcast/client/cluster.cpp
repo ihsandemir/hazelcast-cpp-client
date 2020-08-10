@@ -34,7 +34,7 @@
 #include <boost/functional/hash.hpp>
 
 #include "hazelcast/client/Cluster.h"
-#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/MembershipListener.h"
 #include "hazelcast/client/InitialMembershipListener.h"
 #include "hazelcast/client/InitialMembershipEvent.h"
@@ -48,7 +48,7 @@
 
 namespace hazelcast {
     namespace client {
-        Cluster::Cluster(spi::ClientClusterService &clusterService)
+        Cluster::Cluster(spi::impl::ClientClusterServiceImpl &clusterService)
                 : clusterService(clusterService) {
         }
 

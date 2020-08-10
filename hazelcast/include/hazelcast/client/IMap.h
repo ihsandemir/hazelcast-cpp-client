@@ -35,7 +35,6 @@
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/ExceptionUtil.h"
 #include "hazelcast/client/protocol/codec/codecs.h"
-#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 
 class NearCachedClientMapProxy;

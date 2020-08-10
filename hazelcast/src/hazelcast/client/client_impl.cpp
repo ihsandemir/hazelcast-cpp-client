@@ -132,7 +132,7 @@ namespace hazelcast {
                       transactionManager(clientContext), cluster(clusterService),
                       lifecycleService(clientContext, clientConfig.getLifecycleListeners(),
                                        clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
-                      id(++CLIENT_ID), invocationService(clientContext), cluster_listener_(clientContext) {
+                      id(++CLIENT_ID), cluster_listener_(clientContext) {
                 const std::shared_ptr<std::string> &name = clientConfig.getInstanceName();
                 if (name.get() != NULL) {
                     instanceName = *name;
@@ -163,6 +163,8 @@ namespace hazelcast {
                 connectionManager = initConnectionManagerService(addressProviders);
 
                 partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext, *executionService));
+
+                invocationService = spi::impl::ClientInvocationServiceImpl(clientContext);
 
                 listenerService = initListenerService();
 
@@ -506,7 +508,7 @@ namespace hazelcast {
         }
 
         std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
-        IExecutorService::invokeOnTarget(protocol::ClientMessage &&request, const Address &target) {
+        IExecutorService::invokeOnTarget(protocol::ClientMessage &&request, boost::uuids::uuid target) {
             try {
                 std::shared_ptr<spi::impl::ClientInvocation> clientInvocation = spi::impl::ClientInvocation::create(
                         getContext(), request, getName(), target);
@@ -553,7 +555,7 @@ namespace hazelcast {
         }
 
         int IExecutorService::randomPartitionId() {
-            spi::ClientPartitionService &partitionService = getContext().getPartitionService();
+            spi::impl::ClientPartitionServiceImpl partitionService = getContext().getPartitionService();
             return rand() % partitionService.getPartitionCount();
         }
 

@@ -45,7 +45,6 @@
 #include "hazelcast/client/connection/Connection.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
-#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/UsernamePasswordCredentials.h"
 #include "hazelcast/client/protocol/codec/codecs.h"

@@ -101,7 +101,7 @@ namespace hazelcast {
                 * Note: ClientConfig will be copied.
                 * @param config client configuration to start the client with
                 */
-                HazelcastClientInstanceImpl(const ClientConfig &config);
+                explicit HazelcastClientInstanceImpl(const ClientConfig &config);
 
                 /**
                 * Destructor
@@ -210,7 +210,7 @@ namespace hazelcast {
                 spi::impl::ClientClusterServiceImpl clusterService;
                 std::shared_ptr<spi::impl::ClientPartitionServiceImpl> partitionService;
                 std::shared_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
-                spi::impl::ClientInvocationServiceImpl invocationService;
+                boost::optional<spi::impl::ClientInvocationServiceImpl> invocationService;
                 std::shared_ptr<spi::impl::listener::listener_service_impl> listenerService;
                 spi::impl::ClientTransactionManagerServiceImpl transactionManager;
                 Cluster cluster;
@@ -231,8 +231,6 @@ namespace hazelcast {
                 void operator=(const HazelcastClientInstanceImpl& rhs) = delete;
 
                 std::shared_ptr<spi::impl::listener::listener_service_impl> initListenerService();
-
-                std::unique_ptr<spi::ClientInvocationService> initInvocationService();
 
                 std::shared_ptr<spi::impl::ClientExecutionServiceImpl> initExecutionService();
 

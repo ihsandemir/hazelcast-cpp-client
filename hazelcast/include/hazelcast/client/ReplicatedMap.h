@@ -259,7 +259,7 @@ namespace hazelcast {
             template<typename Listener>
             class EntryEventHandler : public protocol::codec::replicatedmap_addentrylistener_handler {
             public:
-                EntryEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
+                EntryEventHandler(const std::string &instanceName, spi::impl::ClientClusterServiceImpl &clusterService,
                                   serialization::pimpl::SerializationService &serializationService,
                                   Listener &&listener, util::ILogger &log)
                         : instanceName(instanceName), clusterService(clusterService), serializationService(serializationService)
@@ -332,7 +332,7 @@ namespace hazelcast {
                 }
             private:
                 const std::string& instanceName;
-                spi::ClientClusterService &clusterService;
+                spi::impl::ClientClusterServiceImpl &clusterService;
                 serialization::pimpl::SerializationService& serializationService;
                 Listener listener;
                 util::ILogger &logger;

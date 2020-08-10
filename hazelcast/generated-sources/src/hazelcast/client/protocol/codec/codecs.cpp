@@ -2913,6 +2913,92 @@ namespace hazelcast {
                     return msg;
                 }
 
+                ClientMessage executorservice_shutdown_encode(std::string const & name) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(false);
+                    msg.setOperationName("ExecutorService.Shutdown");
+
+                    msg.setMessageType(static_cast<int32_t>(524544));
+
+                    msg.set(name, true);
+
+                    return msg;
+                }
+
+                ClientMessage executorservice_isshutdown_encode(std::string const & name) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(false);
+                    msg.setOperationName("ExecutorService.IsShutdown");
+
+                    msg.setMessageType(static_cast<int32_t>(524800));
+
+                    msg.set(name, true);
+
+                    return msg;
+                }
+
+                ClientMessage executorservice_cancelonpartition_encode(boost::uuids::uuid uuid, bool interrupt) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE + ClientMessage::UINT8_SIZE;
+                    ClientMessage msg(initial_frame_size, true);
+                    msg.setRetryable(false);
+                    msg.setOperationName("ExecutorService.CancelOnPartition");
+
+                    msg.setMessageType(static_cast<int32_t>(525056));
+
+                    msg.set(uuid);
+                    msg.set(interrupt);
+                    return msg;
+                }
+
+                ClientMessage executorservice_cancelonmember_encode(boost::uuids::uuid uuid, boost::uuids::uuid memberUUID, bool interrupt) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE + ClientMessage::UUID_SIZE + ClientMessage::UINT8_SIZE;
+                    ClientMessage msg(initial_frame_size, true);
+                    msg.setRetryable(false);
+                    msg.setOperationName("ExecutorService.CancelOnMember");
+
+                    msg.setMessageType(static_cast<int32_t>(525312));
+
+                    msg.set(uuid);
+                    msg.set(memberUUID);
+                    msg.set(interrupt);
+                    return msg;
+                }
+
+                ClientMessage executorservice_submittopartition_encode(std::string const & name, boost::uuids::uuid uuid, Data const & callable) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(false);
+                    msg.setOperationName("ExecutorService.SubmitToPartition");
+
+                    msg.setMessageType(static_cast<int32_t>(525568));
+
+                    msg.set(uuid);
+                    msg.set(name);
+
+                    msg.set(callable, true);
+
+                    return msg;
+                }
+
+                ClientMessage executorservice_submittomember_encode(std::string const & name, boost::uuids::uuid uuid, Data const & callable, boost::uuids::uuid memberUUID) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE + ClientMessage::UUID_SIZE;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(false);
+                    msg.setOperationName("ExecutorService.SubmitToMember");
+
+                    msg.setMessageType(static_cast<int32_t>(525824));
+
+                    msg.set(uuid);
+                    msg.set(memberUUID);
+                    msg.set(name);
+
+                    msg.set(callable, true);
+
+                    return msg;
+                }
+
                 ClientMessage replicatedmap_put_encode(std::string const & name, Data const & key, Data const & value, int64_t ttl) {
                     size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::INT64_SIZE;
                     ClientMessage msg(initial_frame_size);
@@ -3892,6 +3978,47 @@ namespace hazelcast {
                     return msg;
                 }
 
+                ClientMessage transaction_commit_encode(boost::uuids::uuid transactionId, int64_t threadId) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE + ClientMessage::INT64_SIZE;
+                    ClientMessage msg(initial_frame_size, true);
+                    msg.setRetryable(false);
+                    msg.setOperationName("Transaction.Commit");
+
+                    msg.setMessageType(static_cast<int32_t>(1376512));
+
+                    msg.set(transactionId);
+                    msg.set(threadId);
+                    return msg;
+                }
+
+                ClientMessage transaction_create_encode(int64_t timeout, int32_t durability, int32_t transactionType, int64_t threadId) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::INT64_SIZE + ClientMessage::INT32_SIZE + ClientMessage::INT32_SIZE + ClientMessage::INT64_SIZE;
+                    ClientMessage msg(initial_frame_size, true);
+                    msg.setRetryable(false);
+                    msg.setOperationName("Transaction.Create");
+
+                    msg.setMessageType(static_cast<int32_t>(1376768));
+
+                    msg.set(timeout);
+                    msg.set(durability);
+                    msg.set(transactionType);
+                    msg.set(threadId);
+                    return msg;
+                }
+
+                ClientMessage transaction_rollback_encode(boost::uuids::uuid transactionId, int64_t threadId) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE + ClientMessage::INT64_SIZE;
+                    ClientMessage msg(initial_frame_size, true);
+                    msg.setRetryable(false);
+                    msg.setOperationName("Transaction.Rollback");
+
+                    msg.setMessageType(static_cast<int32_t>(1377024));
+
+                    msg.set(transactionId);
+                    msg.set(threadId);
+                    return msg;
+                }
+
                 ClientMessage ringbuffer_size_encode(std::string const & name) {
                     size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
                     ClientMessage msg(initial_frame_size);
@@ -4017,6 +4144,67 @@ namespace hazelcast {
                     msg.set(name);
 
                     msg.setNullable(filter, true);
+
+                    return msg;
+                }
+
+                ClientMessage flakeidgenerator_newidbatch_encode(std::string const & name, int32_t batchSize) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::INT32_SIZE;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(true);
+                    msg.setOperationName("FlakeIdGenerator.NewIdBatch");
+
+                    msg.setMessageType(static_cast<int32_t>(1835264));
+
+                    msg.set(batchSize);
+                    msg.set(name, true);
+
+                    return msg;
+                }
+
+                ClientMessage pncounter_get_encode(std::string const & name, std::vector<std::pair<boost::uuids::uuid, int64_t>> const & replicaTimestamps, boost::uuids::uuid targetReplicaUUID) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::UUID_SIZE;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(true);
+                    msg.setOperationName("PNCounter.Get");
+
+                    msg.setMessageType(static_cast<int32_t>(1900800));
+
+                    msg.set(targetReplicaUUID);
+                    msg.set(name);
+
+                    msg.set(replicaTimestamps, true);
+
+                    return msg;
+                }
+
+                ClientMessage pncounter_add_encode(std::string const & name, int64_t delta, bool getBeforeUpdate, std::vector<std::pair<boost::uuids::uuid, int64_t>> const & replicaTimestamps, boost::uuids::uuid targetReplicaUUID) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN  + ClientMessage::INT64_SIZE + ClientMessage::UINT8_SIZE + ClientMessage::UUID_SIZE;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(false);
+                    msg.setOperationName("PNCounter.Add");
+
+                    msg.setMessageType(static_cast<int32_t>(1901056));
+
+                    msg.set(delta);
+                    msg.set(getBeforeUpdate);
+                    msg.set(targetReplicaUUID);
+                    msg.set(name);
+
+                    msg.set(replicaTimestamps, true);
+
+                    return msg;
+                }
+
+                ClientMessage pncounter_getconfiguredreplicacount_encode(std::string const & name) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(true);
+                    msg.setOperationName("PNCounter.GetConfiguredReplicaCount");
+
+                    msg.setMessageType(static_cast<int32_t>(1901312));
+
+                    msg.set(name, true);
 
                     return msg;
                 }

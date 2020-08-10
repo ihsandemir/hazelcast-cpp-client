@@ -38,6 +38,7 @@
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/proxy/FlakeIdGeneratorImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/spi/impl/listener/listener_service_impl.h"
 #include "hazelcast/client/proxy/ReliableTopicImpl.h"
 #include "hazelcast/client/topic/impl/TopicEventHandlerImpl.h"
 #include "hazelcast/client/ClientConfig.h"
@@ -269,8 +270,8 @@ namespace hazelcast {
                 return toVoidFuture(ringbuffer->add(message));
             }
 
-            const std::shared_ptr<std::unordered_set<Address> > PNCounterImpl::EMPTY_ADDRESS_LIST(
-                    new std::unordered_set<Address>());
+            const std::shared_ptr<std::unordered_set<Member> > PNCounterImpl::EMPTY_ADDRESS_LIST(
+                    new std::unordered_set<Member>());
 
             PNCounterImpl::PNCounterImpl(const std::string &serviceName, const std::string &objectName,
                                          spi::ClientContext *context)
@@ -285,7 +286,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::get() {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::get",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -294,7 +295,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::getAndAdd(int64_t delta) {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndAdd",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -303,7 +304,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::addAndGet(int64_t delta) {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(exception::NoDataMemberInClusterException("ClientPNCounterProxy::addAndGet",
                                                                                     "Cannot invoke operations on a CRDT because the cluster does not contain any data members"));
@@ -312,7 +313,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::getAndSubtract(int64_t delta) {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndSubtract",
@@ -323,7 +324,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::subtractAndGet(int64_t delta) {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::subtractAndGet",
@@ -333,7 +334,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::decrementAndGet() {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::decrementAndGet",
@@ -343,7 +344,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::incrementAndGet() {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::incrementAndGet",
@@ -353,7 +354,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::getAndDecrement() {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndDecrement",
@@ -363,7 +364,7 @@ namespace hazelcast {
             }
 
             boost::future<int64_t> PNCounterImpl::getAndIncrement() {
-                std::shared_ptr<Address> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
+                boost::shared_ptr<Member> target = getCRDTOperationTarget(*EMPTY_ADDRESS_LIST);
                 if (!target) {
                     BOOST_THROW_EXCEPTION(
                             exception::NoDataMemberInClusterException("ClientPNCounterProxy::getAndIncrement",
@@ -377,16 +378,16 @@ namespace hazelcast {
                 return boost::make_ready_future();
             }
 
-            std::shared_ptr<Address>
-            PNCounterImpl::getCRDTOperationTarget(const std::unordered_set<Address> &excludedAddresses) {
-                auto replicaAddress = currentTargetReplicaAddress.get();
+            boost::shared_ptr<Member>
+            PNCounterImpl::getCRDTOperationTarget(const std::unordered_set<Member> &excludedAddresses) {
+                auto replicaAddress = currentTargetReplicaAddress.load();
                 if (replicaAddress && excludedAddresses.find(*replicaAddress) == excludedAddresses.end()) {
                     return replicaAddress;
                 }
 
                 {
                     std::lock_guard<std::mutex> guard(targetSelectionMutex);
-                    replicaAddress = currentTargetReplicaAddress.get();
+                    replicaAddress = currentTargetReplicaAddress.load();
                     if (!replicaAddress ||
                         excludedAddresses.find(*replicaAddress) != excludedAddresses.end()) {
                         currentTargetReplicaAddress = chooseTargetReplica(excludedAddresses);
@@ -395,24 +396,24 @@ namespace hazelcast {
                 return currentTargetReplicaAddress;
             }
 
-            std::shared_ptr<Address>
-            PNCounterImpl::chooseTargetReplica(const std::unordered_set<Address> &excludedAddresses) {
-                std::vector<Address> replicaAddresses = getReplicaAddresses(excludedAddresses);
+            boost::shared_ptr<Member>
+            PNCounterImpl::chooseTargetReplica(const std::unordered_set<Member> &excludedAddresses) {
+                std::vector<Member> replicaAddresses = getReplicaAddresses(excludedAddresses);
                 if (replicaAddresses.empty()) {
-                    return std::shared_ptr<Address>();
+                    return nullptr;
                 }
                 // TODO: Use a random generator as used in Java (ThreadLocalRandomProvider) which is per thread
                 int randomReplicaIndex = std::abs(rand()) % (int) replicaAddresses.size();
-                return std::shared_ptr<Address>(new Address(replicaAddresses[randomReplicaIndex]));
+                return boost::make_shared<Member>(replicaAddresses[randomReplicaIndex]);
             }
 
-            std::vector<Address> PNCounterImpl::getReplicaAddresses(const std::unordered_set<Address> &excludedAddresses) {
+            std::vector<Member> PNCounterImpl::getReplicaAddresses(const std::unordered_set<Member> &excludedAddresses) {
                 std::vector<Member> dataMembers = getContext().getClientClusterService().getMembers(
                         *cluster::memberselector::MemberSelectors::DATA_MEMBER_SELECTOR);
                 int32_t replicaCount = getMaxConfiguredReplicaCount();
                 int currentReplicaCount = util::min<int>(replicaCount, (int) dataMembers.size());
 
-                std::vector<Address> replicaAddresses;
+                std::vector<Member> replicaAddresses;
                 for (int i = 0; i < currentReplicaCount; i++) {
                     const Address &dataMemberAddress = dataMembers[i].getAddress();
                     if (excludedAddresses.find(dataMemberAddress) == excludedAddresses.end()) {
@@ -433,24 +434,24 @@ namespace hazelcast {
                 return maxConfiguredReplicaCount;
             }
 
-            std::shared_ptr<Address>
-            PNCounterImpl::tryChooseANewTarget(std::shared_ptr<std::unordered_set<Address>> excludedAddresses,
-                                               std::shared_ptr<Address> lastTarget,
+            boost::shared_ptr<Member>
+            PNCounterImpl::tryChooseANewTarget(std::shared_ptr<std::unordered_set<Member>> excludedAddresses,
+                                               boost::shared_ptr<Member> lastTarget,
                                                const exception::HazelcastException &lastException) {
                 logger.finest("Exception occurred while invoking operation on target ", *lastTarget,
                               ", choosing different target. Cause: ", lastException);
                 if (excludedAddresses == EMPTY_ADDRESS_LIST) {
                     // TODO: Make sure that this only affects the local variable of the method
-                    excludedAddresses = std::make_shared<std::unordered_set<Address>>();
+                    excludedAddresses = std::make_shared<std::unordered_set<Member>>();
                 }
                 excludedAddresses->insert(*lastTarget);
                 return getCRDTOperationTarget(*excludedAddresses);
             }
 
             boost::future<int64_t>
-            PNCounterImpl::invokeGetInternal(std::shared_ptr<std::unordered_set<Address>> excludedAddresses,
+            PNCounterImpl::invokeGetInternal(std::shared_ptr<std::unordered_set<Member>> excludedAddresses,
                                              std::exception_ptr lastException,
-                                             const std::shared_ptr<Address> &target) {
+                                             const boost::shared_ptr<Member> &target) {
                 if (!target) {
                     if (lastException) {
                         std::rethrow_exception(lastException);
@@ -462,8 +463,8 @@ namespace hazelcast {
                 }
                 try {
                     auto timestamps = observedClock.get()->entrySet();
-                    auto request = protocol::codec::pncounter_get_encode(getName(), timestamps, *target);
-                    return invokeOnAddress(request, *target).then(boost::launch::deferred, [=] (boost::future<protocol::ClientMessage> f) {
+                    auto request = protocol::codec::pncounter_get_encode(getName(), timestamps, target->getUuid());
+                    return invokeOnMember(request, target->getUuid()).then(boost::launch::deferred, [=] (boost::future<protocol::ClientMessage> f) {
                         try {
                             return get_and_update_timestamps(std::move(f));
                         } catch (exception::HazelcastException &e) {
@@ -479,9 +480,9 @@ namespace hazelcast {
 
             boost::future<int64_t>
             PNCounterImpl::invokeAddInternal(int64_t delta, bool getBeforeUpdate,
-                                             std::shared_ptr<std::unordered_set<Address> > excludedAddresses,
+                                             std::shared_ptr<std::unordered_set<Member> > excludedAddresses,
                                              std::exception_ptr lastException,
-                                             const std::shared_ptr<Address> &target) {
+                                             const boost::shared_ptr<Member> &target) {
                 if (!target) {
                     if (lastException) {
                         std::rethrow_exception(lastException);
@@ -494,8 +495,8 @@ namespace hazelcast {
 
                 try {
                     auto request = protocol::codec::pncounter_add_encode(
-                            getName(), delta, getBeforeUpdate, observedClock.get()->entrySet(), *target);
-                    return invokeOnAddress(request, *target).then(boost::launch::deferred, [=] (boost::future<protocol::ClientMessage> f) {
+                            getName(), delta, getBeforeUpdate, observedClock.get()->entrySet(), target->getUuid());
+                    return invokeOnMember(request, target->getUuid()).then(boost::launch::deferred, [=] (boost::future<protocol::ClientMessage> f) {
                         try {
                             return get_and_update_timestamps(std::move(f));
                         } catch (exception::HazelcastException &e) {
@@ -538,8 +539,8 @@ namespace hazelcast {
                         new cluster::impl::VectorClock(replicaLogicalTimestamps));
             }
 
-            std::shared_ptr<Address> PNCounterImpl::getCurrentTargetReplicaAddress() {
-                return currentTargetReplicaAddress.get();
+            boost::shared_ptr<Member> PNCounterImpl::getCurrentTargetReplicaAddress() {
+                return currentTargetReplicaAddress.load();
             }
 
             IListImpl::IListImpl(const std::string &instanceName, spi::ClientContext *context)
@@ -960,9 +961,9 @@ namespace hazelcast {
             }
 
             boost::future<protocol::ClientMessage>
-            SerializingProxy::invokeOnAddress(protocol::ClientMessage &request, const Address &address) {
+            SerializingProxy::invokeOnMember(protocol::ClientMessage &request, boost::uuids::uuid uuid) {
                 try {
-                    auto invocation = spi::impl::ClientInvocation::create(context_, std::make_shared<protocol::ClientMessage>(std::move(request)), name_, address);
+                    auto invocation = spi::impl::ClientInvocation::create(context_, std::make_shared<protocol::ClientMessage>(std::move(request)), name_, uuid);
                     return invocation->invoke();
                 } catch (exception::IException &) {
                     util::ExceptionUtil::rethrow(std::current_exception());

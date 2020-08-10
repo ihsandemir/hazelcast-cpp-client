@@ -16,7 +16,7 @@
 #pragma once
 
 #include "hazelcast/client/protocol/codec/codecs.h"
-#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/ItemListener.h"
 #include "hazelcast/client/ItemEvent.h"
 #include "hazelcast/client/serialization/serialization.h"
@@ -28,7 +28,7 @@ namespace hazelcast {
             template<typename Listener, typename BaseType>
             class ItemEventHandler : public BaseType {
             public:
-                ItemEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
+                ItemEventHandler(const std::string &instanceName, spi::impl::ClientClusterServiceImpl &clusterService,
                                  serialization::pimpl::SerializationService &serializationService,
                                  Listener &&listener, bool includeValue)
                         : instanceName(instanceName), clusterService(clusterService),
@@ -52,7 +52,7 @@ namespace hazelcast {
 
             private:
                 const std::string &instanceName;
-                spi::ClientClusterService &clusterService;
+                spi::impl::ClientClusterServiceImpl &clusterService;
                 serialization::pimpl::SerializationService &serializationService;
                 Listener listener;
                 bool includeValue;

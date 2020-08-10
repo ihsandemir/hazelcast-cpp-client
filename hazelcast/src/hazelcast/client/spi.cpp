@@ -46,7 +46,7 @@
 #include <hazelcast/client/spi/impl/ClientClusterServiceImpl.h>
 #include <hazelcast/client/spi/impl/listener/cluster_view_listener.h>
 #include <hazelcast/client/spi/impl/listener/listener_service_impl.h>
-
+#include "hazelcast/client/cluster/memberselector/MemberSelectors.h"
 #include "hazelcast/util/RuntimeAvailableProcessors.h"
 #include "hazelcast/client/HazelcastClient.h"
 #include "hazelcast/client/LifecycleEvent.h"

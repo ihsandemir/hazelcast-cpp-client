@@ -85,10 +85,6 @@ namespace hazelcast {
 
             boost::future<void> TransactionProxy::begin() {
                 try {
-                    if (clientContext.getConnectionManager().getOwnerConnection().get() == NULL) {
-                        BOOST_THROW_EXCEPTION(exception::TransactionException("TransactionProxy::begin()",
-                                                                              "Owner connection needs to be present to begin a transaction"));
-                    }
                     if (state == TxnState::ACTIVE) {
                         BOOST_THROW_EXCEPTION(exception::IllegalStateException("TransactionProxy::begin()",
                                                                                "Transaction is already active"));
@@ -231,7 +227,7 @@ namespace hazelcast {
             }
 
             boost::future<protocol::ClientMessage> TransactionProxy::invoke(protocol::ClientMessage &request) {
-                return ClientTransactionUtil::invoke(request, boost::uuids::to_string(*getTxnId()), clientContext, connection);
+                return ClientTransactionUtil::invoke(request, boost::uuids::to_string(getTxnId()), clientContext, connection);
             }
 
             spi::ClientContext &TransactionProxy::getClientContext() const {

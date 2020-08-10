@@ -18,11 +18,11 @@
 
 #include <unordered_map>
 #include <vector>
+#include <boost/thread/latch.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
 
 #include "hazelcast/client/ClientConfig.h"
-#include "hazelcast/client/spi/ClientClusterService.h"
 #include "hazelcast/client/InitialMembershipListener.h"
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/Member.h"
@@ -40,6 +40,11 @@ namespace hazelcast {
         namespace connection {
             class Connection;
         }
+        namespace cluster {
+            namespace memberselector {
+                class MemberSelector;
+            }
+        }
         class InitialMembershipListener;
         class InitialMembershipEvent;
 
@@ -49,7 +54,7 @@ namespace hazelcast {
             namespace impl {
                 class ClientMembershipListener;
 
-                class HAZELCAST_API ClientClusterServiceImpl : public ClientClusterService {
+                class HAZELCAST_API ClientClusterServiceImpl {
                 public:
                     explicit ClientClusterServiceImpl(ClientContext &client);
 
@@ -57,18 +62,18 @@ namespace hazelcast {
 
                     void shutdown();
 
-                    boost::optional<Member> getMember(boost::uuids::uuid uuid) override;
+                    boost::optional<Member> getMember(boost::uuids::uuid uuid);
 
-                    std::vector<Member> getMemberList() override;
+                    std::vector<Member> getMemberList();
 
                     std::vector<Member> getMembers(
-                            const cluster::memberselector::MemberSelector &selector) override;
+                            const cluster::memberselector::MemberSelector &selector);
 
                     Client getLocalClient() const;
 
-                    boost::uuids::uuid addMembershipListener(const std::shared_ptr<MembershipListener> &listener) override;
+                    boost::uuids::uuid addMembershipListener(const std::shared_ptr<MembershipListener> &listener);
 
-                    bool removeMembershipListener(boost::uuids::uuid registrationId) override;
+                    bool removeMembershipListener(boost::uuids::uuid registrationId);
 
                     void clear_member_list_version();
 

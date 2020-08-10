@@ -35,6 +35,7 @@
 #include "hazelcast/client/connection/AddressTranslator.h"
 #include "hazelcast/client/connection/ConnectionListenable.h"
 #include "hazelcast/client/connection/HeartbeatManager.h"
+#include "hazelcast/client/config/ClientConnectionStrategyConfig.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -48,6 +49,7 @@ namespace hazelcast {
     }
     namespace client {
         class Credentials;
+        class LoadBalancer;
 
         namespace protocol {
             class ClientMessage;

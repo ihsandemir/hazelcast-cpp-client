@@ -748,7 +748,7 @@ namespace hazelcast {
             ClientTestSupportBase::ClientTestSupportBase() = default;
 
             std::string ClientTestSupportBase::generateKeyOwnedBy(spi::ClientContext &context, const Member &member) {
-                spi::ClientPartitionService &partitionService = context.getPartitionService();
+                spi::impl::ClientPartitionServiceImpl partitionService = context.getPartitionService();
                 serialization::pimpl::SerializationService &serializationService = context.getSerializationService();
                 while (true) {
                     auto id = randomString();

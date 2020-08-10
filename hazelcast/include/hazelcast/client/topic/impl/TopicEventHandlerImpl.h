@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/topic/Message.h"
 #include "hazelcast/client/serialization/serialization.h"
 
@@ -31,7 +31,7 @@ namespace hazelcast {
                 template<typename Listener>
                 class TopicEventHandlerImpl : public protocol::codec::topic_addmessagelistener_handler {
                 public:
-                    TopicEventHandlerImpl(const std::string &instanceName, spi::ClientClusterService &clusterService,
+                    TopicEventHandlerImpl(const std::string &instanceName, spi::impl::ClientClusterServiceImpl &clusterService,
                                       serialization::pimpl::SerializationService &serializationService,
                                           Listener &&messageListener)
                             :instanceName(instanceName), clusterService(clusterService),
@@ -43,7 +43,7 @@ namespace hazelcast {
                     }
                 private:
                     std::string instanceName;
-                    spi::ClientClusterService &clusterService;
+                    spi::impl::ClientClusterServiceImpl &clusterService;
                     serialization::pimpl::SerializationService &serializationService;
                     Listener &listener;
                 };

@@ -22,7 +22,7 @@
 #include "hazelcast/client/MapEvent.h"
 #include "hazelcast/client/EntryListener.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
-#include "hazelcast/client/spi/ClientClusterService.h"
+#include "hazelcast/client/spi/impl/ClientClusterServiceImpl.h"
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/client/protocol/codec/codecs.h"
 
@@ -37,7 +37,7 @@ namespace hazelcast {
             template<typename Listener, typename BaseType>
             class EntryEventHandler : public BaseType {
             public:
-                EntryEventHandler(const std::string &instanceName, spi::ClientClusterService &clusterService,
+                EntryEventHandler(const std::string &instanceName, spi::impl::ClientClusterServiceImpl &clusterService,
                                   serialization::pimpl::SerializationService &serializationService,
                                   Listener &&listener, bool includeValue, util::ILogger &log)
                 : instanceName(instanceName), clusterService(clusterService), serializationService(serializationService)
@@ -129,7 +129,7 @@ namespace hazelcast {
                 }
             private:
                 const std::string& instanceName;
-                spi::ClientClusterService &clusterService;
+                spi::impl::ClientClusterServiceImpl &clusterService;
                 serialization::pimpl::SerializationService& serializationService;
                 Listener listener;
                 bool includeValue;

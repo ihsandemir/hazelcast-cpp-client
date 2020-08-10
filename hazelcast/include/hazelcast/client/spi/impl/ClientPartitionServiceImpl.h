@@ -20,7 +20,6 @@
 
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/AtomicInt.h"
-#include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/EventHandler.h"
 #include "hazelcast/client/ExecutionCallback.h"
 #include "hazelcast/client/impl/Partition.h"
@@ -45,8 +44,7 @@ namespace hazelcast {
             namespace impl {
                 class ClientExecutionServiceImpl;
 
-                class HAZELCAST_API ClientPartitionServiceImpl : public ClientPartitionService,
-                                                                 public std::enable_shared_from_this<ClientPartitionServiceImpl> {
+                class HAZELCAST_API ClientPartitionServiceImpl : public std::enable_shared_from_this<ClientPartitionServiceImpl> {
                 public:
                     ClientPartitionServiceImpl(ClientContext &client,
                                                hazelcast::client::spi::impl::ClientExecutionServiceImpl &executionService);
@@ -57,13 +55,13 @@ namespace hazelcast {
                     void handle_event(const std::shared_ptr<connection::Connection>& connection, int32_t version,
                                       const std::vector<std::pair<boost::uuids::uuid, std::vector<int>>> &partitions);
 
-                    boost::uuids::uuid getPartitionOwner(int partitionId) override;
+                    boost::uuids::uuid getPartitionOwner(int partitionId);
 
-                    int32_t getPartitionId(const serialization::pimpl::Data &key) override;
+                    int32_t getPartitionId(const serialization::pimpl::Data &key);
 
-                    int32_t getPartitionCount() override;
+                    int32_t getPartitionCount();
 
-                    std::shared_ptr<client::impl::Partition> getPartition(int32_t partitionId) override;
+                    std::shared_ptr<client::impl::Partition> getPartition(int32_t partitionId);
 
                     bool check_and_set_partition_count(int32_t new_partition_count);
 

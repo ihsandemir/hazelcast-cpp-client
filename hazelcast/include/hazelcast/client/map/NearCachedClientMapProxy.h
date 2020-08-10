@@ -26,7 +26,6 @@
 #include "hazelcast/client/internal/nearcache/NearCache.h"
 #include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/protocol/codec/codecs.h"
-#include "hazelcast/client/spi/ClientPartitionService.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/EntryEvent.h"
@@ -408,7 +407,7 @@ namespace hazelcast {
                 }
 
                 void removeNearCacheInvalidationListener() {
-                    if (!invalidationListenerId) {
+                    if (invalidationListenerId.is_nil()) {
                         return;
                     }
 
@@ -416,8 +415,9 @@ namespace hazelcast {
                 }
 
                 class ClientMapAddNearCacheEventHandler
-                        : public protocol::codec::map_addnearcacheentrylistener_handler {
+                        : public protocol::codec::map_addnearcacheinvalidationlistener_handler {
                 public:
+                    // TODO: implement RepairingTask as in Java client
                     ClientMapAddNearCacheEventHandler(
                             const std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V> > &cache)
                             : nearCache(cache) {
@@ -431,10 +431,8 @@ namespace hazelcast {
                         nearCache->clear();
                     }
 
-                    void handle_imapinvalidation(const boost::optional<serialization::pimpl::Data> &key,
-                                                 boost::uuids::uuid sourceUuid,
-                                                 boost::uuids::uuid partitionUuid,
-                                                 const int64_t &sequence) override {
+                    void handle_imapinvalidation(const boost::optional<Data> &key, boost::uuids::uuid sourceUuid,
+                                                 boost::uuids::uuid partitionUuid, int64_t sequence) override {
                         // null key means Near Cache has to remove all entries in it (see MapAddNearCacheEntryListenerMessageTask)
                         if (!key) {
                             nearCache->clear();

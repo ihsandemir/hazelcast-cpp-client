@@ -27,8 +27,10 @@ namespace hazelcast {
             class Connection;
         }
         namespace spi {
-            class ClientPartitionService;
             class ClientContext;
+            namespace impl {
+                class ClientPartitionServiceImpl;
+            }
         }
         typedef std::vector<std::pair<serialization::pimpl::Data, serialization::pimpl::Data>> EntryVector;
 
@@ -52,8 +54,8 @@ namespace hazelcast {
                 invokeOnKeyOwner(protocol::ClientMessage &request,
                                  const serialization::pimpl::Data &keyData);
 
-                boost::future<protocol::ClientMessage> invokeOnAddress(protocol::ClientMessage &request,
-                                                        const Address &address);
+                boost::future<protocol::ClientMessage> invokeOnMember(protocol::ClientMessage &request,
+                                                                      boost::uuids::uuid uuid);
 
                 int getPartitionId(const serialization::pimpl::Data &key);
 
@@ -247,7 +249,7 @@ namespace hazelcast {
                 }
 
                 serialization::pimpl::SerializationService &serializationService_;
-                spi::ClientPartitionService &partitionService_;
+                spi::impl::ClientPartitionServiceImpl &partitionService_;
                 std::string name_;
                 spi::ClientContext &context_;
             };

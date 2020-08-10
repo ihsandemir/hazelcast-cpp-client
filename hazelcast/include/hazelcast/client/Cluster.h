@@ -23,11 +23,12 @@
 namespace hazelcast {
     namespace client {
         namespace spi {
-            class ClientClusterService;
+            namespace impl {
+                class ClientClusterServiceImpl;
+            }
         }
 
         class MembershipListener;
-
         class InitialMembershipListener;
 
         /**
@@ -38,7 +39,7 @@ namespace hazelcast {
             /**
              * Constructor
              */
-            Cluster(spi::ClientClusterService &clusterService);
+            Cluster(spi::impl::ClientClusterServiceImpl &clusterService);
 
             /**
              * @deprecated Please use {@link addMembershipListener(const std::shared_ptr<MembershipListener> &)}
@@ -142,7 +143,7 @@ namespace hazelcast {
             std::vector<Member> getMembers();
 
         private:
-            spi::ClientClusterService &clusterService;
+            spi::impl::ClientClusterServiceImpl &clusterService;
         };
     }
 }

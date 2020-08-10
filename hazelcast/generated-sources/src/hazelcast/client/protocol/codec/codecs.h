@@ -1507,6 +1507,37 @@ namespace hazelcast {
                  ClientMessage HAZELCAST_API set_isempty_encode(std::string const & name);
 
                 /**
+                 * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
+                 * Invocation has no additional effect if already shut down.
+                 */
+                 ClientMessage HAZELCAST_API executorservice_shutdown_encode(std::string const & name);
+
+                /**
+                 * Returns true if this executor has been shut down.
+                 */
+                 ClientMessage HAZELCAST_API executorservice_isshutdown_encode(std::string const & name);
+
+                /**
+                 * Cancels the task running on the member that owns the partition with the given id.
+                 */
+                 ClientMessage HAZELCAST_API executorservice_cancelonpartition_encode(boost::uuids::uuid uuid, bool interrupt);
+
+                /**
+                 * Cancels the task running on the member with the given address.
+                 */
+                 ClientMessage HAZELCAST_API executorservice_cancelonmember_encode(boost::uuids::uuid uuid, boost::uuids::uuid memberUUID, bool interrupt);
+
+                /**
+                 * Submits the task to the member that owns the partition with the given id.
+                 */
+                 ClientMessage HAZELCAST_API executorservice_submittopartition_encode(std::string const & name, boost::uuids::uuid uuid, Data const & callable);
+
+                /**
+                 * Submits the task to member specified by the address.
+                 */
+                 ClientMessage HAZELCAST_API executorservice_submittomember_encode(std::string const & name, boost::uuids::uuid uuid, Data const & callable, boost::uuids::uuid memberUUID);
+
+                /**
                  * Associates a given value to the specified key and replicates it to the cluster. If there is an old value, it will
                  * be replaced by the specified one and returned from the call. In addition, you have to specify a ttl and its TimeUnit
                  * to define when the value is outdated and thus should be removed from the replicated map.
@@ -1949,6 +1980,21 @@ namespace hazelcast {
                  ClientMessage HAZELCAST_API transactionalqueue_size_encode(std::string const & name, boost::uuids::uuid txnId, int64_t threadId);
 
                 /**
+                 * Commits the transaction with the given id.
+                 */
+                 ClientMessage HAZELCAST_API transaction_commit_encode(boost::uuids::uuid transactionId, int64_t threadId);
+
+                /**
+                 * Creates a transaction with the given parameters.
+                 */
+                 ClientMessage HAZELCAST_API transaction_create_encode(int64_t timeout, int32_t durability, int32_t transactionType, int64_t threadId);
+
+                /**
+                 * Rollbacks the transaction with the given id.
+                 */
+                 ClientMessage HAZELCAST_API transaction_rollback_encode(boost::uuids::uuid transactionId, int64_t threadId);
+
+                /**
                  * Returns number of items in the ringbuffer. If no ttl is set, the size will always be equal to capacity after the
                  * head completed the first looparound the ring. This is because no items are getting retired.
                  */
@@ -2023,6 +2069,44 @@ namespace hazelcast {
                  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
                  */
                  ClientMessage HAZELCAST_API ringbuffer_readmany_encode(std::string const & name, int64_t startSequence, int32_t minCount, int32_t maxCount,  const Data * filter);
+
+                /**
+                 * Fetches a new batch of ids for the given flake id generator.
+                 */
+                 ClientMessage HAZELCAST_API flakeidgenerator_newidbatch_encode(std::string const & name, int32_t batchSize);
+
+                /**
+                 * Query operation to retrieve the current value of the PNCounter.
+                 * <p>
+                 * The invocation will return the replica timestamps (vector clock) which
+                 * can then be sent with the next invocation to keep session consistency
+                 * guarantees.
+                 * The target replica is determined by the {@code targetReplica} parameter.
+                 * If smart routing is disabled, the actual member processing the client
+                 * message may act as a proxy.
+                 */
+                 ClientMessage HAZELCAST_API pncounter_get_encode(std::string const & name, std::vector<std::pair<boost::uuids::uuid, int64_t>> const & replicaTimestamps, boost::uuids::uuid targetReplicaUUID);
+
+                /**
+                 * Adds a delta to the PNCounter value. The delta may be negative for a
+                 * subtraction.
+                 * <p>
+                 * The invocation will return the replica timestamps (vector clock) which
+                 * can then be sent with the next invocation to keep session consistency
+                 * guarantees.
+                 * The target replica is determined by the {@code targetReplica} parameter.
+                 * If smart routing is disabled, the actual member processing the client
+                 * message may act as a proxy.
+                 */
+                 ClientMessage HAZELCAST_API pncounter_add_encode(std::string const & name, int64_t delta, bool getBeforeUpdate, std::vector<std::pair<boost::uuids::uuid, int64_t>> const & replicaTimestamps, boost::uuids::uuid targetReplicaUUID);
+
+                /**
+                 * Returns the configured number of CRDT replicas for the PN counter with
+                 * the given {@code name}.
+                 * The actual replica count may be less, depending on the number of data
+                 * members in the cluster (members that own data).
+                 */
+                 ClientMessage HAZELCAST_API pncounter_getconfiguredreplicacount_encode(std::string const & name);
 
             }
         }
