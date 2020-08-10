@@ -88,9 +88,9 @@ namespace hazelcast {
 
                 void setRemoteAddress(const std::shared_ptr<Address> &endpoint);
 
-                const boost::uuids::uuid &getRemoteUuid() const;
+                boost::uuids::uuid getRemoteUuid() const;
 
-                void setRemoteUuid(const boost::uuids::uuid &remoteUuid);
+                void setRemoteUuid(boost::uuids::uuid remoteUuid);
 
                 virtual void handleClientMessage(const std::shared_ptr<protocol::ClientMessage> &message);
 

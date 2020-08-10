@@ -79,7 +79,7 @@ namespace hazelcast {
              *
              * @return UUID of this member.
              */
-            const boost::uuids::uuid &getUuid() const;
+            boost::uuids::uuid getUuid() const;
 
             const std::unordered_map<std::string, std::string> &getAttributes() const;
 

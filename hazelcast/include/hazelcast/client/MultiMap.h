@@ -175,7 +175,7 @@ namespace hazelcast {
             * @return returns registration id.
             */
             template<typename Listener>
-            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener, bool includeValue) {
+            boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, bool includeValue) {
                 return proxy::MultiMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::multimap_addentrylistener_handler>(
@@ -200,7 +200,7 @@ namespace hazelcast {
             * @return returns registration id.
             */
             template<typename Listener, typename K>
-            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener, const K &key, bool includeValue) {
+            boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, const K &key, bool includeValue) {
                 return proxy::MultiMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::multimap_addentrylistenertokey_handler>(

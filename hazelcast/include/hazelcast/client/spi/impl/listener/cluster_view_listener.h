@@ -46,9 +46,9 @@ namespace hazelcast {
                             virtual void onListenerRegister();
 
                             virtual void
-                            handle_membersview(const int32_t &version, const std::vector<Member> &memberInfos);
+                            handle_membersview(int32_t version, const std::vector<Member> &memberInfos);
 
-                            virtual void handle_partitionsview(const int32_t &version,
+                            virtual void handle_partitionsview(int32_t version,
                                                                const std::vector<std::pair<boost::uuids::uuid, std::vector<int>>> &partitions);
 
                             std::shared_ptr<connection::Connection> connection_;

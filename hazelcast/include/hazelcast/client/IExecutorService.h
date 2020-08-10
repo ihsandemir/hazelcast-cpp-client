@@ -63,7 +63,7 @@ namespace hazelcast {
             public:
                 executor_promise(spi::ClientContext &context) : context(context) {}
 
-                executor_promise(boost::future<boost::optional<T>> &future, const boost::uuids::uuid &uuid, int partitionId,
+                executor_promise(boost::future<boost::optional<T>> &future, boost::uuids::uuid uuid, int partitionId,
                                  const Address &address, spi::ClientContext &context,
                                  const std::shared_ptr<spi::impl::ClientInvocation> &invocation)
                         : sharedFuture(future.share()), uuid(uuid), partitionId(partitionId), address(address),
@@ -601,7 +601,7 @@ namespace hazelcast {
 
             std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
             invokeOnPartitionInternal(const serialization::pimpl::Data &taskData, int partitionId,
-                                      const boost::uuids::uuid &uuid) {
+                                      boost::uuids::uuid uuid) {
                 return invokeOnPartitionOwner(
                         protocol::codec::executorservice_submittopartition_encode(name, uuid, taskData), partitionId);
             }
@@ -679,7 +679,7 @@ namespace hazelcast {
             template<typename HazelcastSerializable>
             std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
             invokeOnAddressInternal(const HazelcastSerializable &task, const Address &address,
-                                    const boost::uuids::uuid &uuid) {
+                                    boost::uuids::uuid uuid) {
                 return invokeOnTarget(
                         protocol::codec::executorservice_submittoaddress_encode(name, uuid, toData(task), address),
                         address);
@@ -704,7 +704,7 @@ namespace hazelcast {
             executor_promise<T>
             checkSync(
                     std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>> &futurePair,
-                    const boost::uuids::uuid &uuid, int partitionId, bool preventSync) {
+                    boost::uuids::uuid uuid, int partitionId, bool preventSync) {
                 return checkSync<T>(futurePair, uuid, partitionId, Address(), preventSync);
             }
 
@@ -723,7 +723,7 @@ namespace hazelcast {
             typename std::enable_if<!std::is_same<executor_marker, T>::value, executor_promise<T>>::type
             checkSync(
                     std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>> &futurePair,
-                    const boost::uuids::uuid &uuid, int partitionId, const Address &address, bool preventSync) {
+                    boost::uuids::uuid uuid, int partitionId, const Address &address, bool preventSync) {
                 bool sync = isSyncComputation(preventSync);
                 boost::future<boost::optional<T>> objectFuture;
                 if (sync) {
@@ -744,7 +744,7 @@ namespace hazelcast {
             typename std::enable_if<std::is_same<executor_marker, T>::value, executor_promise<T>>::type
             checkSync(
                     std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>> &futurePair,
-                    const boost::uuids::uuid &uuid, int partitionId, const Address &address, bool preventSync) {
+                    boost::uuids::uuid uuid, int partitionId, const Address &address, bool preventSync) {
                 bool sync = isSyncComputation(preventSync);
                 if (sync) {
                     futurePair.first.get();

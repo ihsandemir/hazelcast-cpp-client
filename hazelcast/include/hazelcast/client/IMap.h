@@ -473,7 +473,7 @@ namespace hazelcast {
             * @return registrationId of added listener that can be used to remove the entry listener.
             */
             template<typename Listener>
-            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener, bool includeValue) {
+            boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistener_handler>(
@@ -499,7 +499,7 @@ namespace hazelcast {
             * @return registrationId of added listener that can be used to remove the entry listener.
             */
             template<typename Listener, typename P>
-            boost::future<boost::optional<boost::uuids::uuid>>
+            boost::future<boost::uuids::uuid>
             addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
@@ -524,7 +524,7 @@ namespace hazelcast {
             *                     contain the value.
             */
             template<typename Listener, typename K>
-            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
+            boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
                 return proxy::IMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistenertokey_handler>(

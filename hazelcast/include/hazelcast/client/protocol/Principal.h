@@ -33,9 +33,9 @@ namespace hazelcast {
             public:
                 Principal(boost::uuids::uuid uuid, boost::uuids::uuid ownerUuid);
 
-                const boost::uuids::uuid &getUuid() const;
+                boost::uuids::uuid getUuid() const;
 
-                const boost::uuids::uuid &getOwnerUuid() const;
+                boost::uuids::uuid getOwnerUuid() const;
 
                 friend bool operator==(const Principal &lhs, const Principal &rhs);
 

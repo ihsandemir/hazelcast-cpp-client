@@ -141,20 +141,20 @@ namespace hazelcast {
                 return invokeAndGetFuture<int>(request, key);
             }
 
-            boost::future<boost::optional<boost::uuids::uuid>>
+            boost::future<boost::uuids::uuid>
             MultiMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                                            bool includeValue) {
                 return registerListener(createMultiMapEntryListenerCodec(includeValue), std::move(entryEventHandler));
             }
 
-            boost::future<boost::optional<boost::uuids::uuid>>
+            boost::future<boost::uuids::uuid>
             MultiMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                                            bool includeValue, Data &&key) {
                 return registerListener(createMultiMapEntryListenerCodec(includeValue, std::move(key)),
                                         std::move(entryEventHandler));
             }
 
-            boost::future<bool> MultiMapImpl::removeEntryListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+            boost::future<bool> MultiMapImpl::removeEntryListener(boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -234,7 +234,7 @@ namespace hazelcast {
 
             protocol::ClientMessage
             MultiMapImpl::MultiMapEntryListenerMessageCodec::encodeRemoveRequest(
-                    const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+                    boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::multimap_removeentrylistener_encode(name, realRegistrationId);
             }
 
@@ -246,7 +246,7 @@ namespace hazelcast {
 
             protocol::ClientMessage
             MultiMapImpl::MultiMapEntryListenerToKeyCodec::encodeRemoveRequest(
-                    const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+                    boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::multimap_removeentrylistener_encode(name, realRegistrationId);
             }
 
@@ -549,7 +549,7 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            boost::future<bool> IListImpl::removeItemListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+            boost::future<bool> IListImpl::removeItemListener(boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -666,7 +666,7 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            IListImpl::ListListenerMessageCodec::encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+            IListImpl::ListListenerMessageCodec::encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::list_removelistener_encode(name, realRegistrationId);
             }
 
@@ -793,7 +793,7 @@ namespace hazelcast {
             }
 
             boost::future<bool> IQueueImpl::removeItemListener(
-                    const boost::optional<boost::uuids::uuid> &registrationId) {
+                    boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -901,7 +901,7 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            IQueueImpl::QueueListenerMessageCodec::encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+            IQueueImpl::QueueListenerMessageCodec::encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::queue_removelistener_encode(name, realRegistrationId);
             }
 
@@ -1168,14 +1168,14 @@ namespace hazelcast {
             }
 
             // TODO: We can use generic template Listener instead of impl::BaseEventHandler to prevent the virtual function calls
-            boost::future<boost::optional<boost::uuids::uuid>>
+            boost::future<boost::uuids::uuid>
             IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 auto listenerFlags = EntryEvent::type::ALL;
                 return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), std::move(entryEventHandler));
             }
 
-            boost::future<boost::optional<boost::uuids::uuid>>
+            boost::future<boost::uuids::uuid>
             IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                     Data &&predicate, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
@@ -1183,11 +1183,11 @@ namespace hazelcast {
                 return registerListener(createMapEntryListenerCodec(includeValue, std::move(predicate), listenerFlags), std::move(entryEventHandler));
             }
 
-            boost::future<bool> IMapImpl::removeEntryListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+            boost::future<bool> IMapImpl::removeEntryListener(boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            boost::future<boost::optional<boost::uuids::uuid>> IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+            boost::future<boost::uuids::uuid> IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                                                                                           bool includeValue, Data &&key) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 EntryEvent::type listenerFlags = EntryEvent::type::ALL;
@@ -1382,7 +1382,7 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            IMapImpl::MapEntryListenerMessageCodec::encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+            IMapImpl::MapEntryListenerMessageCodec::encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::map_removeentrylistener_encode(name, realRegistrationId);
             }
 
@@ -1393,7 +1393,7 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            IMapImpl::MapEntryListenerToKeyCodec::encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+            IMapImpl::MapEntryListenerToKeyCodec::encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::map_removeentrylistener_encode(name, realRegistrationId);
             }
 
@@ -1416,7 +1416,7 @@ namespace hazelcast {
 
             protocol::ClientMessage
             IMapImpl::MapEntryListenerWithPredicateMessageCodec::encodeRemoveRequest(
-                    const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+                    boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::map_removeentrylistener_encode(name, realRegistrationId);
             }
 
@@ -1452,7 +1452,7 @@ namespace hazelcast {
                 partitionId = getPartitionId(keyData);
             }
 
-            boost::future<bool> ISetImpl::removeItemListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+            boost::future<bool> ISetImpl::removeItemListener(boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -1526,7 +1526,7 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            ISetImpl::SetListenerMessageCodec::encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+            ISetImpl::SetListenerMessageCodec::encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::set_removelistener_encode(name, realRegistrationId);
             }
 
@@ -1539,11 +1539,11 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            boost::future<boost::optional<boost::uuids::uuid>> ITopicImpl::addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler) {
+            boost::future<boost::uuids::uuid> ITopicImpl::addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler) {
                 return registerListener(createItemListenerCodec(), std::move(topicEventHandler));
             }
 
-            boost::future<bool> ITopicImpl::removeMessageListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+            boost::future<bool> ITopicImpl::removeMessageListener(boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
@@ -1559,7 +1559,7 @@ namespace hazelcast {
             }
 
             protocol::ClientMessage
-            ITopicImpl::TopicListenerMessageCodec::encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const {
+            ITopicImpl::TopicListenerMessageCodec::encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const {
                 return protocol::codec::topic_removemessagelistener_encode(name, realRegistrationId);
             }
 

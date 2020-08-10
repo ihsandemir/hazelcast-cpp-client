@@ -51,7 +51,7 @@ namespace hazelcast {
                 *
                 * @return true if registration is removed, false otherwise
                 */
-                boost::future<bool> removeEntryListener(const boost::optional<boost::uuids::uuid> &registrationId);
+                boost::future<bool> removeEntryListener(boost::uuids::uuid registrationId);
             protected:
                 MultiMapImpl(const std::string& instanceName, spi::ClientContext *context);
 
@@ -77,10 +77,10 @@ namespace hazelcast {
 
                 boost::future<int> valueCount(const serialization::pimpl::Data& key);
 
-                boost::future<boost::optional<boost::uuids::uuid>>
+                boost::future<boost::uuids::uuid>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
 
-                boost::future<boost::optional<boost::uuids::uuid>>
+                boost::future<boost::uuids::uuid>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
                                  Data &&key);
 
@@ -110,7 +110,7 @@ namespace hazelcast {
 
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    protocol::ClientMessage encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
                 private:
                     std::string name;
                     bool includeValue;
@@ -123,7 +123,7 @@ namespace hazelcast {
 
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    protocol::ClientMessage encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
                 private:
                     std::string  name;
                     bool includeValue;

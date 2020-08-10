@@ -40,7 +40,7 @@ namespace hazelcast {
                 * @return true if registration is removed, false otherwise
                 */
                 boost::future<bool> removeItemListener(
-                        const boost::optional<boost::uuids::uuid> &registrationId);
+                        boost::uuids::uuid registrationId);
 
                 /**
                 *
@@ -68,7 +68,7 @@ namespace hazelcast {
                 IQueueImpl(const std::string& instanceName, spi::ClientContext *context);
 
                 template<typename Listener>
-                boost::future<boost::optional<boost::uuids::uuid>>
+                boost::future<boost::uuids::uuid>
                 addItemListener(std::unique_ptr<impl::ItemEventHandler<Listener, protocol::codec::queue_addlistener_handler>> &&itemEventHandler, bool includeValue) {
                     return registerListener(createItemListenerCodec(includeValue), std::move(itemEventHandler));
                 }
@@ -107,7 +107,7 @@ namespace hazelcast {
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
 
                 private:
                     std::string name;

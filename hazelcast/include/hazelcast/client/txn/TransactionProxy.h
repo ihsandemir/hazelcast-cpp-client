@@ -80,7 +80,7 @@ namespace hazelcast {
 
                 TransactionProxy(const TransactionProxy &rhs);
 
-                const boost::optional<boost::uuids::uuid> &getTxnId() const;
+                boost::uuids::uuid getTxnId() const;
 
                 TxnState getState() const;
 
@@ -106,7 +106,7 @@ namespace hazelcast {
                 util::AtomicBoolean TRANSACTION_EXISTS;
 
                 int64_t threadId;
-                boost::optional<boost::uuids::uuid> txnId;
+                boost::uuids::uuid txnId;
 
                 TxnState state;
                 std::chrono::steady_clock::time_point startTime;

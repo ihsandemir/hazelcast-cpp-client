@@ -57,7 +57,7 @@ namespace hazelcast {
 
                     void shutdown();
 
-                    boost::optional<Member> getMember(const boost::uuids::uuid &uuid) override;
+                    boost::optional<Member> getMember(boost::uuids::uuid uuid) override;
 
                     std::vector<Member> getMemberList() override;
 
@@ -68,11 +68,11 @@ namespace hazelcast {
 
                     boost::uuids::uuid addMembershipListener(const std::shared_ptr<MembershipListener> &listener) override;
 
-                    bool removeMembershipListener(const boost::uuids::uuid &registrationId) override;
+                    bool removeMembershipListener(boost::uuids::uuid registrationId) override;
 
                     void clear_member_list_version();
 
-                    void handle_event(const int32_t &version, const std::vector<Member> &memberInfos);
+                    void handle_event(int32_t version, const std::vector<Member> &memberInfos);
 
                 private:
                     struct member_list_snapshot {
@@ -93,7 +93,7 @@ namespace hazelcast {
 
                     void fireInitialMembershipEvent(const InitialMembershipEvent &event);
 
-                    static member_list_snapshot create_snapshot(const int32_t &version, const std::vector<Member> &vector);
+                    static member_list_snapshot create_snapshot(int32_t version, const std::vector<Member> &vector);
 
                     static std::string members_string(const member_list_snapshot& snapshot);
 

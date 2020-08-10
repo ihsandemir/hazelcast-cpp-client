@@ -1220,7 +1220,7 @@ namespace hazelcast {
 
                 auto uuid = future.get();
                 ASSERT_TRUE(uuid);
-                ASSERT_EQ(boost::uuids::to_string(members[0].getUuid()), *uuid);
+                ASSERT_EQ(boost::uuids::to_string(members[0].getUuid()), uuid);
             }
 
             TEST_F(ClientExecutorServiceTest, testSubmitCallableToMembers) {
@@ -1240,7 +1240,7 @@ namespace hazelcast {
                     ASSERT_NE(futuresMap.end(), it);
                     auto uuid = (*it).second.get_future().get();
                     ASSERT_TRUE(uuid);
-                    ASSERT_EQ(boost::uuids::to_string(member.getUuid()), *uuid);
+                    ASSERT_EQ(boost::uuids::to_string(member.getUuid()), uuid);
                 }
             }
 
@@ -1274,7 +1274,7 @@ namespace hazelcast {
 
                     auto uuid = future.get();
                     ASSERT_TRUE(uuid);
-                    ASSERT_EQ(boost::uuids::to_string(member.getUuid()), *uuid);
+                    ASSERT_EQ(boost::uuids::to_string(member.getUuid()), uuid);
                 }
             }
 

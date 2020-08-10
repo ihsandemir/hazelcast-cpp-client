@@ -269,9 +269,9 @@ namespace hazelcast {
                     auto response = f.get();
                     auto *f = reinterpret_cast<ClientMessage::frame_header_t *>(response.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
                     result = {
-                            response.get<byte>(), response.get<boost::optional<boost::uuids::uuid>>(),
+                            response.get<byte>(), response.get<boost::uuids::uuid>(),
                             response.get<byte>(), response.get<int32_t>(),
-                            response.get<boost::optional<boost::uuids::uuid>>()
+                            response.get<boost::uuids::uuid>()
                     };
                     // skip first frame
                     response.rd_ptr(f->frame_len - ClientMessage::RESPONSE_HEADER_LEN - 2 * ClientMessage::UINT8_SIZE -
@@ -647,7 +647,7 @@ namespace hazelcast {
                 return *connections.begin();
             }
 
-            const boost::uuids::uuid &ClientConnectionManagerImpl::getClientUuid() const {
+            boost::uuids::uuid ClientConnectionManagerImpl::getClientUuid() const {
                 return client_uuid_;
             }
 
@@ -954,11 +954,11 @@ namespace hazelcast {
                 invocations.erase(callId);
             }
 
-            const boost::uuids::uuid &Connection::getRemoteUuid() const {
+            boost::uuids::uuid Connection::getRemoteUuid() const {
                 return remote_uuid_;
             }
 
-            void Connection::setRemoteUuid(const boost::uuids::uuid &remoteUuid) {
+            void Connection::setRemoteUuid(boost::uuids::uuid remoteUuid) {
                 remote_uuid_ = remoteUuid;
             }
 

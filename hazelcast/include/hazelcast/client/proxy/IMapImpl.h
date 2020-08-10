@@ -71,7 +71,7 @@ namespace hazelcast {
                 *
                 * @return true if registration is removed, false otherwise
                 */
-                boost::future<bool> removeEntryListener(const boost::optional<boost::uuids::uuid> &registrationId);
+                boost::future<bool> removeEntryListener(boost::uuids::uuid registrationId);
 
                 /**
                 * Returns the number of key-value mappings in this map.  If the
@@ -157,14 +157,14 @@ namespace hazelcast {
 
                 boost::future<std::string> addInterceptor(const serialization::pimpl::Data &interceptor);
 
-                boost::future<boost::optional<boost::uuids::uuid>>
+                boost::future<boost::uuids::uuid>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
 
-                boost::future<boost::optional<boost::uuids::uuid>>
+                boost::future<boost::uuids::uuid>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, Data &&predicate,
                                  bool includeValue);
 
-                boost::future<boost::optional<boost::uuids::uuid>>
+                boost::future<boost::uuids::uuid>
                 addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
                                  Data &&key);
 
@@ -270,7 +270,7 @@ namespace hazelcast {
 
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    protocol::ClientMessage encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
                 private:
                     std::string name;
                     bool includeValue;
@@ -285,7 +285,7 @@ namespace hazelcast {
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
 
                 private:
                     std::string name;
@@ -300,7 +300,7 @@ namespace hazelcast {
 
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    protocol::ClientMessage encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
 
                 private:
                     std::string name;

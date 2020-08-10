@@ -84,6 +84,7 @@ namespace hazelcast {
 
                 namespace listener {
                     class cluster_view_listener;
+                    class listener_service_impl;
                 }
             }
 
@@ -106,7 +107,7 @@ namespace hazelcast {
 
                 LifecycleService &getLifecycleService();
 
-                ClientListenerService &getClientListenerService();
+                spi::impl::listener::listener_service_impl &getClientListenerService();
 
                 connection::ClientConnectionManagerImpl &getConnectionManager();
 

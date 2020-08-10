@@ -395,23 +395,14 @@ namespace hazelcast {
                 }
 
                 template<typename T>
-                typename std::enable_if<std::is_same<T, boost::optional<boost::uuids::uuid>>::value, T>::type
+                typename std::enable_if<std::is_same<T, boost::uuids::uuid>::value, T>::type
                 inline get() {
                     if (get<bool>()) {
                         // skip the next 16 bytes
                         rd_ptr(sizeof(boost::uuids::uuid));
-                        return boost::none;
-                    }
-                    return get_uuid();
-                }
-
-                template<typename T>
-                typename std::enable_if<std::is_same<T, boost::uuids::uuid>::value, T>::type
-                inline get() {
-                    if (get<bool>()) {
-                        // skip 16 bytes
-                        rd_ptr(sizeof(boost::uuids::uuid));
-                        return boost::uuids::uuid();
+                        boost::uuids::uuid id;
+                        std::memset(&id, 0, sizeof(boost::uuids::uuid));
+                        return id;
                     }
                     return get_uuid();
                 }
@@ -501,7 +492,7 @@ namespace hazelcast {
                     return get<T>();
                 }
 
-                inline boost::optional<boost::uuids::uuid> get_first_uuid() {
+                inline boost::uuids::uuid get_first_uuid() {
                     assert(buffer_index == 0 && offset == 0);
                     // skip header
                     rd_ptr(REQUEST_HEADER_LEN);
@@ -617,19 +608,9 @@ namespace hazelcast {
                     }
                 }
 
-                inline void set(const boost::uuids::uuid &uuid) {
+                inline void set(boost::uuids::uuid uuid) {
                     set(uuid.is_nil());
                     std::memcpy(wr_ptr(sizeof(boost::uuids::uuid)), uuid.data, sizeof(boost::uuids::uuid));
-                }
-
-                void set(const boost::optional<boost::uuids::uuid> &uuid) {
-                    set(!uuid.has_value() || uuid->is_nil());
-                    if (uuid) {
-                        std::memcpy(wr_ptr(sizeof(boost::uuids::uuid)), uuid->data, sizeof(boost::uuids::uuid));
-                    } else {
-                        // skip the next 16 bytes
-                        wr_ptr(sizeof(boost::uuids::uuid));
-                    }
                 }
 
                 inline void set(const serialization::pimpl::Data &value, bool is_final = false) {
@@ -646,7 +627,7 @@ namespace hazelcast {
                     setNullable<serialization::pimpl::Data>(value);
                 }
 
-                void set(unsigned char *memory, const boost::uuids::uuid &uuid);
+                void set(unsigned char *memory, boost::uuids::uuid uuid);
 
                 template<typename K, typename V>
                 void set(const std::pair<K, V> &entry) {

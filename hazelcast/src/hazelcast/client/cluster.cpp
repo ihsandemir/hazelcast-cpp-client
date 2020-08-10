@@ -69,7 +69,7 @@ namespace hazelcast {
             return clusterService.addMembershipListener(listener);
         }
 
-        bool Cluster::removeMembershipListener(const boost::uuids::uuid &registrationId) {
+        bool Cluster::removeMembershipListener(boost::uuids::uuid registrationId) {
             return clusterService.removeMembershipListener(registrationId);
         }
 
@@ -104,7 +104,7 @@ namespace hazelcast {
             return address;
         }
 
-        const boost::uuids::uuid &Member::getUuid() const {
+        boost::uuids::uuid Member::getUuid() const {
             return uuid;
         }
 
@@ -162,7 +162,7 @@ namespace hazelcast {
         Endpoint::Endpoint(boost::uuids::uuid uuid, boost::optional<Address> socketAddress)
                 : uuid(uuid), socketAddress(std::move(socketAddress)) {}
 
-        const boost::uuids::uuid &Endpoint::getUuid() const {
+        boost::uuids::uuid Endpoint::getUuid() const {
             return uuid;
         }
 
@@ -203,11 +203,11 @@ namespace hazelcast {
 
         MembershipListener::~MembershipListener() = default;
 
-        const boost::uuids::uuid & MembershipListener::getRegistrationId() const {
+        boost::uuids::uuid  MembershipListener::getRegistrationId() const {
             return registrationId;
         }
 
-        void MembershipListener::setRegistrationId(const boost::uuids::uuid &registrationId) {
+        void MembershipListener::setRegistrationId(boost::uuids::uuid registrationId) {
             this->registrationId = registrationId;
         }
 
@@ -232,11 +232,11 @@ namespace hazelcast {
             return listener->shouldRequestInitialMembers();
         }
 
-        void MembershipListenerDelegator::setRegistrationId(const boost::uuids::uuid &registrationId) {
+        void MembershipListenerDelegator::setRegistrationId(boost::uuids::uuid registrationId) {
             listener->setRegistrationId(registrationId);
         }
 
-        const boost::uuids::uuid & MembershipListenerDelegator::getRegistrationId() const {
+        boost::uuids::uuid  MembershipListenerDelegator::getRegistrationId() const {
             return listener->getRegistrationId();
         }
 
@@ -267,11 +267,11 @@ namespace hazelcast {
             return listener->shouldRequestInitialMembers();
         }
 
-        const boost::uuids::uuid & InitialMembershipListenerDelegator::getRegistrationId() const {
+        boost::uuids::uuid  InitialMembershipListenerDelegator::getRegistrationId() const {
             return listener->getRegistrationId();
         }
 
-        void InitialMembershipListenerDelegator::setRegistrationId(const boost::uuids::uuid &registrationId) {
+        void InitialMembershipListenerDelegator::setRegistrationId(boost::uuids::uuid registrationId) {
             listener->setRegistrationId(registrationId);
         }
 
@@ -389,7 +389,7 @@ namespace hazelcast {
                     return anyTimestampGreater || other.replicaTimestamps.size() < replicaTimestamps.size();
                 }
 
-                std::pair<bool, int64_t> VectorClock::getTimestampForReplica(const boost::uuids::uuid &replicaId) {
+                std::pair<bool, int64_t> VectorClock::getTimestampForReplica(boost::uuids::uuid replicaId) {
                     if (replicaTimestamps.count(replicaId) == 0) {
                         return std::make_pair(false, -1);
                     }

@@ -39,10 +39,10 @@ namespace hazelcast {
 
                     virtual protocol::ClientMessage encodeAddRequest(bool localOnly) const = 0;
 
-                    boost::optional<boost::uuids::uuid> decodeAddResponse(protocol::ClientMessage &msg) const;
+                    boost::uuids::uuid decodeAddResponse(protocol::ClientMessage &msg) const;
 
                     virtual protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const = 0;
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const = 0;
 
                     bool decodeRemoveResponse(protocol::ClientMessage &msg) const;
                 };

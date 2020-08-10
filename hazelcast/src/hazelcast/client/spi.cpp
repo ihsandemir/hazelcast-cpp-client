@@ -124,55 +124,11 @@ namespace hazelcast {
                 proxies.clear();
             }
 
-            void ProxyManager::initializeWithRetry(const std::shared_ptr<ClientProxy> &clientProxy) {
-                auto start = std::chrono::steady_clock::now();
-                while (std::chrono::steady_clock::now() < start + invocationTimeout) {
-                    try {
-                        initialize(clientProxy);
-                        return;
-                    } catch (exception::IException &e) {
-                        bool retryable = isRetryable(e);
-                        if (!retryable) {
-                            try {
-                                throw;
-                            } catch (exception::ExecutionException &) {
-                                try {
-                                    std::rethrow_if_nested(std::current_exception());
-                                } catch (exception::IException &ie) {
-                                    retryable = isRetryable(ie);
-                                }
-                            }
-                        }
-
-                        if (retryable) {
-                            sleepForProxyInitRetry();
-                        } else {
-                            throw;
-                        }
-                    }
-                }
-                auto elapsedTime = std::chrono::steady_clock::now() - start;
-                throw (exception::ExceptionBuilder<exception::OperationTimeoutException>(
-                        "ProxyManager::initializeWithRetry") << "Initializing  " << clientProxy->getServiceName() << ":"
-                                                             << clientProxy->getName() << " is timed out after "
-                                                             << std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count() << " ms. Configured invocation timeout is "
-                                                             << std::chrono::duration_cast<std::chrono::milliseconds>(invocationTimeout).count() << " ms").build();
-            }
-
             void ProxyManager::initialize(const std::shared_ptr<ClientProxy> &clientProxy) {
                 auto clientMessage = protocol::codec::client_createproxy_encode(clientProxy->getName(),
                         clientProxy->getServiceName());
                 spi::impl::ClientInvocation::create(client, clientMessage, clientProxy->getServiceName())->invoke().get();
                 clientProxy->onInitialize();
-            }
-
-            bool ProxyManager::isRetryable(exception::IException &exception) {
-                return spi::impl::ClientInvocation::should_retry(exception);
-            }
-
-            void ProxyManager::sleepForProxyInitRetry() {
-                // TODO: change to interruptible sleep
-                std::this_thread::sleep_for(invocationRetryPause);
             }
 
             boost::future<void> ProxyManager::destroyProxy(ClientProxy &proxy) {
@@ -232,7 +188,7 @@ namespace hazelcast {
                 return hazelcastClient.lifecycleService;
             }
 
-            ClientListenerService &ClientContext::getClientListenerService() {
+            spi::impl::listener::listener_service_impl &ClientContext::getClientListenerService() {
                 return *hazelcastClient.listenerService;
             }
 
@@ -491,7 +447,7 @@ namespace hazelcast {
                         boost::launch::deferred, [](boost::future<protocol::ClientMessage> f) { f.get(); });
             }
 
-            boost::future<boost::optional<boost::uuids::uuid>>
+            boost::future<boost::uuids::uuid>
             ClientProxy::registerListener(std::unique_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
                                           std::unique_ptr<client::impl::BaseEventHandler> handler) {
                 handler->setLogger(&getContext().getLogger());
@@ -499,12 +455,12 @@ namespace hazelcast {
                                                                                 std::move(handler));
             }
 
-            boost::future<bool> ClientProxy::deregisterListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+            boost::future<bool> ClientProxy::deregisterListener(boost::uuids::uuid registrationId) {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
             namespace impl {
-                boost::optional<boost::uuids::uuid>
+                boost::uuids::uuid
                 ListenerMessageCodec::decodeAddResponse(protocol::ClientMessage &msg) const {
                     return msg.get_first_uuid();
                 }
@@ -667,7 +623,7 @@ namespace hazelcast {
                     return id;
                 }
 
-                boost::optional<Member> ClientClusterServiceImpl::getMember(const boost::uuids::uuid &uuid) {
+                boost::optional<Member> ClientClusterServiceImpl::getMember(boost::uuids::uuid uuid) {
                     assert(!uuid.is_nil());
                     auto members_view_ptr = member_list_snapshot_.load();
                     const auto it = members_view_ptr->members.find(uuid);
@@ -725,7 +681,7 @@ namespace hazelcast {
                     return id;
                 }
 
-                bool ClientClusterServiceImpl::removeMembershipListener(const boost::uuids::uuid &registrationId) {
+                bool ClientClusterServiceImpl::removeMembershipListener(boost::uuids::uuid registrationId) {
                     return listeners.remove(registrationId).get();
                 }
 
@@ -765,7 +721,7 @@ namespace hazelcast {
                 }
 
                 void
-                ClientClusterServiceImpl::handle_event(const int32_t &version, const std::vector<Member> &memberInfos) {
+                ClientClusterServiceImpl::handle_event(int32_t version, const std::vector<Member> &memberInfos) {
                     auto &logger = client.getLogger();
                     if (logger.isFinestEnabled()) {
                         auto snapshot = create_snapshot(version, memberInfos);
@@ -800,7 +756,7 @@ namespace hazelcast {
                 }
 
                 ClientClusterServiceImpl::member_list_snapshot
-                ClientClusterServiceImpl::create_snapshot(const int32_t &version, const std::vector<Member> &members) {
+                ClientClusterServiceImpl::create_snapshot(int32_t version, const std::vector<Member> &members) {
                     member_list_snapshot result;
                     result.version = version;
                     for (auto &m : members) {
@@ -1786,7 +1742,7 @@ namespace hazelcast {
                     listener_service_impl::registerListener(
                             std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
                             std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
-                        auto task = boost::packaged_task<boost::optional<boost::uuids::uuid>()>(std::bind(
+                        auto task = boost::packaged_task<boost::uuids::uuid()>(std::bind(
                                 [=](std::unique_ptr<impl::ListenerMessageCodec> &codec,
                                     std::unique_ptr<client::impl::BaseEventHandler> &h) {
                                     return registerListenerInternal(std::move(codec), std::move(h));
@@ -1902,7 +1858,7 @@ namespace hazelcast {
                             try {
                                 const auto &listenerMessageCodec = listenerRegistration->codec;
                                 auto serverRegistrationId = registration->server_registration_id;
-                                auto request = listenerMessageCodec->encodeRemoveRequest(boost::make_optional(serverRegistrationId));
+                                auto request = listenerMessageCodec->encodeRemoveRequest(serverRegistrationId);
                                 auto invocation = ClientInvocation::create(clientContext,request, "",
                                                                            subscriber);
                                 invocation->invoke().get();
@@ -1979,10 +1935,9 @@ namespace hazelcast {
                         auto serverRegistrationId = codec->decodeAddResponse(clientMessage);
                         handler->onListenerRegister();
                         int64_t correlationId = invocation->getClientMessage()->getCorrelationId();
-                        ClientEventRegistration registration(serverRegistrationId, correlationId, connection, codec);
 
                         (*listener_registration).registrations.put(connection, std::shared_ptr<connection_registration>(
-                                new connection_registration{*serverRegistrationId, correlationId}));
+                                new connection_registration{serverRegistrationId, correlationId}));
                     }
 
                     void listener_service_impl::processEventMessage(
@@ -2051,13 +2006,13 @@ namespace hazelcast {
                     }
 
                     void
-                    cluster_view_listener::event_handler::handle_membersview(const int32_t &version,
+                    cluster_view_listener::event_handler::handle_membersview(int32_t version,
                                                                              const std::vector<Member> &memberInfos) {
                         view_listener_.client_context_.getClientClusterService().handle_event(version, memberInfos);
                     }
 
                     void
-                    cluster_view_listener::event_handler::handle_partitionsview(const int32_t &version,
+                    cluster_view_listener::event_handler::handle_partitionsview(int32_t version,
                                                                                 const std::vector<std::pair<boost::uuids::uuid, std::vector<int>>> &partitions) {
                         view_listener_.client_context_.getPartitionService().handle_event(connection_, version, partitions);
                     }
@@ -2108,12 +2063,6 @@ namespace std {
     hash<hazelcast::client::spi::DefaultObjectNamespace>::operator()(
             const hazelcast::client::spi::DefaultObjectNamespace &k) const noexcept {
         return std::hash<std::string>()(k.getServiceName() + k.getObjectName());
-    }
-
-    std::size_t
-    hash<hazelcast::client::spi::impl::listener::ClientRegistrationKey>::operator()(
-            const hazelcast::client::spi::impl::listener::ClientRegistrationKey &val) const noexcept {
-        return boost::hash<boost::uuids::uuid>()(*val.getUserRegistrationId());
     }
 }
 

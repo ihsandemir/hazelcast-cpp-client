@@ -220,7 +220,7 @@ namespace hazelcast {
                 return os;
             }
 
-            void ClientMessage::set(unsigned char *memory, const boost::uuids::uuid &uuid) {
+            void ClientMessage::set(unsigned char *memory, boost::uuids::uuid uuid) {
                 std::memcpy(wr_ptr(uuid.size()), uuid.data, uuid.size());
             }
 
@@ -395,11 +395,11 @@ namespace hazelcast {
                 errorCodeToFactory[errorCode] = factory;
             }
 
-            const boost::uuids::uuid &Principal::getUuid() const {
+            boost::uuids::uuid Principal::getUuid() const {
                 return uuid;
             }
 
-            const boost::uuids::uuid &Principal::getOwnerUuid() const {
+            boost::uuids::uuid Principal::getOwnerUuid() const {
                 return ownerUuid;
             }
 

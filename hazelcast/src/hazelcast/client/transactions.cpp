@@ -71,7 +71,7 @@ namespace hazelcast {
                 TRANSACTION_EXISTS.store(nonConstRhs.TRANSACTION_EXISTS.load());
             }
 
-            const boost::optional<boost::uuids::uuid> &TransactionProxy::getTxnId() const {
+            boost::uuids::uuid TransactionProxy::getTxnId() const {
                 return txnId;
             }
 
@@ -549,7 +549,7 @@ namespace hazelcast {
 
             void TransactionalObject::onDestroy() {}
 
-            const boost::optional<boost::uuids::uuid> &TransactionalObject::getTransactionId() const {
+            boost::uuids::uuid TransactionalObject::getTransactionId() const {
                 return context.getTxnId();
             }
 
@@ -567,7 +567,7 @@ namespace hazelcast {
                                                                                                    txnConnection) {
         }
 
-        const boost::optional<boost::uuids::uuid> & TransactionContext::getTxnId() const {
+        boost::uuids::uuid  TransactionContext::getTxnId() const {
             return transaction.getTxnId();
         }
 

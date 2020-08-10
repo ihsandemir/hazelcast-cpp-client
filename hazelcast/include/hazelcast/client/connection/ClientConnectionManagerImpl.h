@@ -113,7 +113,7 @@ namespace hazelcast {
 
                 std::shared_ptr<Connection> get_random_connection();
 
-                const boost::uuids::uuid &getClientUuid() const;
+                boost::uuids::uuid getClientUuid() const;
 
                 void check_invocation_allowed();
             private:
@@ -121,10 +121,10 @@ namespace hazelcast {
 
                 struct auth_response {
                     byte status;
-                    boost::optional<boost::uuids::uuid> member_uuid;
+                    boost::uuids::uuid member_uuid;
                     byte serialization_version;
                     int32_t partition_count;
-                    boost::optional<boost::uuids::uuid> cluster_id;
+                    boost::uuids::uuid cluster_id;
                     Address address;
                     std::string server_version;
                 };

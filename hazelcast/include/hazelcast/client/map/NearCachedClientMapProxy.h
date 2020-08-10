@@ -432,8 +432,8 @@ namespace hazelcast {
                     }
 
                     void handle_imapinvalidation(const boost::optional<serialization::pimpl::Data> &key,
-                                                 const boost::optional<boost::uuids::uuid> &sourceUuid,
-                                                 const boost::optional<boost::uuids::uuid> &partitionUuid,
+                                                 boost::uuids::uuid sourceUuid,
+                                                 boost::uuids::uuid partitionUuid,
                                                  const int64_t &sequence) override {
                         // null key means Near Cache has to remove all entries in it (see MapAddNearCacheEntryListenerMessageTask)
                         if (!key) {
@@ -465,7 +465,7 @@ namespace hazelcast {
                     }
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override {
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override {
                         return protocol::codec::map_removeentrylistener_encode(name, realRegistrationId);
                     }
 
@@ -542,7 +542,7 @@ namespace hazelcast {
                 impl::nearcache::KeyStateMarker *keyStateMarker;
                 const config::NearCacheConfig<K, V> &nearCacheConfig;
                 std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, V>> nearCache;
-                boost::optional<boost::uuids::uuid> invalidationListenerId;
+                boost::uuids::uuid invalidationListenerId;
                 util::ILogger &logger;
             };
         }

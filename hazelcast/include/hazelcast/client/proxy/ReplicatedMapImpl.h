@@ -74,7 +74,7 @@ namespace hazelcast {
                  * @param registrationId ID of the registered entry listener.
                  * @return true if registration is removed, false otherwise.
                  */
-                boost::future<bool> removeEntryListener(const boost::optional<boost::uuids::uuid> &registrationId) {
+                boost::future<bool> removeEntryListener(boost::uuids::uuid registrationId) {
                     return deregisterListener(registrationId);
                 }
 
@@ -148,21 +148,21 @@ namespace hazelcast {
                             request, valueData);
                 }
 
-                boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler) {
+                boost::future<boost::uuids::uuid> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler) {
                     return registerListener(createEntryListenerCodec(getName()), std::move(entryEventHandler));
                 }
 
-                boost::future<boost::optional<boost::uuids::uuid>> addEntryListenerToKey(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                boost::future<boost::uuids::uuid> addEntryListenerToKey(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                                                                                          serialization::pimpl::Data &&key) {
                     return registerListener(createEntryListenerToKeyCodec(std::move(key)), std::move(entryEventHandler));
                 }
 
-                boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                boost::future<boost::uuids::uuid> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                                                                                     serialization::pimpl::Data &&predicate) {
                     return registerListener(createEntryListenerWithPredicateCodec(std::move(predicate)), std::move(entryEventHandler));
                 }
 
-                boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                boost::future<boost::uuids::uuid> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
                                                                                     serialization::pimpl::Data &&key, serialization::pimpl::Data &&predicate) {
                     return registerListener(createEntryListenerToKeyWithPredicateCodec(std::move(key), std::move(predicate)), std::move(entryEventHandler));
                 }
@@ -246,7 +246,7 @@ namespace hazelcast {
             private:
                 int targetPartitionId;
                 std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, serialization::pimpl::Data>> nearCache;
-                boost::optional<boost::uuids::uuid> invalidationListenerId;
+                boost::uuids::uuid invalidationListenerId;
                 
                 class NearCacheInvalidationListenerMessageCodec : public spi::impl::ListenerMessageCodec {
                 public:
@@ -257,7 +257,7 @@ namespace hazelcast {
                     }
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override{
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override{
                         return protocol::codec::replicatedmap_removeentrylistener_encode(name, realRegistrationId);
                     }
 
@@ -279,7 +279,7 @@ namespace hazelcast {
                     }
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override{
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override{
                         return protocol::codec::replicatedmap_removeentrylistener_encode(name, realRegistrationId);
                     }
 
@@ -300,7 +300,7 @@ namespace hazelcast {
                     }
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override {
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override {
                         return protocol::codec::replicatedmap_removeentrylistener_encode(name, realRegistrationId);
                     }
 
@@ -319,7 +319,7 @@ namespace hazelcast {
                     }
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override {
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override {
                         return protocol::codec::replicatedmap_removeentrylistener_encode(name, realRegistrationId);
                     }
 
@@ -337,7 +337,7 @@ namespace hazelcast {
                     }
 
                     protocol::ClientMessage
-                    encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override {
+                    encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override {
                         return protocol::codec::replicatedmap_removeentrylistener_encode(name, realRegistrationId);
                     }
 
@@ -361,8 +361,8 @@ namespace hazelcast {
 
                     void handle_entry(const boost::optional<Data> &key, const boost::optional<Data> &value,
                                       const boost::optional<Data> &oldValue, const boost::optional<Data> &mergingValue,
-                                      const int32_t &eventType, const boost::optional<boost::uuids::uuid> &uuid,
-                                      const int32_t &numberOfAffectedEntries) override {
+                                      int32_t eventType, boost::uuids::uuid uuid,
+                                      int32_t numberOfAffectedEntries) override {
                         switch (eventType) {
                             case static_cast<int32_t>(EntryEvent::type::ADDED):
                             case static_cast<int32_t>(EntryEvent::type::REMOVED):

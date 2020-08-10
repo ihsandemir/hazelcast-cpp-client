@@ -31,14 +31,14 @@ namespace hazelcast {
                 *
                 * @return true if registration is removed, false otherwise
                 */
-                boost::future<bool> removeMessageListener(const boost::optional<boost::uuids::uuid> &registrationId);
+                boost::future<bool> removeMessageListener(boost::uuids::uuid registrationId);
 
             protected:
                 ITopicImpl(const std::string& instanceName, spi::ClientContext *context);
 
                 boost::future<void> publish(const serialization::pimpl::Data& data);
 
-                boost::future<boost::optional<boost::uuids::uuid>> addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler);
+                boost::future<boost::uuids::uuid> addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler);
 
             private:
                 class TopicListenerMessageCodec : public spi::impl::ListenerMessageCodec {
@@ -47,7 +47,7 @@ namespace hazelcast {
 
                     protocol::ClientMessage encodeAddRequest(bool localOnly) const override;
 
-                    protocol::ClientMessage encodeRemoveRequest(const boost::optional<boost::uuids::uuid> &realRegistrationId) const override;
+                    protocol::ClientMessage encodeRemoveRequest(boost::uuids::uuid realRegistrationId) const override;
 
                 private:
                     std::string name;

@@ -58,7 +58,7 @@ namespace hazelcast {
                      * @return false for the pair.first if timestamp does not exist for replicaId,
                      * otherwise returns true for pair.first and the timestamp of the replica as the pair.second.
                      */
-                    std::pair<bool, int64_t> getTimestampForReplica(const boost::uuids::uuid &replicaId);
+                    std::pair<bool, int64_t> getTimestampForReplica(boost::uuids::uuid replicaId);
 
                     TimestampMap replicaTimestamps;
                     VectorClock::TimestampVector replicaTimestampEntries;

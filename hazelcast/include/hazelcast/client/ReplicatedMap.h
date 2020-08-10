@@ -85,7 +85,7 @@ namespace hazelcast {
              * @param listener entry listener
              */
             template<typename Listener>
-            boost::future<boost::optional<boost::uuids::uuid>> addEntryListener(Listener &&listener) {
+            boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener) {
                 return proxy::ReplicatedMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
@@ -105,7 +105,7 @@ namespace hazelcast {
              * @param key      the key to listen to
              */
             template<typename Listener, typename K>
-            typename std::enable_if<!std::is_base_of<query::Predicate, K>::value, boost::future<boost::optional<boost::uuids::uuid>>>::type
+            typename std::enable_if<!std::is_base_of<query::Predicate, K>::value, boost::future<boost::uuids::uuid>>::type
             addEntryListener(Listener &&listener, const K &key) {
                 return proxy::ReplicatedMapImpl::addEntryListenerToKey(
                         std::unique_ptr<impl::BaseEventHandler>(
@@ -122,7 +122,7 @@ namespace hazelcast {
              * @param predicate the predicate for filtering entries
              */
             template<typename Listener, typename P>
-            typename std::enable_if<std::is_base_of<query::Predicate, P>::value, boost::future<boost::optional<boost::uuids::uuid>>>::type
+            typename std::enable_if<std::is_base_of<query::Predicate, P>::value, boost::future<boost::uuids::uuid>>::type
             addEntryListener(Listener &&listener, const P &predicate) {
                 return proxy::ReplicatedMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
@@ -140,7 +140,7 @@ namespace hazelcast {
              * @param key       the key to listen to
              */
             template<typename Listener, typename K, typename P>
-            typename std::enable_if<std::is_base_of<query::Predicate, P>::value, boost::future<boost::optional<boost::uuids::uuid>>>::type
+            typename std::enable_if<std::is_base_of<query::Predicate, P>::value, boost::future<boost::uuids::uuid>>::type
             addEntryListener(Listener &&listener, const P &predicate, const K &key) {
                 return proxy::ReplicatedMapImpl::addEntryListener(
                         std::unique_ptr<impl::BaseEventHandler>(
@@ -267,8 +267,8 @@ namespace hazelcast {
 
                 void handle_entry(const boost::optional<Data> &key, const boost::optional<Data> &value,
                                   const boost::optional<Data> &oldValue, const boost::optional<Data> &mergingValue,
-                                  const int32_t &eventType, const boost::optional<boost::uuids::uuid> &uuid,
-                                  const int32_t &numberOfAffectedEntries) override {
+                                  int32_t eventType, boost::uuids::uuid uuid,
+                                  int32_t numberOfAffectedEntries) override {
                     if (eventType == static_cast<int32_t>(EntryEvent::type::CLEAR_ALL)) {
                         fireMapWideEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
                         return;
@@ -280,9 +280,9 @@ namespace hazelcast {
             private:
                 void fireMapWideEvent(const boost::optional<Data> &key, const boost::optional<Data> &value,
                                       const boost::optional<Data> &oldValue, const boost::optional<Data> &mergingValue,
-                                      const int32_t &eventType, const boost::optional<boost::uuids::uuid> &uuid,
-                                      const int32_t &numberOfAffectedEntries) {
-                    auto member = clusterService.getMember(*uuid);
+                                      int32_t eventType, boost::uuids::uuid uuid,
+                                      int32_t numberOfAffectedEntries) {
+                    auto member = clusterService.getMember(uuid);
                     auto mapEventType = static_cast<EntryEvent::type>(eventType);
                     MapEvent mapEvent(std::move(member).value(), mapEventType, instanceName, numberOfAffectedEntries);
                     listener.mapCleared(mapEvent);
@@ -290,8 +290,8 @@ namespace hazelcast {
 
                 void fireEntryEvent(const boost::optional<Data> &key, const boost::optional<Data> &value,
                                     const boost::optional<Data> &oldValue, const boost::optional<Data> &mergingValue,
-                                    const int32_t &eventType, const boost::optional<boost::uuids::uuid> &uuid,
-                                    const int32_t &numberOfAffectedEntries) {
+                                    int32_t eventType, boost::uuids::uuid uuid,
+                                    int32_t numberOfAffectedEntries) {
                     TypedData eventKey, val, oldVal, mergingVal;
                     if (value) {
                         val = TypedData(std::move(*value), serializationService);
@@ -305,9 +305,9 @@ namespace hazelcast {
                     if (key) {
                         eventKey = TypedData(std::move(*key), serializationService);
                     }
-                    auto member = clusterService.getMember(*uuid);
+                    auto member = clusterService.getMember(uuid);
                     if (!member.has_value()) {
-                        member = Member(*uuid);
+                        member = Member(uuid);
                     }
                     auto type = static_cast<EntryEvent::type>(eventType);
                     EntryEvent entryEvent(instanceName, member.value(), type, std::move(eventKey), std::move(val),

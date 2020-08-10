@@ -129,7 +129,7 @@ namespace hazelcast {
              * @return true if the registration is removed, false otherwise
              * @see #addMembershipListener(const std::shared_ptr<MembershipListener> &)
              */
-            bool removeMembershipListener(const boost::uuids::uuid &registrationId);
+            bool removeMembershipListener(boost::uuids::uuid registrationId);
 
             /**
              * Set of current members of the cluster.

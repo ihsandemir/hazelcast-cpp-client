@@ -80,9 +80,9 @@ namespace hazelcast {
 
             virtual bool shouldRequestInitialMembers() const;
 
-            virtual const boost::uuids::uuid & getRegistrationId() const;
+            virtual boost::uuids::uuid  getRegistrationId() const;
 
-            virtual void setRegistrationId(const boost::uuids::uuid &registrationId);
+            virtual void setRegistrationId(boost::uuids::uuid registrationId);
         };
 
         class MembershipListenerDelegator : public MembershipListener {
@@ -98,9 +98,9 @@ namespace hazelcast {
 
             bool shouldRequestInitialMembers() const override;
 
-            void setRegistrationId(const boost::uuids::uuid &registrationId) override;
+            void setRegistrationId(boost::uuids::uuid registrationId) override;
 
-            const boost::uuids::uuid & getRegistrationId() const override;
+            boost::uuids::uuid  getRegistrationId() const override;
         };
     }
 }
