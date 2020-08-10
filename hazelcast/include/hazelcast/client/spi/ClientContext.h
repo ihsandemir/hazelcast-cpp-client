@@ -134,7 +134,7 @@ namespace hazelcast {
 
                 client::impl::statistics::Statistics &getClientstatistics();
 
-                spi::impl::listener::cluster_view_listener &get_cluster_view_listenner();
+                spi::impl::listener::cluster_view_listener &get_cluster_view_listener();
             private:
                 client::impl::HazelcastClientInstanceImpl &hazelcastClient;
             };

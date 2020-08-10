@@ -57,7 +57,7 @@
 #include "hazelcast/client/ClientProperties.h"
 #include "hazelcast/client/connection/HeartbeatManager.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
-#include "hazelcast/client/spi/impl/listener/AbstractClientListenerService.h"
+#include "hazelcast/client/spi/impl/listener/listener_service_impl.h"
 #include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/internal/socket/TcpSocket.h"
 #include "hazelcast/client/impl/BuildInfo.h"
@@ -822,7 +822,7 @@ namespace hazelcast {
                 }
                 if (message->is_flag_set(message->getHeaderFlags(), protocol::ClientMessage::IS_EVENT_FLAG)) {
                     auto &listenerService =
-                            (spi::impl::listener::AbstractClientListenerService &) clientContext.getClientListenerService();
+                            (spi::impl::listener::listener_service_impl &) clientContext.getClientListenerService();
                     listenerService.handleClientMessage(invocation, message);
                 } else {
                     invocationService.handleClientMessage(invocation, message);

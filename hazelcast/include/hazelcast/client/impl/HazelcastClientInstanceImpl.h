@@ -70,14 +70,14 @@ namespace hazelcast {
         }
         namespace spi {
             class ClientContext;
-
             class LifecycleService;
-
-            class ClientListenerService;
 
             namespace impl {
                 class ClientExecutionServiceImpl;
                 class ClientPartitionServiceImpl;
+                namespace listener {
+                    class listener_service_impl;
+                }
             }
         }
 
@@ -88,7 +88,6 @@ namespace hazelcast {
         class TransactionOptions;
 
         class Cluster;
-
 
         namespace impl {
             class ClientLockReferenceIdGenerator;
@@ -212,7 +211,7 @@ namespace hazelcast {
                 std::shared_ptr<spi::impl::ClientPartitionServiceImpl> partitionService;
                 std::shared_ptr<spi::impl::ClientExecutionServiceImpl> executionService;
                 spi::impl::ClientInvocationServiceImpl invocationService;
-                std::shared_ptr<spi::ClientListenerService> listenerService;
+                std::shared_ptr<spi::impl::listener::listener_service_impl> listenerService;
                 spi::impl::ClientTransactionManagerServiceImpl transactionManager;
                 Cluster cluster;
                 spi::LifecycleService lifecycleService;
@@ -231,7 +230,7 @@ namespace hazelcast {
 
                 void operator=(const HazelcastClientInstanceImpl& rhs) = delete;
 
-                std::shared_ptr<spi::ClientListenerService> initListenerService();
+                std::shared_ptr<spi::impl::listener::listener_service_impl> initListenerService();
 
                 std::unique_ptr<spi::ClientInvocationService> initInvocationService();
 

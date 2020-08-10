@@ -16,16 +16,13 @@
 
 #pragma once
 
+#include <memory>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/strand.hpp>
 
-#include <stdint.h>
 #include "hazelcast/client/connection/ConnectionListener.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/util/ILogger.h"
-#include "hazelcast/client/spi/ClientListenerService.h"
-#include "hazelcast/client/spi/impl/listener/ClientEventRegistration.h"
-#include "hazelcast/client/spi/impl/listener/ClientRegistrationKey.h"
 
 namespace hazelcast {
     namespace client {
@@ -39,7 +36,6 @@ namespace hazelcast {
         }
         namespace connection {
             class Connection;
-
             class ClientConnectionManagerImpl;
         }
         namespace protocol {
@@ -50,58 +46,69 @@ namespace hazelcast {
 
             namespace impl {
                 namespace listener {
-                    class AbstractClientListenerService
-                            : public ClientListenerService,
-                              public connection::ConnectionListener,
-                              public std::enable_shared_from_this<AbstractClientListenerService> {
+                    class listener_service_impl
+                            : public connection::ConnectionListener,
+                              public std::enable_shared_from_this<listener_service_impl> {
                     public:
-                        virtual ~AbstractClientListenerService();
+                        listener_service_impl(ClientContext &clientContext, int32_t eventThreadCount);
 
-                        virtual void start();
+                        void start();
 
-                        virtual void shutdown();
+                        void shutdown();
+
+                        boost::future<boost::uuids::uuid>
+                        registerListener(std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
+                                         std::unique_ptr<client::impl::BaseEventHandler> &&handler);
+
+                        boost::future<bool> deregisterListener(boost::uuids::uuid registrationId);
 
                         void handleClientMessage(const std::shared_ptr<ClientInvocation> invocation,
                                                  const std::shared_ptr<protocol::ClientMessage> response);
-
-                        boost::future<boost::optional<boost::uuids::uuid>>
-                        registerListener(std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
-                                         std::unique_ptr<client::impl::BaseEventHandler> &&handler) override;
-
-                        boost::future<bool> deregisterListener(const boost::optional<boost::uuids::uuid> &registrationId) override;
 
                         void connectionAdded(const std::shared_ptr<connection::Connection> connection) override;
 
                         void connectionRemoved(const std::shared_ptr<connection::Connection> connection) override;
 
-                    protected:
-                        AbstractClientListenerService(ClientContext &clientContext, int32_t eventThreadCount);
+                    private:
+                        /**
+                         * Keeps the information related to to an event registration made by clients.
+                         */
+                        struct connection_registration {
+                            boost::uuids::uuid server_registration_id;
+                            int64_t call_id;
+                        };
+                        struct listener_registration {
+                            std::shared_ptr<ListenerMessageCodec> codec;
+                            std::shared_ptr<client::impl::BaseEventHandler> handler;
+                            util::SynchronizedMap<std::shared_ptr<connection::Connection>, connection_registration> registrations;
+                        };
 
                         void processEventMessage(const std::shared_ptr<ClientInvocation> invocation,
                                                  const std::shared_ptr<protocol::ClientMessage> response);
 
-                        virtual bool registersLocalOnly() const = 0;
+                        void
+                        removeEventHandler(int64_t call_id, const std::shared_ptr<connection::Connection> &connection);
 
-                        typedef std::unordered_map<std::shared_ptr<connection::Connection>, ClientEventRegistration> ConnectionRegistrationsMap;
-                        typedef util::SynchronizedMap<ClientRegistrationKey, ConnectionRegistrationsMap> RegistrationsMap;
-
-                        void removeEventHandler(const ClientEventRegistration &registration);
-
-                        virtual boost::optional<boost::uuids::uuid>
+                        boost::uuids::uuid
                         registerListenerInternal(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
                                                  std::unique_ptr<client::impl::BaseEventHandler> &&handler);
 
-                        virtual bool deregisterListenerInternal(const boost::optional<boost::uuids::uuid> &userRegistrationId);
+                        bool deregisterListenerInternal(boost::uuids::uuid userRegistrationId);
 
-                        virtual void
+                        void
                         connectionAddedInternal(const std::shared_ptr<connection::Connection> &connection);
 
-                        virtual void
+                        void
                         connectionRemovedInternal(const std::shared_ptr<connection::Connection> &connection);
 
 
-                        void invoke(const ClientRegistrationKey &registrationKey,
+                        void invoke(const std::shared_ptr<listener_registration> &listener_registration,
                                     const std::shared_ptr<connection::Connection> &connection);
+
+                        void invokeFromInternalThread(const std::shared_ptr<listener_registration> &listener_registration,
+                                                      const std::shared_ptr<connection::Connection> &connection);
+
+                        bool registersLocalOnly() const;
 
                         ClientContext &clientContext;
                         serialization::pimpl::SerializationService &serializationService;
@@ -112,12 +119,9 @@ namespace hazelcast {
                         std::unique_ptr<hazelcast::util::hz_thread_pool> registrationExecutor;
                         std::chrono::steady_clock::duration invocationTimeout;
                         std::chrono::steady_clock::duration invocationRetryPause;
-                        RegistrationsMap registrations;
+                        util::SynchronizedMap<boost::uuids::uuid, listener_registration, boost::hash<boost::uuids::uuid>> registrations;
                         int numberOfEventThreads;
-
-                    private:
-                        void invokeFromInternalThread(const ClientRegistrationKey &registrationKey,
-                                                      const std::shared_ptr<connection::Connection> &connection);
+                        bool smart_;
                     };
                 }
             }

@@ -63,6 +63,12 @@ namespace hazelcast {
                 return argument;
             }
 
+            static void checkNotNill(boost::uuids::uuid id, const std::string &errorMessage) {
+                if (id.is_nil()) {
+                    throw client::exception::NullPointerException(errorMessage);
+                }
+            }
+
             /**
              * Tests whether the supplied expression is {@code true}.
              *

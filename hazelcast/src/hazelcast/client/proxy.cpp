@@ -36,7 +36,6 @@
 #include "hazelcast/client/proxy/PNCounterImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
-#include "hazelcast/client/spi/ClientListenerService.h"
 #include "hazelcast/client/proxy/FlakeIdGeneratorImpl.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/proxy/ReliableTopicImpl.h"

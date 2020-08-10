@@ -50,8 +50,6 @@
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
 #include "hazelcast/client/spi/impl/ClientInvocationServiceImpl.h"
-#include "hazelcast/client/spi/impl/listener/NonSmartClientListenerService.h"
-#include "hazelcast/client/spi/impl/listener/SmartClientListenerService.h"
 #include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/spi/impl/ClientExecutionServiceImpl.h"
 #include "hazelcast/client/spi/impl/sequence/CallIdFactory.h"
@@ -131,7 +129,7 @@ namespace hazelcast {
                     : clientConfig(config), clientProperties(const_cast<ClientConfig &>(config).getProperties()),
                       clientContext(*this),
                       serializationService(clientConfig.getSerializationConfig()), clusterService(clientContext),
-                      transactionManager(clientContext, *clientConfig.getLoadBalancer()), cluster(clusterService),
+                      transactionManager(clientContext), cluster(clusterService),
                       lifecycleService(clientContext, clientConfig.getLifecycleListeners(),
                                        clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
                       id(++CLIENT_ID), invocationService(clientContext), cluster_listener_(clientContext) {
@@ -248,16 +246,9 @@ namespace hazelcast {
                 return exceptionFactory;
             }
 
-            std::shared_ptr<spi::ClientListenerService> HazelcastClientInstanceImpl::initListenerService() {
-                int eventThreadCount = clientProperties.getInteger(clientProperties.getEventThreadCount());
-                config::ClientNetworkConfig &networkConfig = clientConfig.getNetworkConfig();
-                if (networkConfig.isSmartRouting()) {
-                    return std::shared_ptr<spi::ClientListenerService>(
-                            new spi::impl::listener::SmartClientListenerService(clientContext, eventThreadCount));
-                } else {
-                    return std::shared_ptr<spi::ClientListenerService>(
-                            new spi::impl::listener::NonSmartClientListenerService(clientContext, eventThreadCount));
-                }
+            std::shared_ptr<spi::impl::listener::listener_service_impl> HazelcastClientInstanceImpl::initListenerService() {
+                auto eventThreadCount = clientProperties.getInteger(clientProperties.getEventThreadCount());
+                return std::make_shared<spi::impl::listener::listener_service_impl>(clientContext, eventThreadCount);
             }
 
             std::shared_ptr<spi::impl::ClientExecutionServiceImpl>
