@@ -652,14 +652,14 @@ namespace hazelcast {
             template<typename K, typename V>
             boost::future<std::vector<K>> keySet(query::PagingPredicate<K, V> &predicate) {
                 predicate.setIterationType(query::IterationType::KEY);
-                return keySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
+                return keySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate, serializationService_)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
                     auto result = f.get();
                     predicate.setAnchorDataList(std::move(result.second));
                     const auto &entries = result.first;
                     std::vector<K> values;
                     values.reserve(entries.size());
                     for(const auto &e : entries) {
-                        values.empace_back(*toObject<K>(e.first));
+                        values.emplace_back(*toObject<K>(e.first));
                     }
                     return values;
                 });
@@ -756,14 +756,14 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             boost::future<std::vector<std::pair<K, V>>> entrySet(query::PagingPredicate<K, V> &predicate) {
-                return entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
+                return entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate, serializationService_)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
                     auto result = f.get();
                     predicate.setAnchorDataList(std::move(result.second));
                     const auto &entries_data = result.first;
                     std::vector<std::pair<K, V>> entries;
                     entries.reserve(entries_data.size());
                     for(const auto &e : entries_data) {
-                        entries.empace_back(*toObject<K>(e.first), *toObject<V>(e.second));
+                        entries.emplace_back(*toObject<K>(e.first), *toObject<V>(e.second));
                     }
                     return entries;
                 });

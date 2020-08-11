@@ -1228,10 +1228,12 @@ namespace hazelcast {
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>>(request);
             }
 
-            boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetForPagingPredicateData(
+            boost::future<std::pair<EntryVector, query::anchor_data_list>> IMapImpl::keySetForPagingPredicateData(
                     protocol::codec::holder::paging_predicate_holder const & predicate) {
                 auto request = protocol::codec::map_keysetwithpagingpredicate_encode(getName(), predicate);
-                return invokeAndGetFuture<std::vector<serialization::pimpl::Data>>(request);
+                return invoke(request).then(boost::launch::deferred, [=](boost::future<protocol::ClientMessage> f) {
+                    return get_paging_predicate_response(std::move(f));
+                });
             }
 
             boost::future<EntryVector> IMapImpl::entrySetData() {
@@ -1244,10 +1246,12 @@ namespace hazelcast {
                 return invokeAndGetFuture<EntryVector>(request);
             }
 
-            boost::future<EntryVector> IMapImpl::entrySetForPagingPredicateData(
+            boost::future<std::pair<EntryVector, query::anchor_data_list>> IMapImpl::entrySetForPagingPredicateData(
                     protocol::codec::holder::paging_predicate_holder const & predicate) {
                 auto request = protocol::codec::map_entrieswithpagingpredicate_encode(getName(), predicate);
-                return invokeAndGetFuture<EntryVector>(request);
+                return invoke(request).then(boost::launch::deferred, [=](boost::future<protocol::ClientMessage> f) {
+                    return get_paging_predicate_response(std::move(f));
+                });
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::valuesData() {

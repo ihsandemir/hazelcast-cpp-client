@@ -182,20 +182,22 @@ namespace hazelcast {
 
                 boost::future<std::vector<serialization::pimpl::Data>> keySetData(const serialization::pimpl::Data &predicate);
 
-                boost::future<std::vector<serialization::pimpl::Data>>
+                boost::future<std::pair<EntryVector, query::anchor_data_list>>
                 keySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
 
                 boost::future<EntryVector> entrySetData();
 
                 boost::future<EntryVector> entrySetData(const serialization::pimpl::Data &predicate);
 
-                boost::future<EntryVector> entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
+                boost::future<std::pair<EntryVector, query::anchor_data_list>>
+                entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const &predicate);
 
                 boost::future<std::vector<serialization::pimpl::Data>> valuesData();
 
                 boost::future<std::vector<serialization::pimpl::Data>> valuesData(const serialization::pimpl::Data &predicate);
 
-                boost::future<std::pair<EntryVector, query::anchor_data_list>> valuesForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
+                boost::future<std::pair<EntryVector, query::anchor_data_list>>
+                valuesForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const &predicate);
 
                 boost::future<protocol::ClientMessage> addIndexData(const config::index_config &config);
 
