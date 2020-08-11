@@ -748,7 +748,7 @@ namespace hazelcast {
             ClientTestSupportBase::ClientTestSupportBase() = default;
 
             std::string ClientTestSupportBase::generateKeyOwnedBy(spi::ClientContext &context, const Member &member) {
-                spi::impl::ClientPartitionServiceImpl partitionService = context.getPartitionService();
+                spi::impl::ClientPartitionServiceImpl &partitionService = context.getPartitionService();
                 serialization::pimpl::SerializationService &serializationService = context.getSerializationService();
                 while (true) {
                     auto id = randomString();
@@ -1241,10 +1241,10 @@ namespace hazelcast {
                 auto endpointAddress = endpoint.getSocketAddress();
                 ASSERT_TRUE(endpointAddress);
                 connection::ClientConnectionManagerImpl &connectionManager = context.getConnectionManager();
-                std::shared_ptr<connection::Connection> connection = connectionManager.getOwnerConnection();
+                std::shared_ptr<connection::Connection> connection = connectionManager.get_random_connection();
                 ASSERT_NOTNULL(connection.get(), connection::Connection);
-                std::unique_ptr<Address> localAddress = connection->getLocalSocketAddress();
-                ASSERT_NOTNULL(localAddress.get(), Address);
+                auto localAddress = connection->getLocalSocketAddress();
+                ASSERT_TRUE(localAddress.has_value());
                 ASSERT_EQ(*localAddress, *endpointAddress);
 
                 std::shared_ptr<protocol::Principal> principal = connectionManager.getPrincipal();
@@ -1482,24 +1482,20 @@ namespace hazelcast {
                      */
                     class ClientPNCounterConsistencyLostTest : public ClientTestSupport {
                     protected:
-                        std::shared_ptr<Address> getCurrentTargetReplicaAddress(
+                        boost::shared_ptr<Member> getCurrentTargetReplicaAddress(
                                 const std::shared_ptr<PNCounter> &pnCounter) {
                             return pnCounter->getCurrentTargetReplicaAddress();
                         }
 
                         void
-                        terminateMember(const Address &address, HazelcastServer &server1, HazelcastServer &server2) {
+                        terminateMember(const Member &address, HazelcastServer &server1, HazelcastServer &server2) {
                             auto member1 = server1.getMember();
-                            if (address == Address(member1.host, member1.port)) {
+                            if (boost::to_string(address.getUuid()) == member1.uuid) {
                                 server1.terminate();
                                 return;
                             }
 
-                            auto member2 = server2.getMember();
-                            if (address == Address(member2.host, member2.port)) {
-                                server2.terminate();
-                                return;
-                            }
+                            server2.terminate();
                         }
                     };
 
@@ -1519,7 +1515,7 @@ namespace hazelcast {
 
                         ASSERT_EQ(5, pnCounter->get().get());
 
-                        std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
+                        auto currentTarget = getCurrentTargetReplicaAddress(pnCounter);
 
                         terminateMember(*currentTarget, instance, instance2);
 
@@ -1546,7 +1542,7 @@ namespace hazelcast {
 
                         ASSERT_EQ(5, pnCounter->get().get());
 
-                        std::shared_ptr<Address> currentTarget = getCurrentTargetReplicaAddress(pnCounter);
+                        auto currentTarget = getCurrentTargetReplicaAddress(pnCounter);
 
                         terminateMember(*currentTarget, instance, instance2);
 
@@ -1594,8 +1590,8 @@ namespace hazelcast {
                             : _memberAdded(_memberAdded), _memberRemoved(_memberRemoved) {
                     }
 
-                    void init(const InitialMembershipEvent &event) override {
-                        std::vector<Member> const &members = event.getMembers();
+                    void init(InitialMembershipEvent event) override {
+                        auto &members = event.getMembers();
                         if (members.size() == 1) {
                             _memberAdded.count_down();
                         }
@@ -2237,12 +2233,11 @@ namespace hazelcast {
 
             class MyLoadBalancer : public impl::AbstractLoadBalancer {
             public:
-                const Member next() override {
+                boost::optional<Member> next() override {
                     std::vector<Member> members = getMembers();
                     size_t len = members.size();
                     if (len == 0) {
-                        BOOST_THROW_EXCEPTION(exception::IOException("const Member& RoundRobinLB::next()",
-                                                                     "No member in member list!!"));
+                        return boost::none;
                     }
                     for (size_t i = 0; i < len; i++) {
                         if (members[i].getAddress().getPort() == 5701) {
@@ -2305,7 +2300,7 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = client->newTransactionContext();
                 context.beginTransaction().get();
-                ASSERT_FALSE(context.getTxnId());
+                ASSERT_TRUE(context.getTxnId().is_nil());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2326,7 +2321,7 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = uniSocketClient.newTransactionContext();
                 context.beginTransaction().get();
-                ASSERT_FALSE(context.getTxnId());
+                ASSERT_TRUE(context.getTxnId().is_nil());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2348,7 +2343,7 @@ namespace hazelcast {
                 TransactionContext context = client->newTransactionContext(transactionOptions);
 
                 context.beginTransaction().get();
-                ASSERT_FALSE(context.getTxnId());
+                ASSERT_TRUE(context.getTxnId().is_nil());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2385,7 +2380,7 @@ namespace hazelcast {
 
                 try {
                     context.beginTransaction().get();
-                    ASSERT_FALSE(context.getTxnId());
+                    ASSERT_TRUE(context.getTxnId().is_nil());
                     auto queue = context.getQueue(queueName);
                     queue->offer(randomString()).get();
 

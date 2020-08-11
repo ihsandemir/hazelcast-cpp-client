@@ -33,6 +33,10 @@ namespace hazelcast {
         namespace impl {
             class ClientLockReferenceIdGenerator;
         }
+
+        namespace config {
+            struct index_config;
+        }
         namespace proxy {
             class HAZELCAST_API IMapImpl : public ProxyImpl {
             public:
@@ -93,7 +97,7 @@ namespace hazelcast {
                 * Removes all of the mappings from this map (optional operation).
                 * The map will be empty after this call returns.
                 */
-                boost::future<protocol::ClientMessage> clear();
+                boost::future<protocol::ClientMessage> clearData();
 
             protected:
                 IMapImpl(const std::string &instanceName, spi::ClientContext *context);
@@ -179,21 +183,21 @@ namespace hazelcast {
                 boost::future<std::vector<serialization::pimpl::Data>> keySetData(const serialization::pimpl::Data &predicate);
 
                 boost::future<std::vector<serialization::pimpl::Data>>
-                keySetForPagingPredicateData(const serialization::pimpl::Data &predicate);
+                keySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
 
                 boost::future<EntryVector> entrySetData();
 
                 boost::future<EntryVector> entrySetData(const serialization::pimpl::Data &predicate);
 
-                boost::future<EntryVector> entrySetForPagingPredicateData(const serialization::pimpl::Data &predicate);
+                boost::future<EntryVector> entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
 
                 boost::future<std::vector<serialization::pimpl::Data>> valuesData();
 
                 boost::future<std::vector<serialization::pimpl::Data>> valuesData(const serialization::pimpl::Data &predicate);
 
-                boost::future<EntryVector> valuesForPagingPredicateData(const serialization::pimpl::Data &predicate);
+                boost::future<std::pair<EntryVector, query::anchor_data_list>> valuesForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
 
-                boost::future<protocol::ClientMessage> addIndex(const std::string &attribute, bool ordered);
+                boost::future<protocol::ClientMessage> addIndexData(const config::index_config &config);
 
                 boost::future<protocol::ClientMessage> putAllData(int partitionId, const EntryVector &entries);
 
@@ -319,6 +323,9 @@ namespace hazelcast {
                 std::unique_ptr<spi::impl::ListenerMessageCodec>
                 createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
                                             serialization::pimpl::Data &&key);
+
+                std::pair<EntryVector, query::anchor_data_list>
+                get_paging_predicate_response(boost::future<ClientMessage> f) const;
             };
         }
     }

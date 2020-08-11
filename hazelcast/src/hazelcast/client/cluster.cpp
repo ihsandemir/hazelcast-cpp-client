@@ -97,7 +97,7 @@ namespace hazelcast {
         }
 
         bool Member::operator==(const Member &rhs) const {
-            return address == rhs.address;
+            return uuid == rhs.uuid;
         }
 
         const Address &Member::getAddress() const {

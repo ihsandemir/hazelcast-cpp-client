@@ -1229,7 +1229,7 @@ namespace hazelcast {
             }
 
             boost::future<std::vector<serialization::pimpl::Data>> IMapImpl::keySetForPagingPredicateData(
-                    const serialization::pimpl::Data &predicate) {
+                    protocol::codec::holder::paging_predicate_holder const & predicate) {
                 auto request = protocol::codec::map_keysetwithpagingpredicate_encode(getName(), predicate);
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>>(request);
             }
@@ -1245,7 +1245,7 @@ namespace hazelcast {
             }
 
             boost::future<EntryVector> IMapImpl::entrySetForPagingPredicateData(
-                    const serialization::pimpl::Data &predicate) {
+                    protocol::codec::holder::paging_predicate_holder const & predicate) {
                 auto request = protocol::codec::map_entrieswithpagingpredicate_encode(getName(), predicate);
                 return invokeAndGetFuture<EntryVector>(request);
             }
@@ -1260,14 +1260,25 @@ namespace hazelcast {
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>>(request);
             }
 
-            boost::future<EntryVector>
-            IMapImpl::valuesForPagingPredicateData(const serialization::pimpl::Data &predicate) {
+            boost::future<std::pair<EntryVector, query::anchor_data_list>>
+            IMapImpl::valuesForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate) {
                 auto request = protocol::codec::map_valueswithpagingpredicate_encode(getName(), predicate);
-                return invokeAndGetFuture<EntryVector>(request);
+                return invoke(request).then(boost::launch::deferred, [=](boost::future<protocol::ClientMessage> f) {
+                    return get_paging_predicate_response(std::move(f));
+                });
             }
 
-            boost::future<protocol::ClientMessage> IMapImpl::addIndex(const std::string &attribute, bool ordered) {
-                auto request = protocol::codec::map_addindex_encode(getName(), attribute, ordered);
+            std::pair<EntryVector, query::anchor_data_list>
+            IMapImpl::get_paging_predicate_response(boost::future<protocol::ClientMessage> f) const {
+                auto msg = f.get();
+
+                return std::pair<EntryVector, query::anchor_data_list>{*msg.get_first_var_sized_field<EntryVector>(),
+                        query::anchor_data_list{msg.get<decltype(query::anchor_data_list::page_list)>(),
+                        msg.get<decltype(query::anchor_data_list::data_list)>()}};
+            }
+
+            boost::future<protocol::ClientMessage> IMapImpl::addIndexData(const config::index_config &config) {
+                auto request = protocol::codec::map_addindex_encode(getName(), config);
                 return invoke(request);
             }
 
@@ -1282,11 +1293,11 @@ namespace hazelcast {
             }
 
             boost::future<protocol::ClientMessage> IMapImpl::putAllData(int partitionId, const EntryVector &entries) {
-                auto request = protocol::codec::map_putall_encode(getName(), entries);
+                auto request = protocol::codec::map_putall_encode(getName(), entries, true);
                 return invokeOnPartition(request, partitionId);
             }
 
-            boost::future<protocol::ClientMessage> IMapImpl::clear() {
+            boost::future<protocol::ClientMessage> IMapImpl::clearData() {
                 auto request = protocol::codec::map_clear_encode(getName());
                 return invoke(request);
             }

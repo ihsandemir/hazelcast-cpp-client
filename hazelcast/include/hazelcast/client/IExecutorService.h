@@ -65,7 +65,7 @@ namespace hazelcast {
                 executor_promise(boost::future<boost::optional<T>> &future, boost::uuids::uuid uuid, int partitionId,
                                  boost::uuids::uuid member, spi::ClientContext &context,
                                  const std::shared_ptr<spi::impl::ClientInvocation> &invocation)
-                        : sharedFuture(future.share()), uuid(uuid), partitionId(partitionId), memberUuid(memberUuid),
+                        : sharedFuture(future.share()), uuid(uuid), partitionId(partitionId), memberUuid(member),
                           context(context), invocation(invocation) {}
 
                 bool cancel(bool mayInterruptIfRunning) {
@@ -229,8 +229,7 @@ namespace hazelcast {
             template<typename HazelcastSerializable, typename T>
             executor_promise<T>
             submitToMember(const HazelcastSerializable &task, const Member &member) {
-                const Address memberAddress = getMemberAddress(member);
-                return submitToTargetInternal<HazelcastSerializable, T>(task, memberAddress, false);
+                return submitToTargetInternal<HazelcastSerializable, T>(task, member, false);
             }
 
             /**
@@ -247,8 +246,7 @@ namespace hazelcast {
             submitToMembers(const HazelcastSerializable &task, const std::vector<Member> &members) {
                 std::unordered_map<Member, executor_promise<T>> futureMap;
                 for (auto &member : members) {
-                    Address memberAddress = getMemberAddress(member);
-                    auto f = submitToTargetInternal<HazelcastSerializable, T>(task, memberAddress, true);
+                    auto f = submitToTargetInternal<HazelcastSerializable, T>(task, member, true);
                     // no need to check if emplace is success since member is unique
                     futureMap.emplace(member, std::move(f));
                 }
@@ -284,13 +282,11 @@ namespace hazelcast {
             template<typename HazelcastSerializable, typename T>
             std::unordered_map<Member, executor_promise<T>>
             submitToAllMembers(const HazelcastSerializable &task) {
-                std::vector<Member> members = getContext().getClientClusterService().getMemberList();
                 std::unordered_map<Member, executor_promise<T>> futureMap;
-                for (std::vector<Member>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                    Address memberAddress = getMemberAddress(*it);
-                    auto f = submitToTargetInternal<HazelcastSerializable, T>(task, memberAddress, true);
+                for (const auto &m : getContext().getClientClusterService().getMemberList()) {
+                    auto f = submitToTargetInternal<HazelcastSerializable, T>(task, m, true);
                     // no need to check if emplace is success since member is unique
-                    futureMap.emplace(*it, std::move(f));
+                    futureMap.emplace(m, std::move(f));
                 }
                 return futureMap;
             }
@@ -407,8 +403,7 @@ namespace hazelcast {
             template<typename HazelcastSerializable, typename T>
             void submitToMember(const HazelcastSerializable &task, const Member &member,
                                 const std::shared_ptr<ExecutionCallback<T> > &callback) {
-                const Address memberAddress = getMemberAddress(member);
-                return submitToTargetInternal<HazelcastSerializable, T>(task, memberAddress, callback);
+                return submitToTargetInternal<HazelcastSerializable, T>(task, member, callback);
             }
 
             /**
@@ -646,7 +641,7 @@ namespace hazelcast {
             }
 
             template<typename HazelcastSerializable, typename T>
-            executor_promise<T> submitToTargetInternal(const HazelcastSerializable &task, boost::uuids::uuid member,
+            executor_promise<T> submitToTargetInternal(const HazelcastSerializable &task, const Member &member,
                                                        bool preventSync) {
                 boost::uuids::uuid uuid = boost::uuids::random_generator()();
 
@@ -656,7 +651,7 @@ namespace hazelcast {
             }
 
             template<typename HazelcastSerializable, typename T>
-            void submitToTargetInternal(const HazelcastSerializable &task, boost::uuids::uuid member,
+            void submitToTargetInternal(const HazelcastSerializable &task, const Member &member,
                                         const std::shared_ptr<ExecutionCallback<T> > &callback) {
                 boost::uuids::uuid uuid = boost::uuids::random_generator()();
 
@@ -677,11 +672,11 @@ namespace hazelcast {
 
             template<typename HazelcastSerializable>
             std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
-            invokeOnTargetInternal(const HazelcastSerializable &task, boost::uuids::uuid member,
+            invokeOnTargetInternal(const HazelcastSerializable &task, const Member &member,
                                    boost::uuids::uuid uuid) {
                 return invokeOnTarget(
-                        protocol::codec::executorservice_submittomember_encode(name, uuid, toData(task), member),
-                        member);
+                        protocol::codec::executorservice_submittomember_encode(name, uuid, toData(task), member.getUuid()),
+                        member.getUuid());
             }
 
             std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>>
@@ -704,7 +699,7 @@ namespace hazelcast {
             checkSync(
                     std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>> &futurePair,
                     boost::uuids::uuid uuid, int partitionId, bool preventSync) {
-                return checkSync<T>(futurePair, uuid, partitionId, Address(), preventSync);
+                return checkSync<T>(futurePair, uuid, partitionId, Member(), preventSync);
             }
 
             template<typename T>
@@ -722,7 +717,7 @@ namespace hazelcast {
             typename std::enable_if<!std::is_same<executor_marker, T>::value, executor_promise<T>>::type
             checkSync(
                     std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>> &futurePair,
-                    boost::uuids::uuid uuid, int partitionId, boost::uuids::uuid member, bool preventSync) {
+                    boost::uuids::uuid uuid, int partitionId, const Member &member, bool preventSync) {
                 bool sync = isSyncComputation(preventSync);
                 boost::future<boost::optional<T>> objectFuture;
                 if (sync) {
@@ -736,14 +731,14 @@ namespace hazelcast {
                                                          });
                 }
 
-                return executor_promise<T>(objectFuture, uuid, partitionId, member, getContext(), futurePair.second);
+                return executor_promise<T>(objectFuture, uuid, partitionId, member.getUuid(), getContext(), futurePair.second);
             }
 
             template<typename T>
             typename std::enable_if<std::is_same<executor_marker, T>::value, executor_promise<T>>::type
             checkSync(
                     std::pair<boost::future<protocol::ClientMessage>, std::shared_ptr<spi::impl::ClientInvocation>> &futurePair,
-                    boost::uuids::uuid uuid, int partitionId, boost::uuids::uuid member, bool preventSync) {
+                    boost::uuids::uuid uuid, int partitionId, const Member &member, bool preventSync) {
                 bool sync = isSyncComputation(preventSync);
                 if (sync) {
                     futurePair.first.get();

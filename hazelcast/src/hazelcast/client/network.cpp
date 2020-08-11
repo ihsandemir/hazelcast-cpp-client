@@ -322,14 +322,14 @@ namespace hazelcast {
                     const protocol::UsernamePasswordCredentials cr(groupConfig.getName(), groupConfig.getPassword());
                     // TODO: add labels into config
                     return protocol::codec::client_authentication_encode(cluster_name, &cr.getPrincipal(),
-                                                                         &cr.getPassword(), client_uuid_,
+                                                                         &cr.getPassword(), client_uuid_.is_nil() ? nullptr : &client_uuid_,
                                                                          protocol::ClientTypes::CPP,
                                                                          serializationVersion, HAZELCAST_VERSION,
                                                                          client.getName(), labels_);
                 } else {
                     return protocol::codec::client_authenticationcustom_encode(cluster_name,
                                                                                credentials.value().toByteArray(),
-                                                                               client_uuid_, protocol::ClientTypes::CPP,
+                                                                               client_uuid_.is_nil() ? nullptr : &client_uuid_, protocol::ClientTypes::CPP,
                                                                                serializationVersion, HAZELCAST_VERSION,
                                                                                client.getName(), labels_);
                 }
@@ -474,9 +474,9 @@ namespace hazelcast {
             }
 
             std::unordered_set<Address> ClientConnectionManagerImpl::getPossibleMemberAddresses() {
-                std::unordered_set<Address> addresses;
-                for (const auto &member : client.getClientClusterService().getMemberList()) {
-                    addresses.insert(member.getAddress());
+                std::vector<Address> addresses;
+                for (auto &&member : client.getClientClusterService().getMemberList()) {
+                    addresses.emplace_back(member.getAddress());
                 }
 
                 if (shuffleMemberList) {
@@ -485,14 +485,18 @@ namespace hazelcast {
 
                 for (auto &addressProvider : addressProviders) {
                     auto addrList = addressProvider->loadAddresses();
-                    addresses.insert(addrList.begin(), addrList.end());
+                    addresses.insert(addresses.end(), addrList.begin(), addrList.end());
                 }
 
                 if (shuffleMemberList) {
                     shuffle(addresses);
                 }
 
-                return addresses;
+                std::unordered_set<Address> result;
+                for (auto &&a : std::move(addresses)) {
+                    result.insert(a);
+                }
+                return result;
             }
 
             void ClientConnectionManagerImpl::connectToCluster() {
@@ -573,9 +577,9 @@ namespace hazelcast {
                 check_partition_count(response.partition_count);
                 connection->setConnectedServerVersion(response.server_version);
                 connection->setRemoteAddress(std::make_shared<Address>(response.address));
-                connection->setRemoteUuid(response.member_uuid.value());
+                connection->setRemoteUuid(response.member_uuid);
 
-                auto new_cluster_id = *response.cluster_id;
+                auto new_cluster_id = response.cluster_id;
                 auto current_cluster_id = cluster_id_.load();
 
                 if (logger.isFinestEnabled()) {
@@ -589,14 +593,14 @@ namespace hazelcast {
                     client.getHazelcastClientImplementation()->on_cluster_restart();
                 }
 
-                activeConnections.put(*response.member_uuid, connection);
+                activeConnections.put(response.member_uuid, connection);
 
                 if (initial_connection) {
                     cluster_id_ = new_cluster_id;
                     fire_life_cycle_event(LifecycleEvent::LifecycleState::CLIENT_CONNECTED);
                 }
 
-                logger.info("Authenticated with server ", response.address , ":", *response.member_uuid
+                logger.info("Authenticated with server ", response.address , ":", response.member_uuid
                             , ", server version: " , response.server_version
                             , ", local address: ", *connection->getLocalSocketAddress());
 
@@ -745,7 +749,7 @@ namespace hazelcast {
                       invocationService(clientContext.getInvocationService()),
                       connectionId(connectionId),
                       connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION),
-                      logger(clientContext.getLogger()), connectionManager(clientConnectionManager), alive(true) {
+                      logger(clientContext.getLogger()), alive(true) {
                 socket = socketFactory.create(address, connectTimeoutInMillis);
                 std::memset(&remote_uuid_, 0, sizeof(boost::uuids::uuid));
             }

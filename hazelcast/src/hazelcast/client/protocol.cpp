@@ -36,8 +36,6 @@
 
 #include "hazelcast/client/protocol/ClientMessage.h"
 #include <hazelcast/client/protocol/ClientProtocolErrorCodes.h>
-#include "hazelcast/client/protocol/codec/AddressCodec.h"
-#include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/Member.h"
@@ -119,6 +117,30 @@ namespace hazelcast {
             template<>
             void ClientMessage::set(const std::vector<int64_t> &values, bool is_final) {
                 set_primitive_vector(values, is_final);
+            }
+
+            void ClientMessage::set(const codec::holder::paging_predicate_holder &p, bool is_final) {
+                add_begin_frame();
+
+                auto f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+                f->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + 2 * INT32_SIZE + INT8_SIZE;
+                f->flags = DEFAULT_FLAGS;
+                set(p.page_size);
+                set(p.page);
+                set(p.iteration_type);
+
+                f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(BEGIN_FRAME)));
+                *f = BEGIN_FRAME;
+                set(p.anchor_list.page_list);
+                set(p.anchor_list.data_list);
+                f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(END_FRAME)));
+                *f = END_FRAME;
+
+                set(p.predicate_data);
+                set(p.comparator_data);
+                set(static_cast<serialization::pimpl::Data *>(nullptr));
+
+                add_end_frame(is_final);
             }
 
             //----- Setter methods end ---------------------

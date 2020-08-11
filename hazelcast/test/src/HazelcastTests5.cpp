@@ -1895,13 +1895,6 @@ namespace hazelcast {
                     ASSERT_EQ(predSize + i, values[i]);
                 }
 
-                const std::pair<int *, int *> *anchor = predicate.getAnchor();
-                ASSERT_NE((const std::pair<int *, int *> *) NULL, anchor);
-                ASSERT_NE((int *) NULL, anchor->first);
-                ASSERT_NE((int *) NULL, anchor->second);
-                ASSERT_EQ(9, *anchor->first);
-                ASSERT_EQ(9, *anchor->second);
-
                 ASSERT_EQ(1, (int) predicate.getPage());
 
                 predicate.setPage(4);
@@ -1912,21 +1905,6 @@ namespace hazelcast {
                 for (int i = 0; i < predSize; ++i) {
                     ASSERT_EQ(predSize * 4 + i, values[i]);
                 }
-
-                anchor = predicate.getAnchor();
-                ASSERT_NE((const std::pair<int *, int *> *) NULL, anchor);
-                ASSERT_NE((int *) NULL, anchor->first);
-                ASSERT_NE((int *) NULL, anchor->second);
-                ASSERT_EQ(24, *anchor->first);
-                ASSERT_EQ(24, *anchor->second);
-
-                const std::pair<size_t, std::pair<int *, int *> > *anchorEntry = predicate.getNearestAnchorEntry();
-                ASSERT_NE((const std::pair<size_t, std::pair<int *, int *> > *) NULL, anchorEntry);
-                ASSERT_NE((int *) NULL, anchorEntry->second.first);
-                ASSERT_NE((int *) NULL, anchorEntry->second.second);
-                ASSERT_EQ(3, (int) anchorEntry->first);
-                ASSERT_EQ(19, *anchorEntry->second.first);
-                ASSERT_EQ(19, *anchorEntry->second.second);
 
                 predicate.nextPage();
                 values = intMap->values<int>(predicate).get();
@@ -2289,11 +2267,6 @@ namespace hazelcast {
                     ASSERT_EQ(predSize + i, values[i]);
                 }
 
-                const std::pair<int *, int *> *anchor = predicate.getAnchor();
-                ASSERT_NE((const std::pair<int *, int *> *) NULL, anchor);
-                ASSERT_NE((int *) NULL, anchor->first);
-                ASSERT_EQ(9, *anchor->first);
-
                 ASSERT_EQ(1, (int) predicate.getPage());
 
                 predicate.setPage(4);
@@ -2304,17 +2277,6 @@ namespace hazelcast {
                 for (int i = 0; i < predSize; ++i) {
                     ASSERT_EQ(predSize * 4 + i, values[i]);
                 }
-
-                anchor = predicate.getAnchor();
-                ASSERT_NE((const std::pair<int *, int *> *) NULL, anchor);
-                ASSERT_NE((int *) NULL, anchor->first);
-                ASSERT_EQ(24, *anchor->first);
-
-                const std::pair<size_t, std::pair<int *, int *> > *anchorEntry = predicate.getNearestAnchorEntry();
-                ASSERT_NE((const std::pair<size_t, std::pair<int *, int *> > *) NULL, anchorEntry);
-                ASSERT_NE((int *) NULL, anchorEntry->second.first);
-                ASSERT_EQ(3, (int) anchorEntry->first);
-                ASSERT_EQ(19, *anchorEntry->second.first);
 
                 predicate.nextPage();
                 values = intMap->keySet<int>(predicate).get();
@@ -2689,13 +2651,6 @@ namespace hazelcast {
                     ASSERT_EQ(value, values[i]);
                 }
 
-                const std::pair<int *, int *> *anchor = predicate.getAnchor();
-                ASSERT_NE((const std::pair<int *, int *> *) NULL, anchor);
-                ASSERT_NE((int *) NULL, anchor->first);
-                ASSERT_NE((int *) NULL, anchor->second);
-                ASSERT_EQ(9, *anchor->first);
-                ASSERT_EQ(9, *anchor->second);
-
                 ASSERT_EQ(1, (int) predicate.getPage());
 
                 predicate.setPage(4);
@@ -2706,21 +2661,6 @@ namespace hazelcast {
                     std::pair<int, int> value(predSize * 4 + i, predSize * 4 + i);
                     ASSERT_EQ(value, values[i]);
                 }
-
-                anchor = predicate.getAnchor();
-                ASSERT_NE((const std::pair<int *, int *> *) NULL, anchor);
-                ASSERT_NE((int *) NULL, anchor->first);
-                ASSERT_NE((int *) NULL, anchor->second);
-                ASSERT_EQ(24, *anchor->first);
-                ASSERT_EQ(24, *anchor->second);
-
-                const std::pair<size_t, std::pair<int *, int *> > *anchorEntry = predicate.getNearestAnchorEntry();
-                ASSERT_NE((const std::pair<size_t, std::pair<int *, int *> > *) NULL, anchorEntry);
-                ASSERT_NE((int *) NULL, anchorEntry->second.first);
-                ASSERT_NE((int *) NULL, anchorEntry->second.second);
-                ASSERT_EQ(3, (int) anchorEntry->first);
-                ASSERT_EQ(19, *anchorEntry->second.first);
-                ASSERT_EQ(19, *anchorEntry->second.second);
 
                 predicate.nextPage();
                 values = intMap->entrySet<int, int>(predicate).get();
@@ -3373,8 +3313,8 @@ namespace hazelcast {
                 ASSERT_EQ(view.value, employee);
                 ASSERT_EQ(view.key, 1);
 
-                employees->addIndex("a", true).get();
-                employees->addIndex("n", false).get();
+                employees->addIndex(config::index_config::index_type::SORTED, std::string("a")).get();
+                employees->addIndex(config::index_config::index_type::HASH, std::string("n")).get();
             }
 
             TEST_P(ClientMapTest, testMapStoreRelatedRequests) {

@@ -25,6 +25,9 @@
 #include "hazelcast/util/ILogger.h"
 
 namespace hazelcast {
+    namespace util {
+        class hz_thread_pool;
+    }
     namespace client {
         namespace impl {
             class BaseEventHandler;
@@ -51,6 +54,8 @@ namespace hazelcast {
                               public std::enable_shared_from_this<listener_service_impl> {
                     public:
                         listener_service_impl(ClientContext &clientContext, int32_t eventThreadCount);
+
+                        virtual ~listener_service_impl();
 
                         void start();
 

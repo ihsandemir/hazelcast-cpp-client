@@ -46,7 +46,6 @@
 #include "hazelcast/client/LifecycleListener.h"
 #include <hazelcast/client/cluster/impl/ClusterDataSerializerHook.h>
 #include <hazelcast/client/exception/ProtocolExceptions.h>
-#include "hazelcast/client/proxy/PNCounterImpl.h"
 #include "hazelcast/client/impl/HazelcastClientInstanceImpl.h"
 #include "hazelcast/client/impl/ClientLockReferenceIdGenerator.h"
 #include "hazelcast/client/spi/impl/ClientInvocationServiceImpl.h"
@@ -57,6 +56,7 @@
 #include "hazelcast/client/spi/impl/DefaultAddressProvider.h"
 #include "hazelcast/client/aws/impl/AwsAddressTranslator.h"
 #include "hazelcast/client/spi/impl/DefaultAddressTranslator.h"
+#include "hazelcast/client/spi/impl/listener/listener_service_impl.h"
 #include "hazelcast/client/LoadBalancer.h"
 #include "hazelcast/client/connection/ClientConnectionManagerImpl.h"
 #include "hazelcast/client/proxy/FlakeIdGeneratorImpl.h"
@@ -164,7 +164,7 @@ namespace hazelcast {
 
                 partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext, *executionService));
 
-                invocationService = spi::impl::ClientInvocationServiceImpl(clientContext);
+                invocationService.reset(new spi::impl::ClientInvocationServiceImpl(clientContext));
 
                 listenerService = initListenerService();
 
@@ -555,7 +555,7 @@ namespace hazelcast {
         }
 
         int IExecutorService::randomPartitionId() {
-            spi::impl::ClientPartitionServiceImpl partitionService = getContext().getPartitionService();
+            auto &partitionService = getContext().getPartitionService();
             return rand() % partitionService.getPartitionCount();
         }
 

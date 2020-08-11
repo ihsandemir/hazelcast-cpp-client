@@ -652,19 +652,16 @@ namespace hazelcast {
             template<typename K, typename V>
             boost::future<std::vector<K>> keySet(query::PagingPredicate<K, V> &predicate) {
                 predicate.setIterationType(query::IterationType::KEY);
-                return toObjectVector<K>(keySetForPagingPredicateData(toData(predicate))).then(boost::launch::deferred, [&](boost::future<std::vector<K>> f) {
-                    auto keys = f.get();
-                    std::vector<std::pair<K, boost::optional<V>>> entries;
-                    for (auto &key : keys) {
-                        entries.push_back(std::make_pair(std::move(key), boost::none));
+                return keySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
+                    auto result = f.get();
+                    predicate.setAnchorDataList(std::move(result.second));
+                    const auto &entries = result.first;
+                    std::vector<K> values;
+                    values.reserve(entries.size());
+                    for(const auto &e : entries) {
+                        values.empace_back(*toObject<K>(e.first));
                     }
-                    auto resultEntries = sortAndGet(predicate, query::IterationType::KEY, entries);
-                    std::vector<K> result;
-                    result.reserve(resultEntries.size());
-                    for (auto &entry : resultEntries) {
-                        result.push_back(std::move(entry.first));
-                    }
-                    return result;
+                    return values;
                 });
             }
 
@@ -705,15 +702,18 @@ namespace hazelcast {
             template<typename K, typename V>
             boost::future<std::vector<V>> values(query::PagingPredicate<K, V> &predicate) {
                 predicate.setIterationType(query::IterationType::VALUE);
-                return toEntryObjectVector<K, V>(valuesForPagingPredicateData(toData(predicate))).then(boost::launch::deferred, [&](boost::future<std::vector<std::pair<K, V>>> f) {
-                    auto entries = f.get();
-                    auto resultEntries = sortAndGet(predicate, query::IterationType::VALUE, entries);
-                    std::vector<V> result;
-                    result.reserve(resultEntries.size());
-                    for (auto &entry : resultEntries) {
-                        result.push_back(std::move(entry.second.value()));
+                return valuesForPagingPredicateData(
+                        protocol::codec::holder::paging_predicate_holder::of(predicate, serializationService_)).then(
+                        [=, &predicate](boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
+                    auto result = f.get();
+                    predicate.setAnchorDataList(std::move(result.second));
+                    const auto &entries = result.first;
+                    std::vector<V> values;
+                    values.reserve(entries.size());
+                    for(const auto &e : entries) {
+                        values.emplace_back(*toObject<V>(e.second));
                     }
-                    return result;
+                    return values;
                 });
             }
 
@@ -756,47 +756,77 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             boost::future<std::vector<std::pair<K, V>>> entrySet(query::PagingPredicate<K, V> &predicate) {
-                return toSortedEntryObjectVector<K, V>(predicate, query::IterationType::ENTRY);
+                return entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
+                    auto result = f.get();
+                    predicate.setAnchorDataList(std::move(result.second));
+                    const auto &entries_data = result.first;
+                    std::vector<std::pair<K, V>> entries;
+                    entries.reserve(entries_data.size());
+                    for(const auto &e : entries_data) {
+                        entries.empace_back(*toObject<K>(e.first), *toObject<V>(e.second));
+                    }
+                    return entries;
+                });
             }
 
             /**
-            * Adds an index to this map for the specified entries so
-            * that queries can run faster.
-            *
-            * Let's say your map values are Employee objects.
-            *
-            *   class Employee {
-            *       //...
-            *       private:
-            *          bool active;
-            *          int age;
-            *          std::string name;
-            *
-            *   }
-            *
-            *
-            * If you are querying your values mostly based on age and active then
-            * you should consider indexing these fields.
-            *
-            *   auto imap = hazelcastInstance.getMap("employees");
-            *   imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
-            *   imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
-            *
-            *
-            * In the server side, Index  should either have a getter method or be public.
-            * You should also make sure to add the indexes before adding
-            * entries to this map.
-            *
-            * @param attribute attribute of value
-            * @param ordered   <tt>true</tt> if index should be ordered,
-            *                  <tt>false</tt> otherwise.
-            */
-            boost::future<void> addIndex(const std::string &attribute, bool ordered) {
-                return toVoidFuture(proxy::IMapImpl::addIndex(attribute, ordered));
+             * Adds an index to this map for the specified entries so
+             * that queries can run faster.
+             * <p>
+             * Let's say your map values are Employee objects.
+             * <pre>
+             *   struct Employee {
+             *     bool active;
+             *     int32_t age;
+             *     std::string name;
+             *     // other fields
+             *
+             *   }
+             * </pre>
+             * If you are querying your values mostly based on age and active then
+             * you may consider indexing these fields.
+             * <pre>
+             *   auto imap = client.getMap("employees");
+             *   imap.addIndex(config::index_config(config::index_config::index_type::SORTED, "age"));  // Sorted index for range queries
+             *   imap.addIndex(config::index_config(config::index_config::index_type::HASH, "active"));  // Sorted index for range queries
+             * </pre>
+             * Index attribute should either have a getter method or be public.
+             * You should also make sure to add the indexes before adding
+             * entries to this map.
+             * <p>
+             * <b>Time to Index</b>
+             * <p>
+             * Indexing time is executed in parallel on each partition by operation threads. The Map
+             * is not blocked during this operation.
+             * <p>
+             * The time taken in proportional to the size of the Map and the number Members.
+             * <p>
+             * <b>Searches while indexes are being built</b>
+             * <p>
+             * Until the index finishes being created, any searches for the attribute will use a full Map scan,
+             * thus avoiding using a partially built index and returning incorrect results.
+             *
+             * @param config Index configuration.
+             */
+            boost::future<void> addIndex(const config::index_config &config) {
+                return toVoidFuture(proxy::IMapImpl::addIndexData(config));
+            }
+
+            /**
+             * Convenient method to add an index to this map with the given type and attributes.
+             * Attributes are indexed in ascending order.
+             * <p>
+             *
+             * \param type       Index type.
+             * \param attributes Attributes to be indexed.
+             */
+            template<typename ...T>
+            boost::future<void> addIndex(config::index_config::index_type type, T... attributes) {
+                return addIndex(config::index_config(type, std::forward<T>(attributes)...));
             }
 
             boost::future<void> clear() {
-                return toVoidFuture(proxy::IMapImpl::clear());
+                return toVoidFuture(proxy::IMapImpl::clearData());
             }
 
             /**
@@ -1075,20 +1105,6 @@ namespace hazelcast {
             }
 
         private:
-            template<typename K, typename V>
-            boost::future<std::vector<std::pair<K, V>>> toSortedEntryObjectVector(query::PagingPredicate<K, V> &predicate, query::IterationType iterationType) {
-                return toEntryObjectVector<K, V>(proxy::IMapImpl::entrySetForPagingPredicateData(toData(predicate))).then(
-                        boost::launch::deferred, [&](boost::future<std::vector<std::pair<K, V>>> f) {
-                            auto entries = sortAndGet<K, V>(predicate, iterationType, f.get());
-                            std::vector<std::pair<K, V>> result;
-                            result.reserve(entries.size());
-                            for_each(entries.begin(), entries.end(), [&](std::pair<K, boost::optional<V>> &entry) {
-                                result.push_back(
-                                        std::make_pair(std::move(entry.first), std::move(entry.second.value())));
-                            });
-                            return result;
-                        });
-            }
 
             template<typename K, typename V>
             std::vector<std::pair<K, boost::optional<V>>> sortAndGet(query::PagingPredicate<K, V> &predicate, query::IterationType iterationType, std::vector<std::pair<K, V>> entries) {

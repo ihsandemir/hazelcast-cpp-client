@@ -31,7 +31,6 @@
  */
 
 #include "hazelcast/client/ClientConfig.h"
-
 #include "hazelcast/client/SerializationConfig.h"
 #include "hazelcast/client/config/SSLConfig.h"
 #include "hazelcast/util/Preconditions.h"
@@ -44,8 +43,10 @@
 #include "hazelcast/client/config/ReliableTopicConfig.h"
 #include "hazelcast/client/config/ClientConnectionStrategyConfig.h"
 #include "hazelcast/client/config/LoggerConfig.h"
+#include "hazelcast/client/config/index_config.h"
 #include "hazelcast/client/GroupConfig.h"
 #include "hazelcast/client/config/matcher/MatchingPointConfigPatternMatcher.h"
+#include "hazelcast/client/query/Predicates.h"
 
 namespace hazelcast {
     namespace client {
@@ -521,6 +522,20 @@ namespace hazelcast {
                     return (int) (firstPart.length() + secondPart.length());
                 }
             }
+
+            const std::string index_config::bitmap_index_options::DEFAULT_KEY = query::QueryConstants::KEY_ATTRIBUTE_NAME;
+            const index_config::bitmap_index_options::unique_key_transformation index_config::bitmap_index_options::DEFAULT_TRANSFORMATION = index_config::bitmap_index_options::unique_key_transformation::OBJECT;
+
+            index_config::bitmap_index_options::bitmap_index_options() : key(DEFAULT_KEY),
+                                                                         transformation(DEFAULT_TRANSFORMATION) {}
+
+            const index_config::index_type index_config::DEFAULT_TYPE = index_config::index_type::SORTED;
+
+            index_config::index_config() : type(DEFAULT_TYPE) {}
+
+            index_config::index_config(index_config::index_type type) : type(type) {}
+
+            void index_config::add_attributes() {}
         }
 
         GroupConfig::GroupConfig() : name("dev"), password("dev-pass") {

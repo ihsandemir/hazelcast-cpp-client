@@ -708,6 +708,11 @@ namespace hazelcast {
                  ClientMessage HAZELCAST_API map_entrieswithpredicate_encode(std::string const & name, Data const & predicate);
 
                 /**
+                 * Adds an index to this map with specified configuration.
+                 */
+                 ClientMessage HAZELCAST_API map_addindex_encode(std::string const & name, config::index_config const & indexConfig);
+
+                /**
                  * Returns the number of key-value mappings in this map.  If the map contains more than Integer.MAX_VALUE elements,
                  * returns Integer.MAX_VALUE
                  */
@@ -771,6 +776,30 @@ namespace hazelcast {
                  * never blocks,and returns immediately.
                  */
                  ClientMessage HAZELCAST_API map_forceunlock_encode(std::string const & name, Data const & key, int64_t referenceId);
+
+                /**
+                 * Queries the map based on the specified predicate and returns the keys of matching entries. Specified predicate
+                 * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+                 * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+                 * QueryResultSizeExceededException if query result size limit is configured.
+                 */
+                 ClientMessage HAZELCAST_API map_keysetwithpagingpredicate_encode(std::string const & name, codec::holder::paging_predicate_holder const & predicate);
+
+                /**
+                 * Queries the map based on the specified predicate and returns the values of matching entries. Specified predicate
+                 * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+                 * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+                 * QueryResultSizeExceededException if query result size limit is configured.
+                 */
+                 ClientMessage HAZELCAST_API map_valueswithpagingpredicate_encode(std::string const & name, codec::holder::paging_predicate_holder const & predicate);
+
+                /**
+                 * Queries the map based on the specified predicate and returns the matching entries. Specified predicate
+                 * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+                 * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+                 * QueryResultSizeExceededException if query result size limit is configured.
+                 */
+                 ClientMessage HAZELCAST_API map_entrieswithpagingpredicate_encode(std::string const & name, codec::holder::paging_predicate_holder const & predicate);
 
                 /**
                  * Fetches specified number of keys from the specified partition starting from specified table index.

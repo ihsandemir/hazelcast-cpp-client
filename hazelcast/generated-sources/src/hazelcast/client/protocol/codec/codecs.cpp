@@ -1103,6 +1103,21 @@ namespace hazelcast {
                     return msg;
                 }
 
+                ClientMessage map_addindex_encode(std::string const & name, config::index_config const & indexConfig) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(false);
+                    msg.setOperationName("Map.AddIndex");
+
+                    msg.setMessageType(static_cast<int32_t>(76032));
+
+                    msg.set(name);
+
+                    msg.set(indexConfig, true);
+
+                    return msg;
+                }
+
                 ClientMessage map_size_encode(std::string const & name) {
                     size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
                     ClientMessage msg(initial_frame_size);
@@ -1255,6 +1270,51 @@ namespace hazelcast {
                     msg.set(name);
 
                     msg.set(key, true);
+
+                    return msg;
+                }
+
+                ClientMessage map_keysetwithpagingpredicate_encode(std::string const & name, codec::holder::paging_predicate_holder const & predicate) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(true);
+                    msg.setOperationName("Map.KeySetWithPagingPredicate");
+
+                    msg.setMessageType(static_cast<int32_t>(78848));
+
+                    msg.set(name);
+
+                    msg.set(predicate, true);
+
+                    return msg;
+                }
+
+                ClientMessage map_valueswithpagingpredicate_encode(std::string const & name, codec::holder::paging_predicate_holder const & predicate) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(true);
+                    msg.setOperationName("Map.ValuesWithPagingPredicate");
+
+                    msg.setMessageType(static_cast<int32_t>(79104));
+
+                    msg.set(name);
+
+                    msg.set(predicate, true);
+
+                    return msg;
+                }
+
+                ClientMessage map_entrieswithpagingpredicate_encode(std::string const & name, codec::holder::paging_predicate_holder const & predicate) {
+                    size_t initial_frame_size = ClientMessage::REQUEST_HEADER_LEN ;
+                    ClientMessage msg(initial_frame_size);
+                    msg.setRetryable(true);
+                    msg.setOperationName("Map.EntriesWithPagingPredicate");
+
+                    msg.setMessageType(static_cast<int32_t>(79360));
+
+                    msg.set(name);
+
+                    msg.set(predicate, true);
 
                     return msg;
                 }

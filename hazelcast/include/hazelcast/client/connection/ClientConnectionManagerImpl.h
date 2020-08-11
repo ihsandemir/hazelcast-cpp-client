@@ -154,8 +154,7 @@ namespace hazelcast {
 
                 template<typename Container>
                 void shuffle(Container &memberAddresses) const {
-                    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-                    std::shuffle(memberAddresses.begin(), memberAddresses.end(), std::default_random_engine(seed));
+                    std::random_shuffle(memberAddresses.begin(), memberAddresses.end());
                 }
 
                 void check_client_active();

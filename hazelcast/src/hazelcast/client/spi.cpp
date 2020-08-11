@@ -102,9 +102,6 @@ namespace hazelcast {
             }
 
             void ProxyManager::init() {
-                auto &invocationService = client.getInvocationService();
-                invocationTimeout = invocationService.getInvocationTimeout();
-                invocationRetryPause = invocationService.getInvocationRetryPause();
             }
 
             void ProxyManager::destroy() {
@@ -173,7 +170,7 @@ namespace hazelcast {
             }
 
             impl::ClientInvocationServiceImpl &ClientContext::getInvocationService() {
-                return hazelcastClient.invocationService;
+                return *hazelcastClient.invocationService;
             }
 
             ClientConfig &ClientContext::getClientConfig() {
@@ -847,7 +844,7 @@ namespace hazelcast {
                 bool
                 ClientInvocationServiceImpl::invokeOnConnection(const std::shared_ptr<ClientInvocation> &invocation,
                                                                 const std::shared_ptr<connection::Connection> &connection) {
-                    send(invocation, connection);
+                    return send(invocation, connection);
                 }
 
                 bool ClientInvocationServiceImpl::invokeOnPartitionOwner(
@@ -947,7 +944,7 @@ namespace hazelcast {
                 ClientInvocation::~ClientInvocation() = default;
 
                 boost::future<protocol::ClientMessage> ClientInvocation::invoke() {
-                    assert (clientMessage.get() != NULL);
+                    assert (clientMessage.load());
                     clientMessage.load()->get()->setCorrelationId(callIdSequence->next());
                     invokeOnSelection();
                     return invocationPromise.get_future().then(boost::launch::sync,
@@ -958,7 +955,7 @@ namespace hazelcast {
                 }
 
                 boost::future<protocol::ClientMessage> ClientInvocation::invokeUrgent() {
-                    assert (clientMessage);
+                    assert(clientMessage.load());
                     urgent_ = true;
                     clientMessage.load()->get()->setCorrelationId(callIdSequence->forceNext());
                     invokeOnSelection();
@@ -1144,7 +1141,6 @@ namespace hazelcast {
                     } else {
                         target << "random";
                     }
-                    ClientInvocation &nonConstInvocation = const_cast<ClientInvocation &>(invocation);
                     os << "ClientInvocation{" << "requestMessage = " << *invocation.clientMessage.load()->get()
                        << ", objectName = "
                        << invocation.objectName << ", target = " << target.str() << ", sendConnection = ";
@@ -1748,7 +1744,7 @@ namespace hazelcast {
                                     return registerListenerInternal(std::move(codec), std::move(h));
                                 }, std::move(listenerMessageCodec), std::move(handler)));
                         auto f = task.get_future();
-                        boost::asio::post(registrationExecutor->get_executor(), task);
+                        boost::asio::post(registrationExecutor->get_executor(), std::move(task));
                         return f;
                     }
 
@@ -1759,7 +1755,7 @@ namespace hazelcast {
                             return deregisterListenerInternal(registrationId);
                         });
                         auto f = task.get_future();
-                        boost::asio::post(registrationExecutor->get_executor(), task);
+                        boost::asio::post(registrationExecutor->get_executor(), std::move(task));
                         return f;
                     }
 
@@ -1962,6 +1958,8 @@ namespace hazelcast {
                             }
                         }
                     }
+
+                    listener_service_impl::~listener_service_impl() = default;
 
                     void cluster_view_listener::start() {
                         client_context_.getConnectionManager().addConnectionListener(shared_from_this());

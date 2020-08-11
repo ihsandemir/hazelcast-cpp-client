@@ -151,7 +151,6 @@ namespace hazelcast {
                 boost::uuids::uuid remote_uuid_;
 
                 util::ILogger &logger;
-                ClientConnectionManagerImpl &connectionManager;
                 std::atomic_bool alive;
             };
         }

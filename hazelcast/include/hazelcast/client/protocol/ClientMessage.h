@@ -30,13 +30,14 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/endian.hpp>
 #include <boost/optional.hpp>
-
+#include <hazelcast/client/query/PagingPredicate.h>
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/Member.h"
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/client/map/DataEntryView.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
 #include "hazelcast/client/protocol/codec/StackTraceElement.h"
+#include "hazelcast/client/config/index_config.h"
 
 namespace hazelcast {
     namespace util {
@@ -50,6 +51,29 @@ namespace hazelcast {
             public:
                 static const std::string CPP;
             };
+
+            namespace codec {
+                namespace holder {
+                    struct paging_predicate_holder {
+                        int32_t page_size;
+                        int32_t page;
+                        byte iteration_type;
+
+                        const query::anchor_data_list &anchor_list;
+                        const serialization::pimpl::Data *predicate_data;
+                        const serialization::pimpl::Data *comparator_data;
+
+                        template<typename K, typename V>
+                        static paging_predicate_holder
+                        of(const query::PagingPredicate <K, V> &p, serialization::pimpl::SerializationService &ss) {
+                            return {static_cast<int32_t>(p.getPageSize()), static_cast<int32_t>(p.getPage()),
+                                    static_cast<byte>(p.getIterationType()), p.anchor_data_list_,
+                                    p.predicate_data_.get_ptr(), p.comparator_data_.get_ptr()
+                            };
+                        }
+                    };
+                }
+            }
 
             /**
              * Client Message is the carrier framed data as defined below.
@@ -475,6 +499,13 @@ namespace hazelcast {
                 }
 
                 template<typename T>
+                typename std::enable_if<std::is_same<T, typename boost::optional<typename std::remove_reference<typename std::remove_cv<typename T::value_type>::type>::type>>::value, T>::type
+                inline get() {
+                    typedef typename std::remove_reference<typename std::remove_cv<typename T::value_type>::type>::type type;
+                    return getNullable<type>();
+                }
+
+                template<typename T>
                 boost::optional<T> getNullable() {
                     if (next_frame_is_null_frame()) {
                         // skip next frame with null flag
@@ -591,21 +622,46 @@ namespace hazelcast {
                 }
 
                 inline void set(const Address &a, bool is_final = false) {
-                    auto *f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(BEGIN_FRAME)));
-                    *f = BEGIN_FRAME;
+                    add_begin_frame();
 
-                    f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+                    auto f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                     f->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + INT32_SIZE;
                     f->flags = DEFAULT_FLAGS;
                     set(static_cast<int32_t>(a.getPort()));
 
                     set(a.getHost());
 
-                    f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(END_FRAME)));
-                    *f = END_FRAME;
-                    if (is_final) {
-                        f->flags |= IS_FINAL_FLAG;
-                    }
+                    add_end_frame(is_final);
+                }
+
+                void set(const codec::holder::paging_predicate_holder &p, bool is_final = false);
+
+                inline void set(const config::index_config &c, bool is_final = false) {
+                    add_begin_frame();
+
+                    auto f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+                    f->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + INT32_SIZE;
+                    f->flags = DEFAULT_FLAGS;
+                    set(static_cast<int32_t>(c.type));
+
+                    set(c.name.get_ptr());
+                    set(c.attributes);
+                    set(c.options.get_ptr());
+
+                    add_end_frame(is_final);
+                }
+
+                inline void set(const config::index_config::bitmap_index_options &o, bool is_final = false) {
+                    add_begin_frame();
+
+                    auto f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+                    f->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + INT32_SIZE;
+                    f->flags = DEFAULT_FLAGS;
+                    set(static_cast<int32_t>(o.transformation));
+
+                    set(o.key);
+
+                    add_end_frame(is_final);
                 }
 
                 inline void set(boost::uuids::uuid uuid) {
@@ -625,6 +681,13 @@ namespace hazelcast {
 
                 inline void set(const serialization::pimpl::Data *value) {
                     setNullable<serialization::pimpl::Data>(value);
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<T, typename boost::optional<typename std::remove_reference<typename std::remove_cv<typename T::value_type>::type>::type>>::value, void>::type
+                inline set(const T &value, bool is_final = false) {
+                    typedef typename std::remove_reference<typename std::remove_cv<typename T::value_type>::type>::type type;
+                    return setNullable<type>(value.get_ptr(), is_final);
                 }
 
                 void set(unsigned char *memory, boost::uuids::uuid uuid);
@@ -728,6 +791,19 @@ namespace hazelcast {
                     return u;
                 }
 
+                void add_begin_frame() {
+                    auto *f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(BEGIN_FRAME)));
+                    *f = BEGIN_FRAME;
+                }
+
+                void add_end_frame(bool is_final) {
+                    auto ef = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(END_FRAME)));
+                    *ef = END_FRAME;
+                    if (is_final) {
+                        ef->flags |= IS_FINAL_FLAG;
+                    }
+                }
+
                 bool retryable;
                 std::string operationName;
 
@@ -749,7 +825,6 @@ namespace hazelcast {
             void ClientMessage::set(const std::vector<std::pair<boost::uuids::uuid, int64_t>> &values, bool is_final);
 
         }
-
     }
 }
 
