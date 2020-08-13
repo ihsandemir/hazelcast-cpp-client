@@ -171,7 +171,9 @@ namespace hazelcast {
                     return;
                 }
 
-                connect_to_members_timer_->cancel();
+                if (connect_to_members_timer_) {
+                    connect_to_members_timer_->cancel();
+                }
 
                 heartbeat.shutdown();
 
