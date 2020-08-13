@@ -45,11 +45,13 @@ namespace hazelcast {
 
                 virtual ~ClientExceptionFactory();
 
-                std::exception_ptr create_exception(std::vector<codec::ErrorHolder>::const_iterator begin,
-                                      std::vector<codec::ErrorHolder>::const_iterator end) const;
+                std::exception_ptr create_exception(const std::vector<codec::ErrorHolder> &errors) const;
 
             private:
                 void registerException(int32_t errorCode, ExceptionFactory *factory);
+
+                std::exception_ptr create_exception(std::vector<codec::ErrorHolder>::const_iterator begin,
+                                                    std::vector<codec::ErrorHolder>::const_iterator end) const;
 
                 std::unordered_map<int32_t, ExceptionFactory *> errorCodeToFactory;
             };

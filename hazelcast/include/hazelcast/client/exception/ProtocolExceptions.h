@@ -16,8 +16,6 @@
 
 #pragma once
 
-#include <stdint.h>
-
 #include "hazelcast/client/exception/IException.h"
 #include "hazelcast/client/protocol/ClientProtocolErrorCodes.h"
 
@@ -32,14 +30,14 @@ namespace hazelcast {
 #define DEFINE_EXCEPTION_CLASS(ClassName, errorNo, isRuntime) \
             class HAZELCAST_API ClassName : public IException {\
             public:\
-                ClassName(const std::string& errorName, int32_t errorCode, const std::string& source, const std::string& message, \
-                        const std::string& details = std::string(), bool runtime = false, bool retryable = false) \
-                    : IException(errorName, source, message, details, errorCode, runtime, retryable) {}\
                 ClassName(const std::string& source, const std::string& message, \
-                        const std::string& details = std::string(), bool retryable = false) \
-                    : ClassName(#ClassName, errorNo,  source, message, details, isRuntime, retryable) {}\
-                ClassName(const std::string& message) : ClassName("", message) {}\
+                        const std::string& details = "", std::exception_ptr cause = nullptr, bool retryable = false) \
+                    : ClassName(#ClassName, errorNo, source, message, details, cause, isRuntime, retryable) {}\
+                explicit ClassName(const std::string& message) : ClassName("", message) {}\
                 ClassName() : ClassName("", "") {}\
+                ClassName(const std::string& errorName, int32_t errorCode, const std::string& source, const std::string& message, \
+                        const std::string& details, std::exception_ptr cause, bool runtime, bool retryable) \
+                    : IException(errorName, source, message, details, errorCode, cause, runtime, retryable) {}\
             };\
 
             // ---------  Non-RuntimeException starts here -------------------------------------------/
@@ -147,18 +145,19 @@ namespace hazelcast {
             class HAZELCAST_API RetryableHazelcastException : public HazelcastException {
             public:
                 RetryableHazelcastException(const std::string &errorName, int32_t errorCode, const std::string &source,
-                                            const std::string &message, const std::string &details, bool runtime,
+                                            const std::string &message, const std::string &details,
+                                            std::exception_ptr cause, bool runtime,
                                             bool retryable);
 
-                RetryableHazelcastException(const std::string &source = "", const std::string &message = "",
-                                            const std::string &details = "");
+                explicit RetryableHazelcastException(const std::string &source = "", const std::string &message = "",
+                                            const std::string &details = "", std::exception_ptr cause = nullptr);
             };
 
 #define DEFINE_RETRYABLE_EXCEPTION_CLASS(ClassName, errorNo) \
             class HAZELCAST_API ClassName : public RetryableHazelcastException {\
             public:\
-                ClassName(const std::string& source = "", const std::string& message = "", const std::string& details = "") \
-                    : RetryableHazelcastException(#ClassName, errorNo, source, message, details, false, true) {} \
+                explicit ClassName(const std::string& source = "", const std::string& message = "", const std::string& details = "", std::exception_ptr cause = nullptr) \
+                    : RetryableHazelcastException(#ClassName, errorNo, source, message, details, cause, false, true) {} \
             };\
 
             /** List of Retryable exceptions **/
@@ -172,8 +171,8 @@ namespace hazelcast {
 
             class MemberLeftException : public ExecutionException {
             public:
-                MemberLeftException(const std::string &source = "", const std::string &message = "",
-                                    const std::string &details = "");
+                explicit MemberLeftException(const std::string &source = "", const std::string &message = "",
+                                    const std::string &details = "", std::exception_ptr cause = nullptr);
             };
 
             // ---------  RuntimeException ends here -------------------------------------------------/
@@ -182,8 +181,8 @@ namespace hazelcast {
             // -----------------    Client side runtime exceptions start here --------------------------------
             class ConsistencyLostException : public HazelcastException {
             public:
-                ConsistencyLostException(const std::string &source = "", const std::string &message = "",
-                                         const std::string &details = "");
+                explicit ConsistencyLostException(const std::string &source = "", const std::string &message = "",
+                                         const std::string &details = "", std::exception_ptr cause = nullptr);
             };
 
             DEFINE_EXCEPTION_CLASS(HazelcastClientNotActiveException, protocol::HAZELCAST_INSTANCE_NOT_ACTIVE, true);
@@ -210,5 +209,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-

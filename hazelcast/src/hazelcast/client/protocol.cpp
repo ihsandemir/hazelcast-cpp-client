@@ -382,26 +382,6 @@ namespace hazelcast {
                 }
             }
 
-            void ClientExceptionFactory::throwException(const std::string &source,
-                                                        protocol::ClientMessage &clientMessage) const {
-                auto errors = codec::ErrorCodec::decode(clientMessage);
-                create_and_throw(errors.begin(), errors.end(), *this);
-                auto it = errorCodeToFactory.find(error.errorCode);
-                if (errorCodeToFactory.end() == it) {
-                    it = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
-                }
-                it->second->throwException(*this, source, error.message ? *error.message : "nullptr",
-                                           error.toString(), -1);
-            }
-
-            void ClientExceptionFactory::throwException(int32_t errorCode) const {
-                auto it = errorCodeToFactory.find(errorCode);
-                if (errorCodeToFactory.end() == it) {
-                    it = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
-                }
-                return it->second->throwException();
-            }
-
             void ClientExceptionFactory::registerException(int32_t errorCode, ExceptionFactory *factory) {
                 auto it = errorCodeToFactory.find(errorCode);
                 if (errorCodeToFactory.end() != it) {
@@ -423,17 +403,12 @@ namespace hazelcast {
                 if (errorCodeToFactory.end() == factory) {
                     factory = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
                 }
-                factory->second->create_exception(*this, begin->className, begin->message.value_or("nullptr"),
+                return factory->second->create_exception(*this, begin->className, begin->message.value_or("nullptr"),
                                                   begin->toString(), create_exception(++begin, end));
             }
 
-            void ClientExceptionFactory::throw_single_exception(const codec::ErrorHolder &error) const {
-                auto found = errorCodeToFactory.find(error.errorCode);
-                if (errorCodeToFactory.end() == found) {
-                    found = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
-                }
-                found->second->throwException(*this, error.className, error.message.value_or("nullptr"),
-                                              error.toString());
+            std::exception_ptr ClientExceptionFactory::create_exception(const std::vector<codec::ErrorHolder> &errors) const {
+                return create_exception(errors.begin(), errors.end());
             }
 
             boost::uuids::uuid Principal::getUuid() const {

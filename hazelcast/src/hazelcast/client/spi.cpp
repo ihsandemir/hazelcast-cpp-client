@@ -549,13 +549,8 @@ namespace hazelcast {
                         const std::shared_ptr<protocol::ClientMessage> &response) {
                     try {
                         if (protocol::codec::ErrorCodec::EXCEPTION_MESSAGE_TYPE == response->getMessageType()) {
-                            try {
-                                client.getClientExceptionFactory().throwException(
-                                        "ClientInvocationServiceImpl::ResponseThread::handleClientMessage",
-                                        *response);
-                            } catch (...) {
-                                invocation->notifyException(std::current_exception());
-                            }
+                            auto error_holder = protocol::codec::ErrorCodec::decode(*response);
+                            invocation->notifyException(client.getClientExceptionFactory().create_exception(error_holder));
                         } else {
                             invocation->notify(response);
                         }
@@ -941,6 +936,7 @@ namespace hazelcast {
                         objectName(name),
                         connection(conn),
                         invokeCount(0), urgent_(false), smart_routing_(invocationService.is_smart_routing()) {
+                    message->setPartitionId(partitionId);
                     clientMessage = boost::make_shared<std::shared_ptr<protocol::ClientMessage>>(message);
                 }
 

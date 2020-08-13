@@ -759,9 +759,9 @@ namespace hazelcast {
         namespace exception {
             IException::IException(const std::string &exceptionName, const std::string &source,
                                    const std::string &message, const std::string &details, int32_t errorNo,
-                                   bool isRuntime, bool retryable)
-                    : src(source), msg(message), details(details), errorCode(errorNo), runtimeException(isRuntime),
-                      retryable(retryable), report((boost::format(
+                                   std::exception_ptr cause, bool isRuntime, bool retryable)
+                    : src(source), msg(message), details(details), errorCode(errorNo), cause_(cause),
+                    runtimeException(isRuntime), retryable(retryable), report((boost::format(
                             "%1% {%2%. Error code:%3%, Details:%4%.} at %5%.") % exceptionName % message % errorNo %
                                                     details % source).str()) {
             }
@@ -805,33 +805,34 @@ namespace hazelcast {
 
             RetryableHazelcastException::RetryableHazelcastException(const std::string &source,
                                                                      const std::string &message,
-                                                                     const std::string &details)
+                                                                     const std::string &details,
+                                                                     std::exception_ptr cause)
                     : RetryableHazelcastException(
-                    "RetryableHazelcastException", protocol::RETRYABLE_HAZELCAST, source, message, details, true,
+                    "RetryableHazelcastException", protocol::RETRYABLE_HAZELCAST, source, message, details, cause, true,
                     true) {}
 
             RetryableHazelcastException::RetryableHazelcastException(const std::string &errorName, int32_t errorCode,
                                                                      const std::string &source,
                                                                      const std::string &message,
-                                                                     const std::string &details, bool runtime,
-                                                                     bool retryable) : HazelcastException(errorName,
+                                                                     const std::string &details, std::exception_ptr cause,
+                                                                     bool runtime, bool retryable) : HazelcastException(errorName,
                                                                                                           errorCode,
                                                                                                           source,
                                                                                                           message,
                                                                                                           details,
+                                                                                                          cause,
                                                                                                           runtime,
                                                                                                           retryable) {}
 
             MemberLeftException::MemberLeftException(const std::string &source, const std::string &message,
-                                                     const std::string &details)
-                    : ExecutionException("MemberLeftException", protocol::MEMBER_LEFT, source, message, details, false,
-                                         true) {}
+                                                     const std::string &details, std::exception_ptr cause)
+                    : ExecutionException("MemberLeftException", protocol::MEMBER_LEFT, source, message, details,
+                                         cause, false,true) {}
 
             ConsistencyLostException::ConsistencyLostException(const std::string &source, const std::string &message,
-                                                               const std::string &details)
+                                                               const std::string &details, std::exception_ptr cause)
                     : HazelcastException("ConsistencyLostException", protocol::CONSISTENCY_LOST, source, message,
-                                         details, true,
-                                         false) {}
+                                         details, cause, true,false) {}
         }
     }
 }

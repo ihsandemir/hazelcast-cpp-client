@@ -92,12 +92,9 @@ namespace hazelcast {
                 void client_addclusterviewlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 770) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto version = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto memberInfos = msg.get<std::vector<Member>>();
 
@@ -105,12 +102,9 @@ namespace hazelcast {
                         return;
                     }
                     if (messageType == 771) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto version = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto partitions = msg.get<std::vector<std::pair<boost::uuids::uuid, std::vector<int>>>>();
                         handle_partitionsview(version, partitions);
@@ -169,14 +163,11 @@ namespace hazelcast {
                 void client_addpartitionlostlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 1538) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto partitionId = msg.get<int32_t>();
                         auto lostBackupCount = msg.get<int32_t>();
                         auto source = msg.get<boost::uuids::uuid>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         handle_partitionlost(partitionId, lostBackupCount, source);
                         return;
@@ -227,12 +218,9 @@ namespace hazelcast {
                 void client_adddistributedobjectlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 2306) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto source = msg.get<boost::uuids::uuid>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::UUID_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto name = msg.get<std::string>();
                         auto serviceName = msg.get<std::string>();
@@ -330,12 +318,9 @@ namespace hazelcast {
                 void client_localbackuplistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 3842) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto sourceInvocationCorrelationId = msg.get<int64_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT64_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         handle_backup(sourceInvocationCorrelationId);
                         return;
@@ -761,14 +746,11 @@ namespace hazelcast {
                 void map_addentrylistenertokeywithpredicate_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 71170) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -804,14 +786,11 @@ namespace hazelcast {
                 void map_addentrylistenerwithpredicate_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 71426) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -847,14 +826,11 @@ namespace hazelcast {
                 void map_addentrylistenertokey_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 71682) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -888,14 +864,11 @@ namespace hazelcast {
                 void map_addentrylistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 71938) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -942,13 +915,10 @@ namespace hazelcast {
                 void map_addpartitionlostlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 72450) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto partitionId = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         handle_mappartitionlost(partitionId, uuid);
                         return;
@@ -1541,21 +1511,18 @@ namespace hazelcast {
                 void map_addnearcacheinvalidationlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 81666) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto sourceUuid = msg.get<boost::uuids::uuid>();
                         auto partitionUuid = msg.get<boost::uuids::uuid>();
                         auto sequence = msg.get<int64_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::UUID_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT64_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         handle_imapinvalidation(key, sourceUuid, partitionUuid, sequence);
                         return;
                     }
                     if (messageType == 81667) {
-                        msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN);
+                        msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN);
 
                         auto keys = msg.get<std::vector<Data>>();
 
@@ -1940,14 +1907,11 @@ namespace hazelcast {
                 void multimap_addentrylistenertokey_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 134402) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -1980,14 +1944,11 @@ namespace hazelcast {
                 void multimap_addentrylistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 134658) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -2420,13 +2381,10 @@ namespace hazelcast {
                 void queue_addlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 200962) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto eventType = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto item = msg.getNullable<Data>();
                         handle_item(item, uuid, eventType);
@@ -2514,13 +2472,10 @@ namespace hazelcast {
                 void topic_addmessagelistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 262658) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto publishTime = msg.get<int64_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT64_SIZE + ClientMessage::UUID_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto item = msg.get<Data>();
                         handle_topic(item, publishTime, uuid);
@@ -2719,13 +2674,10 @@ namespace hazelcast {
                 void list_addlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 330498) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto eventType = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto item = msg.getNullable<Data>();
                         handle_item(item, uuid, eventType);
@@ -3096,13 +3048,10 @@ namespace hazelcast {
                 void set_addlistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 396034) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto eventType = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto item = msg.getNullable<Data>();
                         handle_item(item, uuid, eventType);
@@ -3397,14 +3346,11 @@ namespace hazelcast {
                 void replicatedmap_addentrylistenertokeywithpredicate_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 854530) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3438,14 +3384,11 @@ namespace hazelcast {
                 void replicatedmap_addentrylistenerwithpredicate_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 854786) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3479,14 +3422,11 @@ namespace hazelcast {
                 void replicatedmap_addentrylistenertokey_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 855042) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3518,14 +3458,11 @@ namespace hazelcast {
                 void replicatedmap_addentrylistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 855298) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3615,14 +3552,11 @@ namespace hazelcast {
                 void replicatedmap_addnearcacheentrylistener_handler::handle(ClientMessage &msg) {
                     auto messageType = msg.getMessageType();
                     if (messageType == 856578) {
-                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
+                        auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        auto remaining_initial_frame_bytes = initial_frame->frame_len - ClientMessage::RESPONSE_HEADER_LEN;
-                        remaining_initial_frame_bytes -= (ClientMessage::INT32_SIZE + ClientMessage::UUID_SIZE + ClientMessage::INT32_SIZE);
-                        // skip any remaining bytes to the end of the frame
-                        msg.rd_ptr(remaining_initial_frame_bytes);
+                        msg.seek(initial_frame->frame_len);
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();

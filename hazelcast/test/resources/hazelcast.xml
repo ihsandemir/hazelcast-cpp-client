@@ -31,7 +31,6 @@
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
 
-    <cluster-name>dev</cluster-name>
 
     <properties>
         <property name="hazelcast.map.invalidation.batch.enabled">false</property>

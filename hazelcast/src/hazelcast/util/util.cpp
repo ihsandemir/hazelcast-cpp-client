@@ -57,8 +57,6 @@
 #include <mutex>
 
 #include "hazelcast/util/Destroyable.h"
-#include "hazelcast/util/TimeUtil.h"
-#include "hazelcast/util/concurrent/TimeUnit.h"
 #include "hazelcast/util/Closeable.h"
 #include <boost/uuid/uuid.hpp>
 #include "hazelcast/util/UTFUtil.h"
@@ -66,7 +64,6 @@
 #include "hazelcast/util/AtomicBoolean.h"
 #include "hazelcast/util/concurrent/locks/LockSupport.h"
 #include "hazelcast/util/concurrent/BackoffIdleStrategy.h"
-#include "hazelcast/util/concurrent/CancellationException.h"
 #include "hazelcast/util/AtomicInt.h"
 #include "hazelcast/util/AddressHelper.h"
 #include "hazelcast/util/RuntimeAvailableProcessors.h"
@@ -273,32 +270,11 @@ namespace hazelcast {
     }
 }
 
-
-
-namespace hazelcast {
-    namespace util {
-        int64_t TimeUtil::timeInMsOrOneIfResultIsZero(int64_t time, const concurrent::TimeUnit &timeunit) {
-            int64_t timeInMillis = timeunit.toMillis(time);
-            if (time > 0 && timeInMillis == 0) {
-                timeInMillis = 1;
-            }
-
-            return timeInMillis;
-        }
-    }
-}
-
-//  Copyright (c) 2015 ihsan demir. All rights reserved.
-//
-
-
 namespace hazelcast {
     namespace util {
         Closeable::~Closeable() = default;
     }
 }
-
-
 
 namespace hazelcast {
     namespace util {
@@ -751,185 +727,6 @@ namespace hazelcast {
                                                                            : min(minParkPeriodNs << allowedShift,
                                                                                  maxParkPeriodNs);
             }
-        }
-    }
-}
-
-
-
-namespace hazelcast {
-    namespace util {
-        namespace concurrent {
-            CancellationException::CancellationException(const std::string &source, const std::string &message)
-                    : IllegalStateException("CancellationException", client::protocol::CANCELLATION, source, message,
-                                            "", true) {}
-        }
-    }
-}
-
-
-
-
-namespace hazelcast {
-    namespace util {
-        namespace concurrent {
-            const NanoSeconds TimeUnit::NANOS;
-            const MicroSeconds TimeUnit::MICROS;
-            const MilliSeconds TimeUnit::MILLIS;
-            const Seconds TimeUnit::SECS;
-            const Minutes TimeUnit::MINS;
-            const Hours TimeUnit::HRS;
-            const Days TimeUnit::DS;
-
-            const TimeUnit &TimeUnit::NANOSECONDS() {
-                return TimeUnit::NANOS;
-            }
-
-            const TimeUnit &TimeUnit::MICROSECONDS() {
-                return TimeUnit::MICROS;
-            }
-
-            const TimeUnit &TimeUnit::MILLISECONDS() {
-                return TimeUnit::MILLIS;
-            }
-
-            const TimeUnit &TimeUnit::SECONDS() {
-                return TimeUnit::SECS;
-            }
-
-            const TimeUnit &TimeUnit::MINUTES() {
-                return TimeUnit::MINS;
-            }
-
-            const TimeUnit &TimeUnit::HOURS() {
-                return TimeUnit::HRS;
-            }
-
-            const TimeUnit &TimeUnit::DAYS() {
-                return TimeUnit::DS;
-            }
-
-            /**
-             * Scale d by m, checking for overflow.
-             * This has a short name to make above code more readable.
-             */
-            int64_t TimeUnit::x(int64_t d, int64_t m, int64_t over) {
-                if (d > over) return INT64_MAX;
-                if (d < -over) return INT64_MIN;
-                return d * m;
-            }
-
-            int64_t NanoSeconds::toNanos(int64_t d) const { return d; }
-
-            int64_t NanoSeconds::toMicros(int64_t d) const { return d / (C1 / C0); }
-
-            int64_t NanoSeconds::toMillis(int64_t d) const { return d / (C2 / C0); }
-
-            int64_t NanoSeconds::toSeconds(int64_t d) const { return d / (C3 / C0); }
-
-            int64_t NanoSeconds::toMinutes(int64_t d) const { return d / (C4 / C0); }
-
-            int64_t NanoSeconds::toHours(int64_t d) const { return d / (C5 / C0); }
-
-            int64_t NanoSeconds::toDays(int64_t d) const { return d / (C6 / C0); }
-
-            int64_t NanoSeconds::convert(int64_t d, const TimeUnit &u) const { return u.toNanos(d); }
-
-            int64_t MicroSeconds::toNanos(int64_t d) const { return x(d, C1 / C0, MAX / (C1 / C0)); }
-
-            int64_t MicroSeconds::toMicros(int64_t d) const { return d; }
-
-            int64_t MicroSeconds::toMillis(int64_t d) const { return d / (C2 / C1); }
-
-            int64_t MicroSeconds::toSeconds(int64_t d) const { return d / (C3 / C1); }
-
-            int64_t MicroSeconds::toMinutes(int64_t d) const { return d / (C4 / C1); }
-
-            int64_t MicroSeconds::toHours(int64_t d) const { return d / (C5 / C1); }
-
-            int64_t MicroSeconds::toDays(int64_t d) const { return d / (C6 / C1); }
-
-            int64_t MicroSeconds::convert(int64_t d, const TimeUnit &u) const { return u.toMicros(d); }
-
-            int64_t MilliSeconds::toNanos(int64_t d) const { return x(d, C2 / C0, MAX / (C2 / C0)); }
-
-            int64_t MilliSeconds::toMicros(int64_t d) const { return x(d, C2 / C1, MAX / (C2 / C1)); }
-
-            int64_t MilliSeconds::toMillis(int64_t d) const { return d; }
-
-            int64_t MilliSeconds::toSeconds(int64_t d) const { return d / (C3 / C2); }
-
-            int64_t MilliSeconds::toMinutes(int64_t d) const { return d / (C4 / C2); }
-
-            int64_t MilliSeconds::toHours(int64_t d) const { return d / (C5 / C2); }
-
-            int64_t MilliSeconds::toDays(int64_t d) const { return d / (C6 / C2); }
-
-            int64_t MilliSeconds::convert(int64_t d, const TimeUnit &u) const { return u.toMillis(d); }
-
-            int64_t Seconds::toNanos(int64_t d) const { return x(d, C3 / C0, MAX / (C3 / C0)); }
-
-            int64_t Seconds::toMicros(int64_t d) const { return x(d, C3 / C1, MAX / (C3 / C1)); }
-
-            int64_t Seconds::toMillis(int64_t d) const { return x(d, C3 / C2, MAX / (C3 / C2)); }
-
-            int64_t Seconds::toSeconds(int64_t d) const { return d; }
-
-            int64_t Seconds::toMinutes(int64_t d) const { return d / (C4 / C3); }
-
-            int64_t Seconds::toHours(int64_t d) const { return d / (C5 / C3); }
-
-            int64_t Seconds::toDays(int64_t d) const { return d / (C6 / C3); }
-
-            int64_t Seconds::convert(int64_t d, const TimeUnit &u) const { return u.toSeconds(d); }
-
-            int64_t Minutes::toNanos(int64_t d) const { return x(d, C4 / C0, MAX / (C4 / C0)); }
-
-            int64_t Minutes::toMicros(int64_t d) const { return x(d, C4 / C1, MAX / (C4 / C1)); }
-
-            int64_t Minutes::toMillis(int64_t d) const { return x(d, C4 / C2, MAX / (C4 / C2)); }
-
-            int64_t Minutes::toSeconds(int64_t d) const { return x(d, C4 / C3, MAX / (C4 / C3)); }
-
-            int64_t Minutes::toMinutes(int64_t d) const { return d; }
-
-            int64_t Minutes::toHours(int64_t d) const { return d / (C5 / C4); }
-
-            int64_t Minutes::toDays(int64_t d) const { return d / (C6 / C4); }
-
-            int64_t Minutes::convert(int64_t d, const TimeUnit &u) const { return u.toMinutes(d); }
-
-            int64_t Hours::toNanos(int64_t d) const { return x(d, C5 / C0, MAX / (C5 / C0)); }
-
-            int64_t Hours::toMicros(int64_t d) const { return x(d, C5 / C1, MAX / (C5 / C1)); }
-
-            int64_t Hours::toMillis(int64_t d) const { return x(d, C5 / C2, MAX / (C5 / C2)); }
-
-            int64_t Hours::toSeconds(int64_t d) const { return x(d, C5 / C3, MAX / (C5 / C3)); }
-
-            int64_t Hours::toMinutes(int64_t d) const { return x(d, C5 / C4, MAX / (C5 / C4)); }
-
-            int64_t Hours::toHours(int64_t d) const { return d; }
-
-            int64_t Hours::toDays(int64_t d) const { return d / (C6 / C5); }
-
-            int64_t Hours::convert(int64_t d, const TimeUnit &u) const { return u.toHours(d); }
-
-            int64_t Days::toNanos(int64_t d) const { return x(d, C6 / C0, MAX / (C6 / C0)); }
-
-            int64_t Days::toMicros(int64_t d) const { return x(d, C6 / C1, MAX / (C6 / C1)); }
-
-            int64_t Days::toMillis(int64_t d) const { return x(d, C6 / C2, MAX / (C6 / C2)); }
-
-            int64_t Days::toSeconds(int64_t d) const { return x(d, C6 / C3, MAX / (C6 / C3)); }
-
-            int64_t Days::toMinutes(int64_t d) const { return x(d, C6 / C4, MAX / (C6 / C4)); }
-
-            int64_t Days::toHours(int64_t d) const { return x(d, C6 / C5, MAX / (C6 / C5)); }
-
-            int64_t Days::toDays(int64_t d) const { return d; }
-
-            int64_t Days::convert(int64_t d, const TimeUnit &u) const { return u.toDays(d); }
         }
     }
 }

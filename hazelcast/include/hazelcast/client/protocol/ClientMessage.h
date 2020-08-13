@@ -198,6 +198,7 @@ namespace hazelcast {
                 //partition id field offset used by request and event messages
                 static constexpr size_t PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT64_SIZE;
                 static constexpr size_t REQUEST_HEADER_LEN = PARTITION_ID_FIELD_OFFSET + INT32_SIZE;
+                static constexpr size_t EVENT_HEADER_LEN = PARTITION_ID_FIELD_OFFSET + INT32_SIZE;
                 static constexpr size_t RESPONSE_HEADER_LEN = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT8_SIZE;
                 //offset valid for fragmentation frames only
                 static constexpr size_t FRAGMENTATION_ID_OFFSET = 0;
@@ -236,6 +237,11 @@ namespace hazelcast {
                     byte *result = peek(requestedBytes);
                     offset += requestedBytes;
                     return result;
+                }
+
+                inline void seek(size_t position) {
+                    assert(buffer_index == 0 && position >= offset && position < data_buffer[buffer_index].size());
+                    offset = position;
                 }
 
                 inline byte *peek(size_t requestedBytes) {
@@ -326,10 +332,25 @@ namespace hazelcast {
                     return std::string(reinterpret_cast<const char *>(rd_ptr(str_bytes_len)), str_bytes_len);
                 }
 
+                template <typename>
+                struct is_trivial_entry_vector : std::false_type
+                { };
+
+                template <typename T, typename U>
+                struct is_trivial_entry_vector<std::vector<std::pair<T, U>>> : std::true_type
+                { };
+
+                template <>
+                struct is_trivial_entry_vector<std::vector<std::pair<serialization::pimpl::Data, boost::optional<hazelcast::client::serialization::pimpl::Data>>>> : std::false_type
+                { };
+
+                template <>
+                struct is_trivial_entry_vector<std::vector<std::pair<serialization::pimpl::Data, hazelcast::client::serialization::pimpl::Data>>> : std::false_type
+                { };
+
                 template<typename T>
                 typename std::enable_if<std::is_same<T, std::vector<typename T::value_type>>::value &&
-                                        !std::is_same<int32_t, typename T::value_type>::value &&
-                                        !std::is_same<int64_t, typename T::value_type>::value, T>::type
+                        !std::is_trivial<typename T::value_type>::value && !is_trivial_entry_vector<T>::value, T>::type
                 get() {
                     T result;
                     // skip begin frame
@@ -347,19 +368,54 @@ namespace hazelcast {
 
                 template<typename T>
                 typename std::enable_if<std::is_same<T, std::vector<typename T::value_type>>::value &&
-                        (std::is_same<int32_t, typename T::value_type>::value ||
-                         std::is_same<int64_t, typename T::value_type>::value), T>::type
+                        std::is_trivial<typename T::value_type>::value, T>::type
                 get() {
                     T result;
 
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                     auto content_length = f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-                    size_t item_count = content_length / sizeof(typename T::value_type);
+                    size_t item_count = content_length / ClientMessage::get_sizeof<typename T::value_type>();
                     for (size_t i = 0; i < item_count; ++i) {
                         result.push_back(get<typename T::value_type>());
                     }
 
                     return result;
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<T, std::vector<typename T::value_type>>::value &&
+                        std::is_same<std::pair<typename T::value_type::first_type, typename T::value_type::second_type>, typename T::value_type>::value &&
+                        std::is_trivial<typename T::value_type::first_type>::value && std::is_trivial<typename T::value_type::second_type>::value, T>::type
+                get() {
+                    T result;
+
+                    auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+                    auto content_length = f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+                    size_t item_count = content_length / (ClientMessage::get_sizeof<typename T::value_type::first_type>() + ClientMessage::get_sizeof<typename T::value_type::second_type>());
+                    for (size_t i = 0; i < item_count; ++i) {
+                        result.emplace_back(std::make_pair(get<typename T::value_type::first_type>(), get<typename T::value_type::second_type>()));
+                    }
+
+                    return result;
+
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<T, std::vector<typename T::value_type>>::value &&
+                        std::is_same<std::pair<typename T::value_type::first_type, typename T::value_type::second_type>, typename T::value_type>::value &&
+                        std::is_trivial<typename T::value_type::first_type>::value && !std::is_trivial<typename T::value_type::second_type>::value, T>::type
+                get() {
+                    T result;
+
+                    auto values = get<std::vector<typename T::value_type::second_type>>();
+                    auto keys = get<std::vector<typename T::value_type::first_type>>();
+
+                    for (size_t i = 0; i < keys.size(); ++i) {
+                        result.emplace_back(std::make_pair(keys[i], std::move(values[i])));
+                    }
+
+                    return result;
+
                 }
 
                 template<typename T>
@@ -539,14 +595,14 @@ namespace hazelcast {
                 T get_first_fixed_sized_field() {
                     assert(buffer_index == 0 && offset == 0);
                     // skip header
-                    rd_ptr(REQUEST_HEADER_LEN);
+                    rd_ptr(RESPONSE_HEADER_LEN);
                     return get<T>();
                 }
 
                 inline boost::uuids::uuid get_first_uuid() {
                     assert(buffer_index == 0 && offset == 0);
                     // skip header
-                    rd_ptr(REQUEST_HEADER_LEN);
+                    rd_ptr(RESPONSE_HEADER_LEN);
                     return get<boost::uuids::uuid>();
                 }
 
@@ -822,6 +878,18 @@ namespace hazelcast {
                     if (is_final) {
                         ef->flags |= IS_FINAL_FLAG;
                     }
+                }
+
+                template<typename T>
+                typename std::enable_if<(std::is_same<int32_t, T>::value || std::is_same<int64_t, T>::value), size_t>::type
+                static constexpr get_sizeof() {
+                    return sizeof(T);
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<boost::uuids::uuid, T>::value, size_t>::type
+                static constexpr get_sizeof() {
+                    return 17;
                 }
 
                 bool retryable;

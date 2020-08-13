@@ -48,7 +48,6 @@
 #include "hazelcast/client/cluster/impl/VectorClock.h"
 #include "hazelcast/client/internal/partition/strategy/StringPartitioningStrategy.h"
 #include "hazelcast/util/Util.h"
-#include "hazelcast/util/TimeUtil.h"
 
 namespace hazelcast {
     namespace client {
