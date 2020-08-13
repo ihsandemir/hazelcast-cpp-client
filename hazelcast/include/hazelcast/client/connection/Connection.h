@@ -136,22 +136,17 @@ namespace hazelcast {
                 spi::ClientContext &clientContext;
                 protocol::IMessageHandler &invocationService;
                 std::unique_ptr<Socket> socket;
-                std::shared_ptr<ConnectionFuture> authFuture;
-                util::AtomicBoolean authenticatedAsOwner;
-
                 int connectionId;
                 std::string closeReason;
                 std::exception_ptr closeCause;
-
                 std::string connectedServerVersionString;
                 int connectedServerVersion;
-
                 // check if they need to be atomic
                 std::shared_ptr<Address> remote_address_;
                 boost::uuids::uuid remote_uuid_;
-
                 util::ILogger &logger;
                 std::atomic_bool alive;
+                std::shared_ptr<ConnectionFuture> authFuture;
             };
         }
     }

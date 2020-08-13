@@ -244,7 +244,7 @@ namespace hazelcast {
             }
 
             spi::impl::listener::cluster_view_listener &ClientContext::get_cluster_view_listener() {
-                return hazelcastClient.cluster_listener_;
+                return *hazelcastClient.cluster_listener_;
             }
 
             LifecycleService::LifecycleService(ClientContext &clientContext,
@@ -264,7 +264,7 @@ namespace hazelcast {
 
                 clientContext.getClientExecutionService().start();
 
-                ((spi::impl::listener::listener_service_impl &) clientContext.getClientListenerService()).start();
+                clientContext.getClientListenerService().start();
 
                 clientContext.getInvocationService().start();
 
@@ -296,7 +296,7 @@ namespace hazelcast {
                     clientContext.getConnectionManager().shutdown();
                     clientContext.getClientClusterService().shutdown();
                     clientContext.getInvocationService().shutdown();
-                    ((spi::impl::listener::listener_service_impl &) clientContext.getClientListenerService()).shutdown();
+                    clientContext.getClientListenerService().shutdown();
                     clientContext.getNearCacheManager().destroyAllNearCaches();
                     fireLifecycleEvent(LifecycleEvent::SHUTDOWN);
                     clientContext.getClientExecutionService().shutdown();
@@ -607,8 +607,11 @@ namespace hazelcast {
                     return addresses;
                 }
 
-                impl::ClientClusterServiceImpl::ClientClusterServiceImpl(hazelcast::client::spi::ClientContext &client)
-                        : client(client), member_list_snapshot_(nullptr), labels_(client.getClientConfig().getLabels()),
+                const boost::shared_ptr<ClientClusterServiceImpl::member_list_snapshot> impl::ClientClusterServiceImpl::EMPTY_SNAPSHOT(
+                        new ClientClusterServiceImpl::member_list_snapshot{-1});
+
+                ClientClusterServiceImpl::ClientClusterServiceImpl(hazelcast::client::spi::ClientContext &client)
+                        : client(client), member_list_snapshot_(EMPTY_SNAPSHOT), labels_(client.getClientConfig().getLabels()),
                         initial_list_fetched_latch_(1) {
                 }
 
@@ -634,7 +637,7 @@ namespace hazelcast {
                     auto members_view_ptr = member_list_snapshot_.load();
                     std::vector<Member> result;
                     result.reserve(members_view_ptr->members.size());
-                    for (auto &&e : members_view_ptr->members) {
+                    for (const auto &e : members_view_ptr->members) {
                         result.emplace_back(e.second);
                     }
                     return result;
@@ -711,7 +714,7 @@ namespace hazelcast {
                     auto cluster_view_snapshot = member_list_snapshot_.load();
                     //This check is necessary so that `clear_member_list_version` when handling auth response will not
                     //intervene with client failover logic
-                    if (!cluster_view_snapshot) {
+                    if (cluster_view_snapshot != EMPTY_SNAPSHOT) {
                         member_list_snapshot_.store(boost::shared_ptr<member_list_snapshot>(
                                 new member_list_snapshot{0, cluster_view_snapshot->members}));
                     }
@@ -726,10 +729,10 @@ namespace hazelcast {
                                       , members_string(snapshot));
                     }
                     auto cluster_view_snapshot = member_list_snapshot_.load();
-                    if (!cluster_view_snapshot) {
+                    if (cluster_view_snapshot == EMPTY_SNAPSHOT) {
                         std::lock_guard<std::mutex> g(cluster_view_lock_);
                         cluster_view_snapshot = member_list_snapshot_.load();
-                        if (!cluster_view_snapshot) {
+                        if (cluster_view_snapshot == EMPTY_SNAPSHOT) {
                             //this means this is the first time client connected to cluster
                             apply_initial_state(version, memberInfos);
                             initial_list_fetched_latch_.count_down();
@@ -1429,8 +1432,7 @@ namespace hazelcast {
                 }
 
 
-                ClientPartitionServiceImpl::ClientPartitionServiceImpl(ClientContext &client,
-                                                                       hazelcast::client::spi::impl::ClientExecutionServiceImpl &executionService)
+                ClientPartitionServiceImpl::ClientPartitionServiceImpl(ClientContext &client)
                         : client(client), logger_(client.getLogger()), partitionCount(0),
                         partition_table_(boost::shared_ptr<partition_table>(new partition_table{nullptr, -1})) {
                 }
@@ -1987,7 +1989,19 @@ namespace hazelcast {
                                  std::make_shared<protocol::ClientMessage>(
                                  protocol::codec::client_addclusterviewlistener_encode()), "", connection);
 
-                        invocation->setEventHandler(std::shared_ptr<event_handler>(new event_handler(connection, *this)));
+                        auto handler = std::shared_ptr<event_handler>(new event_handler(connection, *this));
+                        invocation->setEventHandler(handler);
+                        handler->beforeListenerRegister();
+
+                        invocation->invokeUrgent().then([=] (boost::future<protocol::ClientMessage> f) {
+                            if (f.has_value()) {
+                                handler->onListenerRegister();
+                                return;
+                            }
+                            //completes with exception, listener needs to be reregistered
+                            try_reregister_to_random_connection(connection);
+                        });
+                        
                     }
 
                     void cluster_view_listener::try_reregister_to_random_connection(
@@ -2002,6 +2016,8 @@ namespace hazelcast {
                             try_register(new_connection);
                         }
                     }
+
+                    cluster_view_listener::~cluster_view_listener() = default;
 
                     void
                     cluster_view_listener::event_handler::handle_membersview(int32_t version,

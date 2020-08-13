@@ -18,8 +18,7 @@
 #include <string>
 #include <vector>
 #include <boost/optional.hpp>
-
-#include "hazelcast/client/protocol/codec/StackTraceElement.h"
+#include "hazelcast/util/HazelcastDll.h"
 
 namespace hazelcast {
     namespace client {
@@ -27,21 +26,27 @@ namespace hazelcast {
             class ClientMessage;
 
             namespace codec {
-                class ErrorCodec {
-                public:
+                struct HAZELCAST_API StackTraceElement {
+                    std::string declaringClass;
+                    std::string methodName;
+                    boost::optional<std::string> fileName;
+                    int lineNumber;
+                };
+
+                struct HAZELCAST_API ErrorHolder {
                     int32_t errorCode;
                     std::string className;
                     boost::optional<std::string> message;
-                    std::vector<StackTraceElement> stackTrace;
-
-                    static constexpr int32_t EXCEPTION_MESSAGE_TYPE = 0;
-
-                    static ErrorCodec decode(ClientMessage &clientMessage);
+                    std::vector<codec::StackTraceElement> stackTrace;
 
                     std::string toString() const;
+                };
 
-                private:
-                    ErrorCodec(ClientMessage &clientMessage);
+                std::ostream &operator<<(std::ostream &out, const StackTraceElement &trace);
+
+                struct HAZELCAST_API ErrorCodec {
+                    static constexpr int32_t EXCEPTION_MESSAGE_TYPE = 0;
+                    static std::vector<ErrorHolder> decode(ClientMessage &clientMessage);
                 };
             }
         }

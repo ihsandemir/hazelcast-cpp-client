@@ -1325,7 +1325,7 @@ namespace hazelcast {
                                                                                    util::getCurrentThreadId());
                 return invokeOnPartition(request, getPartitionId(key)).then([] (boost::future<protocol::ClientMessage> f) {
                     auto msg = f.get();
-                    msg.skip_first_frame();
+                    msg.skip_frame();
                     return msg.getNullable<serialization::pimpl::Data>();
                 });
             }

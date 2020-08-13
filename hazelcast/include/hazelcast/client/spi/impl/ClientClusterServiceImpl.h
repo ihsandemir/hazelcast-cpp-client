@@ -94,6 +94,8 @@ namespace hazelcast {
                     const std::unordered_set<std::string> labels_;
                     boost::latch initial_list_fetched_latch_;
 
+                    static const boost::shared_ptr<member_list_snapshot> EMPTY_SNAPSHOT;
+
                     boost::uuids::uuid addMembershipListenerWithoutInit(const std::shared_ptr<MembershipListener> &listener);
 
                     void fireInitialMembershipEvent(const InitialMembershipEvent &event);

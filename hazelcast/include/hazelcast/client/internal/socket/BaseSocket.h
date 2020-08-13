@@ -62,7 +62,7 @@ namespace hazelcast {
                         using namespace boost::asio::ip;
 
                         connectTimer.expires_from_now(connectTimeoutMillis);
-                        connectTimer.async_wait([this, connection, authFuture](const boost::system::error_code &ec) {
+                        connectTimer.async_wait([=](const boost::system::error_code &ec) {
                             if (ec == boost::asio::error::operation_aborted) {
                                 return;
                             }
@@ -269,7 +269,7 @@ namespace hazelcast {
                             return;
                         }
 
-                        static const std::string PROTOCOL_TYPE_BYTES("CB2");
+                        static const std::string PROTOCOL_TYPE_BYTES("CP2");
                         async_write(socket_, boost::asio::buffer(PROTOCOL_TYPE_BYTES),
                                     [=](const boost::system::error_code &ec, size_t bytesWritten) {
                                         if (ec) {
@@ -284,6 +284,8 @@ namespace hazelcast {
                                         }
 
                                         do_read(connection);
+
+                                        authFuture->onSuccess(connection);
                                     });
                     }
 

@@ -590,7 +590,7 @@ namespace hazelcast {
                 }
                 
                 static void SetUpTestCase() {
-                    instance = new HazelcastServer(*g_srvFactory);
+                    //instance = new HazelcastServer(*g_srvFactory);
                     client = new HazelcastClient(getConfig());
                     q = client->getQueue("MyQueue");
                 }

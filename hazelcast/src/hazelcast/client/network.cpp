@@ -71,6 +71,8 @@ namespace hazelcast {
 
         namespace connection {
             constexpr size_t ClientConnectionManagerImpl::EXECUTOR_CORE_POOL_SIZE;
+            constexpr int32_t ClientConnectionManagerImpl::DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
+            constexpr int32_t ClientConnectionManagerImpl::DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC;
 
             ClientConnectionManagerImpl::ClientConnectionManagerImpl(spi::ClientContext &client,
                                                                      const std::shared_ptr<AddressTranslator> &addressTranslator,
@@ -103,6 +105,16 @@ namespace hazelcast {
                 ClientConnectionManagerImpl::addressProviders = addressProviders;
 
                 connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+
+                int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
+                bool isAsync = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
+
+                if (connAttemptLimit < 0) {
+                    this->connectionAttemptLimit = isAsync ? DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC
+                                                           : DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC;
+                } else {
+                    this->connectionAttemptLimit = connAttemptLimit == 0 ? INT32_MAX : connAttemptLimit;
+                }
 
                 ioThreadCount = clientProperties.getInteger(clientProperties.getIOThreadCount());
             }
@@ -196,26 +208,25 @@ namespace hazelcast {
                     return connection;
                 }
 
-                auto target = translator->translate(address);
                 auto future = std::make_shared<ConnectionFuture>(address, connection, connectionsInProgress);
-                connection = std::make_shared<Connection>(target, client, ++connectionIdGen, future,
-                                                          *socketFactory, *this, connectionTimeoutMillis);
                 auto f = connectionsInProgress.putIfAbsent(address, future);
-                auto new_future = f ? f : future;
-                std::lock_guard<std::mutex> g(new_future->getLock());
+                if (f) {
+                    future = f;
+                }
+                std::lock_guard<std::mutex> g(future->getLock());
                 // double check here
-                connection = getConnection(target);
+                connection = getConnection(address);
                 if (connection) {
-                    if (f) {
-                        connectionsInProgress.remove(address);
-                    }
                     return connection;
                 }
 
+                auto target = translator->translate(address);
+                connection = std::make_shared<Connection>(target, client, ++connectionIdGen, future,
+                                                          *socketFactory, *this, connectionTimeoutMillis);
                 connection->asyncStart();
 
                 try {
-                    connection = new_future->get();
+                    connection = future->get();
                 } catch (exception::IException &e) {
                     connectionsInProgress.remove(address);
                     throw;
@@ -319,17 +330,20 @@ namespace hazelcast {
                     // TODO: Change UsernamePasswordCredentials to implement Credentials interface so that we can just
                     // upcast the credentials as done at Java
                     GroupConfig &groupConfig = client.getClientConfig().getGroupConfig();
+                    auto user = groupConfig.getName();
+                    auto pass = groupConfig.getPassword();
+                    const std::string *username = user.empty() ? nullptr : &user;
+                    const std::string *password = pass.empty() ? nullptr : &pass;
                     const protocol::UsernamePasswordCredentials cr(groupConfig.getName(), groupConfig.getPassword());
                     // TODO: add labels into config
-                    return protocol::codec::client_authentication_encode(cluster_name, &cr.getPrincipal(),
-                                                                         &cr.getPassword(), client_uuid_.is_nil() ? nullptr : &client_uuid_,
+                    return protocol::codec::client_authentication_encode(cluster_name, username, password, client_uuid_,
                                                                          protocol::ClientTypes::CPP,
                                                                          serializationVersion, HAZELCAST_VERSION,
                                                                          client.getName(), labels_);
                 } else {
                     return protocol::codec::client_authenticationcustom_encode(cluster_name,
                                                                                credentials.value().toByteArray(),
-                                                                               client_uuid_.is_nil() ? nullptr : &client_uuid_, protocol::ClientTypes::CPP,
+                                                                               client_uuid_, protocol::ClientTypes::CPP,
                                                                                serializationVersion, HAZELCAST_VERSION,
                                                                                client.getName(), labels_);
                 }
@@ -511,9 +525,15 @@ namespace hazelcast {
                 return alive;
             }
 
-            void ClientConnectionManagerImpl::on_connection_close(Connection &connection) {
+            void ClientConnectionManagerImpl::on_connection_close(Connection &connection, std::exception_ptr cause) {
                 auto endpoint = connection.getRemoteAddress();
                 auto member_uuid = connection.getRemoteUuid();
+
+                auto socket_remote_address = connection.getSocket().getRemoteEndpoint();
+                auto conn_future = connectionsInProgress.remove(socket_remote_address);
+                if (conn_future) {
+                    conn_future->onFailure(cause);
+                }
 
                 if (!endpoint) {
                     if (logger.isFinestEnabled()) {
@@ -522,7 +542,7 @@ namespace hazelcast {
                     }
                     return;
                 }
-
+                
                 auto conn = connection.shared_from_this();
                 if (activeConnections.remove(member_uuid, conn)) {
                     logger.info("Removed connection to endpoint: ", *endpoint, ", connection: ", connection);
@@ -689,15 +709,18 @@ namespace hazelcast {
             }
 
             void ConnectionFuture::onSuccess(const std::shared_ptr<Connection> &conn) {
-                promise_.set_value(conn);
+                if (connections_in_progress_.remove(address_)) {
+                    promise_.set_value(conn);
+                }
             }
 
             void ConnectionFuture::onFailure(std::exception_ptr t) {
                 util::IOUtil::closeResource(connection_in_progress_.get(),
                                             (boost::format("Connection to address %1% failed.") %
                                              address_).str().c_str());
-                connections_in_progress_.remove(address_);
-                promise_.set_exception(t);
+                if (connections_in_progress_.remove(address_)) {
+                    promise_.set_exception(t);
+                }
             }
 
             std::shared_ptr<Connection> ConnectionFuture::get() {
@@ -749,7 +772,7 @@ namespace hazelcast {
                       invocationService(clientContext.getInvocationService()),
                       connectionId(connectionId),
                       connectedServerVersion(impl::BuildInfo::UNKNOWN_HAZELCAST_VERSION),
-                      logger(clientContext.getLogger()), alive(true) {
+                      logger(clientContext.getLogger()), alive(true), authFuture(authFuture) {
                 socket = socketFactory.create(address, connectTimeoutInMillis);
                 std::memset(&remote_uuid_, 0, sizeof(boost::uuids::uuid));
             }
@@ -787,7 +810,7 @@ namespace hazelcast {
                     clientContext.getLogger().warning("Exception while closing connection", e.getMessage());
                 }
 
-                clientContext.getConnectionManager().on_connection_close(*this);
+                clientContext.getConnectionManager().on_connection_close(*this, closeCause);
 
                 auto thisConnection = shared_from_this();
                 boost::asio::post(socket->get_executor(), [=]() {

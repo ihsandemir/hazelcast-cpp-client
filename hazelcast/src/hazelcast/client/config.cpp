@@ -538,9 +538,7 @@ namespace hazelcast {
             void index_config::add_attributes() {}
         }
 
-        GroupConfig::GroupConfig() : name("dev"), password("dev-pass") {
-
-        }
+        GroupConfig::GroupConfig() {}
 
         GroupConfig::GroupConfig(const std::string &name, const std::string &password)
                 : name(name), password(password) {
@@ -564,8 +562,8 @@ namespace hazelcast {
             return password;
         }
 
-        ClientConfig::ClientConfig()
-                : loadBalancer(NULL), redoOperation(false), socketInterceptor(NULL), executorPoolSize(-1) {}
+        ClientConfig::ClientConfig() : cluster_name_("dev"), loadBalancer(NULL), redoOperation(false),
+                                       socketInterceptor(NULL), executorPoolSize(-1) {}
 
         ClientConfig &ClientConfig::addAddress(const Address &address) {
             networkConfig.addAddress(address);

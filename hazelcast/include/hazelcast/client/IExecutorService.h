@@ -690,7 +690,7 @@ namespace hazelcast {
             retrieveResultFromMessage(serialization::pimpl::SerializationService *serializationService,
                     boost::future<protocol::ClientMessage> f) {
                 auto msg = f.get();
-                msg.skip_first_frame();
+                msg.skip_frame();
                 return serializationService->toObject<T>(msg.getNullable<serialization::pimpl::Data>().get_ptr());
             }
 

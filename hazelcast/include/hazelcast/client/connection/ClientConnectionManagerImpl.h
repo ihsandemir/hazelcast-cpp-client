@@ -107,7 +107,7 @@ namespace hazelcast {
 
                 bool isAlive();
 
-                void on_connection_close(Connection &connection);
+                void on_connection_close(Connection &connection, std::exception_ptr ptr);
 
                 void addConnectionListener(const std::shared_ptr<ConnectionListener> &connectionListener) override;
 
@@ -120,6 +120,8 @@ namespace hazelcast {
                 void check_invocation_allowed();
             private:
                 static constexpr size_t EXECUTOR_CORE_POOL_SIZE = 10;
+                static constexpr int32_t DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
+                static constexpr int32_t DEFAULT_CONNECTION_ATTEMPT_LIMIT_ASYNC = 20;
 
                 struct auth_response {
                     byte status;
@@ -154,6 +156,9 @@ namespace hazelcast {
 
                 template<typename Container>
                 void shuffle(Container &memberAddresses) const {
+                    if (memberAddresses.empty()) {
+                        return;
+                    }
                     std::random_shuffle(memberAddresses.begin(), memberAddresses.end());
                 }
 

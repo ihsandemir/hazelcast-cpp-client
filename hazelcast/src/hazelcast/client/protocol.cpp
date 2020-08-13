@@ -39,7 +39,6 @@
 #include "hazelcast/util/ByteBuffer.h"
 #include "hazelcast/util/Util.h"
 #include "hazelcast/client/Member.h"
-#include "hazelcast/client/protocol/codec/StackTraceElement.h"
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 #include "hazelcast/client/protocol/codec/ErrorCodec.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
@@ -385,9 +384,9 @@ namespace hazelcast {
 
             void ClientExceptionFactory::throwException(const std::string &source,
                                                         protocol::ClientMessage &clientMessage) const {
-                codec::ErrorCodec error = codec::ErrorCodec::decode(clientMessage);
-                std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it = errorCodeToFactory.find(
-                        error.errorCode);
+                auto errors = codec::ErrorCodec::decode(clientMessage);
+                create_and_throw(errors.begin(), errors.end(), *this);
+                auto it = errorCodeToFactory.find(error.errorCode);
                 if (errorCodeToFactory.end() == it) {
                     it = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
                 }
@@ -396,8 +395,7 @@ namespace hazelcast {
             }
 
             void ClientExceptionFactory::throwException(int32_t errorCode) const {
-                std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::const_iterator it = errorCodeToFactory.find(
-                        errorCode);
+                auto it = errorCodeToFactory.find(errorCode);
                 if (errorCodeToFactory.end() == it) {
                     it = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
                 }
@@ -405,8 +403,7 @@ namespace hazelcast {
             }
 
             void ClientExceptionFactory::registerException(int32_t errorCode, ExceptionFactory *factory) {
-                std::unordered_map<int, hazelcast::client::protocol::ExceptionFactory *>::iterator it = errorCodeToFactory.find(
-                        errorCode);
+                auto it = errorCodeToFactory.find(errorCode);
                 if (errorCodeToFactory.end() != it) {
                     char msg[100];
                     util::hz_snprintf(msg, 100, "Error code %d was already registered!!!", errorCode);
@@ -415,6 +412,28 @@ namespace hazelcast {
                 }
 
                 errorCodeToFactory[errorCode] = factory;
+            }
+
+            std::exception_ptr ClientExceptionFactory::create_exception(std::vector<codec::ErrorHolder>::const_iterator begin,
+                                                          std::vector<codec::ErrorHolder>::const_iterator end) const {
+                if (begin == end) {
+                    return nullptr;
+                }
+                auto factory = errorCodeToFactory.find(begin->errorCode);
+                if (errorCodeToFactory.end() == factory) {
+                    factory = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
+                }
+                factory->second->create_exception(*this, begin->className, begin->message.value_or("nullptr"),
+                                                  begin->toString(), create_exception(++begin, end));
+            }
+
+            void ClientExceptionFactory::throw_single_exception(const codec::ErrorHolder &error) const {
+                auto found = errorCodeToFactory.find(error.errorCode);
+                if (errorCodeToFactory.end() == found) {
+                    found = errorCodeToFactory.find(protocol::ClientProtocolErrorCodes::UNDEFINED);
+                }
+                found->second->throwException(*this, error.className, error.message.value_or("nullptr"),
+                                              error.toString());
             }
 
             boost::uuids::uuid Principal::getUuid() const {
@@ -535,28 +554,14 @@ namespace hazelcast {
                     << "." << trace.methodName;
                 }
 
-                ErrorCodec ErrorCodec::decode(ClientMessage &clientMessage) {
-                    return ErrorCodec(clientMessage);
+                std::vector<ErrorHolder> ErrorCodec::decode(ClientMessage &msg) {
+                    // skip initial message frame
+                    msg.skip_frame();
+
+                    return msg.get<std::vector<ErrorHolder>>();
                 }
 
-                ErrorCodec::ErrorCodec(ClientMessage &msg) {
-                    // skip begin frame
-                    msg.rd_ptr(ClientMessage::SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-
-                    auto *f = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                    errorCode = msg.get<int32_t>();
-
-                    // skip the bytes in header frame
-                    msg.rd_ptr(f->frame_len - ClientMessage::SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-
-                    className = msg.get<std::string>();
-                    message = msg.getNullable<std::string>();
-                    stackTrace = msg.get<std::vector<StackTraceElement>>();
-
-                    msg.fast_forward_to_end_frame();
-                }
-
-                std::string ErrorCodec::toString() const {
+                std::string ErrorHolder::toString() const {
                     std::ostringstream out;
                     out << "Error code:" << errorCode << ", Class name that generated the error:" << className <<
                         ", ";

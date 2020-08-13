@@ -132,7 +132,7 @@ namespace hazelcast {
                       transactionManager(clientContext), cluster(clusterService),
                       lifecycleService(clientContext, clientConfig.getLifecycleListeners(),
                                        clientConfig.getLoadBalancer(), cluster), proxyManager(clientContext),
-                      id(++CLIENT_ID), cluster_listener_(clientContext) {
+                      id(++CLIENT_ID) {
                 const std::shared_ptr<std::string> &name = clientConfig.getInstanceName();
                 if (name.get() != NULL) {
                     instanceName = *name;
@@ -145,9 +145,9 @@ namespace hazelcast {
                 logger.reset(new util::ILogger(instanceName, clientConfig.getGroupConfig().getName(), HAZELCAST_VERSION,
                                                clientConfig.getLoggerConfig()));
 
-                initalizeNearCacheManager();
-
                 executionService = initExecutionService();
+
+                initalizeNearCacheManager();
 
                 int32_t maxAllowedConcurrentInvocations = clientProperties.getInteger(
                         clientProperties.getMaxConcurrentInvocations());
@@ -162,7 +162,9 @@ namespace hazelcast {
 
                 connectionManager = initConnectionManagerService(addressProviders);
 
-                partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext, *executionService));
+                cluster_listener_.reset(new spi::impl::listener::cluster_view_listener(clientContext));
+
+                partitionService.reset(new spi::impl::ClientPartitionServiceImpl(clientContext));
 
                 invocationService.reset(new spi::impl::ClientInvocationServiceImpl(clientContext));
 

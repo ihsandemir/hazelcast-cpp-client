@@ -30,6 +30,8 @@ namespace hazelcast {
                     public:
                         cluster_view_listener(ClientContext &clientContext);
 
+                        virtual ~cluster_view_listener();
+
                         void start();
 
                         virtual void connectionAdded(const std::shared_ptr<connection::Connection> connection);

@@ -1044,7 +1044,7 @@ namespace hazelcast {
                 try {
                     HazelcastClient client(clientConfig);
                 } catch (exception::IllegalStateException &) {
-// this is expected
+                    // this is expected
                 }
                 ASSERT_GE(hazelcast::util::currentTimeMillis() - startTimeMillis, 2 * 900);
             }

@@ -36,8 +36,8 @@
 #include "hazelcast/client/serialization/pimpl/Data.h"
 #include "hazelcast/client/map/DataEntryView.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
-#include "hazelcast/client/protocol/codec/StackTraceElement.h"
 #include "hazelcast/client/config/index_config.h"
+#include "hazelcast/client/protocol/codec/ErrorCodec.h"
 
 namespace hazelcast {
     namespace util {
@@ -198,7 +198,7 @@ namespace hazelcast {
                 //partition id field offset used by request and event messages
                 static constexpr size_t PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + INT64_SIZE;
                 static constexpr size_t REQUEST_HEADER_LEN = PARTITION_ID_FIELD_OFFSET + INT32_SIZE;
-                static constexpr size_t RESPONSE_HEADER_LEN = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT32_SIZE;
+                static constexpr size_t RESPONSE_HEADER_LEN = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + INT8_SIZE;
                 //offset valid for fragmentation frames only
                 static constexpr size_t FRAGMENTATION_ID_OFFSET = 0;
 
@@ -481,7 +481,7 @@ namespace hazelcast {
                     auto ttl = get<int64_t>();
                     auto maxIdle = get<int64_t>();
                     // skip bytes in initial frame
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
+                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - 10 * INT64_SIZE);
 
                     auto key = get<serialization::pimpl::Data>();
                     auto value = get<serialization::pimpl::Data>();
@@ -503,6 +503,26 @@ namespace hazelcast {
                 inline get() {
                     typedef typename std::remove_reference<typename std::remove_cv<typename T::value_type>::type>::type type;
                     return getNullable<type>();
+                }
+
+                template<typename T>
+                typename std::enable_if<std::is_same<T, codec::ErrorHolder>::value, T>::type
+                inline get() {
+                    // skip begin frame
+                    rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+
+                    auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
+                    auto error_code = get<int32_t>();
+                    // skip bytes in initial frame
+                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
+
+
+                    codec::ErrorHolder h = {error_code, get<std::string>(), getNullable<std::string>(),
+                                                get<std::vector<codec::StackTraceElement>>()};
+
+                    fast_forward_to_end_frame();
+
+                    return h;
                 }
 
                 template<typename T>
@@ -533,14 +553,14 @@ namespace hazelcast {
                 template<typename T>
                 boost::optional<T> get_first_var_sized_field() {
                     assert(buffer_index == 0 && offset == 0);
-                    skip_first_frame();
+                    skip_frame();
                     return get<T>();
                 }
 
                 template<typename T>
                 boost::optional<T> get_first_optional_var_sized_field() {
                     assert(buffer_index == 0 && offset == 0);
-                    skip_first_frame();
+                    skip_frame();
                     return getNullable<T>();
                 }
                 //----- Getter methods end --------------------------
@@ -602,7 +622,7 @@ namespace hazelcast {
                             h->flags |= IS_FINAL_FLAG;
                         }
                     } else {
-                        set(*value);
+                        set(*value, is_final);
                     }
                 }
 
@@ -679,8 +699,8 @@ namespace hazelcast {
                     std::memcpy(fp + SIZE_OF_FRAME_LENGTH_AND_FLAGS, &bytes[0], bytes.size());
                 }
 
-                inline void set(const serialization::pimpl::Data *value) {
-                    setNullable<serialization::pimpl::Data>(value);
+                inline void set(const serialization::pimpl::Data *value, bool is_final = false) {
+                    setNullable<serialization::pimpl::Data>(value, is_final);
                 }
 
                 template<typename T>
@@ -748,7 +768,7 @@ namespace hazelcast {
 
                 void setOperationName(const std::string &name);
 
-                inline void skip_first_frame() {
+                inline void skip_frame() {
                     auto *f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                     rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS);
                 }
@@ -787,7 +807,7 @@ namespace hazelcast {
 
                 boost::uuids::uuid get_uuid() {
                     boost::uuids::uuid u;
-                    memcpy(&u, rd_ptr(sizeof(boost::uuids::uuid)), sizeof(boost::uuids::uuid));
+                    memcpy(&u.data, rd_ptr(sizeof(boost::uuids::uuid)), sizeof(boost::uuids::uuid));
                     return u;
                 }
 

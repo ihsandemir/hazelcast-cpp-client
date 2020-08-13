@@ -42,12 +42,9 @@ namespace hazelcast {
             class ClientContext;
 
             namespace impl {
-                class ClientExecutionServiceImpl;
-
                 class HAZELCAST_API ClientPartitionServiceImpl : public std::enable_shared_from_this<ClientPartitionServiceImpl> {
                 public:
-                    ClientPartitionServiceImpl(ClientContext &client,
-                                               hazelcast::client::spi::impl::ClientExecutionServiceImpl &executionService);
+                    ClientPartitionServiceImpl(ClientContext &client);
 
                     /**
                      * The partitions can be empty on the response, client will not apply the empty partition table,
