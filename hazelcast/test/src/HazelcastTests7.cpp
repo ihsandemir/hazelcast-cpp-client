@@ -226,11 +226,9 @@ namespace hazelcast {
                 boost::latch latch1Remove(4);
                 boost::latch latch2Add(3);
                 boost::latch latch2Remove(3);
-                MyMultiMapListener listener1(latch1Add, latch1Remove);
-                MyMultiMapListener listener2(latch2Add, latch2Remove);
 
-                auto id1 = mm->addEntryListener(listener1, true).get();
-                auto id2 = mm->addEntryListener(listener2, "key3", true).get();
+                auto id1 = mm->addEntryListener(MyMultiMapListener(latch1Add, latch1Remove), true).get();
+                auto id2 = mm->addEntryListener(MyMultiMapListener(latch2Add, latch2Remove), "key3", true).get();
 
                 fillData();
 
@@ -555,8 +553,7 @@ namespace hazelcast {
             TEST_F(ClientListTest, testListener) {
                 boost::latch latch1(1);
 
-                MyListItemListener listener(latch1);
-                auto registrationId = list->addItemListener(listener, true).get();
+                auto registrationId = list->addItemListener(MyListItemListener(latch1), true).get();
 
                 list->add("item-1").get();
 

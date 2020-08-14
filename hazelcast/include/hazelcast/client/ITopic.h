@@ -76,7 +76,7 @@ namespace hazelcast {
             template<typename Listener>
             boost::future<boost::uuids::uuid> addMessageListener(Listener &&listener) {
                 return proxy::ITopicImpl::addMessageListener(
-                        std::unique_ptr<impl::BaseEventHandler>(new topic::impl::TopicEventHandlerImpl<Listener>(getName(),
+                        std::shared_ptr<impl::BaseEventHandler>(new topic::impl::TopicEventHandlerImpl<Listener>(getName(),
                                                                                                       getContext().getClientClusterService(),
                                                                                                       getContext().getSerializationService(),
                                                                                                       std::move(

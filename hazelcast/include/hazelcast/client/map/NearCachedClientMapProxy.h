@@ -76,7 +76,7 @@ namespace hazelcast {
 
                     invalidateOnChange = nearCache->isInvalidatedOnChange();
                     if (invalidateOnChange) {
-                        std::unique_ptr<client::impl::BaseEventHandler> invalidationHandler(
+                        std::shared_ptr<client::impl::BaseEventHandler> invalidationHandler(
                                 new ClientMapAddNearCacheEventHandler(nearCache));
                         addNearCacheInvalidateListener(invalidationHandler);
                     }
@@ -394,10 +394,10 @@ namespace hazelcast {
                             getKeyStateMarker();
                 }
 
-                void addNearCacheInvalidateListener(std::unique_ptr<client::impl::BaseEventHandler> &handler) {
+                void addNearCacheInvalidateListener(std::shared_ptr<client::impl::BaseEventHandler> &handler) {
                     try {
                         invalidationListenerId = proxy::ProxyImpl::registerListener(createNearCacheEntryListenerCodec(),
-                                                                                    std::move(handler)).get();
+                                                                                    handler).get();
                     } catch (exception::IException &e) {
                         std::ostringstream out;
                         out << "-----------------\n Near Cache is not initialized!!! \n-----------------";
@@ -475,9 +475,9 @@ namespace hazelcast {
                     EntryEvent::type listenerFlags;
                 };
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec> createNearCacheEntryListenerCodec() {
+                std::shared_ptr<spi::impl::ListenerMessageCodec> createNearCacheEntryListenerCodec() {
                     EntryEvent::type listenerFlags = EntryEvent::type::INVALIDATION;
-                    return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                    return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                             new NearCacheEntryListenerMessageCodec(spi::ClientProxy::getName(), listenerFlags));
                 }
 

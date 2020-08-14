@@ -16,7 +16,6 @@
 #pragma once
 
 #include <memory>
-#include <assert.h>
 
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/MapEvent.h"
@@ -41,7 +40,7 @@ namespace hazelcast {
                                   serialization::pimpl::SerializationService &serializationService,
                                   Listener &&listener, bool includeValue, util::ILogger &log)
                 : instanceName(instanceName), clusterService(clusterService), serializationService(serializationService)
-                , listener(listener), includeValue(includeValue), logger(log) {}
+                , listener(std::move(listener)), includeValue(includeValue), logger(log) {}
 
                 void handle_entry(const boost::optional<serialization::pimpl::Data> &key,
                                   const boost::optional<serialization::pimpl::Data> &value,

@@ -148,21 +148,21 @@ namespace hazelcast {
                             request, valueData);
                 }
 
-                boost::future<boost::uuids::uuid> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler) {
+                boost::future<boost::uuids::uuid> addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler) {
                     return registerListener(createEntryListenerCodec(getName()), std::move(entryEventHandler));
                 }
 
-                boost::future<boost::uuids::uuid> addEntryListenerToKey(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                boost::future<boost::uuids::uuid> addEntryListenerToKey(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                                                                                          serialization::pimpl::Data &&key) {
                     return registerListener(createEntryListenerToKeyCodec(std::move(key)), std::move(entryEventHandler));
                 }
 
-                boost::future<boost::uuids::uuid> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                boost::future<boost::uuids::uuid> addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                                                                                     serialization::pimpl::Data &&predicate) {
                     return registerListener(createEntryListenerWithPredicateCodec(std::move(predicate)), std::move(entryEventHandler));
                 }
 
-                boost::future<boost::uuids::uuid> addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+                boost::future<boost::uuids::uuid> addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                                                                                     serialization::pimpl::Data &&key, serialization::pimpl::Data &&predicate) {
                     return registerListener(createEntryListenerToKeyWithPredicateCodec(std::move(key), std::move(predicate)), std::move(entryEventHandler));
                 }
@@ -385,40 +385,40 @@ namespace hazelcast {
                     std::shared_ptr<internal::nearcache::NearCache<serialization::pimpl::Data, serialization::pimpl::Data>> nearCache;
                 };
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec> createEntryListenerCodec(const std::string name) {
-                    return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                std::shared_ptr<spi::impl::ListenerMessageCodec> createEntryListenerCodec(const std::string name) {
+                    return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                             new ReplicatedMapListenerMessageCodec(name));
                 }
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createEntryListenerToKeyCodec(serialization::pimpl::Data &&keyData) {
-                    return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                    return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                             new ReplicatedMapAddEntryListenerToKeyMessageCodec(name, std::move(keyData)));
                 }
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createEntryListenerWithPredicateCodec(serialization::pimpl::Data &&predicateData) {
-                    return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                    return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                             new ReplicatedMapAddEntryListenerWithPredicateMessageCodec(name, std::move(predicateData)));
                 }
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createEntryListenerToKeyWithPredicateCodec(serialization::pimpl::Data &&keyData,
                                                            serialization::pimpl::Data &&predicateData) {
-                    return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                    return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                             new ReplicatedMapAddEntryListenerToKeyWithPredicateMessageCodec(name, std::move(keyData),
                                                                                             std::move(predicateData)));
                 }
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec> createNearCacheInvalidationListenerCodec() {
-                    return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                std::shared_ptr<spi::impl::ListenerMessageCodec> createNearCacheInvalidationListenerCodec() {
+                    return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                             new NearCacheInvalidationListenerMessageCodec(name));
                 }
 
                 void registerInvalidationListener() {
                     try {
                         invalidationListenerId = registerListener(createNearCacheInvalidationListenerCodec(),
-                                                                  std::unique_ptr<impl::BaseEventHandler>(new ReplicatedMapAddNearCacheEventHandler(nearCache))).get();
+                                                                  std::shared_ptr<impl::BaseEventHandler>(new ReplicatedMapAddNearCacheEventHandler(nearCache))).get();
                     } catch (exception::IException &e) {
                         getContext().getLogger().severe("-----------------\nNear Cache is not initialized!\n-----------------" , e);
                     }

@@ -87,7 +87,7 @@ namespace hazelcast {
             template<typename Listener>
             boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener) {
                 return proxy::ReplicatedMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(), std::forward<Listener>(listener), getContext().getLogger())));
             }
@@ -108,7 +108,7 @@ namespace hazelcast {
             typename std::enable_if<!std::is_base_of<query::Predicate, K>::value, boost::future<boost::uuids::uuid>>::type
             addEntryListener(Listener &&listener, const K &key) {
                 return proxy::ReplicatedMapImpl::addEntryListenerToKey(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
                                                                 getContext().getSerializationService(), std::forward<Listener>(listener),
                                                                 getContext().getLogger())), toData(key));
@@ -125,7 +125,7 @@ namespace hazelcast {
             typename std::enable_if<std::is_base_of<query::Predicate, P>::value, boost::future<boost::uuids::uuid>>::type
             addEntryListener(Listener &&listener, const P &predicate) {
                 return proxy::ReplicatedMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
                                                                 getContext().getSerializationService(), std::forward<Listener>(listener),
                                                                 getContext().getLogger())), toData(predicate));
@@ -143,7 +143,7 @@ namespace hazelcast {
             typename std::enable_if<std::is_base_of<query::Predicate, P>::value, boost::future<boost::uuids::uuid>>::type
             addEntryListener(Listener &&listener, const P &predicate, const K &key) {
                 return proxy::ReplicatedMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new EntryEventHandler<Listener>(getName(), getContext().getClientClusterService(),
                                                                 getContext().getSerializationService(), std::forward<Listener>(listener),
                                                                 getContext().getLogger())), toData(key), toData(predicate));

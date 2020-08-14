@@ -78,10 +78,10 @@ namespace hazelcast {
                 boost::future<int> valueCount(const serialization::pimpl::Data& key);
 
                 boost::future<boost::uuids::uuid>
-                addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
+                addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler, bool includeValue);
 
                 boost::future<boost::uuids::uuid>
-                addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
+                addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler, bool includeValue,
                                  Data &&key);
 
                 boost::future<void> lock(const serialization::pimpl::Data& key);
@@ -132,9 +132,9 @@ namespace hazelcast {
 
                 std::shared_ptr<impl::ClientLockReferenceIdGenerator> lockReferenceIdGenerator;
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec> createMultiMapEntryListenerCodec(bool includeValue);
+                std::shared_ptr<spi::impl::ListenerMessageCodec> createMultiMapEntryListenerCodec(bool includeValue);
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&key);
             };
         }

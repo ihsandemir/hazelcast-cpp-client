@@ -849,9 +849,7 @@ namespace hazelcast {
                     invocations.erase(invocationIterator);
                 }
                 if (message->is_flag_set(message->getHeaderFlags(), protocol::ClientMessage::IS_EVENT_FLAG)) {
-                    auto &listenerService =
-                            (spi::impl::listener::listener_service_impl &) clientContext.getClientListenerService();
-                    listenerService.handleClientMessage(invocation, message);
+                    clientContext.getClientListenerService().handleClientMessage(invocation, message);
                 } else {
                     invocationService.handleClientMessage(invocation, message);
                 }

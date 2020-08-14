@@ -38,7 +38,7 @@ namespace hazelcast {
 
                 boost::future<void> publish(const serialization::pimpl::Data& data);
 
-                boost::future<boost::uuids::uuid> addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler);
+                boost::future<boost::uuids::uuid> addMessageListener(std::shared_ptr<impl::BaseEventHandler> topicEventHandler);
 
             private:
                 class TopicListenerMessageCodec : public spi::impl::ListenerMessageCodec {
@@ -55,7 +55,7 @@ namespace hazelcast {
 
                 int partitionId;
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec();
+                std::shared_ptr<spi::impl::ListenerMessageCodec> createItemListenerCodec();
             };
         }
     }

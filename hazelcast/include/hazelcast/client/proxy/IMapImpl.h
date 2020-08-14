@@ -162,14 +162,14 @@ namespace hazelcast {
                 boost::future<std::string> addInterceptor(const serialization::pimpl::Data &interceptor);
 
                 boost::future<boost::uuids::uuid>
-                addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue);
+                addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler, bool includeValue);
 
                 boost::future<boost::uuids::uuid>
-                addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, Data &&predicate,
+                addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler, Data &&predicate,
                                  bool includeValue);
 
                 boost::future<boost::uuids::uuid>
-                addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue,
+                addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler, bool includeValue,
                                  Data &&key);
 
                 boost::future<boost::optional<map::DataEntryView>> getEntryViewData(const serialization::pimpl::Data &key);
@@ -315,14 +315,14 @@ namespace hazelcast {
                     serialization::pimpl::Data key;
                 };
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags);
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&predicate,
                                             EntryEvent::type listenerFlags);
 
-                std::unique_ptr<spi::impl::ListenerMessageCodec>
+                std::shared_ptr<spi::impl::ListenerMessageCodec>
                 createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
                                             serialization::pimpl::Data &&key);
 

@@ -62,8 +62,8 @@ namespace hazelcast {
                         void shutdown();
 
                         boost::future<boost::uuids::uuid>
-                        registerListener(std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
-                                         std::unique_ptr<client::impl::BaseEventHandler> &&handler);
+                        registerListener(std::shared_ptr<ListenerMessageCodec> listenerMessageCodec,
+                                         std::shared_ptr<client::impl::BaseEventHandler> handler);
 
                         boost::future<bool> deregisterListener(boost::uuids::uuid registrationId);
 
@@ -95,8 +95,8 @@ namespace hazelcast {
                         removeEventHandler(int64_t call_id, const std::shared_ptr<connection::Connection> &connection);
 
                         boost::uuids::uuid
-                        registerListenerInternal(std::unique_ptr<impl::ListenerMessageCodec> &&listenerMessageCodec,
-                                                 std::unique_ptr<client::impl::BaseEventHandler> &&handler);
+                        registerListenerInternal(std::shared_ptr<ListenerMessageCodec> listenerMessageCodec,
+                                                 std::shared_ptr<client::impl::BaseEventHandler> handler);
 
                         bool deregisterListenerInternal(boost::uuids::uuid userRegistrationId);
 

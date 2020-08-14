@@ -474,11 +474,11 @@ namespace hazelcast {
             template<typename Listener>
             boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistener_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
-                                        std::forward<Listener>(listener),
+                                        std::move(listener),
                                         includeValue, getContext().getLogger())), includeValue);
             }
 
@@ -501,7 +501,7 @@ namespace hazelcast {
             boost::future<boost::uuids::uuid>
             addEntryListener(Listener &&listener, const P &predicate, bool includeValue) {
                 return proxy::IMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistenerwithpredicate_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),
@@ -525,7 +525,7 @@ namespace hazelcast {
             template<typename Listener, typename K>
             boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, bool includeValue, const K &key) {
                 return proxy::IMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::map_addentrylistenertokey_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(),

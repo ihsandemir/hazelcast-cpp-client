@@ -1437,10 +1437,9 @@ namespace hazelcast {
 
                 boost::latch latch1;
                 boost::latch latch2;
-                Issue864MapListener listener;
             };
 
-            IssueTest::IssueTest() : latch1(1), latch2(1), listener(latch1, latch2) {}
+            IssueTest::IssueTest() : latch1(1), latch2(1) {}
 
             TEST_F(IssueTest, testOperationRedo_smartRoutingDisabled) {
                 HazelcastServer hz1(*g_srvFactory);
@@ -1480,7 +1479,7 @@ namespace hazelcast {
                 auto map = client.getMap("IssueTest_map");
 
                 // 4. Subscribe client to entry added event
-                map->addEntryListener(listener, true).get();
+                map->addEntryListener(Issue864MapListener(latch1, latch2), true).get();
 
                 // Put a key, value to the map
                 ASSERT_FALSE(map->put(1, 10).get().has_value());

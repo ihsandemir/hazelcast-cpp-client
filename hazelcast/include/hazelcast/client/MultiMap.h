@@ -177,7 +177,7 @@ namespace hazelcast {
             template<typename Listener>
             boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, bool includeValue) {
                 return proxy::MultiMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::multimap_addentrylistener_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(), std::forward<Listener>(listener), includeValue, getContext().getLogger())), includeValue);
@@ -202,7 +202,7 @@ namespace hazelcast {
             template<typename Listener, typename K>
             boost::future<boost::uuids::uuid> addEntryListener(Listener &&listener, const K &key, bool includeValue) {
                 return proxy::MultiMapImpl::addEntryListener(
-                        std::unique_ptr<impl::BaseEventHandler>(
+                        std::shared_ptr<impl::BaseEventHandler>(
                                 new impl::EntryEventHandler<Listener, protocol::codec::multimap_addentrylistenertokey_handler>(
                                         getName(), getContext().getClientClusterService(),
                                         getContext().getSerializationService(), std::forward<Listener>(listener), includeValue, getContext().getLogger())), includeValue,

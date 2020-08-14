@@ -142,13 +142,13 @@ namespace hazelcast {
             }
 
             boost::future<boost::uuids::uuid>
-            MultiMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+            MultiMapImpl::addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                                            bool includeValue) {
                 return registerListener(createMultiMapEntryListenerCodec(includeValue), std::move(entryEventHandler));
             }
 
             boost::future<boost::uuids::uuid>
-            MultiMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+            MultiMapImpl::addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                                            bool includeValue, Data &&key) {
                 return registerListener(createMultiMapEntryListenerCodec(includeValue, std::move(key)),
                                         std::move(entryEventHandler));
@@ -206,15 +206,15 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, getPartitionId(key)));
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new MultiMapEntryListenerMessageCodec(getName(), includeValue));
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             MultiMapImpl::createMultiMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&key) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new MultiMapEntryListenerToKeyCodec(getName(), includeValue, std::move(key)));
             }
 
@@ -650,8 +650,8 @@ namespace hazelcast {
                 return invokeAndGetFuture<std::vector<serialization::pimpl::Data>>(request, partitionId);
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec> IListImpl::createItemListenerCodec(bool includeValue) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+            std::shared_ptr<spi::impl::ListenerMessageCodec> IListImpl::createItemListenerCodec(bool includeValue) {
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new ListListenerMessageCodec(getName(), includeValue));
             }
 
@@ -884,9 +884,9 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             IQueueImpl::createItemListenerCodec(bool includeValue) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new QueueListenerMessageCodec(getName(), includeValue));
             }
 
@@ -1169,14 +1169,14 @@ namespace hazelcast {
 
             // TODO: We can use generic template Listener instead of impl::BaseEventHandler to prevent the virtual function calls
             boost::future<boost::uuids::uuid>
-            IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler, bool includeValue) {
+            IMapImpl::addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 auto listenerFlags = EntryEvent::type::ALL;
-                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), std::move(entryEventHandler));
+                return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), entryEventHandler);
             }
 
             boost::future<boost::uuids::uuid>
-            IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+            IMapImpl::addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                     Data &&predicate, bool includeValue) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 EntryEvent::type listenerFlags = EntryEvent::type::ALL;
@@ -1187,7 +1187,7 @@ namespace hazelcast {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            boost::future<boost::uuids::uuid> IMapImpl::addEntryListener(std::unique_ptr<impl::BaseEventHandler> &&entryEventHandler,
+            boost::future<boost::uuids::uuid> IMapImpl::addEntryListener(std::shared_ptr<impl::BaseEventHandler> entryEventHandler,
                                                                                           bool includeValue, Data &&key) {
                 // TODO: Use appropriate flags for the event type as implemented in Java instead of EntryEventType::ALL
                 EntryEvent::type listenerFlags = EntryEvent::type::ALL;
@@ -1356,23 +1356,23 @@ namespace hazelcast {
             }
 
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             IMapImpl::createMapEntryListenerCodec(bool includeValue, serialization::pimpl::Data &&predicate,
                                                   EntryEvent::type listenerFlags) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new MapEntryListenerWithPredicateMessageCodec(getName(), includeValue, listenerFlags, std::move(predicate)));
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new MapEntryListenerMessageCodec(getName(), includeValue, listenerFlags));
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             IMapImpl::createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
                                                   serialization::pimpl::Data &&key) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new MapEntryListenerToKeyCodec(getName(), includeValue, listenerFlags, key));
             }
 
@@ -1526,9 +1526,9 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec>
+            std::shared_ptr<spi::impl::ListenerMessageCodec>
             ISetImpl::createItemListenerCodec(bool includeValue) {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(
                         new SetListenerMessageCodec(getName(), includeValue));
             }
 
@@ -1554,7 +1554,7 @@ namespace hazelcast {
                 return toVoidFuture(invokeOnPartition(request, partitionId));
             }
 
-            boost::future<boost::uuids::uuid> ITopicImpl::addMessageListener(std::unique_ptr<impl::BaseEventHandler> &&topicEventHandler) {
+            boost::future<boost::uuids::uuid> ITopicImpl::addMessageListener(std::shared_ptr<impl::BaseEventHandler> topicEventHandler) {
                 return registerListener(createItemListenerCodec(), std::move(topicEventHandler));
             }
 
@@ -1562,8 +1562,8 @@ namespace hazelcast {
                 return getContext().getClientListenerService().deregisterListener(registrationId);
             }
 
-            std::unique_ptr<spi::impl::ListenerMessageCodec> ITopicImpl::createItemListenerCodec() {
-                return std::unique_ptr<spi::impl::ListenerMessageCodec>(new TopicListenerMessageCodec(getName()));
+            std::shared_ptr<spi::impl::ListenerMessageCodec> ITopicImpl::createItemListenerCodec() {
+                return std::shared_ptr<spi::impl::ListenerMessageCodec>(new TopicListenerMessageCodec(getName()));
             }
 
             ITopicImpl::TopicListenerMessageCodec::TopicListenerMessageCodec(std::string name) : name(std::move(name)) {}

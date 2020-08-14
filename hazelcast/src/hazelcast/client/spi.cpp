@@ -445,11 +445,11 @@ namespace hazelcast {
             }
 
             boost::future<boost::uuids::uuid>
-            ClientProxy::registerListener(std::unique_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
-                                          std::unique_ptr<client::impl::BaseEventHandler> handler) {
+            ClientProxy::registerListener(std::shared_ptr<impl::ListenerMessageCodec> listenerMessageCodec,
+                                          std::shared_ptr<client::impl::BaseEventHandler> handler) {
                 handler->setLogger(&getContext().getLogger());
-                return getContext().getClientListenerService().registerListener(std::move(listenerMessageCodec),
-                                                                                std::move(handler));
+                return getContext().getClientListenerService().registerListener(listenerMessageCodec,
+                                                                                handler);
             }
 
             boost::future<bool> ClientProxy::deregisterListener(boost::uuids::uuid registrationId) {
@@ -1734,13 +1734,12 @@ namespace hazelcast {
 
                     boost::future<boost::uuids::uuid>
                     listener_service_impl::registerListener(
-                            std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
-                            std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
-                        auto task = boost::packaged_task<boost::uuids::uuid()>(std::bind(
-                                [=](std::unique_ptr<impl::ListenerMessageCodec> &codec,
-                                    std::unique_ptr<client::impl::BaseEventHandler> &h) {
-                                    return registerListenerInternal(std::move(codec), std::move(h));
-                                }, std::move(listenerMessageCodec), std::move(handler)));
+                            std::shared_ptr<ListenerMessageCodec> listenerMessageCodec,
+                            std::shared_ptr<client::impl::BaseEventHandler> handler) {
+                        auto task = boost::packaged_task<boost::uuids::uuid()>(
+                                [=]() {
+                                    return registerListenerInternal(listenerMessageCodec, handler);
+                                });
                         auto f = task.get_future();
                         boost::asio::post(registrationExecutor->get_executor(), std::move(task));
                         return f;
@@ -1816,11 +1815,11 @@ namespace hazelcast {
                     }
 
                     boost::uuids::uuid listener_service_impl::registerListenerInternal(
-                            std::unique_ptr<ListenerMessageCodec> &&listenerMessageCodec,
-                            std::unique_ptr<client::impl::BaseEventHandler> &&handler) {
+                            std::shared_ptr<ListenerMessageCodec> listenerMessageCodec,
+                            std::shared_ptr<client::impl::BaseEventHandler> handler) {
                         auto user_registration_id = boost::uuids::random_generator()();
 
-                        std::shared_ptr<listener_registration> registration(new listener_registration{std::move(listenerMessageCodec), std::move(handler)});
+                        std::shared_ptr<listener_registration> registration(new listener_registration{listenerMessageCodec, handler});
                         registrations.put(user_registration_id, registration);
                         for (auto const &connection : clientConnectionManager.getActiveConnections()) {
                             try {
