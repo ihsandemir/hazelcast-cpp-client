@@ -669,7 +669,7 @@ namespace hazelcast {
                             for (const auto &e : members_ptr->members) {
                                 members.insert(e.second);
                             }
-                            ((InitialMembershipListener &) listener).init(InitialMembershipEvent(cluster, members));
+                            std::static_pointer_cast<InitialMembershipListener>(listener)->init(InitialMembershipEvent(cluster, members));
                         }
                     }
 
@@ -1229,6 +1229,7 @@ namespace hazelcast {
                         BOOST_THROW_EXCEPTION(exception::IllegalArgumentException("response can't be null"));
                     }
                     try {
+                        // TODO: move msg content here?
                         invocationPromise.set_value(*msg);
                     } catch (std::exception &e) {
                         logger.warning("Failed to set the response for invocation. Dropping the response. ", e.what(),

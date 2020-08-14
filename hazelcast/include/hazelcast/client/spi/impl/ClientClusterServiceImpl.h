@@ -87,7 +87,7 @@ namespace hazelcast {
 
                     ClientContext &client;
                     std::shared_ptr<ClientMembershipListener> clientMembershipListener;
-                    util::Sync<std::unordered_map<Address, std::shared_ptr<Member> > > members;
+                    util::Sync<std::unordered_map<Address, std::shared_ptr<Member> > > members_;
                     util::SynchronizedMap<boost::uuids::uuid, MembershipListener, boost::hash<boost::uuids::uuid>> listeners;
                     std::mutex cluster_view_lock_;
                     boost::atomic_shared_ptr<member_list_snapshot> member_list_snapshot_;

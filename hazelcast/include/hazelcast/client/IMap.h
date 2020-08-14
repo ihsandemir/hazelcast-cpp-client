@@ -756,6 +756,7 @@ namespace hazelcast {
             */
             template<typename K, typename V>
             boost::future<std::vector<std::pair<K, V>>> entrySet(query::PagingPredicate<K, V> &predicate) {
+                predicate.setIterationType(query::IterationType::ENTRY);
                 return entrySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder::of(predicate, serializationService_)).then([=, &predicate] (boost::future<std::pair<EntryVector, query::anchor_data_list>> f) {
                     auto result = f.get();
                     predicate.setAnchorDataList(std::move(result.second));

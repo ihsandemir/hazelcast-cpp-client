@@ -233,7 +233,6 @@ namespace hazelcast {
                    << ", operation=" << msg.getOperationName()
                    << ", correlationId=" << msg.getCorrelationId()
                    << ", msgType=0x" << std::hex << msg.getMessageType() << std::dec
-                   << ", partitionId=" << msg.getPartitionId()
                    << ", isRetryable=" << msg.isRetryable()
                    << ", isEvent=" << ClientMessage::is_flag_set(msg.getHeaderFlags(), ClientMessage::IS_EVENT_FLAG)
                    << "}";
