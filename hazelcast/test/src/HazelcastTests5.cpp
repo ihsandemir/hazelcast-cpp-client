@@ -970,6 +970,11 @@ namespace hazelcast {
                     int multiplier;
                 };
             protected:
+                void SetUp() override {
+                    spi::ClientContext context(client);
+                    ASSERT_EQ_EVENTUALLY(2, context.getConnectionManager().getActiveConnections().size());
+                }
+
                 void TearDown() override {
                     // clear maps
                     employees->destroy();
@@ -1060,9 +1065,9 @@ namespace hazelcast {
                     CountdownListener(boost::latch &addLatch,
                                       boost::latch &removeLatch,
                                       boost::latch &updateLatch,
-                                      boost::latch &evictLatch)
+                                      boost::latch &expiryLatch, boost::latch *evictLatch = nullptr)
                             : addLatch(addLatch), removeLatch(removeLatch), updateLatch(updateLatch),
-                              evictLatch(evictLatch) {}
+                              expiryLatch(expiryLatch), evictLatch(evictLatch) {}
 
                     void entryAdded(const EntryEvent &event) override {
                         addLatch.count_down();
@@ -1077,13 +1082,21 @@ namespace hazelcast {
                     }
 
                     void entryExpired(const EntryEvent &event) override {
-                        evictLatch.count_down();
+                        expiryLatch.count_down();
+                    }
+
+                    void entryEvicted(const EntryEvent &event) override {
+                        if (!evictLatch) {
+                            return;
+                        }
+                        evictLatch->count_down();
                     }
                 private:
                     boost::latch &addLatch;
                     boost::latch &removeLatch;
                     boost::latch &updateLatch;
-                    boost::latch &evictLatch;
+                    boost::latch &expiryLatch;
+                    boost::latch *evictLatch;
                 };
 
                 class MyListener : public EntryAdapter {
@@ -1301,8 +1314,9 @@ namespace hazelcast {
 
             TEST_P(ClientMapTest, testPutTtl) {
                 boost::latch dummy(10);
+                boost::latch expiry(1);
                 boost::latch evict(1);
-                auto id = imap->addEntryListener(CountdownListener(dummy, dummy, dummy, evict), false).get();
+                auto id = imap->addEntryListener(CountdownListener(dummy, dummy, dummy, expiry, &evict), false).get();
 
                 auto nearCacheStatsImpl = std::static_pointer_cast<monitor::impl::NearCacheStatsImpl>(
                         imap->getLocalMapStats().getNearCacheStats());
@@ -1312,27 +1326,27 @@ namespace hazelcast {
                     initialInvalidationRequests = nearCacheStatsImpl->getInvalidationRequests();
                 }
 
-// put will cause an invalidation event sent from the server to the client
+                // put will cause an invalidation event sent from the server to the client
                 imap->put<std::string, std::string>("key1", "value1", std::chrono::seconds(1)).get();
 
-// if near cache is enabled
+                // if near cache is enabled
                 if (nearCacheStatsImpl) {
-                    ASSERT_EQ_EVENTUALLY(initialInvalidationRequests + 1,
-                                         nearCacheStatsImpl->getInvalidationRequests());
+                    ASSERT_TRUE_EVENTUALLY(
+                            initialInvalidationRequests < nearCacheStatsImpl->getInvalidationRequests());
 
-// populate near cache
+                    // populate near cache
                     imap->get<std::string, std::string>("key1").get();
 
-// When ttl expires at server, the server does not send near cache invalidation.
-                    ASSERT_TRUE_ALL_THE_TIME((imap->get<std::string, std::string>("key1").get().has_value() && nearCacheStatsImpl->getInvalidationRequests() ==
-                                                                        initialInvalidationRequests + 1), 2);
+                    // When ttl expires at server, the server sends another invalidation.
+                    ASSERT_EQ_EVENTUALLY(
+                            initialInvalidationRequests + 2, nearCacheStatsImpl->getInvalidationRequests());
+
                 } else {
-// trigger eviction
+                    // trigger eviction
                     ASSERT_TRUE_EVENTUALLY((!imap->get<std::string, std::string>("key1").get().has_value()));
                 }
 
-                ASSERT_OPEN_EVENTUALLY(evict);
-
+                ASSERT_OPEN_EVENTUALLY(expiry);
                 ASSERT_TRUE(imap->removeEntryListener(id).get());
             }
 
@@ -1355,14 +1369,15 @@ namespace hazelcast {
 
                 // if near cache is enabled
                 if (nearCacheStatsImpl) {
-                    ASSERT_EQ_EVENTUALLY(initialInvalidationRequests + 1,
-                                         nearCacheStatsImpl->getInvalidationRequests());
+                    ASSERT_TRUE_EVENTUALLY(
+                            initialInvalidationRequests < nearCacheStatsImpl->getInvalidationRequests());
 
                     // populate near cache
-                    map->get<std::string, std::string>("key1").get();
+                    imap->get<std::string, std::string>("key1").get();
 
-                    // When ttl expires at server, the server does not send near cache invalidation.
-                    ASSERT_EQ_ALL_THE_TIME(initialInvalidationRequests + 1, nearCacheStatsImpl->getInvalidationRequests(), 2);
+                    // When ttl expires at server, the server sends another invalidation.
+                    ASSERT_EQ_EVENTUALLY(
+                            initialInvalidationRequests + 2, nearCacheStatsImpl->getInvalidationRequests());
                 } else {
                     // trigger eviction
                     ASSERT_FALSE_EVENTUALLY((map->get<std::string, std::string>("key1").get().has_value()));
@@ -1407,20 +1422,20 @@ namespace hazelcast {
                     initialInvalidationRequests = nearCacheStatsImpl->getInvalidationRequests();
                 }
 
-// set will cause an invalidation event sent from the server to the client
+                // set will cause an invalidation event sent from the server to the client
                 imap->set("key1", "value1", std::chrono::seconds(1)).get();
 
-// if near cache is enabled
+                // if near cache is enabled
                 if (nearCacheStatsImpl) {
-                    ASSERT_EQ_EVENTUALLY(initialInvalidationRequests + 1,
-                                         nearCacheStatsImpl->getInvalidationRequests());
+                    ASSERT_TRUE_EVENTUALLY(
+                            initialInvalidationRequests < nearCacheStatsImpl->getInvalidationRequests());
 
-// populate near cache
+                    // populate near cache
                     imap->get<std::string, std::string>("key1").get();
 
-// When ttl expires at server, the server does not send near cache invalidation.
-                    ASSERT_TRUE_ALL_THE_TIME((imap->get<std::string, std::string>("key1").get() && nearCacheStatsImpl->getInvalidationRequests() ==
-                                                                        initialInvalidationRequests + 1), 2);
+                    // When ttl expires at server, the server sends another invalidation.
+                    ASSERT_EQ_EVENTUALLY(
+                            initialInvalidationRequests + 2, nearCacheStatsImpl->getInvalidationRequests());
                 } else {
 // trigger eviction
                     ASSERT_FALSE_EVENTUALLY((imap->get<std::string, std::string>("key1").get().has_value()));
@@ -1449,14 +1464,15 @@ namespace hazelcast {
 
                 // if near cache is enabled
                 if (nearCacheStatsImpl) {
-                    ASSERT_EQ_EVENTUALLY(initialInvalidationRequests + 1,
-                                         nearCacheStatsImpl->getInvalidationRequests());
+                    ASSERT_TRUE_EVENTUALLY(
+                            initialInvalidationRequests < nearCacheStatsImpl->getInvalidationRequests());
 
                     // populate near cache
-                    map->get<std::string, std::string>("key1").get();
+                    imap->get<std::string, std::string>("key1").get();
 
-                    // When ttl expires at server, the server does not send near cache invalidation.
-                    ASSERT_EQ_ALL_THE_TIME(initialInvalidationRequests + 1, nearCacheStatsImpl->getInvalidationRequests(), 2);
+                    // When ttl expires at server, the server sends another invalidation.
+                    ASSERT_EQ_EVENTUALLY(
+                            initialInvalidationRequests + 2, nearCacheStatsImpl->getInvalidationRequests());
                 } else {
                     // trigger eviction
                     ASSERT_FALSE_EVENTUALLY((map->get<std::string, std::string>("key1").get().has_value()));
@@ -2796,10 +2812,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithTruePredicate) {
-                boost::latch latchAdd(3);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(3), latchRemove(1), latchEvict(1), latchUpdate(1);
 
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict), query::TruePredicate(client), false).get();
 
@@ -2826,10 +2839,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithFalsePredicate) {
-                boost::latch latchAdd(3);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(3), latchRemove(1), latchEvict(1), latchUpdate(1);
 
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict), query::FalsePredicate(client), false).get();
 
@@ -2856,10 +2866,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithEqualPredicate) {
-                boost::latch latchAdd(1);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(1), latchRemove(1), latchEvict(1), latchUpdate(1);
 
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict),
                                                                  query::EqualPredicate(client, 
@@ -2893,10 +2900,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithNotEqualPredicate) {
-                boost::latch latchAdd(2);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(2), latchRemove(1), latchEvict(1), latchUpdate(1);
 
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict),
                                                                  query::NotEqualPredicate(client, 
@@ -2930,10 +2934,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithGreaterLessPredicate) {
-                boost::latch latchAdd(2);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(2), latchRemove(1), latchEvict(1), latchUpdate(1);
 
 // key <= 2
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict),
@@ -2967,10 +2968,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithBetweenPredicate) {
-                boost::latch latchAdd(2);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(2), latchRemove(1), latchEvict(1), latchUpdate(1);
 
 // 1 <=key <= 2
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict),
@@ -3003,10 +3001,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithSqlPredicate) {
-                boost::latch latchAdd(1);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(1), latchRemove(1), latchEvict(1), latchUpdate(1);
 
 // 1 <=key <= 2
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict), query::SqlPredicate(client, "__key < 2"), true).get();
@@ -3038,10 +3033,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithRegExPredicate) {
-                boost::latch latchAdd(2);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(2), latchRemove(1), latchEvict(1), latchUpdate(1);
 
 // key matches any word containing ".*met.*"
                 auto listenerId = imap->addEntryListener(CountdownListener(latchAdd, latchRemove, latchUpdate, latchEvict),
@@ -3075,10 +3067,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithInstanceOfPredicate) {
-                boost::latch latchAdd(3);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(3), latchRemove(1), latchEvict(1), latchUpdate(1);
 // 1 <=key <= 2
                 auto listenerId = intMap->addEntryListener(CountdownListener(latchAdd, latchRemove,latchUpdate,latchEvict),
                                                                  query::InstanceOfPredicate(client, 
@@ -3108,10 +3097,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithNotPredicate) {
-                boost::latch latchAdd(2);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(2), latchRemove(1), latchEvict(1), latchUpdate(1);
                 // key >= 3
                 query::NotPredicate notPredicate(client, query::GreaterLessPredicate(client,
                                                                                      query::QueryConstants::KEY_ATTRIBUTE_NAME,
@@ -3145,10 +3131,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithAndPredicate) {
-                boost::latch latchAdd(1);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(1), latchRemove(1), latchEvict(1), latchUpdate(1);
 // key < 3
                 query::GreaterLessPredicate greaterLessPred(client, query::QueryConstants::KEY_ATTRIBUTE_NAME, 3, false, true);
 // value == 1
@@ -3184,10 +3167,7 @@ namespace hazelcast {
             }
 
             TEST_P(ClientMapTest, testListenerWithOrPredicate) {
-                boost::latch latchAdd(2);
-                boost::latch latchRemove(1);
-                boost::latch latchEvict(1);
-                boost::latch latchUpdate(1);
+                boost::latch latchAdd(2), latchRemove(1), latchEvict(1), latchUpdate(1);
 
                 // key < 3
                 query::GreaterLessPredicate greaterLessPred(client, query::QueryConstants::KEY_ATTRIBUTE_NAME, 3, true, false);

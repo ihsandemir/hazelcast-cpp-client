@@ -212,7 +212,8 @@ namespace hazelcast {
 
                 auto future = std::make_shared<ConnectionFuture>(address, connection, connectionsInProgress);
                 auto f = connectionsInProgress.putIfAbsent(address, future);
-                if (f) {
+                bool outstanding_connection_exists = static_cast<bool>(f);
+                if (outstanding_connection_exists) {
                     future = f;
                 }
                 std::lock_guard<std::mutex> g(future->getLock());
@@ -220,6 +221,11 @@ namespace hazelcast {
                 connection = getConnection(address);
                 if (connection) {
                     return connection;
+                }
+                if (outstanding_connection_exists) {
+                    // Outstanding connection seems to be failed. Try connecting only if we could actually insert into
+                    // the outstanding connections map
+                    return getOrConnect(address);
                 }
 
                 auto target = translator->translate(address);

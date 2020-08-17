@@ -182,7 +182,7 @@ namespace hazelcast {
 
                 boost::future<std::vector<serialization::pimpl::Data>> keySetData(const serialization::pimpl::Data &predicate);
 
-                boost::future<std::pair<EntryVector, query::anchor_data_list>>
+                boost::future<std::pair<std::vector<serialization::pimpl::Data>, query::anchor_data_list>>
                 keySetForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const & predicate);
 
                 boost::future<EntryVector> entrySetData();
@@ -196,7 +196,7 @@ namespace hazelcast {
 
                 boost::future<std::vector<serialization::pimpl::Data>> valuesData(const serialization::pimpl::Data &predicate);
 
-                boost::future<std::pair<EntryVector, query::anchor_data_list>>
+                boost::future<std::pair<std::vector<serialization::pimpl::Data>, query::anchor_data_list>>
                 valuesForPagingPredicateData(protocol::codec::holder::paging_predicate_holder const &predicate);
 
                 boost::future<protocol::ClientMessage> addIndexData(const config::index_config &config);
@@ -326,8 +326,14 @@ namespace hazelcast {
                 createMapEntryListenerCodec(bool includeValue, EntryEvent::type listenerFlags,
                                             serialization::pimpl::Data &&key);
 
-                std::pair<EntryVector, query::anchor_data_list>
-                get_paging_predicate_response(boost::future<ClientMessage> f) const;
+                template<typename ResultVector>
+                std::pair<ResultVector, query::anchor_data_list>
+                get_paging_predicate_response(boost::future<protocol::ClientMessage> f) const {
+                    auto msg = f.get();
+
+                    return std::make_pair(*msg.get_first_var_sized_field<ResultVector>(),
+                            msg.get<query::anchor_data_list>());
+                }
             };
         }
     }

@@ -519,6 +519,20 @@ namespace hazelcast {
                 }
 
                 template<typename T>
+                typename std::enable_if<std::is_same<T, query::anchor_data_list>::value, T>::type
+                inline get() {
+                    // skip begin frame
+                    rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+
+                    auto page_list = get<decltype(query::anchor_data_list::page_list)>();
+                    auto data_list = get<decltype(query::anchor_data_list::data_list)>();
+
+                    fast_forward_to_end_frame();
+
+                    return {std::move(page_list), std::move(data_list)};
+                }
+
+                template<typename T>
                 typename std::enable_if<std::is_same<T, map::DataEntryView>::value, T>::type
                 inline get() {
                     // skip begin frame
@@ -711,6 +725,7 @@ namespace hazelcast {
                 }
 
                 void set(const codec::holder::paging_predicate_holder &p, bool is_final = false);
+                void set(const query::anchor_data_list &list, bool is_final = false);
 
                 inline void set(const config::index_config &c, bool is_final = false) {
                     add_begin_frame();
@@ -919,5 +934,3 @@ namespace hazelcast {
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(pop)
 #endif
-
-

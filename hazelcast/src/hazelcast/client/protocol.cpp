@@ -118,6 +118,13 @@ namespace hazelcast {
                 set_primitive_vector(values, is_final);
             }
 
+            void ClientMessage::set(const query::anchor_data_list &list, bool is_final) {
+                add_begin_frame();
+                set(list.page_list);
+                set(list.data_list);
+                add_end_frame(is_final);
+            }
+
             void ClientMessage::set(const codec::holder::paging_predicate_holder &p, bool is_final) {
                 add_begin_frame();
 
@@ -128,12 +135,7 @@ namespace hazelcast {
                 set(p.page);
                 set(p.iteration_type);
 
-                f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(BEGIN_FRAME)));
-                *f = BEGIN_FRAME;
-                set(p.anchor_list.page_list);
-                set(p.anchor_list.data_list);
-                f = reinterpret_cast<frame_header_t *>(wr_ptr(sizeof(END_FRAME)));
-                *f = END_FRAME;
+                set(p.anchor_list);
 
                 set(p.predicate_data);
                 set(p.comparator_data);
@@ -251,9 +253,10 @@ namespace hazelcast {
                 while (number_expected_frames) {
                     auto *f = reinterpret_cast<frame_header_t *>(rd_ptr(sizeof(frame_header_t)));
 
-                    if (*f == END_FRAME) {
+                    int16_t flags = f->flags;
+                    if (is_flag_set(flags, END_DATA_STRUCTURE_FLAG)) {
                         number_expected_frames--;
-                    } else if (*f == BEGIN_FRAME) {
+                    } else if (is_flag_set(flags, BEGIN_DATA_STRUCTURE_FLAG)) {
                         number_expected_frames++;
                     }
 
