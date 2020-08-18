@@ -94,7 +94,7 @@ namespace hazelcast {
                     if (messageType == 770) {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto version = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto memberInfos = msg.get<std::vector<Member>>();
 
@@ -104,7 +104,7 @@ namespace hazelcast {
                     if (messageType == 771) {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto version = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto partitions = msg.get<std::vector<std::pair<boost::uuids::uuid, std::vector<int>>>>();
                         handle_partitionsview(version, partitions);
@@ -167,7 +167,7 @@ namespace hazelcast {
                         auto partitionId = msg.get<int32_t>();
                         auto lostBackupCount = msg.get<int32_t>();
                         auto source = msg.get<boost::uuids::uuid>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         handle_partitionlost(partitionId, lostBackupCount, source);
                         return;
@@ -220,7 +220,7 @@ namespace hazelcast {
                     if (messageType == 2306) {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto source = msg.get<boost::uuids::uuid>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto name = msg.get<std::string>();
                         auto serviceName = msg.get<std::string>();
@@ -320,7 +320,7 @@ namespace hazelcast {
                     if (messageType == 3842) {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto sourceInvocationCorrelationId = msg.get<int64_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         handle_backup(sourceInvocationCorrelationId);
                         return;
@@ -750,7 +750,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -790,7 +790,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -830,7 +830,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -868,7 +868,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -918,7 +918,7 @@ namespace hazelcast {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto partitionId = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         handle_mappartitionlost(partitionId, uuid);
                         return;
@@ -1515,7 +1515,7 @@ namespace hazelcast {
                         auto sourceUuid = msg.get<boost::uuids::uuid>();
                         auto partitionUuid = msg.get<boost::uuids::uuid>();
                         auto sequence = msg.get<int64_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         handle_imapinvalidation(key, sourceUuid, partitionUuid, sequence);
@@ -1911,7 +1911,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -1948,7 +1948,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -2384,7 +2384,7 @@ namespace hazelcast {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto eventType = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto item = msg.getNullable<Data>();
                         handle_item(item, uuid, eventType);
@@ -2475,7 +2475,7 @@ namespace hazelcast {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto publishTime = msg.get<int64_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto item = msg.get<Data>();
                         handle_topic(item, publishTime, uuid);
@@ -2677,7 +2677,7 @@ namespace hazelcast {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto eventType = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto item = msg.getNullable<Data>();
                         handle_item(item, uuid, eventType);
@@ -3051,7 +3051,7 @@ namespace hazelcast {
                         auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::EVENT_HEADER_LEN));
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto eventType = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto item = msg.getNullable<Data>();
                         handle_item(item, uuid, eventType);
@@ -3350,7 +3350,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3388,7 +3388,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3426,7 +3426,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3462,7 +3462,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();
@@ -3556,7 +3556,7 @@ namespace hazelcast {
                         auto eventType = msg.get<int32_t>();
                         auto uuid = msg.get<boost::uuids::uuid>();
                         auto numberOfAffectedEntries = msg.get<int32_t>();
-                        msg.seek(initial_frame->frame_len);
+                        msg.seek(static_cast<int32_t>(initial_frame->frame_len));
 
                         auto key = msg.getNullable<Data>();
                         auto value = msg.getNullable<Data>();

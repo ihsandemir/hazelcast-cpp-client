@@ -42,7 +42,6 @@
 #include "hazelcast/client/protocol/ClientExceptionFactory.h"
 #include "hazelcast/client/protocol/codec/ErrorCodec.h"
 #include "hazelcast/client/exception/ProtocolExceptions.h"
-#include "hazelcast/client/protocol/Principal.h"
 #include "hazelcast/client/protocol/ClientMessageBuilder.h"
 #include "hazelcast/client/protocol/IMessageHandler.h"
 #include "hazelcast/client/connection/Connection.h"
@@ -165,12 +164,13 @@ namespace hazelcast {
                         byteBuff.read_bytes(wr_ptr(bytes_to_read), bytes_to_read);
                         // we do not let the frame to be split into two buffers
                         byteBuff.read_bytes(wr_ptr(remaining), remaining);
-                        remaining_bytes_in_frame = f->frame_len - remaining;
+                        remaining_bytes_in_frame = static_cast<int32_t>(f->frame_len) - remaining;
                         return;
                     } else {
-                        remaining -= f->frame_len;
-                        bytes_to_read += f->frame_len;
-                        read_ptr += f->frame_len;
+                        auto len = static_cast<int32_t>(f->frame_len);
+                        remaining -= len;
+                        bytes_to_read += len;
+                        read_ptr += len;
                         is_final = ClientMessage::is_flag_set(f->flags, ClientMessage::IS_FINAL_FLAG);
                     }
                 }
@@ -261,7 +261,7 @@ namespace hazelcast {
                     }
 
                     // skip current frame
-                    rd_ptr(f->frame_len - sizeof(frame_header_t));
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - sizeof(frame_header_t));
                 }
             }
 
@@ -273,7 +273,7 @@ namespace hazelcast {
                 registerException(ARRAY_INDEX_OUT_OF_BOUNDS,
                                   new ExceptionFactoryImpl<exception::ArrayIndexOutOfBoundsException>());
                 registerException(ARRAY_STORE, new ExceptionFactoryImpl<exception::ArrayStoreException>());
-                registerException(AUTHENTICATIONERROR, new ExceptionFactoryImpl<exception::AuthenticationException>());
+                registerException(AUTHENTICATION, new ExceptionFactoryImpl<exception::AuthenticationException>());
                 registerException(CACHE_NOT_EXISTS, new ExceptionFactoryImpl<exception::CacheNotExistsException>());
                 registerException(CALLER_NOT_MEMBER, new ExceptionFactoryImpl<exception::CallerNotMemberException>());
                 registerException(CANCELLATION, new ExceptionFactoryImpl<exception::CancellationException>());
@@ -282,11 +282,8 @@ namespace hazelcast {
                 registerException(CONCURRENT_MODIFICATION,
                                   new ExceptionFactoryImpl<exception::ConcurrentModificationException>());
                 registerException(CONFIG_MISMATCH, new ExceptionFactoryImpl<exception::ConfigMismatchException>());
-                registerException(CONFIGURATION, new ExceptionFactoryImpl<exception::ConfigurationException>());
                 registerException(DISTRIBUTED_OBJECT_DESTROYED,
                                   new ExceptionFactoryImpl<exception::DistributedObjectDestroyedException>());
-                registerException(DUPLICATE_INSTANCE_NAME,
-                                  new ExceptionFactoryImpl<exception::DuplicateInstanceNameException>());
                 registerException(ENDOFFILE, new ExceptionFactoryImpl<exception::EOFException>());
                 registerException(EXECUTION, new ExceptionFactoryImpl<exception::ExecutionException>());
                 registerException(HAZELCAST, new ExceptionFactoryImpl<exception::HazelcastException>());
@@ -324,11 +321,9 @@ namespace hazelcast {
                 registerException(QUERY, new ExceptionFactoryImpl<exception::QueryException>());
                 registerException(QUERY_RESULT_SIZE_EXCEEDED,
                                   new ExceptionFactoryImpl<exception::QueryResultSizeExceededException>());
-                registerException(QUORUM, new ExceptionFactoryImpl<exception::QuorumException>());
                 registerException(REACHED_MAX_SIZE, new ExceptionFactoryImpl<exception::ReachedMaxSizeException>());
                 registerException(REJECTED_EXECUTION,
                                   new ExceptionFactoryImpl<exception::RejectedExecutionException>());
-                registerException(REMOTE_MAP_REDUCE, new ExceptionFactoryImpl<exception::RemoteMapReduceException>());
                 registerException(RESPONSE_ALREADY_SENT,
                                   new ExceptionFactoryImpl<exception::ResponseAlreadySentException>());
                 registerException(RETRYABLE_HAZELCAST,
@@ -343,7 +338,6 @@ namespace hazelcast {
                 registerException(TARGET_NOT_MEMBER, new ExceptionFactoryImpl<exception::TargetNotMemberException>());
                 registerException(TIMEOUT, new ExceptionFactoryImpl<exception::TimeoutException>());
                 registerException(TOPIC_OVERLOAD, new ExceptionFactoryImpl<exception::TopicOverloadException>());
-                registerException(TOPOLOGY_CHANGED, new ExceptionFactoryImpl<exception::TopologyChangedException>());
                 registerException(TRANSACTION, new ExceptionFactoryImpl<exception::TransactionException>());
                 registerException(TRANSACTION_NOT_ACTIVE,
                                   new ExceptionFactoryImpl<exception::TransactionNotActiveException>());
@@ -373,7 +367,7 @@ namespace hazelcast {
                 registerException(NATIVE_OUT_OF_MEMORY_ERROR,
                                   new ExceptionFactoryImpl<exception::NativeOutOfMemoryError>());
                 registerException(SERVICE_NOT_FOUND, new ExceptionFactoryImpl<exception::ServiceNotFoundException>());
-                registerException(CONSISTENCY_LOST, new ExceptionFactoryImpl<exception::ConsistencyLostException>());
+                registerException(CONSISTENCY_LOST_EXCEPTION, new ExceptionFactoryImpl<exception::ConsistencyLostException>());
             }
 
             ClientExceptionFactory::~ClientExceptionFactory() {
@@ -412,28 +406,6 @@ namespace hazelcast {
             std::exception_ptr ClientExceptionFactory::create_exception(const std::vector<codec::ErrorHolder> &errors) const {
                 return create_exception(errors.begin(), errors.end());
             }
-
-            boost::uuids::uuid Principal::getUuid() const {
-                return uuid;
-            }
-
-            boost::uuids::uuid Principal::getOwnerUuid() const {
-                return ownerUuid;
-            }
-
-            bool operator==(const Principal &lhs, const Principal &rhs) {
-                return lhs.uuid == rhs.uuid &&
-                       lhs.ownerUuid == rhs.ownerUuid;
-            }
-
-            std::ostream &operator<<(std::ostream &os, const Principal &principal) {
-                os << "uuid: " << boost::uuids::to_string(principal.uuid) << " ownerUuid: "
-                   << boost::uuids::to_string(principal.ownerUuid);
-                return os;
-            }
-
-            Principal::Principal(boost::uuids::uuid uuid, boost::uuids::uuid ownerUuid) : uuid(std::move(uuid)),
-                                                                                ownerUuid(std::move(ownerUuid)) {}
 
             ClientMessageBuilder::ClientMessageBuilder(connection::Connection &connection)
                     : connection(connection) {}
@@ -514,11 +486,11 @@ namespace hazelcast {
 
             UsernamePasswordCredentials::UsernamePasswordCredentials(const std::string &principal,
                                                                      const std::string &password)
-                    : principal(principal), password(password) {
+                    : name(principal), password(password) {
             }
 
-            const std::string &UsernamePasswordCredentials::getPrincipal() const {
-                return principal;
+            const std::string &UsernamePasswordCredentials::getName() const {
+                return name;
             }
 
             const std::string &UsernamePasswordCredentials::getPassword() const {

@@ -22,13 +22,13 @@
 #include <future>
 #include <vector>
 #include <boost/asio.hpp>
+#include <boost/smart_ptr/atomic_shared_ptr.hpp>
 
 #include "hazelcast/client/serialization/serialization.h"
 #include "hazelcast/util/ConcurrentSet.h"
 #include "hazelcast/client/LifecycleEvent.h"
 #include "hazelcast/client/Address.h"
 #include "hazelcast/util/SynchronizedMap.h"
-#include "hazelcast/client/protocol/Principal.h"
 #include "hazelcast/client/spi/ClientContext.h"
 #include "hazelcast/client/internal/socket/SocketFactory.h"
 #include "hazelcast/util/Sync.h"
@@ -67,6 +67,10 @@ namespace hazelcast {
             class HazelcastClientInstanceImpl;
         }
 
+        namespace security {
+            class credentials;
+        }
+
         namespace connection {
             class Connection;
 
@@ -103,8 +107,6 @@ namespace hazelcast {
 
                 std::shared_ptr<Connection> getConnection(boost::uuids::uuid uuid);
 
-                std::shared_ptr<protocol::Principal> getPrincipal();
-
                 bool isAlive();
 
                 void on_connection_close(Connection &connection, std::exception_ptr ptr);
@@ -118,6 +120,9 @@ namespace hazelcast {
                 boost::uuids::uuid getClientUuid() const;
 
                 void check_invocation_allowed();
+
+                boost::shared_ptr<security::credentials> getCurrentCredentials() const;
+
             private:
                 static constexpr size_t EXECUTOR_CORE_POOL_SIZE = 10;
                 static constexpr int32_t DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
@@ -129,7 +134,7 @@ namespace hazelcast {
                     byte serialization_version;
                     int32_t partition_count;
                     boost::uuids::uuid cluster_id;
-                    Address address;
+                    boost::optional<Address> address;
                     std::string server_version;
                 };
 
@@ -167,10 +172,9 @@ namespace hazelcast {
                 std::shared_ptr<Connection> connect(const Address &address);
 
                 protocol::ClientMessage
-                encodeAuthenticationRequest(serialization::pimpl::SerializationService &ss,
-                                            const protocol::Principal *p);
+                encodeAuthenticationRequest(serialization::pimpl::SerializationService &ss);
 
-                void handleSuccessfulAuth(const std::shared_ptr<Connection> &connection, const auth_response &response);
+                void handleSuccessfulAuth(const std::shared_ptr<Connection> &connection, auth_response response);
 
                 std::atomic_bool alive;
 
@@ -186,8 +190,7 @@ namespace hazelcast {
                 util::SynchronizedMap<Address, ConnectionFuture> connectionsInProgress;
                 // TODO: change with CopyOnWriteArraySet<ConnectionListener> as in Java
                 util::ConcurrentSet<std::shared_ptr<ConnectionListener> > connectionListeners;
-                boost::optional<serialization::pimpl::Data> credentials;
-                util::Sync<std::shared_ptr<protocol::Principal> > principal;
+                boost::atomic_shared_ptr<security::credentials> current_credentials_;
                 std::unique_ptr<hazelcast::util::hz_thread_pool> executor_;
                 int32_t connectionAttemptPeriod;
                 int32_t connectionAttemptLimit;

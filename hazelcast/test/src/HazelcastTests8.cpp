@@ -29,7 +29,6 @@
 #include <thread>
 #include <hazelcast/client/spi/ClientContext.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
-#include <hazelcast/client/protocol/Principal.h>
 #include <hazelcast/client/connection/Connection.h>
 #include <hazelcast/util/AddressHelper.h>
 #include <hazelcast/util/Util.h>
@@ -665,7 +664,7 @@ namespace hazelcast {
 
                 void TearDown() override {
                     if (map) {
-                        map->destroy();
+                        map->destroy().get();
                     }
                 }
 
@@ -807,7 +806,7 @@ namespace hazelcast {
                 }
 
                 void TearDown() override {
-                    set->clear();
+                    set->clear().get();
                 }
 
                 static void SetUpTestCase() {
@@ -1004,7 +1003,7 @@ namespace hazelcast {
             protected:
                 void TearDown() override {
                     if (topic) {
-                        topic->destroy();
+                        topic->destroy().get();
                     }
                 }
 

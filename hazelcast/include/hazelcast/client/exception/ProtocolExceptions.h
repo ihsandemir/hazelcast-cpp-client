@@ -76,15 +76,14 @@ namespace hazelcast {
             // ---------  RuntimeException starts here -------------------------------------------/
             DEFINE_EXCEPTION_CLASS(ArrayIndexOutOfBoundsException, protocol::INDEX_OUT_OF_BOUNDS, true);
             DEFINE_EXCEPTION_CLASS(ArrayStoreException, protocol::ARRAY_STORE, true);
-            DEFINE_EXCEPTION_CLASS(AuthenticationException, protocol::AUTHENTICATIONERROR, true);
+            DEFINE_EXCEPTION_CLASS(AuthenticationException, protocol::AUTHENTICATION, true);
             DEFINE_EXCEPTION_CLASS(CacheNotExistsException, protocol::CACHE_NOT_EXISTS, true);
             DEFINE_EXCEPTION_CLASS(CancellationException, protocol::CANCELLATION, true);
             DEFINE_EXCEPTION_CLASS(ClassCastException, protocol::CLASS_CAST, true);
             DEFINE_EXCEPTION_CLASS(ConcurrentModificationException, protocol::CONCURRENT_MODIFICATION, true);
             DEFINE_EXCEPTION_CLASS(ConfigMismatchException, protocol::CONFIG_MISMATCH, true);
-            DEFINE_EXCEPTION_CLASS(ConfigurationException, protocol::CONFIGURATION, true);
             DEFINE_EXCEPTION_CLASS(DistributedObjectDestroyedException, protocol::DISTRIBUTED_OBJECT_DESTROYED, true);
-            DEFINE_EXCEPTION_CLASS(DuplicateInstanceNameException, protocol::DUPLICATE_INSTANCE_NAME, true);
+            DEFINE_EXCEPTION_CLASS(EntryProcessorException, protocol::ENTRY_PROCESSOR, true);
             DEFINE_EXCEPTION_CLASS(HazelcastException, protocol::HAZELCAST, true);
             DEFINE_EXCEPTION_CLASS(HazelcastInstanceNotActiveException, protocol::HAZELCAST_INSTANCE_NOT_ACTIVE, true);
             DEFINE_EXCEPTION_CLASS(HazelcastOverloadException, protocol::HAZELCAST_OVERLOAD, true);
@@ -102,10 +101,9 @@ namespace hazelcast {
             DEFINE_EXCEPTION_CLASS(OperationTimeoutException, protocol::OPERATION_TIMEOUT, true);
             DEFINE_EXCEPTION_CLASS(QueryException, protocol::QUERY, true);
             DEFINE_EXCEPTION_CLASS(QueryResultSizeExceededException, protocol::QUERY_RESULT_SIZE_EXCEEDED, true);
-            DEFINE_EXCEPTION_CLASS(QuorumException, protocol::QUORUM, true);
+            DEFINE_EXCEPTION_CLASS(SplitBrainProtectionException, protocol::SPLIT_BRAIN_PROTECTION, true);
             DEFINE_EXCEPTION_CLASS(ReachedMaxSizeException, protocol::REACHED_MAX_SIZE, true);
             DEFINE_EXCEPTION_CLASS(RejectedExecutionException, protocol::REJECTED_EXECUTION, true);
-            DEFINE_EXCEPTION_CLASS(RemoteMapReduceException, protocol::REMOTE_MAP_REDUCE, true);
             DEFINE_EXCEPTION_CLASS(ResponseAlreadySentException, protocol::RESPONSE_ALREADY_SENT, true);
             DEFINE_EXCEPTION_CLASS(RuntimeException, protocol::RUNTIME, true);
             DEFINE_EXCEPTION_CLASS(SecurityException, protocol::SECURITY, true);
@@ -116,7 +114,6 @@ namespace hazelcast {
             DEFINE_EXCEPTION_CLASS(TargetDisconnectedException, protocol::TARGET_DISCONNECTED, true);
             DEFINE_EXCEPTION_CLASS(TopicOverloadException, protocol::TOPIC_OVERLOAD, true);
 
-            DEFINE_EXCEPTION_CLASS(TopologyChangedException, protocol::TOPOLOGY_CHANGED, true);
             DEFINE_EXCEPTION_CLASS(TransactionException, protocol::TRANSACTION, true);
             DEFINE_EXCEPTION_CLASS(TransactionNotActiveException, protocol::TRANSACTION_NOT_ACTIVE, true);
             DEFINE_EXCEPTION_CLASS(TransactionTimedOutException, protocol::TRANSACTION_TIMED_OUT, true);
@@ -196,7 +193,6 @@ namespace hazelcast {
              * Thrown when Hazelcast client is offline during an invocation.
              */
             DEFINE_EXCEPTION_CLASS(UnknownHostException, protocol::UNKNOWN_HOST, false);
-            DEFINE_EXCEPTION_CLASS(FutureUninitialized, protocol::FUTURE_UNINITIALIZED, false);
 
             DEFINE_EXCEPTION_CLASS(ClientNotAllowedInClusterException, protocol::CLIENT_NOT_ALLOWED_IN_CLUSTER, true);
             // -----------------    Client side non-runtime exceptions finish here ----------------------------

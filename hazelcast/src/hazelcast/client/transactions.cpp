@@ -103,8 +103,7 @@ namespace hazelcast {
                         try {
                             auto msg = f.get();
                             // skip header
-                            msg.rd_ptr(msg.REQUEST_HEADER_LEN);
-                            
+                            msg.rd_ptr(msg.RESPONSE_HEADER_LEN);
                             this->txnId = msg.get<boost::uuids::uuid>();
                             this->state = TxnState::ACTIVE;
                         } catch (exception::IException &) {

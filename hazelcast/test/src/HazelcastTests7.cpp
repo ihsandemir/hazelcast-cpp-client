@@ -32,7 +32,6 @@
 #include <thread>
 #include <hazelcast/client/spi/ClientContext.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
-#include <hazelcast/client/protocol/Principal.h>
 #include <hazelcast/client/connection/Connection.h>
 #include <ClientTestSupport.h>
 #include <memory>
@@ -382,7 +381,7 @@ namespace hazelcast {
 
                 void TearDown() override {
                     // clear list
-                    list->clear();
+                    list->clear().get();
                 }
 
                 static void SetUpTestCase() {

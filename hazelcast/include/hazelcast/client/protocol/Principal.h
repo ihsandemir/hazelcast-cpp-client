@@ -31,11 +31,9 @@ namespace hazelcast {
         namespace protocol {
             class HAZELCAST_API Principal {
             public:
-                Principal(boost::uuids::uuid uuid, boost::uuids::uuid ownerUuid);
+                Principal(boost::uuids::uuid uuid);
 
                 boost::uuids::uuid getUuid() const;
-
-                boost::uuids::uuid getOwnerUuid() const;
 
                 friend bool operator==(const Principal &lhs, const Principal &rhs);
 
@@ -43,7 +41,6 @@ namespace hazelcast {
 
             private:
                 boost::uuids::uuid uuid;
-                boost::uuids::uuid ownerUuid;
             };
         }
     }

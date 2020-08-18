@@ -177,9 +177,8 @@ namespace hazelcast {
                     util::Preconditions::checkMax((int32_t) items.size(), MAX_BATCH_SIZE, "items");
 
                     auto request = protocol::codec::ringbuffer_addall_encode(name, items,
-                                                                                         static_cast<int32_t>(overflowPolicy));
-                    return invokeAndGetFuture<int64_t>(
-                            request, partitionId);
+                                                                             static_cast<int32_t>(overflowPolicy));
+                    return invokeAndGetFuture<int64_t>(request, partitionId);
                 }
 
             protected:

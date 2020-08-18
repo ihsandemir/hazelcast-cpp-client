@@ -780,7 +780,7 @@ namespace hazelcast {
                         getName(), size);
                 return invoke(request).then(boost::launch::deferred, [] (boost::future<protocol::ClientMessage> f) {
                     auto msg = f.get();
-                    msg.rd_ptr(ClientMessage::REQUEST_HEADER_LEN);
+                    msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN);
                     return FlakeIdGeneratorImpl::IdBatch(msg.get<int64_t>(), msg.get<int64_t>(), msg.get<int32_t>());
                 });
             }

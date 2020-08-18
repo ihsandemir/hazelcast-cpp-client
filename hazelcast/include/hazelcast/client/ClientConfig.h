@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <memory>
 #include <boost/optional.hpp>
+#include <hazelcast/client/serialization/serialization.h>
 
 #include "hazelcast/client/Address.h"
 #include "hazelcast/client/GroupConfig.h"
@@ -56,6 +57,64 @@ namespace hazelcast {
 
         namespace connection {
              class ClientConnectionManagerImpl;
+        };
+
+        namespace security {
+            class credentials {
+            public:
+                enum type {
+                    username_password,
+                    token,
+                    secret
+                };
+
+                virtual ~credentials();
+
+                virtual const std::string &get_name() const = 0;
+                virtual const type get_type() const = 0;
+            };
+
+            class password_credentials : public credentials {
+            public:
+                virtual const std::string &get_password() const = 0;
+            };
+
+            class username_password_credentials : public password_credentials {
+            public:
+                username_password_credentials(const std::string &name, const std::string &password);
+
+                const std::string &get_name() const override;
+
+                const std::string &get_password() const override;
+
+                const type get_type() const override;
+
+            private:
+                std::string name_;
+                std::string password_;
+            };
+
+            class token_credentials : public credentials {
+            public:
+                token_credentials(const std::string &name, const std::vector<byte> &secretData);
+
+                const std::string &get_name() const override;
+
+                const std::vector<byte> &get_secret() const;
+
+                const type get_type() const override;
+
+            private:
+                std::string name_;
+                std::vector<byte> secret_data_;
+            };
+
+            class secret_credential : public token_credentials {
+            public:
+                secret_credential(const std::string &name, const std::vector<byte> &secretData);
+
+                const type get_type() const override;
+            };
         };
 
         /**
@@ -134,22 +193,25 @@ namespace hazelcast {
             GroupConfig &getGroupConfig();
 
             /**
-            * Can be used instead of GroupConfig in Hazelcast Extensions.
             *
             *  \return itself ClientConfig
             */
-            template<typename T>
-            ClientConfig &setCredentials(const T &credential) {
-                serialization::pimpl::SerializationService ss(serializationConfig);
-                credentials = ss.toData<T>(credential);
-                principal = credential.getPrincipal();
+            ClientConfig &setCredentials(const boost::shared_ptr<security::credentials> &credential) {
+                credentials_ = credential;
                 return *this;
             }
 
             /**
-            * Gets the principal if set by the credentials
+            *
+            *  \return itself ClientConfig
             */
-            const boost::optional<std::string> &getPrincipal() const;
+            template<typename T>
+            ClientConfig &setCredentials(const T &secret) {
+                serialization::pimpl::SerializationService ss(serializationConfig);
+                credentials_ = std::make_shared<security::secret_credential>(secret.get_name(),
+                                                                             ss.toData<T>(secret).toByteArray());
+                return *this;
+            }
 
             /**
             * \deprecated Please use {\link ClientNetworkConfig#setConnectionAttemptLimit(int32_t)}
@@ -543,7 +605,6 @@ namespace hazelcast {
              */
             ClientConfig &addFlakeIdGeneratorConfig(const std::shared_ptr<config::ClientFlakeIdGeneratorConfig> &config);
 
-
             /**
              *
              * \return The logger configuration.
@@ -580,8 +641,7 @@ namespace hazelcast {
 
             SocketInterceptor *socketInterceptor;
 
-            boost::optional<serialization::pimpl::Data> credentials;
-            boost::optional<std::string> principal;
+            boost::shared_ptr<security::credentials> credentials_;
 
             std::unordered_map<std::string, config::ReliableTopicConfig> reliableTopicConfigMap;
 

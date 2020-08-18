@@ -697,7 +697,7 @@ namespace hazelcast {
                     auto connection = cm.get_random_connection();
                     auto inetSocketAddress = connection ? connection->getLocalSocketAddress() : boost::none;
                     auto uuid = cm.getClientUuid();
-                    return Client(uuid, inetSocketAddress, client.getName(), labels_);
+                    return Client(uuid, std::move(inetSocketAddress), client.getName(), labels_);
                 }
 
                 void ClientClusterServiceImpl::clear_member_list_version() {

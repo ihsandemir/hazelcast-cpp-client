@@ -24,7 +24,6 @@
 #include <hazelcast/client/impl/Partition.h>
 #include <gtest/gtest.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
-#include <hazelcast/client/protocol/Principal.h>
 #include <hazelcast/client/connection/Connection.h>
 #include <hazelcast/client/serialization/pimpl/DataInput.h>
 #include <hazelcast/util/AddressHelper.h>

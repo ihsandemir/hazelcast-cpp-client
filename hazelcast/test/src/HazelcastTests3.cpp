@@ -29,7 +29,6 @@
 #include <thread>
 #include <hazelcast/client/spi/ClientContext.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
-#include <hazelcast/client/protocol/Principal.h>
 #include <hazelcast/client/connection/Connection.h>
 #include <ClientTestSupport.h>
 #include <memory>
@@ -715,10 +714,10 @@ namespace hazelcast {
 
                 void TearDown() override {
                     if (nearCachedMap) {
-                        nearCachedMap->destroy();
+                        nearCachedMap->destroy().get();
                     }
                     if (noNearCacheMap) {
-                        noNearCacheMap->destroy();
+                        noNearCacheMap->destroy().get();
                     }
                     if (client) {
                         client->shutdown();

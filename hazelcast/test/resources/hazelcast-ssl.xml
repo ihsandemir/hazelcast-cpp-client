@@ -90,5 +90,4 @@
     <ringbuffer name="default">
         <capacity>10</capacity>
     </ringbuffer>
-
 </hazelcast>

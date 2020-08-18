@@ -373,7 +373,7 @@ namespace hazelcast {
                     T result;
 
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                    auto content_length = f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+                    auto content_length = static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
                     size_t item_count = content_length / ClientMessage::get_sizeof<typename T::value_type>();
                     for (size_t i = 0; i < item_count; ++i) {
                         result.push_back(get<typename T::value_type>());
@@ -390,7 +390,7 @@ namespace hazelcast {
                     T result;
 
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                    auto content_length = f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+                    auto content_length = static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
                     size_t item_count = content_length / (ClientMessage::get_sizeof<typename T::value_type::first_type>() + ClientMessage::get_sizeof<typename T::value_type::second_type>());
                     for (size_t i = 0; i < item_count; ++i) {
                         result.emplace_back(std::make_pair(get<typename T::value_type::first_type>(), get<typename T::value_type::second_type>()));
@@ -444,7 +444,7 @@ namespace hazelcast {
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                     auto port = get<int32_t>();
                     // skip bytes in initial frame
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
 
                     auto host = get<std::string>();
 
@@ -464,7 +464,7 @@ namespace hazelcast {
                     auto uuid = get<boost::uuids::uuid>();
                     auto lite_member = get<bool>();
                     // skip rest of the bytes in initial frame
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - UUID_SIZE - UINT8_SIZE);
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS - UUID_SIZE - UINT8_SIZE);
 
                     auto address = get<Address>();
                     auto attributes = get<std::unordered_map<std::string, std::string>>();
@@ -491,7 +491,7 @@ namespace hazelcast {
                 typename std::enable_if<std::is_same<T, serialization::pimpl::Data>::value, T>::type
                 inline get() {
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                    auto data_size = f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+                    auto data_size = static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS;
                     auto mem_ptr = rd_ptr(data_size);
                     std::vector<byte> bytes(data_size);
                     std::memcpy(&bytes[0], mem_ptr, data_size);
@@ -507,7 +507,7 @@ namespace hazelcast {
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                     auto line_number = get<int32_t>();
                     // skip bytes in initial frame
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
 
                     auto class_name = get<std::string>();
                     auto method_name = get<std::string>();
@@ -551,7 +551,7 @@ namespace hazelcast {
                     auto ttl = get<int64_t>();
                     auto maxIdle = get<int64_t>();
                     // skip bytes in initial frame
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - 10 * INT64_SIZE);
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS - 10 * INT64_SIZE);
 
                     auto key = get<serialization::pimpl::Data>();
                     auto value = get<serialization::pimpl::Data>();
@@ -584,7 +584,7 @@ namespace hazelcast {
                     auto f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                     auto error_code = get<int32_t>();
                     // skip bytes in initial frame
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
 
 
                     codec::ErrorHolder h = {error_code, get<std::string>(), getNullable<std::string>(),
@@ -735,9 +735,9 @@ namespace hazelcast {
                     f->flags = DEFAULT_FLAGS;
                     set(static_cast<int32_t>(c.type));
 
-                    set(c.name.get_ptr());
+                    set(c.name);
                     set(c.attributes);
-                    set(c.options.get_ptr());
+                    set(c.options);
 
                     add_end_frame(is_final);
                 }
@@ -841,7 +841,7 @@ namespace hazelcast {
 
                 inline void skip_frame() {
                     auto *f = reinterpret_cast<frame_header_t *>(rd_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                    rd_ptr(f->frame_len - SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+                    rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS);
                 }
 
                 void fast_forward_to_end_frame();

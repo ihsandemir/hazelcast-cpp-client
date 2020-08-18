@@ -190,7 +190,7 @@ namespace hazelcast {
                         BOOST_THROW_EXCEPTION(exception::IllegalStateException("HazelcastClient",
                                                                                "HazelcastClient could not be started!"));
                     }
-                } catch (exception::IException &) {
+                } catch (std::exception &e) {
                     lifecycleService.shutdown();
                     throw;
                 }
@@ -831,7 +831,7 @@ namespace hazelcast {
 
             ConsistencyLostException::ConsistencyLostException(const std::string &source, const std::string &message,
                                                                const std::string &details, std::exception_ptr cause)
-                    : HazelcastException("ConsistencyLostException", protocol::CONSISTENCY_LOST, source, message,
+                    : HazelcastException("ConsistencyLostException", protocol::CONSISTENCY_LOST_EXCEPTION, source, message,
                                          details, cause, true,false) {}
         }
     }

@@ -84,9 +84,9 @@ namespace hazelcast {
 
                 void write(const std::shared_ptr<spi::impl::ClientInvocation> &clientInvocation);
 
-                const std::shared_ptr<Address> &getRemoteAddress() const;
+                const boost::optional<Address> &getRemoteAddress() const;
 
-                void setRemoteAddress(const std::shared_ptr<Address> &endpoint);
+                void setRemoteAddress(boost::optional<Address> endpoint);
 
                 boost::uuids::uuid getRemoteUuid() const;
 
@@ -142,7 +142,7 @@ namespace hazelcast {
                 std::string connectedServerVersionString;
                 int connectedServerVersion;
                 // check if they need to be atomic
-                std::shared_ptr<Address> remote_address_;
+                boost::optional<Address> remote_address_;
                 boost::uuids::uuid remote_uuid_;
                 util::ILogger &logger;
                 std::atomic_bool alive;

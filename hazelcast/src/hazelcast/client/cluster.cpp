@@ -194,7 +194,7 @@ namespace hazelcast {
         }
 
         Client::Client(boost::uuids::uuid uuid, boost::optional<Address> socketAddress, std::string name,
-                       std::unordered_set<std::string> labels) : Endpoint(uuid, socketAddress), name(std::move(name)),
+                       std::unordered_set<std::string> labels) : Endpoint(uuid, std::move(socketAddress)), name(std::move(name)),
                                                                  labels_(std::move(labels)) {}
 
         const std::string &Client::getName() const {

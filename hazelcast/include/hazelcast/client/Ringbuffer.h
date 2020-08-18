@@ -237,11 +237,11 @@ namespace hazelcast {
 
             ringbuffer::ReadResultSet get_result_set(boost::future<protocol::ClientMessage> f) {
                 auto msg = f.get();
-                auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::REQUEST_HEADER_LEN));
+                auto *initial_frame = reinterpret_cast<ClientMessage::frame_header_t *>(msg.rd_ptr(ClientMessage::RESPONSE_HEADER_LEN));
                 auto read_count = msg.get<int32_t>();
                 auto next_seq = msg.get<int64_t>();
                 msg.rd_ptr(
-                        initial_frame->frame_len - ClientMessage::REQUEST_HEADER_LEN - ClientMessage::INT32_SIZE -
+                        static_cast<int32_t>(initial_frame->frame_len) - ClientMessage::RESPONSE_HEADER_LEN - ClientMessage::INT32_SIZE -
                         ClientMessage::INT64_SIZE);
 
                 auto datas = msg.get<std::vector<Data>>();

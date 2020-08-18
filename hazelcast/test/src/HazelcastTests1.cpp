@@ -16,12 +16,10 @@
 #include "HazelcastServerFactory.h"
 #include "HazelcastServer.h"
 #include "ClientTestSupport.h"
-#include <regex>
 #include <vector>
 #include "ringbuffer/StartsWithStringFilter.h"
 #include "ClientTestSupportBase.h"
 #include <hazelcast/client/ClientConfig.h>
-#include <hazelcast/client/exception/IllegalStateException.h>
 #include <hazelcast/client/HazelcastClient.h>
 #include <hazelcast/client/serialization/serialization.h>
 #include <hazelcast/client/impl/Partition.h>
@@ -29,9 +27,7 @@
 #include <thread>
 #include <hazelcast/client/spi/ClientContext.h>
 #include <hazelcast/client/connection/ClientConnectionManagerImpl.h>
-#include <hazelcast/client/protocol/Principal.h>
 #include <hazelcast/client/connection/Connection.h>
-#include <ClientTestSupport.h>
 #include <memory>
 #include <hazelcast/client/proxy/PNCounterImpl.h>
 #include <hazelcast/client/serialization/pimpl/DataInput.h>
@@ -39,27 +35,14 @@
 #include <hazelcast/util/RuntimeAvailableProcessors.h>
 #include <hazelcast/client/serialization/pimpl/DataOutput.h>
 #include <hazelcast/util/AddressHelper.h>
-#include <hazelcast/client/exception/IOException.h>
-#include <hazelcast/client/protocol/ClientExceptionFactory.h>
-#include <hazelcast/util/IOUtil.h>
 
-#include <ClientTestSupportBase.h>
 #include <hazelcast/util/Util.h>
 #include <TestHelperFunctions.h>
 #include <ostream>
 #include <hazelcast/util/ILogger.h>
-#include <ctime>
-#include <errno.h>
 #include <hazelcast/client/LifecycleListener.h>
 #include "serialization/Serializables.h"
-#include <hazelcast/client/SerializationConfig.h>
-#include <hazelcast/client/HazelcastJsonValue.h>
-#include <hazelcast/client/internal/nearcache/impl/NearCacheRecordStore.h>
-#include <hazelcast/client/internal/nearcache/impl/store/NearCacheDataRecordStore.h>
-#include <hazelcast/client/internal/nearcache/impl/store/NearCacheObjectRecordStore.h>
 #include <unordered_set>
-#include <HazelcastServer.h>
-#include "TestHelperFunctions.h"
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -487,6 +470,15 @@ namespace hazelcast {
                         client2Ringbuffer = client2->getRingbuffer(testName);
                     }
 
+                    void TearDown() override {
+                        if (clientRingbuffer) {
+                            clientRingbuffer->destroy().get();
+                        }
+                        if (client2Ringbuffer) {
+                            client2Ringbuffer->destroy().get();
+                        }
+                    }
+
                     static void SetUpTestCase() {
                         instance = new HazelcastServer(*g_srvFactory);
                         client = new HazelcastClient(getConfig());
@@ -574,10 +566,13 @@ namespace hazelcast {
                     ASSERT_EQ(latestEmployee, rb->readOne<Employee>(CAPACITY).get().value());
                 }
 
-                TEST_F(RingbufferTest, readManyAsync_whenHitsStale_shouldNotBeBlocked) {
-                    auto f = clientRingbuffer->readMany<std::string>(0, 1, 10);
-                    client2Ringbuffer->addAll(items, client::ringbuffer::OverflowPolicy::OVERWRITE).get();
-                    ASSERT_THROW(f.get(), exception::StaleSequenceException);
+                TEST_F(RingbufferTest, readManyAsync_whenHitsStale_useHeadAsStartSequence) {
+                    client2Ringbuffer->addAll(items, client::ringbuffer::OverflowPolicy::OVERWRITE);
+                    auto f = clientRingbuffer->readMany<std::string>(1, 1, 10);
+                    auto rs = f.get();
+                    ASSERT_EQ(10, rs.readCount());
+                    ASSERT_EQ(std::string("1"), *rs.getItems()[0].get<std::string>());
+                    ASSERT_EQ(std::string("10"), *rs.getItems()[9].get<std::string>());
                 }
 
                 TEST_F(RingbufferTest, readOne_whenHitsStale_shouldNotBeBlocked) {
@@ -1204,7 +1199,8 @@ namespace hazelcast {
             };
 
             TEST_F(ClientAuthenticationTest, testSetGroupConfig) {
-                HazelcastServer instance(*g_srvFactory);
+                HazelcastServerFactory factory("hazelcast/test/resources/hazelcast-username-password.xml");
+                HazelcastServer instance(factory);
                 ClientConfig config;
                 config.setGroupConfig(GroupConfig("dev", "dev-pass"));
 
@@ -1214,15 +1210,13 @@ namespace hazelcast {
             TEST_F(ClientAuthenticationTest, testIncorrectGroupName) {
                 HazelcastServer instance(*g_srvFactory);
                 ClientConfig config;
-                config.getGroupConfig().setName("invalid cluster");
+                config.setClusterName("invalid cluster");
 
                 ASSERT_THROW((HazelcastClient(config)), exception::IllegalStateException);
             }
         }
     }
 }
-
-
 
 namespace hazelcast {
     namespace client {
@@ -1234,6 +1228,7 @@ namespace hazelcast {
                 HazelcastServer instance(*g_srvFactory);
 
                 HazelcastClient client;
+                ASSERT_EQ_EVENTUALLY(1, client.getCluster().getMembers().size());
                 const Client endpoint = client.getLocalEndpoint();
                 spi::ClientContext context(client);
                 ASSERT_EQ(context.getName(), endpoint.getName());
@@ -1244,12 +1239,9 @@ namespace hazelcast {
                 std::shared_ptr<connection::Connection> connection = connectionManager.get_random_connection();
                 ASSERT_NOTNULL(connection.get(), connection::Connection);
                 auto localAddress = connection->getLocalSocketAddress();
-                ASSERT_TRUE(localAddress.has_value());
+                ASSERT_TRUE(localAddress);
                 ASSERT_EQ(*localAddress, *endpointAddress);
-
-                std::shared_ptr<protocol::Principal> principal = connectionManager.getPrincipal();
-                ASSERT_NOTNULL(principal.get(), protocol::Principal);
-                ASSERT_EQ(principal->getUuid(), endpoint.getUuid());
+                ASSERT_EQ(connectionManager.getClientUuid(), endpoint.getUuid());
             }
         }
     }

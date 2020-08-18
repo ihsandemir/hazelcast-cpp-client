@@ -493,7 +493,7 @@ namespace hazelcast {
                         }
                     }
                     if (duplicate.get() != NULL) {
-                        throw (exception::ExceptionBuilder<exception::ConfigurationException>(
+                        throw (exception::ExceptionBuilder<exception::InvalidConfigurationException>(
                                 "MatchingPointConfigPatternMatcher::matches") << "Configuration " << itemName
                                                                               << " has duplicate configuration. Candidate:"
                                                                               << *candidate << ", duplicate:"
@@ -700,11 +700,6 @@ namespace hazelcast {
             return membershipListeners;
         }
 
-
-        const boost::optional<std::string> &ClientConfig::getPrincipal() const {
-            return principal;
-        }
-
         ClientConfig &ClientConfig::setSocketInterceptor(SocketInterceptor *interceptor) {
             this->socketInterceptor = interceptor;
             return *this;
@@ -851,6 +846,48 @@ namespace hazelcast {
         ClientConfig &ClientConfig::addLabel(const std::string &label) {
             labels_.insert(label);
             return *this;
+        }
+        
+        namespace security {
+            username_password_credentials::username_password_credentials(const std::string &name,
+                                                                                   const std::string &password) : name_(
+                    name), password_(password) {}
+
+            const std::string &username_password_credentials::get_name() const {
+                return name_;
+            }
+
+            const std::string &username_password_credentials::get_password() const {
+                return password_;
+            }
+
+            const credentials::type username_password_credentials::get_type() const {
+                return credentials::type::username_password;
+            }
+
+            const std::string &token_credentials::get_name() const {
+                return name_;
+            }
+
+            const std::vector<byte> &token_credentials::get_secret() const {
+                return secret_data_;
+            }
+
+            const credentials::type token_credentials::get_type() const {
+                return credentials::type::token;
+            }
+
+            token_credentials::token_credentials(const std::string &name, const std::vector<byte> &secretData) : name_(
+                    name), secret_data_(secretData) {}
+
+            secret_credential::secret_credential(const std::string &name, const std::vector<byte> &secretData)
+                    : token_credentials(name, secretData) {}
+
+            const credentials::type secret_credential::get_type() const {
+                return credentials::type::secret;
+            }
+
+            credentials::~credentials() {}
         }
     }
 }
