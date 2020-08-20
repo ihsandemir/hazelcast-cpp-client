@@ -120,7 +120,7 @@ namespace hazelcast {
                         util::ILogger &logger;
                         connection::ClientConnectionManagerImpl &clientConnectionManager;
                         std::unique_ptr<hazelcast::util::hz_thread_pool> eventExecutor;
-                        std::vector<boost::asio::thread_pool::executor_type> eventStrands;
+                        std::vector<boost::asio::strand<boost::asio::thread_pool::executor_type>> eventStrands;
                         std::unique_ptr<hazelcast::util::hz_thread_pool> registrationExecutor;
                         std::chrono::steady_clock::duration invocationTimeout;
                         std::chrono::steady_clock::duration invocationRetryPause;

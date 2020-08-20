@@ -35,7 +35,7 @@ namespace hazelcast {
                                       serialization::pimpl::SerializationService &serializationService,
                                           Listener &&messageListener)
                             :instanceName(instanceName), clusterService(clusterService),
-                            serializationService(serializationService), listener(messageListener) {}
+                            serializationService(serializationService), listener(std::move(messageListener)) {}
 
                     void handle_topic(const Data &item, int64_t publishTime, boost::uuids::uuid uuid) override {
                         listener(Message(instanceName, TypedData(std::move(item), serializationService), publishTime,
@@ -45,7 +45,7 @@ namespace hazelcast {
                     std::string instanceName;
                     spi::impl::ClientClusterServiceImpl &clusterService;
                     serialization::pimpl::SerializationService &serializationService;
-                    Listener &listener;
+                    Listener listener;
                 };
             }
         }

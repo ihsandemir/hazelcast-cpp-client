@@ -38,7 +38,7 @@ namespace hazelcast {
                             boost::asio::io_context &io, std::chrono::steady_clock::duration &connectTimeoutInMillis)
                             : socketOptions(socketOptions), remoteEndpoint(address), io(io),
                               socketStrand(io), connectTimer(socketStrand),
-                              connectTimeoutMillis(connectTimeoutInMillis), resolver(ioResolver), socket_(socketStrand) {
+                              connectTimeout(connectTimeoutInMillis), resolver(ioResolver), socket_(socketStrand) {
                     }
 
                     template<typename CONTEXT>
@@ -48,7 +48,7 @@ namespace hazelcast {
                             CONTEXT &context)
                             : socketOptions(socketOptions), remoteEndpoint(address), io(io),
                               socketStrand(io), connectTimer(socketStrand),
-                              connectTimeoutMillis(connectTimeoutInMillis), resolver(ioResolver),
+                              connectTimeout(connectTimeoutInMillis), resolver(ioResolver),
                               socket_(socketStrand, context) {
                     }
 
@@ -61,7 +61,7 @@ namespace hazelcast {
                         using namespace boost::asio;
                         using namespace boost::asio::ip;
 
-                        connectTimer.expires_from_now(connectTimeoutMillis);
+                        connectTimer.expires_from_now(connectTimeout);
                         connectTimer.async_wait([=](const boost::system::error_code &ec) {
                             if (ec == boost::asio::error::operation_aborted) {
                                 return;
@@ -69,8 +69,8 @@ namespace hazelcast {
                             authFuture->onFailure(std::make_exception_ptr(exception::IOException(
                                     "Connection::asyncStart", (boost::format(
                                             "Connection establishment to server %1% timed out in %2% msecs. %3%") %
-                                                               remoteEndpoint % connectTimeoutMillis.count() %
-                                                               ec).str())));
+                                            remoteEndpoint % std::chrono::duration_cast<std::chrono::milliseconds>(connectTimeout).count() %
+                                            ec).str())));
                             return;
                         });
                         resolver.async_resolve(remoteEndpoint.getHost(), std::to_string(remoteEndpoint.getPort()),
@@ -211,6 +211,8 @@ namespace hazelcast {
                     void setSocketOptions(const client::config::SocketOptions &options) {
                         auto &lowestLayer = socket_.lowest_layer();
 
+                        lowestLayer.native_non_blocking(true);
+
                         lowestLayer.set_option(boost::asio::ip::tcp::no_delay(options.isTcpNoDelay()));
 
                         lowestLayer.set_option(boost::asio::socket_base::keep_alive(options.isKeepAlive()));
@@ -294,7 +296,7 @@ namespace hazelcast {
                     boost::asio::io_context &io;
                     boost::asio::io_context::strand socketStrand;
                     boost::asio::steady_timer connectTimer;
-                    std::chrono::steady_clock::duration connectTimeoutMillis;
+                    std::chrono::steady_clock::duration connectTimeout;
                     boost::asio::ip::tcp::resolver &resolver;
                     T socket_;
                 };

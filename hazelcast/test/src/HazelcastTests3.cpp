@@ -225,7 +225,14 @@ namespace hazelcast {
                     }
                     return testValues;
                 }
-                
+
+                virtual void SetUp() {
+                    ASSERT_TRUE(factory);
+                    ASSERT_TRUE(instance1);
+                    ASSERT_TRUE(client);
+                    ASSERT_TRUE(client2);
+                }
+
                 static void SetUpTestCase() {
                     factory = new HazelcastServerFactory(g_srvFactory->getServerAddress(), 
                             "hazelcast/test/resources/replicated-map-binary-in-memory-config-hazelcast.xml");
@@ -562,12 +569,8 @@ namespace hazelcast {
                 struct ListenerState {
                     ListenerState() : keys(UINT_MAX) {}
                     hazelcast::util::BlockingConcurrentQueue<int> keys;
-                    hazelcast::util::AtomicInt addCount;
-                    hazelcast::util::AtomicInt removeCount;
-                    hazelcast::util::AtomicInt updateCount;
-                    hazelcast::util::AtomicInt evictCount;
-                    hazelcast::util::AtomicInt mapClearCount;
-                    hazelcast::util::AtomicInt mapEvictCount;
+                    hazelcast::util::AtomicInt addCount, removeCount, updateCount, evictCount, mapClearCount,
+                    mapEvictCount;
                 };
                 
                 struct EventCountingListener {

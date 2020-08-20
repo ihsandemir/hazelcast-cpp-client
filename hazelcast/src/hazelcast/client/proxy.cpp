@@ -406,20 +406,19 @@ namespace hazelcast {
                 return boost::make_shared<Member>(replicaAddresses[randomReplicaIndex]);
             }
 
-            std::vector<Member> PNCounterImpl::getReplicaAddresses(const std::unordered_set<Member> &excludedAddresses) {
+            std::vector<Member> PNCounterImpl::getReplicaAddresses(const std::unordered_set<Member> &excludedMembers) {
                 std::vector<Member> dataMembers = getContext().getClientClusterService().getMembers(
                         *cluster::memberselector::MemberSelectors::DATA_MEMBER_SELECTOR);
                 int32_t replicaCount = getMaxConfiguredReplicaCount();
                 int currentReplicaCount = util::min<int>(replicaCount, (int) dataMembers.size());
 
-                std::vector<Member> replicaAddresses;
+                std::vector<Member> replicaMembers;
                 for (int i = 0; i < currentReplicaCount; i++) {
-                    const Address &dataMemberAddress = dataMembers[i].getAddress();
-                    if (excludedAddresses.find(dataMemberAddress) == excludedAddresses.end()) {
-                        replicaAddresses.push_back(dataMemberAddress);
+                    if (excludedMembers.find(dataMembers[i]) == excludedMembers.end()) {
+                        replicaMembers.push_back(dataMembers[i]);
                     }
                 }
-                return replicaAddresses;
+                return replicaMembers;
             }
 
             int32_t PNCounterImpl::getMaxConfiguredReplicaCount() {

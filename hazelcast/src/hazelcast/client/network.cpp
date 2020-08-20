@@ -87,6 +87,7 @@ namespace hazelcast {
                       async_start_(client.getClientConfig().getConnectionStrategyConfig().isAsyncStart()),
                       reconnect_mode_(client.getClientConfig().getConnectionStrategyConfig().getReconnectMode()),
                       smart_routing_enabled_(client.getClientConfig().getNetworkConfig().isSmartRouting()),
+                      connect_to_cluster_task_submitted_(false),
                       client_uuid_(boost::uuids::random_generator()()),
                       authentication_timeout_(heartbeat.getHeartbeatTimeout().count()),
                       load_balancer_(client.getClientConfig().getLoadBalancer()) {
@@ -402,7 +403,7 @@ namespace hazelcast {
                     return;
                 }
 
-                boost::asio::post([=] () {
+                boost::asio::post(executor_->get_executor(), [=] () {
                     try {
                         do_connect_to_cluster();
                         connect_to_cluster_task_submitted_ = false;
@@ -418,7 +419,6 @@ namespace hazelcast {
                         logger.warning("Could not connect to any cluster, shutting down the client: ", e);
                         shutdownWithExternalThread(client.getHazelcastClientImplementation());
                     }
-
                 });
             }
 
@@ -450,8 +450,6 @@ namespace hazelcast {
                         });
                     }
                 }
-
-                schedule_connect_to_all_members();
             }
 
             bool ClientConnectionManagerImpl::do_connect_to_cluster() {
@@ -672,7 +670,10 @@ namespace hazelcast {
                     if (!member) {
                         return nullptr;
                     }
-                    return getConnection(member->getUuid());
+                    auto connection = getConnection(member->getUuid());
+                    if (connection) {
+                        return connection;
+                    }
                 }
 
                 auto connections = activeConnections.values();
@@ -680,7 +681,7 @@ namespace hazelcast {
                     return nullptr;
                 }
 
-                return *connections.begin();
+                return connections[0];
             }
 
             boost::uuids::uuid ClientConnectionManagerImpl::getClientUuid() const {
@@ -709,6 +710,20 @@ namespace hazelcast {
 
             boost::shared_ptr<security::credentials> ClientConnectionManagerImpl::getCurrentCredentials() const {
                 return current_credentials_.load();
+            }
+
+            void ClientConnectionManagerImpl::connect_to_all_cluster_members() {
+                if (!smart_routing_enabled_) {
+                    return;
+                }
+
+                for (const auto &member : client.getClientClusterService().getMemberList()) {
+                    try {
+                        getOrConnect(member.getAddress());
+                    } catch (exception::IException &) {
+                        // ignore
+                    }
+                }
             }
 
             ConnectionFuture::ConnectionFuture(Address address,

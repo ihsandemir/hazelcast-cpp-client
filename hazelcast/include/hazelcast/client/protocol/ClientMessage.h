@@ -218,19 +218,24 @@ namespace hazelcast {
                 void wrap_for_read();
 
                 inline byte *wr_ptr(size_t requestedBytes) {
+                    return wr_ptr(requestedBytes, requestedBytes);
+                }
+
+                inline byte *wr_ptr(size_t bytes_to_reserve, size_t actual_number_of_bytes) {
+                    assert(bytes_to_reserve >= actual_number_of_bytes);
                     size_t max_available_bytes = 0;
                     auto b = data_buffer.rbegin();
                     if (b != data_buffer.rend()) {
                         max_available_bytes = b->capacity() - b->size();
                     }
-                    if (max_available_bytes < requestedBytes) {
+                    if (max_available_bytes < bytes_to_reserve) {
                         // add a new buffer enough size to hold the minimum requested bytes
                         data_buffer.emplace_back();
                         b = data_buffer.rbegin();
-                        b->reserve(std::max(EXPECTED_DATA_BLOCK_SIZE, requestedBytes));
+                        b->reserve(std::max(EXPECTED_DATA_BLOCK_SIZE, bytes_to_reserve));
                     }
 
-                    return b->insert(b->end(), requestedBytes, 0).operator->();
+                    return b->insert(b->end(), actual_number_of_bytes, 0).operator->();
                 }
 
                 inline byte *rd_ptr(size_t requestedBytes) {
@@ -757,6 +762,8 @@ namespace hazelcast {
 
                 inline void set(boost::uuids::uuid uuid) {
                     set(uuid.is_nil());
+                    boost::endian::endian_reverse_inplace<int64_t>(*reinterpret_cast<int64_t *>(uuid.data));
+                    boost::endian::endian_reverse_inplace<int64_t>(*reinterpret_cast<int64_t *>(uuid.data + util::Bits::LONG_SIZE_IN_BYTES));
                     std::memcpy(wr_ptr(sizeof(boost::uuids::uuid)), uuid.data, sizeof(boost::uuids::uuid));
                 }
 
@@ -879,6 +886,8 @@ namespace hazelcast {
                 boost::uuids::uuid get_uuid() {
                     boost::uuids::uuid u;
                     memcpy(&u.data, rd_ptr(sizeof(boost::uuids::uuid)), sizeof(boost::uuids::uuid));
+                    boost::endian::endian_reverse_inplace<int64_t>(*reinterpret_cast<int64_t *>(u.data));
+                    boost::endian::endian_reverse_inplace<int64_t>(*reinterpret_cast<int64_t *>(u.data + util::Bits::LONG_SIZE_IN_BYTES));
                     return u;
                 }
 

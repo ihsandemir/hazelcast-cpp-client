@@ -800,8 +800,7 @@ namespace hazelcast {
                     clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
                     HazelcastClient client(clientConfig);
                     client.shutdown();
-                    ASSERT_THROW((client.getMap(randomMapName())),
-                                 exception::HazelcastClientOfflineException);
+                    ASSERT_THROW((client.getMap(randomMapName())), exception::HazelcastClientNotActiveException);
 
                     client.shutdown();
                 }
@@ -854,21 +853,22 @@ namespace hazelcast {
                 }
 
                 TEST_F(ConfiguredBehaviourTest, testReconnectModeOFFTwoMembers) {
-                    HazelcastServer ownerServer(*g_srvFactory);
+                    HazelcastServer server1(*g_srvFactory);
+                    HazelcastServer server2(*g_srvFactory);
 
                     clientConfig.getConnectionStrategyConfig().setReconnectMode(
                             config::ClientConnectionStrategyConfig::OFF);
                     HazelcastClient client(clientConfig);
-                    HazelcastServer hazelcastInstance2(*g_srvFactory);
                     boost::latch shutdownLatch(1);
                     LifecycleStateListener lifecycleListener(shutdownLatch, LifecycleEvent::SHUTDOWN);
                     client.addLifecycleListener(&lifecycleListener);
 
-// no exception at this point
+                    // no exception at this point
                     auto map = client.getMap(randomMapName());
                     map->put(1, 5).get();
 
-                    ownerServer.shutdown();
+                    server1.shutdown();
+                    server2.shutdown();
                     ASSERT_OPEN_EVENTUALLY(shutdownLatch);
 
                     ASSERT_THROW(map->put(1, 5).get(), exception::HazelcastClientNotActiveException);
@@ -913,6 +913,8 @@ namespace hazelcast {
 
                     auto map = client.getMap(randomMapName());
                     map->size().get();
+
+                    client.shutdown();
                 }
 
                 TEST_F(ConfiguredBehaviourTest, testReconnectModeASYNCSingleMemberStartLate) {
@@ -947,11 +949,10 @@ namespace hazelcast {
                 }
 
                 TEST_F(ConfiguredBehaviourTest, testReconnectModeASYNCTwoMembers) {
-                    HazelcastServer ownerServer(*g_srvFactory);
+                    HazelcastServer server1(*g_srvFactory);
+                    HazelcastServer server2(*g_srvFactory);
 
-                    boost::latch connectedLatch(1);
-                    boost::latch disconnectedLatch(1);
-                    boost::latch reconnectedLatch(1);
+                    boost::latch connectedLatch(1), disconnectedLatch(1), reconnectedLatch(1);
 
                     clientConfig.getNetworkConfig().setConnectionAttemptLimit(10);
                     LifecycleStateListener listener(connectedLatch, LifecycleEvent::CLIENT_CONNECTED);
@@ -964,8 +965,6 @@ namespace hazelcast {
 
                     ASSERT_OPEN_EVENTUALLY(connectedLatch);
 
-                    HazelcastServer hazelcastInstance2(*g_srvFactory);
-
                     auto map = client.getMap(randomMapName());
                     map->put(1, 5).get();
 
@@ -975,9 +974,13 @@ namespace hazelcast {
                     LifecycleStateListener reconnectListener(reconnectedLatch, LifecycleEvent::CLIENT_CONNECTED);
                     client.addLifecycleListener(&reconnectListener);
 
-                    ownerServer.shutdown();
+                    server1.shutdown();
+                    server2.shutdown();
 
                     ASSERT_OPEN_EVENTUALLY(disconnectedLatch);
+
+                    HazelcastServer server3(*g_srvFactory);
+
                     ASSERT_OPEN_EVENTUALLY(reconnectedLatch);
 
                     map->get<int, int>(1).get();
@@ -1483,7 +1486,8 @@ namespace hazelcast {
 
             TEST_F(ClientSerializationTest, testStringLiterals) {
                 auto literal = R"delimeter(My example string literal)delimeter";
-                serialization::pimpl::SerializationService serializationService(SerializationConfig{});
+                SerializationConfig config;
+                serialization::pimpl::SerializationService serializationService(config);
                 auto data = serializationService.toData(literal);
                 auto obj = serializationService.toObject<decltype(literal)>(data);
                 ASSERT_TRUE(obj);

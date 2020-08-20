@@ -152,9 +152,9 @@ namespace hazelcast {
 
                     addStat(stats, "clientName", statistics.clientContext.getName());
 
-                    auto principal = statistics.clientContext.getClientConfig().getPrincipal();
-                    if (principal) {
-                        addStat(stats, "credentials.principal", principal.value());
+                    auto credential = statistics.clientContext.getConnectionManager().getCurrentCredentials();
+                    if (credential) {
+                        addStat(stats, "credentials.principal", credential->get_name());
                     }
                 }
 

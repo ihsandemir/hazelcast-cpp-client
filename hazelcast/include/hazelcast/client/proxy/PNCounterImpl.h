@@ -223,11 +223,11 @@ namespace hazelcast {
                  * local membership list. Addresses contained in the {@code excludedAddresses}
                  * collection are excluded.
                  *
-                 * @param excludedAddresses the addresses to exclude when choosing a replica
+                 * @param excludedMembers the addresses to exclude when choosing a replica
                  *                          address
                  * @return list of possible CRDT replica addresses
                  */
-                std::vector<Member> getReplicaAddresses(const std::unordered_set<Member> &excludedAddresses);
+                std::vector<Member> getReplicaAddresses(const std::unordered_set<Member> &excludedMembers);
 
                 boost::shared_ptr<Member>
                 tryChooseANewTarget(std::shared_ptr<std::unordered_set<Member>> excludedAddresses,

@@ -88,7 +88,7 @@ namespace hazelcast {
             template<>
             void ClientMessage::set(const std::vector<std::pair<boost::uuids::uuid, int64_t>> &values, bool) {
                 auto *f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                f->frame_len = values.size() * (sizeof(boost::uuids::uuid) + INT64_SIZE) + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+                f->frame_len = values.size() * (UUID_SIZE + INT64_SIZE) + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
                 f->flags = DEFAULT_FLAGS;
                 for(auto &p : values) {
                     set(p.first);
@@ -99,7 +99,7 @@ namespace hazelcast {
             template<>
             void ClientMessage::set(const std::vector<boost::uuids::uuid> &values, bool) {
                 auto *h = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
-                h->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + values.size() * (sizeof(boost::uuids::uuid) + UINT8_SIZE);
+                h->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + values.size() * UUID_SIZE;
                 h->flags = DEFAULT_FLAGS;
 
                 for (auto &v : values) {
@@ -149,33 +149,28 @@ namespace hazelcast {
                 // Calculate the number of messages to read from the buffer first and then do read_bytes
                 // we add the frame sizes including the final frame to find the total.
                 // If there were bytes of a frame (remaining_bytes_in_frame) to read from the previous call, it is read.
-                auto read_ptr = static_cast<byte *>(byteBuff.ix());
                 auto remaining = byteBuff.remaining();
-                size_t bytes_to_read = std::min(remaining_bytes_in_frame, remaining);
-                remaining_bytes_in_frame -= bytes_to_read;
-                remaining -= bytes_to_read;
-                read_ptr += bytes_to_read;
-
-                // more bytes to read
-                while (remaining >= ClientMessage::SIZE_OF_FRAME_LENGTH_AND_FLAGS && !is_final) {
-                    // start of the frame here
-                    auto *f = reinterpret_cast<frame_header_t *>(read_ptr);
-                    if (remaining < static_cast<size_t>(static_cast<int32_t>(f->frame_len))) {
-                        byteBuff.read_bytes(wr_ptr(bytes_to_read), bytes_to_read);
-                        // we do not let the frame to be split into two buffers
-                        byteBuff.read_bytes(wr_ptr(remaining), remaining);
-                        remaining_bytes_in_frame = static_cast<int32_t>(f->frame_len) - remaining;
+                if (remaining_bytes_in_frame) {
+                    size_t bytes_to_read = std::min(remaining_bytes_in_frame, remaining);
+                    byteBuff.read_bytes(wr_ptr(bytes_to_read), bytes_to_read);
+                    remaining_bytes_in_frame -= bytes_to_read;
+                    if (remaining_bytes_in_frame > 0 || is_final) {
                         return;
-                    } else {
-                        auto len = static_cast<int32_t>(f->frame_len);
-                        remaining -= len;
-                        bytes_to_read += len;
-                        read_ptr += len;
-                        is_final = ClientMessage::is_flag_set(f->flags, ClientMessage::IS_FINAL_FLAG);
                     }
                 }
 
-                byteBuff.read_bytes(wr_ptr(bytes_to_read), bytes_to_read);
+                remaining_bytes_in_frame = 0;
+                // more bytes to read
+                while (remaining_bytes_in_frame == 0 && !is_final && (remaining = byteBuff.remaining()) >= ClientMessage::SIZE_OF_FRAME_LENGTH_AND_FLAGS) {
+                    // start of the frame here
+                    auto read_ptr = static_cast<byte *>(byteBuff.ix());
+                    auto *f = reinterpret_cast<frame_header_t *>(read_ptr);
+                    auto frame_len = static_cast<size_t>(static_cast<int32_t>(f->frame_len));
+                    is_final = ClientMessage::is_flag_set(f->flags, ClientMessage::IS_FINAL_FLAG);
+                    auto actual_bytes_to_read = std::min(frame_len, remaining);
+                    byteBuff.read_bytes(wr_ptr(frame_len, actual_bytes_to_read), actual_bytes_to_read);
+                    remaining_bytes_in_frame = frame_len - actual_bytes_to_read;
+                }
             }
 
             size_t ClientMessage::size() const {

@@ -724,7 +724,6 @@ namespace hazelcast {
     }
 }
 
-
 namespace hazelcast {
     namespace client {
         namespace test {
@@ -738,9 +737,7 @@ namespace hazelcast {
                 static void SetUpTestCase() {
                     instance = new HazelcastServer(*g_srvFactory);
                     instance2 = new HazelcastServer(*g_srvFactory);
-                    ClientConfig clientConfig(getConfig());
-                    clientConfig.getProperties()[ClientProperties::PROP_HEARTBEAT_TIMEOUT] = "20";
-                    client = new HazelcastClient(clientConfig);
+                    client = new HazelcastClient(getConfig());
                     imap = client->getMap("IntMap");
                 }
 
@@ -770,7 +767,6 @@ namespace hazelcast {
             public:
                 ExpirationListener(boost::latch &latch1)
                         : latch1(latch1) {
-
                 }
 
                 void entryExpired(const EntryEvent &event) override {
@@ -799,53 +795,6 @@ namespace hazelcast {
                 }
 
                 ASSERT_OPEN_EVENTUALLY(expirationEventArrivalCount);
-                ASSERT_TRUE(imap->removeEntryListener(registrationId).get());
-            }
-
-
-            class ExpirationAndEvictionListener : public EntryAdapter {
-            public:
-                ExpirationAndEvictionListener(boost::latch &evictedLatch,
-                                              boost::latch &expiredLatch)
-                        : evictedLatch(evictedLatch), expiredLatch(expiredLatch) {
-
-                }
-
-                void entryEvicted(const EntryEvent &event) override {
-                    evictedLatch.count_down();
-                }
-
-                void entryExpired(const EntryEvent &event) override {
-                    expiredLatch.count_down();
-                }
-
-            private:
-                boost::latch &evictedLatch;
-                boost::latch &expiredLatch;
-            };
-
-            TEST_F(ClientExpirationListenerTest, bothNotified_afterExpirationOfEntries) {
-                int numberOfPutOperations = 1000;
-                boost::latch expirationEventArrivalCount(numberOfPutOperations);
-                boost::latch evictedEventArrivalCount(numberOfPutOperations);
-
-                auto registrationId = imap->addEntryListener(ExpirationAndEvictionListener(expirationEventArrivalCount, evictedEventArrivalCount), true).get();
-
-                for (int i = 0; i < numberOfPutOperations; i++) {
-                    imap->put<int, int>(i, i, std::chrono::milliseconds(100)).get();
-                }
-
-// wait expiration of entries.
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-
-// trigger immediate fire of expiration events by touching them.
-                for (int i = 0; i < numberOfPutOperations; i++) {
-                    imap->get<int, int>(i).get();
-                }
-
-                ASSERT_EQ(boost::cv_status::no_timeout,
-                          expirationEventArrivalCount.wait_for(boost::chrono::seconds(120)));
-                ASSERT_EQ(boost::cv_status::no_timeout, evictedEventArrivalCount.wait_for(boost::chrono::seconds(120)));
                 ASSERT_TRUE(imap->removeEntryListener(registrationId).get());
             }
         }

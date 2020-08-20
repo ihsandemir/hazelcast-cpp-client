@@ -276,6 +276,13 @@ namespace hazelcast {
                     return false;
                 }
 
+                auto &connectionStrategyConfig = clientContext.getClientConfig().getConnectionStrategyConfig();
+                if (!connectionStrategyConfig.isAsyncStart()) {
+                    // The client needs to open connections to all members before any services requiring internal listeners start
+                    wait_for_initial_membership_event();
+                    clientContext.getConnectionManager().connect_to_all_cluster_members();
+                }
+
                 loadBalancer->init(cluster);
 
                 clientContext.getClientstatistics().start();
@@ -365,6 +372,10 @@ namespace hazelcast {
                 if (active) {
                     shutdown();
                 }
+            }
+
+            void LifecycleService::wait_for_initial_membership_event() const {
+                clientContext.getClientClusterService().wait_initial_member_list_fetched();
             }
 
             DefaultObjectNamespace::DefaultObjectNamespace(const std::string &service, const std::string &object)
@@ -602,8 +613,10 @@ namespace hazelcast {
                     return addresses;
                 }
 
-                const boost::shared_ptr<ClientClusterServiceImpl::member_list_snapshot> impl::ClientClusterServiceImpl::EMPTY_SNAPSHOT(
+                const boost::shared_ptr<ClientClusterServiceImpl::member_list_snapshot> ClientClusterServiceImpl::EMPTY_SNAPSHOT(
                         new ClientClusterServiceImpl::member_list_snapshot{-1});
+
+                constexpr boost::chrono::steady_clock::duration ClientClusterServiceImpl::INITIAL_MEMBERS_TIMEOUT;
 
                 ClientClusterServiceImpl::ClientClusterServiceImpl(hazelcast::client::spi::ClientContext &client)
                         : client(client), member_list_snapshot_(EMPTY_SNAPSHOT), labels_(client.getClientConfig().getLabels()),
@@ -618,7 +631,7 @@ namespace hazelcast {
                     return id;
                 }
 
-                boost::optional<Member> ClientClusterServiceImpl::getMember(boost::uuids::uuid uuid) {
+                boost::optional<Member> ClientClusterServiceImpl::getMember(boost::uuids::uuid uuid) const {
                     assert(!uuid.is_nil());
                     auto members_view_ptr = member_list_snapshot_.load();
                     const auto it = members_view_ptr->members.find(uuid);
@@ -628,7 +641,7 @@ namespace hazelcast {
                     return {it->second};
                 }
 
-                std::vector<Member> ClientClusterServiceImpl::getMemberList() {
+                std::vector<Member> ClientClusterServiceImpl::getMemberList() const {
                     auto members_view_ptr = member_list_snapshot_.load();
                     std::vector<Member> result;
                     result.reserve(members_view_ptr->members.size());
@@ -653,6 +666,7 @@ namespace hazelcast {
                 }
 
                 void ClientClusterServiceImpl::shutdown() {
+                    initial_list_fetched_latch_.try_count_down();
                 }
 
                 boost::uuids::uuid
@@ -681,11 +695,11 @@ namespace hazelcast {
                 }
 
                 std::vector<Member>
-                ClientClusterServiceImpl::getMembers(const cluster::memberselector::MemberSelector &selector) {
+                ClientClusterServiceImpl::getMembers(const cluster::memberselector::MemberSelector &selector) const {
                     std::vector<Member> result;
                     for (auto &&member : getMemberList()) {
                         if (selector.select(member)) {
-                            result.emplace_back(member);
+                            result.emplace_back(std::move(member));
                         }
                     }
 
@@ -839,6 +853,15 @@ namespace hazelcast {
                     }
                 }
 
+                void ClientClusterServiceImpl::wait_initial_member_list_fetched() const {
+                    // safe to const cast here since latch operations are already thread safe ops.
+                    if ((const_cast<boost::latch&>(initial_list_fetched_latch_)).wait_for(INITIAL_MEMBERS_TIMEOUT) == boost::cv_status::timeout) {
+                        BOOST_THROW_EXCEPTION(exception::IllegalStateException(
+                                                      "ClientClusterServiceImpl::wait_initial_member_list_fetched",
+                                                              "Could not get initial member list from cluster!"));
+                    }
+                }
+
                 bool
                 ClientInvocationServiceImpl::invokeOnConnection(const std::shared_ptr<ClientInvocation> &invocation,
                                                                 const std::shared_ptr<connection::Connection> &connection) {
@@ -938,6 +961,7 @@ namespace hazelcast {
                         invokeCount(0), urgent_(false), smart_routing_(invocationService.is_smart_routing()) {
                     message->setPartitionId(partitionId);
                     clientMessage = boost::make_shared<std::shared_ptr<protocol::ClientMessage>>(message);
+                    setSendConnection(nullptr);
                 }
 
                 ClientInvocation::~ClientInvocation() = default;
@@ -1221,7 +1245,7 @@ namespace hazelcast {
 
                 void
                 ClientInvocation::setSendConnection(const std::shared_ptr<connection::Connection> &conn) {
-                    ClientInvocation::sendConnection.store(boost::make_shared<std::shared_ptr<connection::Connection>>(conn));
+                    sendConnection.store(boost::make_shared<std::shared_ptr<connection::Connection>>(conn));
                 }
 
                 void ClientInvocation::notify(const std::shared_ptr<protocol::ClientMessage> &msg) {

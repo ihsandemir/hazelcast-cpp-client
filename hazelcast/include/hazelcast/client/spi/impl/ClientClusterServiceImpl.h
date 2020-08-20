@@ -62,12 +62,12 @@ namespace hazelcast {
 
                     void shutdown();
 
-                    boost::optional<Member> getMember(boost::uuids::uuid uuid);
+                    boost::optional<Member> getMember(boost::uuids::uuid uuid) const;
 
-                    std::vector<Member> getMemberList();
+                    std::vector<Member> getMemberList() const;
 
                     std::vector<Member> getMembers(
-                            const cluster::memberselector::MemberSelector &selector);
+                            const cluster::memberselector::MemberSelector &selector) const;
 
                     Client getLocalClient() const;
 
@@ -79,7 +79,10 @@ namespace hazelcast {
 
                     void handle_event(int32_t version, const std::vector<Member> &memberInfos);
 
+                    void wait_initial_member_list_fetched() const;
+
                 private:
+                    static constexpr boost::chrono::steady_clock::duration INITIAL_MEMBERS_TIMEOUT{boost::chrono::seconds(120)};
                     struct member_list_snapshot {
                         int32_t version;
                         std::unordered_map<boost::uuids::uuid, Member, boost::hash<boost::uuids::uuid>> members;
