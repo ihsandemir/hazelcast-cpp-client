@@ -22,6 +22,10 @@
 
     <cluster-name>dev</cluster-name>
 
+    <member-attributes>
+        <attribute name = "test-member-attribute-name">test-member-attribute-value</attribute>
+    </member-attributes>
+
     <serialization>
         <portable-version>0</portable-version>
         <use-native-byte-order>false</use-native-byte-order>

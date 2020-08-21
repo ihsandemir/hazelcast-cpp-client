@@ -1021,7 +1021,7 @@ namespace hazelcast {
                             invoked = invocationService.invoke(shared_from_this());
                         }
                         if (!invoked) {
-                            notifyException(std::make_exception_ptr(exception::IOException("""No connection found to invoke")));
+                            notifyException(std::make_exception_ptr(exception::IOException("No connection found to invoke")));
                         }
                     } catch (exception::IException &e) {
                         notifyException(std::current_exception());

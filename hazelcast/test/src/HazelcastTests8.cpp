@@ -1627,13 +1627,6 @@ namespace hazelcast {
                 shutdown();
             }
 
-            bool HazelcastServer::setAttributes(int memberStartOrder) {
-                if (!isStarted) {
-                    return false;
-                }
-                return factory.setAttributes(memberStartOrder);
-            }
-
             const remote::Member &HazelcastServer::getMember() const {
                 return member;
             }

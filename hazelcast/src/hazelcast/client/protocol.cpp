@@ -86,10 +86,10 @@ namespace hazelcast {
             }
 
             template<>
-            void ClientMessage::set(const std::vector<std::pair<boost::uuids::uuid, int64_t>> &values, bool) {
+            void ClientMessage::set(const std::vector<std::pair<boost::uuids::uuid, int64_t>> &values, bool is_final) {
                 auto *f = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                 f->frame_len = values.size() * (UUID_SIZE + INT64_SIZE) + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-                f->flags = DEFAULT_FLAGS;
+                f->flags = is_final ? IS_FINAL_FLAG : DEFAULT_FLAGS;
                 for(auto &p : values) {
                     set(p.first);
                     set(p.second);
@@ -97,11 +97,10 @@ namespace hazelcast {
             }
 
             template<>
-            void ClientMessage::set(const std::vector<boost::uuids::uuid> &values, bool) {
+            void ClientMessage::set(const std::vector<boost::uuids::uuid> &values, bool is_final) {
                 auto *h = reinterpret_cast<frame_header_t *>(wr_ptr(SIZE_OF_FRAME_LENGTH_AND_FLAGS));
                 h->frame_len = SIZE_OF_FRAME_LENGTH_AND_FLAGS + values.size() * UUID_SIZE;
-                h->flags = DEFAULT_FLAGS;
-
+                h->flags = is_final ? IS_FINAL_FLAG : DEFAULT_FLAGS;
                 for (auto &v : values) {
                     set(v);
                 }

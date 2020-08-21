@@ -604,15 +604,9 @@ namespace hazelcast {
             bool HazelcastServerFactory::setAttributes(int memberStartOrder) {
                 std::ostringstream script;
                 script << "function attrs() { "
-                          "var member = instance_" << memberStartOrder << ".getCluster().getLocalMember(); "
-                                                                          "member.setIntAttribute(\"intAttr\", 211); "
-                                                                          "member.setBooleanAttribute(\"boolAttr\", true); "
-                                                                          "member.setByteAttribute(\"byteAttr\", 7); "
-                                                                          "member.setDoubleAttribute(\"doubleAttr\", 2.0); "
-                                                                          "member.setFloatAttribute(\"floatAttr\", 1.2); "
-                                                                          "member.setShortAttribute(\"shortAttr\", 3); "
-                                                                          "return member.setStringAttribute(\"strAttr\", \"strAttr\");} "
-                                                                          " result=attrs(); ";
+                          "var member = instance_" << memberStartOrder << R"delimiter(.getCluster().getLocalMember(); "
+                                                                          "member.setAttribute("stringKey", "stringValue");} "
+                                                                          " result=1; )delimiter";
 
 
                 Response response;
@@ -1174,7 +1168,7 @@ namespace hazelcast {
                 fillMap();
                 boost::optional<std::string> temp = imap->remove<std::string, std::string>("key10").get();
                 ASSERT_FALSE(temp.has_value());
-                imap->deleteEntry("key9");
+                imap->deleteEntry("key9").get();
                 ASSERT_EQ(imap->size().get(), 9);
                 for (int i = 0; i < 9; i++) {
                     std::string key = "key";
