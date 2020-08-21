@@ -742,14 +742,15 @@ namespace hazelcast {
 
             ClientTestSupportBase::ClientTestSupportBase() = default;
 
-            std::string ClientTestSupportBase::generateKeyOwnedBy(spi::ClientContext &context, const Member &member) {
+            boost::uuids::uuid ClientTestSupportBase::generateKeyOwnedBy(spi::ClientContext &context, const Member &member) {
                 spi::impl::ClientPartitionServiceImpl &partitionService = context.getPartitionService();
                 serialization::pimpl::SerializationService &serializationService = context.getSerializationService();
                 while (true) {
-                    auto id = randomString();
-                    int partitionId = partitionService.getPartitionId(serializationService.toData<std::string>(&id));
+                    auto id = boost::uuids::random_generator()();
+                    int partitionId = partitionService.getPartitionId(serializationService.toData(id));
                     std::shared_ptr<impl::Partition> partition = partitionService.getPartition(partitionId);
-                    if (*partition->getOwner() == member) {
+                    auto owner = partition->getOwner();
+                    if (owner && *owner == member) {
                         return id;
                     }
                 }
@@ -1255,34 +1256,14 @@ namespace hazelcast {
 
             TEST_F(MemberAttributeTest, testInitialValues) {
                 HazelcastServer instance(*g_srvFactory);
-                ASSERT_TRUE(instance.setAttributes(0));
                 HazelcastClient hazelcastClient(getNewClient());
                 Cluster cluster = hazelcastClient.getCluster();
                 std::vector<Member> members = cluster.getMembers();
                 ASSERT_EQ(1U, members.size());
                 Member &member = members[0];
-                ASSERT_TRUE(member.lookupAttribute("intAttr"));
-                ASSERT_EQ("211", *member.getAttribute("intAttr"));
-
-                ASSERT_TRUE(member.lookupAttribute("boolAttr"));
-                ASSERT_EQ("true", *member.getAttribute("boolAttr"));
-
-                ASSERT_TRUE(member.lookupAttribute("byteAttr"));
-                ASSERT_EQ("7", *member.getAttribute("byteAttr"));
-
-                ASSERT_TRUE(member.lookupAttribute("doubleAttr"));
-                ASSERT_EQ("2.0", *member.getAttribute("doubleAttr"));
-
-                ASSERT_TRUE(member.lookupAttribute("floatAttr"));
-                ASSERT_EQ("1.2", *member.getAttribute("floatAttr"));
-
-                ASSERT_TRUE(member.lookupAttribute("shortAttr"));
-                ASSERT_EQ("3", *member.getAttribute("shortAttr"));
-
-                ASSERT_TRUE(member.lookupAttribute("strAttr"));
-                ASSERT_EQ(std::string("strAttr"), *member.getAttribute("strAttr"));
-
-                instance.shutdown();
+                std::string attribute_name = "test-member-attribute-name";
+                ASSERT_TRUE(member.lookupAttribute(attribute_name));
+                ASSERT_EQ("test-member-attribute-value", *member.getAttribute(attribute_name));
             }
 
         }
@@ -1441,7 +1422,7 @@ namespace hazelcast {
                                 for (int j = 0; j < loopsPerThread; j++) {
                                     counter1->addAndGet(5).get();
                                     finalValue += 5;
-                                    counter2->addAndGet(-2);
+                                    counter2->addAndGet(-2).get();
                                     finalValue += -2;
                                 }
                             }));
@@ -1750,9 +1731,10 @@ namespace hazelcast {
     namespace client {
         namespace test {
             class FlakeIdGeneratorApiTest : public ClientTestSupport {
-            public:
-                FlakeIdGeneratorApiTest() : flakeIdGenerator(
-                        client->getFlakeIdGenerator(testing::UnitTest::GetInstance()->current_test_info()->name())) {
+            protected:
+                virtual void SetUp() {
+                    ASSERT_TRUE(client);
+                    flakeIdGenerator = client->getFlakeIdGenerator(testing::UnitTest::GetInstance()->current_test_info()->name());
                 }
 
                 static void SetUpTestCase() {
@@ -2292,7 +2274,7 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = client->newTransactionContext();
                 context.beginTransaction().get();
-                ASSERT_TRUE(context.getTxnId().is_nil());
+                ASSERT_FALSE(context.getTxnId().is_nil());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2313,7 +2295,7 @@ namespace hazelcast {
                 std::string queueName = randomString();
                 TransactionContext context = uniSocketClient.newTransactionContext();
                 context.beginTransaction().get();
-                ASSERT_TRUE(context.getTxnId().is_nil());
+                ASSERT_FALSE(context.getTxnId().is_nil());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2335,7 +2317,7 @@ namespace hazelcast {
                 TransactionContext context = client->newTransactionContext(transactionOptions);
 
                 context.beginTransaction().get();
-                ASSERT_TRUE(context.getTxnId().is_nil());
+                ASSERT_FALSE(context.getTxnId().is_nil());
                 auto queue = context.getQueue(queueName);
                 std::string value = randomString();
                 queue->offer(value).get();
@@ -2372,7 +2354,7 @@ namespace hazelcast {
 
                 try {
                     context.beginTransaction().get();
-                    ASSERT_TRUE(context.getTxnId().is_nil());
+                    ASSERT_FALSE(context.getTxnId().is_nil());
                     auto queue = context.getQueue(queueName);
                     queue->offer(randomString()).get();
 
