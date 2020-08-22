@@ -75,6 +75,22 @@ namespace hazelcast {
                 }
             }
 
+            template <typename>
+            struct is_trivial_entry_vector : std::false_type
+            { };
+
+            template <typename T, typename U>
+            struct is_trivial_entry_vector<std::vector<std::pair<T, U>>> : std::true_type
+            { };
+
+            template <>
+            struct is_trivial_entry_vector<std::vector<std::pair<serialization::pimpl::Data, boost::optional<hazelcast::client::serialization::pimpl::Data>>>> : std::false_type
+            { };
+
+            template <>
+            struct is_trivial_entry_vector<std::vector<std::pair<serialization::pimpl::Data, hazelcast::client::serialization::pimpl::Data>>> : std::false_type
+            { };
+
             /**
              * Client Message is the carrier framed data as defined below.
              * Any request parameter, response or event data will be carried in
@@ -336,22 +352,6 @@ namespace hazelcast {
                     auto str_bytes_len = len - ClientMessage::SIZE_OF_FRAME_LENGTH_AND_FLAGS;
                     return std::string(reinterpret_cast<const char *>(rd_ptr(str_bytes_len)), str_bytes_len);
                 }
-
-                template <typename>
-                struct is_trivial_entry_vector : std::false_type
-                { };
-
-                template <typename T, typename U>
-                struct is_trivial_entry_vector<std::vector<std::pair<T, U>>> : std::true_type
-                { };
-
-                template <>
-                struct is_trivial_entry_vector<std::vector<std::pair<serialization::pimpl::Data, boost::optional<hazelcast::client::serialization::pimpl::Data>>>> : std::false_type
-                { };
-
-                template <>
-                struct is_trivial_entry_vector<std::vector<std::pair<serialization::pimpl::Data, hazelcast::client::serialization::pimpl::Data>>> : std::false_type
-                { };
 
                 template<typename T>
                 typename std::enable_if<std::is_same<T, std::vector<typename T::value_type>>::value &&

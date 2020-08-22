@@ -27,6 +27,7 @@
 #include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/protocol/codec/codecs.h"
 #include "hazelcast/client/spi/ClientContext.h"
+#include "hazelcast/client/spi/impl/ClientPartitionServiceImpl.h"
 #include "hazelcast/client/impl/BaseEventHandler.h"
 #include "hazelcast/client/EntryEvent.h"
 #include "hazelcast/client/ExecutionCallback.h"

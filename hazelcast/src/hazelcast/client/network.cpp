@@ -361,6 +361,7 @@ namespace hazelcast {
                                                                                    client.getName(), labels_);
                     }
                 }
+                return protocol::ClientMessage();
             }
 
             void
@@ -409,7 +410,8 @@ namespace hazelcast {
                         connect_to_cluster_task_submitted_ = false;
                         if (activeConnections.empty()) {
                             if (logger.isFinestEnabled()) {
-                                logger.warning("No connection to cluster: ", cluster_id_);
+                                boost::uuids::uuid cluster_id = cluster_id_;
+                                logger.warning("No connection to cluster: ", cluster_id);
                             }
 
                             submit_connect_to_cluster_task();
@@ -611,7 +613,7 @@ namespace hazelcast {
                 connection->setRemoteUuid(response.member_uuid);
 
                 auto new_cluster_id = response.cluster_id;
-                auto current_cluster_id = cluster_id_.load();
+                boost::uuids::uuid current_cluster_id = cluster_id_;
 
                 if (logger.isFinestEnabled()) {
                     logger.finest("Checking the cluster: ", new_cluster_id, ", current cluster: ", current_cluster_id);
