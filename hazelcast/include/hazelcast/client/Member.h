@@ -103,9 +103,6 @@ namespace hazelcast {
 
             bool operator<(const Member &rhs) const;
 
-            void updateAttribute(MemberAttributeOperationType operationType, const std::string &key,
-                                 const boost::optional<std::string> &value);
-
         private:
             Address address;
             boost::uuids::uuid uuid;

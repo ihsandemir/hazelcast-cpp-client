@@ -16,15 +16,16 @@
 #include <hazelcast/client/HazelcastClient.h>
 #include <hazelcast/client/InitialMembershipListener.h>
 #include <hazelcast/client/InitialMembershipEvent.h>
+#include <hazelcast/client/MembershipEvent.h>
 
 class MyInitialMemberListener : public hazelcast::client::InitialMembershipListener {
 
 public:
-    void init(const hazelcast::client::InitialMembershipEvent &event) override {
-        std::vector<hazelcast::client::Member> members = event.getMembers();
+    void init(hazelcast::client::InitialMembershipEvent event) override {
+        auto members = event.getMembers();
         std::cout << "The following are the initial members in the cluster:" << std::endl;
-        for (std::vector<hazelcast::client::Member>::const_iterator it = members.begin(); it != members.end(); ++it) {
-            std::cout << it->getAddress() << std::endl;
+        for (const auto &member : members) {
+            std::cout << member.getAddress() << std::endl;
         }
     }
 

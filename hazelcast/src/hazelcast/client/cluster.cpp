@@ -144,21 +144,6 @@ namespace hazelcast {
             return uuid < rhs.uuid;
         }
 
-        void Member::updateAttribute(Member::MemberAttributeOperationType operationType, const std::string &key,
-                                     const boost::optional<std::string> &value) {
-            switch (operationType) {
-                case PUT:
-                    attributes[key] = *value;
-                    break;
-                case REMOVE:
-                    attributes.erase(key);
-                    break;
-                default:
-                    throw (exception::ExceptionBuilder<exception::IllegalArgumentException>("Member::updateAttribute")
-                            << "Not a known OperationType: " << operationType).build();
-            }
-        }
-
         Endpoint::Endpoint(boost::uuids::uuid uuid, boost::optional<Address> socketAddress)
                 : uuid(uuid), socketAddress(std::move(socketAddress)) {}
 
