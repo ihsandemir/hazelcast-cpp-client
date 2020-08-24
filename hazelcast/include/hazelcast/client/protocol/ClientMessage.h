@@ -591,7 +591,6 @@ namespace hazelcast {
                     // skip bytes in initial frame
                     rd_ptr(static_cast<int32_t>(f->frame_len) - SIZE_OF_FRAME_LENGTH_AND_FLAGS - INT32_SIZE);
 
-
                     codec::ErrorHolder h = {error_code, get<std::string>(), getNullable<std::string>(),
                                                 get<std::vector<codec::StackTraceElement>>()};
 
