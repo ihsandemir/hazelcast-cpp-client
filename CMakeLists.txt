@@ -128,13 +128,17 @@ endif ()
 #find_package(JAVA REQUIRED)
 #find_package(JNI REQUIRED)
 
-set(JAVA_HOME "/Library/Java/JavaVirtualMachines/jdk1.8.0_251.jdk/Contents/Home/")
+set(JAVA_HOME "/Library/Java/JavaVirtualMachines/jdk1.8.0_151.jdk/Contents/Home/")
 set (JLI_LIBRARY "${JAVA_HOME}/jre/lib/jli/libjli.dylib")
 set(JNI_INCLUDE_DIRS "${JAVA_HOME}/include/;${JAVA_HOME}/include/darwin/")
-
+#find_library(JVM_LIBRARY jvm ${JAVA_JVM_LIBRARY_DIRECTORIES})
+set(JVM_LIBRARY "${JAVA_HOME}/jre/lib/server/libjvm.dylib")
+message(STATUS "JVM_LIBRARY " ${JVM_LIBRARY})
 message(STATUS "JNI_INCLUDE_DIRS " ${JNI_INCLUDE_DIRS})
+message(STATUS "JAVA_HOME " ${JAVA_HOME})
+
 include_directories(${JNI_INCLUDE_DIRS})
-link_libraries(${JLI_LIBRARY})
+link_libraries(${JVM_LIBRARY} ${JLI_LIBRARY})
 
 find_package(Boost 1.72 REQUIRED COMPONENTS thread chrono HINTS ${BOOST_HINTS})
 include_directories(${Boost_INCLUDE_DIRS})
