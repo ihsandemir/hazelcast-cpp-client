@@ -25,7 +25,7 @@ struct Person {
     int32_t age;
 };
 
-void test_multiple_threads(hazelcast::Hazelcast &hz, std::function<void(int key, const std::vector<hazelcast::byte> &)> f, int num_threads, int num_ops, size_t object_size) {
+void test_multiple_threads(hazelcast::Hazelcast *hz, std::function<void(int key, const std::vector<hazelcast::byte> &)> f, int num_threads, int num_ops, size_t object_size) {
     std::vector<std::thread> threads;
     std::vector<hazelcast::byte> value(object_size);
 
@@ -35,11 +35,13 @@ void test_multiple_threads(hazelcast::Hazelcast &hz, std::function<void(int key,
 
     auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < num_threads; ++i) {
-        threads.emplace_back([=, &hz] () {
+        threads.emplace_back([=] () {
             for (int j = 0; j < num_ops; ++j) {
                 f(j, value);
             }
-            hz.detach_current_thread();
+            if (hz) {
+                hz->detach_current_thread();
+            }
         });
     }
 
@@ -101,11 +103,11 @@ int main(int argc, char **argv) {
                  "\n\tobject_size:" << object_size <<
                  "\n\ttype:" << type << "\n";
 
-    hazelcast::Hazelcast hz(
-            "/Users/sancar/.m2/repository/com/hazelcast/hazelcast/4.1-SNAPSHOT/hazelcast-4.1-SNAPSHOT.jar");
-
 
     if(strcmp(type, "lite") == 0) {
+        hazelcast::Hazelcast hz(
+                "/Users/ihsan/.m2/repository/com/hazelcast/hazelcast/4.1-SNAPSHOT/hazelcast-4.1-SNAPSHOT.jar");
+
         std::cout << "Lite member:\n";
         std::shared_ptr<hazelcast::HazelcastInstance> liteMember = hz.newHazelcastInstance("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\"\n"
                                                                                            "           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
@@ -115,20 +117,22 @@ int main(int argc, char **argv) {
                                                                                            "</hazelcast>");
 
         std::shared_ptr<hazelcast::IMap> memberMap = liteMember->getMap("test");
-        test_multiple_threads(hz, [=](int key, const std::vector<hazelcast::byte> &value) {
+        test_multiple_threads(&hz, [=](int key, const std::vector<hazelcast::byte> &value) {
             memberMap->put(key, value);
         }, num_threads, num_ops, object_size);
 
         liteMember->shutdown();
-
     }
 
     if(strcmp(type, "java") == 0) {
+        hazelcast::Hazelcast hz(
+                "/Users/ihsan/.m2/repository/com/hazelcast/hazelcast/4.1-SNAPSHOT/hazelcast-4.1-SNAPSHOT.jar");
+
         std::cout << "Java client:\n";
         std::shared_ptr<hazelcast::HazelcastInstance> javaBasedClient = hz.newHazelcastClient();
         std::shared_ptr<hazelcast::IMap> javaBasedClientMap = javaBasedClient->getMap("test");
 
-        test_multiple_threads(hz, [=](int key, const std::vector<hazelcast::byte> &value) {
+        test_multiple_threads(&hz, [=](int key, const std::vector<hazelcast::byte> &value) {
             javaBasedClientMap->put(key, value);
         }, num_threads, num_ops, object_size);
 
@@ -140,7 +144,7 @@ int main(int argc, char **argv) {
         std::shared_ptr<hazelcast::client::IMap> clientMap = client.getMap("test");
 
         std::cout << "C++ client:\n";
-        test_multiple_threads(hz, [=](int key, const std::vector<hazelcast::byte> &value) {
+        test_multiple_threads(nullptr, [=](int key, const std::vector<hazelcast::byte> &value) {
             clientMap->put(key, value).get();
         }, num_threads, num_ops, object_size);
 

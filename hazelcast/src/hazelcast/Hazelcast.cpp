@@ -36,17 +36,17 @@ namespace hazelcast {
         JNIEnv *pEnv = GetJniEnv(vm);
         cls = pEnv->FindClass(name);
         if (cls == nullptr) {
-            throw std::exception();
+            throw std::runtime_error((boost::format("Could not find class %1%") %name).str());
         }
 
         putId = pEnv->GetMethodID(cls, "putForC", "([B[B)[B");
         if (putId == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find method putForC");
         }
 
         getId = pEnv->GetMethodID(cls, "getForC", "([B)[B");
         if (getId == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find method getForC");
         }
     }
 
@@ -72,20 +72,20 @@ namespace hazelcast {
         JNIEnv *pEnv = GetJniEnv(vm);
         cls = pEnv->FindClass("com/hazelcast/core/HazelcastInstance");
         if (cls == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find class com/hazelcast/core/HazelcastInstance");
         }
 
         getNameId = pEnv->GetMethodID(cls, "getName", "()Ljava/lang/String;");
         if (getNameId == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find method getName");
         }
         shutdownId = pEnv->GetMethodID(cls, "shutdown", "()V");
         if (shutdownId == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find method shutdown");
         }
         getMapId = pEnv->GetMethodID(cls, "getMap", "(Ljava/lang/String;)Lcom/hazelcast/map/IMap;");
         if (getMapId == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find method getMap");
         }
     };
 
@@ -131,22 +131,22 @@ namespace hazelcast {
         vm_args.nOptions = 1;
         vm_args.ignoreUnrecognized = JNI_TRUE;
         if (JNI_GetDefaultJavaVMInitArgs(&vm_args) != JNI_OK) {
-            throw std::exception();
+            throw std::runtime_error("Could not init jvm");
         }
         JavaVM *javaVM = NULL;
         JNIEnv *jniEnv = NULL;
         jint res = JNI_CreateJavaVM(&javaVM, (void **) &jniEnv, &vm_args);
         if (res != JNI_OK) {
-            throw std::exception();
+            throw std::runtime_error("Could not create jvm");
         }
         this->vm = javaVM;
         cls = jniEnv->FindClass("com/hazelcast/core/Hazelcast");
         if (cls == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find class com/hazelcast/core/Hazelcast");
         }
         clientCls = jniEnv->FindClass("com/hazelcast/client/HazelcastClient");
         if (clientCls == nullptr) {
-            throw std::exception();
+            throw std::runtime_error("Could not find class com/hazelcast/client/HazelcastClient");
         }
         newHazelcastInstanceId = jniEnv->GetStaticMethodID(cls, "newHazelcastInstance",
                                                            "()Lcom/hazelcast/core/HazelcastInstance;");
