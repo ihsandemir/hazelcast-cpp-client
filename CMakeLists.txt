@@ -121,15 +121,6 @@ ELSE ()
 	message(STATUS "Building the library without SSL.")
 ENDIF()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(BOOST_HINTS "C:\\\\Boost")
-endif ()
-find_package(Boost 1.72 REQUIRED COMPONENTS thread chrono HINTS ${BOOST_HINTS})
-include_directories(${Boost_INCLUDE_DIRS})
-link_libraries(Boost::thread Boost::chrono)
-add_definitions("-DBOOST_THREAD_VERSION=5")
-message(STATUS "Using Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-
 IF (NOT (${HZ_BIT} MATCHES "32") AND NOT (${HZ_BIT} MATCHES "64"))
     message(STATUS "Build needs HZ_BIT. Setting default as -DHZ_BIT=64 (other option -DHZ_BIT=32)")
     set(HZ_BIT 64)
@@ -211,6 +202,17 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	link_libraries(${HZ_LIB_NAME})
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	set(BOOST_HINTS "C:\\\\Boost")
+endif ()
+find_package(Boost 1.72 REQUIRED COMPONENTS thread chrono HINTS ${BOOST_HINTS})
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+link_libraries(Boost::thread Boost::chrono)
+add_definitions("-DBOOST_THREAD_VERSION=5")
+message(STATUS "Using Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
+message(STATUS "Using Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 
 add_definitions(-DBOOST_NO_AUTO_PTR -DELPP_DISABLE_ASSERT -DELPP_WINSOCK2 -DWIN32_LEAN_AND_MEAN)
 

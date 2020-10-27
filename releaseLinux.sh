@@ -25,9 +25,9 @@ mkdir -p ./cpp/Linux_64/hazelcast/include/hazelcast/
 mkdir -p ./cpp/Linux_64/hazelcast/lib/tls
 
 cp -R hazelcast/include/hazelcast/* cpp/Linux_32/hazelcast/include/hazelcast/
-cp -R hazelcast/generated-sources/include/hazelcast/* cpp/Linux_32/hazelcast/include/hazelcast/
+cp -R hazelcast/generated-sources/src/hazelcast/client/protocol/codec/codecs.h cpp/Linux_32/hazelcast/include/hazelcast/client/protocol/codec/codecs.h
 cp -R hazelcast/include/hazelcast/* cpp/Linux_64/hazelcast/include/hazelcast/
-cp -R hazelcast/generated-sources/include/hazelcast/* cpp/Linux_64/hazelcast/include/hazelcast/
+cp -R hazelcast/generated-sources/src/hazelcast/client/protocol/codec/codecs.h cpp/Linux_64/hazelcast/include/hazelcast/client/protocol/codec/codecs.h
 
 scripts/build-linux.sh 32 STATIC Release COMPILE_WITHOUT_SSL &> STATIC_32_linux.txt &
 STATIC_32_pid=$!
