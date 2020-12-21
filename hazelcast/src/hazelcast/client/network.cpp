@@ -73,12 +73,13 @@ namespace hazelcast {
             ClientConnectionManagerImpl::ClientConnectionManagerImpl(spi::ClientContext &client,
                                                                      const std::shared_ptr<AddressTranslator> &address_translator,
                                                                      const std::vector<std::shared_ptr<AddressProvider> > &address_providers)
-                    : alive_(false), logger_(client.get_logger()), connection_timeout_millis_(std::chrono::milliseconds::max()),
+                    : alive_(false), logger_(client.get_logger()),
+                      connection_timeout_millis_(std::chrono::milliseconds::max()),
                       client_(client),
                       socket_interceptor_(client.get_client_config().get_socket_interceptor()),
                       execution_service_(client.get_client_execution_service()),
-                      translator_(address_translator), connection_id_gen_(0),
-                      heartbeat_(client, *this), partition_count_(-1),
+                      translator_(address_translator), executor_(EXECUTOR_CORE_POOL_SIZE), connection_id_gen_(0),
+                      heartbeat_(client, *this),
                       async_start_(client.get_client_config().get_connection_strategy_config().is_async_start()),
                       reconnect_mode_(client.get_client_config().get_connection_strategy_config().get_reconnect_mode()),
                       smart_routing_enabled_(client.get_client_config().get_network_config().is_smart_routing()),
@@ -135,8 +136,8 @@ namespace hazelcast {
                     io_threads_.emplace_back([=]() { io_context_->run(); });
                 }
 
-                executor_.reset(new hazelcast::util::hz_thread_pool(EXECUTOR_CORE_POOL_SIZE));
-                connect_to_members_timer_ = boost::asio::steady_timer(executor_->get_executor());
+                executor_.start();
+                connect_to_members_timer_ = boost::asio::steady_timer(executor_.get_executor());
 
                 heartbeat_.start();
 
@@ -184,7 +185,7 @@ namespace hazelcast {
                     util::IOUtil::close_resource(connection.get(), "Hazelcast client is shutting down");
                 }
 
-                spi::impl::ClientExecutionServiceImpl::shutdown_thread_pool(executor_.get());
+                executor_.stop();
 
                 io_guard_.reset();
                 io_context_->stop();
@@ -383,14 +384,14 @@ namespace hazelcast {
                     return;
                 }
 
-                boost::asio::post(executor_->get_executor(), [=] () {
+                boost::asio::post(executor_.get_executor(), [=]() {
                     try {
                         do_connect_to_cluster();
                         connect_to_cluster_task_submitted_ = false;
                         if (active_connections_.empty()) {
-                            HZ_LOG(logger_, finest, 
-                                boost::str(boost::format("No connection to cluster: %1%")
-                                                         % cluster_id_)
+                            HZ_LOG(logger_, finest,
+                                   boost::str(boost::format("No connection to cluster: %1%")
+                                              % cluster_id_)
                             );
 
                             submit_connect_to_cluster_task();
@@ -422,7 +423,7 @@ namespace hazelcast {
                         // submit a task for this address only if there is no
                         // another connection attempt for it
                         address addr = member_addr;
-                        boost::asio::post(executor_->get_executor(), [=] () {
+                        boost::asio::post(executor_.get_executor(), [=]() {
                             try {
                                 if (!client_.get_lifecycle_service().is_running()) {
                                     return;

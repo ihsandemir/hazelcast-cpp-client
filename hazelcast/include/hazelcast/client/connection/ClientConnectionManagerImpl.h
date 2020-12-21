@@ -39,6 +39,7 @@
 #include "hazelcast/client/config/client_connection_strategy_config.h"
 #include "hazelcast/client/socket_interceptor.h"
 #include "hazelcast/logger.h"
+#include "hazelcast/util/thread_pool.h"
 
 #if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #pragma warning(push)
@@ -47,9 +48,6 @@
 #endif
 
 namespace hazelcast {
-    namespace util {
-        class hz_thread_pool;
-    }
     namespace client {
         class Credentials;
         class load_balancer;
@@ -192,7 +190,7 @@ namespace hazelcast {
                 util::sync_associative_container<std::unordered_map<address, std::unique_ptr<std::mutex>>> conn_locks_;
                 // TODO: change with CopyOnWriteArraySet<ConnectionListener> as in Java
                 util::ConcurrentSet<std::shared_ptr<ConnectionListener> > connection_listeners_;
-                std::unique_ptr<hazelcast::util::hz_thread_pool> executor_;
+                hazelcast::util::thread_pool executor_;
                 std::chrono::milliseconds connection_attempt_period_;
                 int32_t connection_attempt_limit_;
                 int32_t io_thread_count_;
@@ -204,7 +202,6 @@ namespace hazelcast {
                 HeartbeatManager heartbeat_;
                 std::vector<std::thread> io_threads_;
                 std::unique_ptr<boost::asio::io_context::work> io_guard_;
-                std::atomic<int32_t> partition_count_;
                 const bool async_start_;
                 const config::client_connection_strategy_config::reconnect_mode reconnect_mode_;
                 const bool smart_routing_enabled_;

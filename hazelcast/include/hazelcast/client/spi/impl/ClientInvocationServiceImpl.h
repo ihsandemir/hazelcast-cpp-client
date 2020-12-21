@@ -90,7 +90,7 @@ namespace hazelcast {
                     private:
                         logger &logger_;
                         ClientContext &client_;
-                        std::unique_ptr<hazelcast::util::hz_thread_pool> pool_;
+                        std::unique_ptr<hazelcast::util::thread_pool> pool_;
 
                         void process_internal(const std::shared_ptr<ClientInvocation> &invocation,
                                              const std::shared_ptr<protocol::ClientMessage> &response);

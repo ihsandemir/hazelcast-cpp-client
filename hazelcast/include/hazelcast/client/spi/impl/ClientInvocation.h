@@ -21,7 +21,6 @@
 #include <atomic>
 
 #include <boost/thread/future.hpp>
-#include <boost/asio/thread_pool.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
 

@@ -54,7 +54,7 @@
 #include "hazelcast/util/Preconditions.h"
 #include "hazelcast/util/SyncHttpsClient.h"
 #include "hazelcast/util/Clearable.h"
-#include "hazelcast/util/hz_thread_pool.h"
+#include "hazelcast/util/thread_pool.h"
 
 #include "hazelcast/util/Destroyable.h"
 #include "hazelcast/util/Closeable.h"
@@ -1019,25 +1019,35 @@ namespace hazelcast {
             pos_ += t;
         }
 
-        hz_thread_pool::hz_thread_pool(size_t num_threads) : pool_(new boost::asio::thread_pool(num_threads)) {}
-
-        void hz_thread_pool::shutdown_gracefully() {
-            pool_->join();
-            pool_->stop();
-
-#if  defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
-            // needed due to bug https://github.com/chriskohlhoff/asio/issues/431
-            boost::asio::use_service<boost::asio::detail::win_iocp_io_context>(*pool_).stop();
-            // We need the following line so that the windows threads can be terminated. Otherwise,
-            // the threads stay dangling and cause resource leakage. Normally, the pool_ is destructed on client
-            // destruction but somehow it needs to be triggered at this point.
-            pool_.reset();
-#endif
+        thread_pool::thread_pool(size_t num_threads) : number_of_threads_(num_threads),
+                                                       work_guard_(new boost::asio::io_context::work(context_)) {
         }
 
-        boost::asio::thread_pool::executor_type hz_thread_pool::get_executor() const {
-            return pool_->get_executor();
+        void thread_pool::start() {
+            for (size_t i = 0; i < number_of_threads_; ++i) {
+                threads_.emplace_back([&]() {
+                    context_.run();
+                });
+            }
         }
+
+        void thread_pool::stop() {
+            work_guard_.reset();
+            context_.stop();
+
+            for (auto &t : threads_) {
+                t.join();
+            }
+        }
+
+        boost::asio::io_context &thread_pool::get_executor() {
+            return context_;
+        }
+
+        size_t thread_pool::number_of_threads() const {
+            return number_of_threads_;
+        }
+
     }
 }
 

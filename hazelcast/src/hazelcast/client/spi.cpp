@@ -635,6 +635,12 @@ namespace hazelcast {
                                                                                   ClientInvocationServiceImpl &invocation_service,
                                                                                   ClientContext &client_context)
                         : logger_(lg), client_(client_context) {
+                    client_properties &clientProperties = client_.get_client_properties();
+                    auto threadCount = clientProperties.get_integer(
+                            clientProperties.get_response_executor_thread_count());
+                    if (threadCount > 0) {
+                        pool_.reset(new hazelcast::util::thread_pool(threadCount));
+                    }
                 }
 
                 void ClientInvocationServiceImpl::ResponseProcessor::process_internal(
@@ -656,14 +662,14 @@ namespace hazelcast {
                 }
 
                 void ClientInvocationServiceImpl::ResponseProcessor::shutdown() {
-                    ClientExecutionServiceImpl::shutdown_thread_pool(pool_.get());
+                    if (pool_) {
+                        pool_->stop();
+                    }
                 }
 
                 void ClientInvocationServiceImpl::ResponseProcessor::start() {
-                    client_properties &clientProperties = client_.get_client_properties();
-                    auto threadCount = clientProperties.get_integer(clientProperties.get_response_executor_thread_count());
-                    if (threadCount > 0) {
-                        pool_.reset(new hazelcast::util::hz_thread_pool(threadCount));
+                    if (pool_) {
+                        pool_->start();
                     }
                 }
 
@@ -1022,24 +1028,23 @@ namespace hazelcast {
                         user_executor_pool_size_ = 4; // hard coded thread pool count in case we could not get the processor count
                     }
 
-                    internal_executor_.reset(new hazelcast::util::hz_thread_pool(internalPoolSize));
-                    user_executor_.reset(new hazelcast::util::hz_thread_pool(user_executor_pool_size_));
+                    internal_executor_.reset(new hazelcast::util::thread_pool(internalPoolSize));
+                    internal_executor_->start();
+                    user_executor_.reset(new hazelcast::util::thread_pool(user_executor_pool_size_));
+                    user_executor_->start();
                 }
 
                 void ClientExecutionServiceImpl::shutdown() {
-                    shutdown_thread_pool(user_executor_.get());
-                    shutdown_thread_pool(internal_executor_.get());
-                }
-
-                boost::asio::thread_pool::executor_type ClientExecutionServiceImpl::get_user_executor() const {
-                    return user_executor_->get_executor();
-                }
-
-                void ClientExecutionServiceImpl::shutdown_thread_pool(hazelcast::util::hz_thread_pool *pool) {
-                    if (!pool) {
-                        return;
+                    if (user_executor_) {
+                        user_executor_->stop();
                     }
-                    pool->shutdown_gracefully();
+                    if (internal_executor_) {
+                        internal_executor_->stop();
+                    }
+                }
+
+                boost::asio::io_context &ClientExecutionServiceImpl::get_user_executor() {
+                    return user_executor_->get_executor();
                 }
 
                 constexpr int ClientInvocation::MAX_FAST_INVOCATION_COUNT;
@@ -1970,7 +1975,8 @@ namespace hazelcast {
                               serialization_service_(client_context.get_serialization_service()),
                               logger_(client_context.get_logger()),
                               client_connection_manager_(client_context.get_connection_manager()),
-                              number_of_event_threads_(event_thread_count),
+                              event_executor_(static_cast<size_t>(event_thread_count)),
+                              registration_executor_(1),
                               smart_(client_context.get_client_config().get_network_config().is_smart_routing()) {
                         auto &invocationService = client_context.get_invocation_service();
                         invocation_timeout_ = invocationService.get_invocation_timeout();
@@ -1989,7 +1995,7 @@ namespace hazelcast {
                                     return register_listener_internal(listener_message_codec, handler);
                                 });
                         auto f = task.get_future();
-                        boost::asio::post(registration_executor_->get_executor(), std::move(task));
+                        boost::asio::post(registration_executor_.get_executor(), std::move(task));
                         return f;
                     }
 
@@ -2000,18 +2006,20 @@ namespace hazelcast {
                             return deregister_listener_internal(registration_id);
                         });
                         auto f = task.get_future();
-                        boost::asio::post(registration_executor_->get_executor(), std::move(task));
+                        boost::asio::post(registration_executor_.get_executor(), std::move(task));
                         return f;
                     }
 
                     void listener_service_impl::connection_added(
                             const std::shared_ptr<connection::Connection> connection) {
-                        boost::asio::post(registration_executor_->get_executor(), [=]() { connection_added_internal(connection); });
+                        boost::asio::post(registration_executor_.get_executor(),
+                                          [=]() { connection_added_internal(connection); });
                     }
 
                     void listener_service_impl::connection_removed(
                             const std::shared_ptr<connection::Connection> connection) {
-                        boost::asio::post(registration_executor_->get_executor(), [=]() { connection_removed_internal(connection); });
+                        boost::asio::post(registration_executor_.get_executor(),
+                                          [=]() { connection_removed_internal(connection); });
                     }
 
                     void
@@ -2030,7 +2038,8 @@ namespace hazelcast {
                             auto partitionId = response->get_partition_id();
                             if (partitionId == -1) {
                                 // execute on random thread on the thread pool
-                                boost::asio::post(event_executor_->get_executor(), [=]() { process_event_message(invocation, response); });
+                                boost::asio::post(event_executor_.get_executor(),
+                                                  [=]() { process_event_message(invocation, response); });
                                 return;
                             }
 
@@ -2049,17 +2058,18 @@ namespace hazelcast {
                     }
 
                     void listener_service_impl::shutdown() {
-                        ClientExecutionServiceImpl::shutdown_thread_pool(event_executor_.get());
-                        ClientExecutionServiceImpl::shutdown_thread_pool(registration_executor_.get());
+                        event_executor_.stop();
+                        registration_executor_.stop();
                     }
 
                     void listener_service_impl::start() {
-                        event_executor_.reset(new hazelcast::util::hz_thread_pool(number_of_event_threads_));
-                        registration_executor_.reset(new hazelcast::util::hz_thread_pool(1));
-
-                        for (int i = 0; i < number_of_event_threads_; ++i) {
-                            event_strands_.emplace_back(event_executor_->get_executor());
+                        for (size_t i = 0; i < event_executor_.number_of_threads(); ++i) {
+                            event_strands_.emplace_back(event_executor_.get_executor());
                         }
+
+                        event_executor_.start();
+
+                        registration_executor_.start();
 
                         client_connection_manager_.add_connection_listener(shared_from_this());
                     }

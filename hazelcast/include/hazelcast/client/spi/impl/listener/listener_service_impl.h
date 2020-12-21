@@ -17,17 +17,14 @@
 #pragma once
 
 #include <memory>
-#include <boost/asio/thread_pool.hpp>
 #include <boost/asio/strand.hpp>
 
 #include "hazelcast/client/connection/ConnectionListener.h"
 #include "hazelcast/util/SynchronizedMap.h"
 #include "hazelcast/logger.h"
+#include "hazelcast/util/thread_pool.h"
 
 namespace hazelcast {
-    namespace util {
-        class hz_thread_pool;
-    }
     namespace client {
         namespace impl {
             class BaseEventHandler;
@@ -110,8 +107,9 @@ namespace hazelcast {
                         void invoke(const std::shared_ptr<listener_registration> &listener_registration,
                                     const std::shared_ptr<connection::Connection> &connection);
 
-                        void invoke_from_internal_thread(const std::shared_ptr<listener_registration> &listener_registration,
-                                                      const std::shared_ptr<connection::Connection> &connection);
+                        void
+                        invoke_from_internal_thread(const std::shared_ptr<listener_registration> &listener_registration,
+                                                    const std::shared_ptr<connection::Connection> &connection);
 
                         bool registers_local_only() const;
 
@@ -119,13 +117,12 @@ namespace hazelcast {
                         serialization::pimpl::SerializationService &serialization_service_;
                         logger &logger_;
                         connection::ClientConnectionManagerImpl &client_connection_manager_;
-                        std::unique_ptr<hazelcast::util::hz_thread_pool> event_executor_;
-                        std::vector<boost::asio::strand<boost::asio::thread_pool::executor_type>> event_strands_;
-                        std::unique_ptr<hazelcast::util::hz_thread_pool> registration_executor_;
+                        hazelcast::util::thread_pool event_executor_;
+                        std::vector<boost::asio::io_context::strand> event_strands_;
+                        hazelcast::util::thread_pool registration_executor_;
                         std::chrono::milliseconds invocation_timeout_;
                         std::chrono::milliseconds invocation_retry_pause_;
-                        util::SynchronizedMap<boost::uuids::uuid, listener_registration, boost::hash<boost::uuids::uuid>> registrations_;
-                        int number_of_event_threads_;
+                        util::SynchronizedMap <boost::uuids::uuid, listener_registration, boost::hash<boost::uuids::uuid>> registrations_;
                         bool smart_;
                     };
                 }
