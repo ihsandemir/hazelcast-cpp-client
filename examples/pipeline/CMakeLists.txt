@@ -14,3 +14,4 @@
 # limitations under the License.
 #
 add_executable(pipeliningDemo PipeliningDemo.cpp)
+add_executable(pipelining_load PipeliningLoadTest.cpp)
