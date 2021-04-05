@@ -28,9 +28,9 @@ using namespace hazelcast::util;
  * For the benchmark we compare simple imap::get calls with a pipelined approach.
  */
 
-class PipeliningDemo {
+class pipelining_load_test {
 public:
-    PipeliningDemo() : client_(hazelcast::new_client().get()), map_(client_.get_map("map").get()), gen_(rd_()) {}
+    pipelining_load_test() : client_(hazelcast::new_client().get()), map_(client_.get_map("map").get()), gen_(rd_()) {}
 
     void init() {
         for (int l = 0; l < keyDomain; l++) {
@@ -84,7 +84,7 @@ private:
 };
 
 int main() {
-    PipeliningDemo main;
+    pipelining_load_test main;
     main.init();
     main.pipelined(5);
     main.pipelined(10);

@@ -1341,6 +1341,8 @@ namespace hazelcast {
             }
 
             boost::future<protocol::ClientMessage> IMapImpl::put_all_data(int partition_id, const EntryVector &entries) {
+                using namespace std::chrono;
+                auto start = steady_clock::now();
                 auto request = protocol::codec::map_putall_encode(get_name(), entries, true);
                 return invoke_on_partition(request, partition_id);
             }

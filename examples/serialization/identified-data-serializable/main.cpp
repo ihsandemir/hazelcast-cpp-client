@@ -30,7 +30,7 @@ namespace hazelcast {
     namespace client {
         namespace serialization {
             template<>
-            struct hz_serializer<Person> : identified_data_serializer {
+            struct hz_serializer<Person> : public identified_data_serializer {
                 static int32_t get_factory_id() noexcept {
                     return 1;
                 }

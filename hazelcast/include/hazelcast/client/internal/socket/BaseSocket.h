@@ -118,7 +118,9 @@ namespace hazelcast {
                                 if (ec) {
                                     auto invocationIt = connection->invocations.find(message_call_id);
 
-                                    assert(invocationIt != connection->invocations.end());
+                                    if(invocationIt == connection->invocations.end()) {
+                                        return;
+                                    }
 
                                     auto message = (boost::format{
                                             "Error %1% during invocation write for %2% on connection %3%"} %
