@@ -47,7 +47,7 @@ namespace hazelcast {
              * To differentiate users selection on result collection on map-wide operations
              * like values , keySet , query etc.
              */
-            enum struct HAZELCAST_API iteration_type {
+            enum HAZELCAST_API iteration_type {
                 /**
                  * Iterate over keys
                  */

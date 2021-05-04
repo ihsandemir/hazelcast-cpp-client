@@ -28,7 +28,7 @@ namespace hazelcast {
             /**
              * Interface for configuration information about eviction.
              */
-            enum class HAZELCAST_API eviction_strategy_type {
+            enum HAZELCAST_API eviction_strategy_type {
                 /**
                  * Sampling based eviction strategy type
                  */

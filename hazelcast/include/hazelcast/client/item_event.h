@@ -27,7 +27,7 @@ namespace hazelcast {
         /**
         * Type of item event.
         */
-        enum struct HAZELCAST_API item_event_type {
+        enum HAZELCAST_API item_event_type {
             ADDED = 1, REMOVED = 2
         };
 

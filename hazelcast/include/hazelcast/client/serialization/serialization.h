@@ -63,7 +63,7 @@ namespace hazelcast {
 
                 class SerializationService;
 
-                enum struct HAZELCAST_API serialization_constants {
+                enum HAZELCAST_API serialization_constants {
                     CONSTANT_TYPE_NULL = 0,
                     CONSTANT_TYPE_PORTABLE = -1,
                     CONSTANT_TYPE_DATA = -2,
