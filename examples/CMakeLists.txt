@@ -57,6 +57,7 @@ add_subdirectory(pipeline)
 add_subdirectory(authentication)
 add_subdirectory(cp)
 add_subdirectory(soak-test)
+add_subdirectory(issue_900)
 
 if (${WITH_OPENSSL})
     add_subdirectory(tls)
