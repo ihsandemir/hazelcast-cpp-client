@@ -114,7 +114,14 @@ namespace hazelcast {
 
                 socket_interceptor_ = client_.get_client_config().get_socket_interceptor();
 
-                io_thread_ = std::thread([=]() { io_context_->run(); });
+                io_thread_ = std::thread([=]() {
+                    try {
+                        io_context_->run();
+                    } catch(std::exception &e) {
+                        std::cout << "io_context run caused and unexpected exception!!!! " << e.what() << std::endl;
+                        abort();
+                    }
+                });
 
                 executor_.reset(new hazelcast::util::hz_thread_pool(EXECUTOR_CORE_POOL_SIZE));
                 connect_to_members_timer_ = boost::asio::steady_timer(executor_->get_executor());
@@ -167,9 +174,15 @@ namespace hazelcast {
 
                 spi::impl::ClientExecutionServiceImpl::shutdown_thread_pool(executor_.get());
 
+                std::cout <<  "111111\n";
                 // release the guard so that the io thread can stop gracefully
                 io_guard_.reset();
+                std::cout <<  "22222222\n";
+                io_resolver_->cancel();
+                io_resolver_.reset();
+                std::cout <<  "333333333\n";
                 io_thread_.join();
+                std::cout <<  "44444444\n";
 
                 connection_listeners_.clear();
                 active_connections_.clear();
@@ -802,13 +815,13 @@ namespace hazelcast {
                       remote_uuid_(boost::uuids::nil_uuid()), logger_(client_context.get_logger()), alive_(true),
                       last_write_time_(std::chrono::steady_clock::now()) {
                 socket_ = socket_factory.create(address, connect_timeout_in_millis);
+                backup_timer_.reset(new boost::asio::steady_timer(socket_->get_executor().context()));
             }
 
             Connection::~Connection() = default;
 
             void Connection::connect() {
                 socket_->connect(shared_from_this());
-                backup_timer_.reset(new boost::asio::steady_timer(socket_->get_executor().context()));
                 auto backupTimeout = static_cast<spi::impl::ClientInvocationServiceImpl &>(invocation_service_).get_backup_timeout();
                 auto this_connection = shared_from_this();
                 schedule_periodic_backup_cleanup(backupTimeout, this_connection);
@@ -816,9 +829,15 @@ namespace hazelcast {
 
             void Connection::schedule_periodic_backup_cleanup(std::chrono::milliseconds backup_timeout,
                                                               std::shared_ptr<Connection> this_connection) {
+                if (!alive_) {
+                    return;
+                }
                 backup_timer_->expires_from_now(backup_timeout);
+                HZ_LOG(logger_, info, boost::str(boost::format("Scheduling timer. %1%") %(*this)));
                 backup_timer_->async_wait(socket_->get_executor().wrap([=](boost::system::error_code ec) {
+                    HZ_LOG(logger_, info, boost::str(boost::format("Inside Timer lambda. ec:%1%. %2%") % ec %(*this)));
                     if (ec) {
+                        HZ_LOG(logger_, info, boost::str(boost::format("Timer is cancelled. ec:%1%. %2%") % ec %(*this)));
                         return;
                     }
                     for (const auto &it : this_connection->invocations) {
@@ -849,6 +868,9 @@ namespace hazelcast {
                 if (backup_timer_) {
                     boost::system::error_code ignored;
                     backup_timer_->cancel(ignored);
+                    HZ_LOG(logger_, info, boost::str(boost::format("BACKUP TIMER cancelled for connection %1%") % (*this)));
+                } else {
+                    HZ_LOG(logger_, info, boost::str(boost::format("NOOO BACKUP TIMER for connection %1%") % (*this)));
                 }
 
                 close_cause_ = cause;

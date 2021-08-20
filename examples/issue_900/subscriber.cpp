@@ -2,13 +2,13 @@
 
 using namespace hazelcast::client;
 
-hazelcast_client client = hazelcast::new_client().get();
+hazelcast_client hz = hazelcast::new_client().get();
 
 void signal_handler( int signum ) {
     std::cout << "Interrupt signal (" << signum << ") received.\n";
 
     // shutdown the client;
-    client.shutdown().get();
+    hz.shutdown().get();
 
     // cleanup and close up stuff here
     // terminate program
@@ -23,8 +23,8 @@ int main( int argc, char** argv )
     signal(SIGTERM, signal_handler);
     signal(SIGSTOP, signal_handler);
 
-    auto map = client.get_map("issue_900_map").get();
-    auto q = client.get_queue("issue_900_queue").get();
+    auto map = hz.get_map("issue_900_map").get();
+    auto q = hz.get_queue("issue_900_queue").get();
     
     map->add_entry_listener(entry_listener().on_added([](entry_event &&event) {
         std::cout << "Map entry added for key " << *event.get_key().get<int>() << std::endl;
