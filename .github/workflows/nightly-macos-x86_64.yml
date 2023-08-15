@@ -52,41 +52,7 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install openssl@1.1 thrift curl
-          ./scripts/install-boost.sh ${{matrix.boost.version}}
 
-      - name: Download hazelcast-enterprise-tests.jar
+      - name: Start RC
         run: |
-          curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" https://raw.githubusercontent.com/hazelcast/private-test-artifacts/data/certs.jar > hazelcast-enterprise-5.3.0-SNAPSHOT-tests.jar
-
-      - name: Build & Install
-        env:
-          BUILD_DIR: build
-          INSTALL: ON
-          WARN_AS_ERR: ${{ matrix.build_type.warn_as_err }}
-        run: |
-          ./scripts/build-unix.sh                                         \
-              -DCMAKE_BUILD_TYPE=${{ matrix.build_type.type }}            \
-              -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/destination  \
-              -DBUILD_SHARED_LIBS=${{ matrix.shared_libs.toggle }}        \
-              -DWITH_OPENSSL=${{ matrix.with_openssl.toggle }}            \
-              -DBUILD_TESTS=ON                                            \
-              -DBUILD_EXAMPLES=OFF
-
-      - name: Test
-        if: ${{ inputs.run_tests || github.event_name == 'schedule' }}
-        env:
-          BUILD_DIR: build
-          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          HZ_TEST_AWS_INSTANCE_PRIVATE_IP: ${{ secrets.HZ_TEST_AWS_INSTANCE_PRIVATE_IP }}
-        run: |
-          ./scripts/test-unix.sh
-
-      - name: Verify Installation
-        env:
-          BUILD_DIR: build-examples
-        run: |
-          ./scripts/verify-installation-unix.sh                          \
-              -DCMAKE_PREFIX_PATH=${{ github.workspace }}/destination    \
-              -DWITH_OPENSSL=${{ matrix.with_openssl.toggle }}
+          ./scripts/start-rc.sh
