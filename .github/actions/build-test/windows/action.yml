@@ -65,65 +65,6 @@ runs:
               -UserAgent "''"
           Expand-Archive sys-internals.zip -DestinationPath sys-internals
 
-    - uses: nick-fields/retry@v2
-      name: Install OpenSSL
-      if: inputs.OPENSSL_TOGGLE == 'ON'
-      with:
-        timeout_minutes: 10
-        max_attempts : 4
-        retry_on: error
-        shell: pwsh
-        command: |
-          choco install openssl ${{ inputs.ARCH_CHOCO_OPTIONS }}
-          Invoke-WebRequest `
-              "https://curl.se/ca/cacert.pem" `
-              -OutFile "C:\cacert.pem"
-
-    - if: ${{ inputs.INSTALL_BOOST != 'false' }}
-      name: Install Boost
-      shell: pwsh
-      run: |
-        Invoke-WebRequest `
-            "${{ inputs.BOOST_URL }}" `
-            -OutFile "${{ inputs.BOOST_ARCHIVE_NAME }}" `
-            -UserAgent "''"
-        tar xzf ${{ inputs.BOOST_ARCHIVE_NAME }}
-        rm ${{ inputs.BOOST_ARCHIVE_NAME }}
-        cd ${{ inputs.BOOST_FOLDER_NAME }}
-        .\bootstrap.bat
-        .\b2 address-model=${{ inputs.ARCH_ADDRESS_MODEL }} --with-atomic --with-uuid --with-thread --with-chrono install
-        cd ..
-        Remove-Item ${{ inputs.BOOST_FOLDER_NAME }} -Recurse -Force
-
-    - if: ${{ inputs.INSTALL_THRIFT != 'false' }}
-      name: Install Thrift
-      shell: pwsh
-      run: |
-        # Ideally we would download directly from Apache:
-        # https://www.apache.org/dyn/closer.lua/thrift/$1/thrift-$1.tar.gz?action=download
-        # But this has intermittent failures in GitHub Actions
-        Invoke-WebRequest `
-            "https://deb.debian.org/debian/pool/main/t/thrift/thrift_${{ inputs.THRIFT_VERSION }}.orig.tar.gz" `
-            -OutFile "thrift-${{ inputs.THRIFT_VERSION }}.tar.gz"
-        tar xzf thrift-${{ inputs.THRIFT_VERSION }}.tar.gz
-        rm thrift-${{ inputs.THRIFT_VERSION }}.tar.gz
-        cd thrift-${{ inputs.THRIFT_VERSION }}\build
-        cmake .. -A ${{ inputs.ARCH_CMAKE }} `
-                  -DBUILD_COMPILER=OFF -DBUILD_TESTING=OFF -DBUILD_TUTORIALS=OFF -DBUILD_LIBRARIES=ON `
-                  -DBUILD_CPP=ON -DBUILD_AS3=OFF -DBUILD_C_GLIB=OFF -DBUILD_JAVA=OFF -DBUILD_PYTHON=OFF `
-                  -DBUILD_HASKELL=OFF -DWITH_OPENSSL=OFF -DWITH_LIBEVENT=OFF -DWITH_ZLIB=OFF `
-                  -DWITH_QT5=OFF -DBoost_INCLUDE_DIR=${{ inputs.BOOST_INCLUDE_FOLDER }} -DCMAKE_INSTALL_PREFIX=C:\Thrift
-        cmake --build . --target install --config ${{ inputs.BUILD_TYPE }}
-        mkdir C:\Thrift\bin
-        cd ../..
-        Remove-Item thrift-${{ inputs.THRIFT_VERSION }} -Recurse -Force
-
-    - name: Setup JDK
-      uses: actions/setup-java@v4
-      with:
-        java-version: ${{ env.JAVA_VERSION }}
-        distribution: ${{ env.JAVA_DISTRIBUTION }}
-
     - name: Build & Install
       env:
         BUILD_DIR: build
@@ -134,12 +75,13 @@ runs:
       shell: pwsh
       run: |
         .\scripts\build-windows.bat `
-            -DCMAKE_PREFIX_PATH="C:\Boost;C:\Thrift" `
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\destination `
             -DBUILD_SHARED_LIBS=${{ inputs.SHARED_LIBS_TOGGLE }} `
             -DWITH_OPENSSL=${{ inputs.OPENSSL_TOGGLE }} `
             -DBUILD_TESTS=ON `
-            -DBUILD_EXAMPLES=OFF
+            -DBUILD_EXAMPLES=OFF `
+            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DVCPKG_MANIFEST_FEATURES='build-tests'
 
     - name: Test
       if: ${{ inputs.run_tests }}
