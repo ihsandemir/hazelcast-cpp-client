@@ -80,6 +80,8 @@ option(BUILD_EXAMPLES
        "Build examples."
        OFF)
 
+set(WITH_OPENSSL OFF)
+
 # find dependencies
 
 # find Threads
