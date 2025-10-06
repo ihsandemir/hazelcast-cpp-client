@@ -18,7 +18,8 @@
     "build-tests": {
       "description": "Enable GTest for building tests",
       "dependencies": [
-        "gtest"
+        "gtest",
+        "thrift"
       ]
     }
   }
